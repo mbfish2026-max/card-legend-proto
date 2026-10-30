@@ -15,6 +15,7 @@ export const WORLD = {
   returnSpeedRatio: 1.3,
   leashRange: 6 * CARD,
   queueSpacing: 0.8,           // 逻辑排队间距（卡宽比例，<1 重叠）；渲染层另做视觉错开，不影响战斗
+  leapGap: 120, leapSec: 0.35, leapSpeed: 3.2, leapCd: 2.5, // 近战怪跳跃补位
   visualSpacing: 0.92,         // 渲染：后排至少错开 卡宽×该值，避免卡牌重叠
   pickupRadius: 0.45 * CARD,
   dropLandSec: 0.55,

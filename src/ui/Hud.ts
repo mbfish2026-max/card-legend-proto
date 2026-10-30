@@ -36,7 +36,9 @@ class Orb {
 export class Hud {
   hp: Orb; mp: Orb; radar: Phaser.GameObjects.Graphics; skillPos: { x: number; y: number }[] = [];
   potT: Phaser.GameObjects.Text[] = []; dots: Phaser.GameObjects.Rectangle[] = [];
-  logT: Phaser.GameObjects.Text[] = []; lines: { t: string; c: string }[] = []; info: Phaser.GameObjects.Text;
+  logT: Phaser.GameObjects.Text[] = []; lines: { t: string; c: string; at: number }[] = []; logBg?: Phaser.GameObjects.Rectangle;
+  expFill!: Phaser.GameObjects.Rectangle; expT!: Phaser.GameObjects.Text;
+  setExp(lv: number, cur: number, next: number) { this.expFill.width = 480 * Math.max(0, Math.min(1, cur / Math.max(1, next))); this.expT.setText(`Lv${lv}  经验 ${cur}/${next}`); } info: Phaser.GameObjects.Text;
   bagPos = { x: 0, y: 0 }; plaque!: Phaser.GameObjects.Text; dotObjs: Phaser.GameObjects.GameObject[] = [];
   setFloor(name: string, icons: string[]) {
     this.plaque?.setText(name); this.dotObjs.forEach(o => o.destroy()); this.dotObjs = []; this.dots = [];
@@ -57,14 +59,18 @@ export class Hud {
     s.add.rectangle(1130, 36, 258, 34).setStrokeStyle(1, 0xffe8a0, 0.6).setDepth(20);
     this.plaque = txt(s, 1130, 36, levelName, 22, '#ffe8a0', { fontStyle: 'bold' }).setOrigin(0.5).setDepth(21);
     this.setFloor(levelName, waveIcons);
-    if (!mobile) txt(s, 640, 588, '移动 ←→/AD  纵深 ↑↓  技能 QWER  药水 1-4  背包 B/C  商人 F  设置 Esc  静音 M', 13, '#cccccc', { strokeThickness: 2 }).setOrigin(0.5).setDepth(30);
+    if (!mobile) txt(s, 640, 574, '移动 ←→/AD  纵深 ↑↓  技能 QWER  药水 1-4  背包 B/C  商人 F  设置 Esc  静音 M', 13, '#cccccc', { strokeThickness: 2 }).setOrigin(0.5).setDepth(30);
     // 底部栏
-    s.add.rectangle(640, 662, 1280, 116, 0x140f0a, 0.92).setStrokeStyle(2, 0x6a5030).setDepth(19);
-    this.hp = new Orb(s, 74, 652, 58, 0xd01818, 0x700000);
-    this.mp = new Orb(s, 1206, 652, 58, 0x1a4fd8, 0x081a60);
+    // Diablo 式紧凑底栏：红球 | 技能+药水 | 蓝球，中间上方经验条
+    s.add.rectangle(640, 664, 760, 112, 0x140f0a, 0.92).setStrokeStyle(2, 0x6a5030).setDepth(19);
+    this.hp = new Orb(s, 330, 652, 60, 0xd01818, 0x700000);
+    this.mp = new Orb(s, 950, 652, 60, 0x1a4fd8, 0x081a60);
+    s.add.rectangle(640, 601, 480, 10, 0x000000, 0.9).setStrokeStyle(1, 0x8a7040).setDepth(20);
+    this.expFill = s.add.rectangle(400, 601, 0, 8, 0xc8a020).setOrigin(0, 0.5).setDepth(21);
+    this.expT = txt(s, 640, 601, '', 10, '#fff', { strokeThickness: 2 }).setOrigin(0.5).setDepth(22);
     const SK = Hud.SK;
     skills.forEach((k, i) => {
-      const x = 190 + i * (SK + 8), y = 637; this.skillPos.push({ x, y });
+      const x = 420 + i * (SK + 8), y = 646; this.skillPos.push({ x, y });
       s.add.rectangle(x, y, SK, SK, 0x1a1a1a).setStrokeStyle(2, 0xbbaa77).setDepth(20);
       if (s.textures.exists('sk_' + k.id)) s.add.image(x, y, 'sk_' + k.id).setDisplaySize(SK - 4, SK - 4).setDepth(20);
       else if (k.name) txt(s, x, y, k.name, 12).setOrigin(0.5).setDepth(20);
@@ -74,30 +80,34 @@ export class Hud {
     const m = s.make.graphics({}, false); m.fillStyle(0xffffff); this.skillPos.forEach(p => m.fillRect(p.x - SK / 2, p.y - SK / 2, SK, SK));
     this.radar.setMask(m.createGeometryMask());
     POTIONS.forEach((p, i) => {
-      const x = 180 + i * 50, y = 694;
-      s.add.rectangle(x, y, 42, 42, 0x1a1a1a).setStrokeStyle(2, 0x8a7a55).setDepth(20);
+      const x = 684 + i * 52, y = 646;
+      s.add.rectangle(x, y, 44, 44, 0x1a1a1a).setStrokeStyle(2, 0x8a7a55).setDepth(20);
       if (s.textures.exists('potion_' + i)) s.add.image(x, y, 'potion_' + i).setDisplaySize(38, 38).setDepth(20);
       txt(s, x - 18, y - 21, p.key, 11, '#ffff66').setDepth(22);
       this.potT.push(txt(s, x + 19, y + 20, '', 12).setOrigin(1, 1).setDepth(22));
     });
     // 右侧 5 个圆形菜单按钮
-    MENU_LABELS.forEach((label, i) => {
-      const x = 790 + i * 64, y = 640;
-      s.add.circle(x, y, 26, 0x2a1d10).setStrokeStyle(3, 0xb8893a).setDepth(20).setInteractive({ useHandCursor: true }).on('pointerdown', () => onMenu(i));
+    if (!mobile) MENU_LABELS.forEach((label, i) => {
+      const x = 1070 + i * 48, y = 648;
+      s.add.circle(x, y, 21, 0x2a1d10).setStrokeStyle(3, 0xb8893a).setDepth(20).setInteractive({ useHandCursor: true }).on('pointerdown', () => onMenu(i));
       if (s.textures.exists('menu_' + i)) {
-        const im = s.add.image(x, y, 'menu_' + i).setDisplaySize(40, 40).setDepth(21);
-        const mk = s.make.graphics({}, false); mk.fillStyle(0xffffff).fillCircle(x, y, 22); im.setMask(mk.createGeometryMask());
+        const im = s.add.image(x, y, 'menu_' + i).setDisplaySize(34, 34).setDepth(21);
+        const mk = s.make.graphics({}, false); mk.fillStyle(0xffffff).fillCircle(x, y, 18); im.setMask(mk.createGeometryMask());
       }
-      txt(s, x, y + 34, label, 12, '#ffe8a0').setOrigin(0.5).setDepth(21);
+      txt(s, x, y + 30, label, 11, '#ffe8a0').setOrigin(0.5).setDepth(21);
       if (i === 1) this.bagPos = { x, y };
     });
-    for (let i = 0; i < 6; i++) this.logT.push(txt(s, 12, (mobile ? 92 : 34) + i * 18, '', 14, '#fff', { strokeThickness: 2 }).setDepth(30));
+    // 战斗日志：电脑放左下（底栏左侧空位，不挡商人），手机放左上（左下是方向键）；半透明、6 秒后自动淡出
+    if (mobile) this.bagPos = { x: 600, y: 44 };
+    const ly = mobile ? 92 : 606, lh = mobile ? 18 : 18;
+    if (!mobile) this.logBg = s.add.rectangle(0, 596, 252, 124, 0x000000, 0.35).setOrigin(0, 0).setDepth(29);
+    for (let i = 0; i < 6; i++) this.logT.push(txt(s, 8, ly + i * lh, '', mobile ? 14 : 12, '#fff', { strokeThickness: 2, ...(mobile ? {} : { fixedWidth: 244 }) }).setDepth(30));
     this.info = txt(s, 12, 10, '', 14, '#ffe8a0').setDepth(30);
   }
   /** 日志：白字系统提示、绿字拾取/经验 */
   log(t: string, green = false) {
-    console.log(t); this.lines.push({ t, c: green ? '#4dff4d' : '#ffffff' }); this.lines = this.lines.slice(-6);
-    this.logT.forEach((o, i) => { const l = this.lines[i - (6 - this.lines.length)]; o.setText(l?.t ?? '').setColor(l?.c ?? '#fff'); });
+    console.log(t); this.lines.push({ t, c: green ? '#4dff4d' : '#ffffff', at: this.s.time.now }); this.lines = this.lines.slice(-6);
+    this.logT.forEach((o, i) => { const l = this.lines[i - (6 - this.lines.length)]; let str = l?.t ?? ''; if (o.style.fixedWidth && str.length > 20) str = str.slice(0, 19) + '…'; o.setText(str).setColor(l?.c ?? '#fff'); (o as any).at = l?.at ?? 0; });
   }
   update(dt: number, hp: number, maxHp: number, mp: number, maxMp: number, cds: number[], dead: boolean[], pots: number[], info: string) {
     this.hp.update(hp, maxHp, dt); this.mp.update(mp, maxMp, dt);
@@ -112,5 +122,8 @@ export class Hud {
     this.dots.forEach((d, i) => { d.setStrokeStyle(2, dead[i] ? 0x444444 : 0xffd24a); (d as any).cross?.setVisible(!!dead[i]); });
     POTIONS.forEach((p, i) => this.potT[i].setText(p.item ? String(pots[i]) : ''));
     this.info.setText(info);
+    const now = this.s.time.now; let any = 0;
+    this.logT.forEach(o => { const age = (now - ((o as any).at ?? 0)) / 1000, a = age < 6 ? 1 : Math.max(0, 1 - (age - 6) / 1.5); o.setAlpha(a); any = Math.max(any, o.text ? a : 0); });
+    this.logBg?.setAlpha(any);
   }
 }

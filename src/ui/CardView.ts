@@ -86,7 +86,7 @@ export class CardView extends Phaser.GameObjects.Container {
   }
   /** 移动时上下起伏，停下时立绘待机呼吸（只缩放立绘，不动卡框） */
   anim(t: number) {
-    if (this.dying) return;
+    if (this.dying || this.leaping) return;
     const ph = t / 1000 + this.unit.uid;
     if (this.unit.moving) { this.inner.y = -Math.abs(Math.sin(ph * 10)) * 5; this.art.scaleY = this.artSY; }
     else { this.inner.y = 0; this.art.scaleY = this.artSY * (1 + Math.sin(ph * 2.4) * 0.018); }
@@ -120,6 +120,12 @@ export class CardView extends Phaser.GameObjects.Container {
     this.reset(); const a = this.art;
     this.scene.tweens.add({ targets: a, x: this.artX + dir * FX.portraitSwingDx, angle: dir * FX.portraitSwingAngle, scaleX: this.artSX * 1.08, scaleY: this.artSY * 0.96,
       duration: FX.portraitSwingMs / 2, yoyo: true, ease: 'Quad.easeOut' });
+  }
+  /** 跳跃补位：整卡弧线跃起再落地 */
+  leaping = false;
+  leap(ms: number) {
+    if (this.dying) return; this.leaping = true;
+    this.scene.tweens.add({ targets: this.inner, y: -46, duration: ms / 2, yoyo: true, ease: 'Sine.easeOut', onComplete: () => { this.inner.y = 0; this.leaping = false; } });
   }
   /** 冲刺：整张卡向目标方向突进再弹回（普攻/近战技能） */
   lunge(dir: number, dist = 26) {

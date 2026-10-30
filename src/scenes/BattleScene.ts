@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { IS_MOBILE } from '../mobile';
 import { World, SaveData } from '../combat/World';
 import { BattleEvent, GroundItem, Unit } from '../combat/types';
 import { POTIONS } from '../data/skills';
@@ -14,8 +15,10 @@ import type { UIScene } from './UIScene';
 import { playMusic } from '../music';
 import { FxQuality } from '../ui/Fx';
 
-const RARITY_COLOR = { common: FX.pillarCommon, magic: FX.pillarMagic, rare: FX.pillarRare };
-const RARITY_TEXT = { common: '#ffffaa', magic: '#66aaff', rare: '#ffb020' };
+// 稀有度：光柱颜色 = 地上物品名颜色；越稀有光柱越高
+const RARITY_COLOR = { common: 0xf0e6c0, magic: 0x3d9bff, rare: 0xffa020 };
+const RARITY_TEXT = { common: '#f0e6c0', magic: '#3d9bff', rare: '#ffa020' };
+const PILLAR_H = { common: 46, magic: 120, rare: 240 };
 const MERCHANT_X = 110, SHOP_RANGE = 380;
 
 export class BattleScene extends Phaser.Scene {
@@ -47,6 +50,7 @@ export class BattleScene extends Phaser.Scene {
     this.add.rectangle(6, 300, 12, 600, 0x000000, 0.8); this.add.rectangle(W - 6, 300, 12, 600, 0x000000, 0.8);
     const lv = Number(qs.get('lv')) || 1;
     this.world = new World(Math.random, lv, FLOORS, data?.cls ?? 'warrior', data?.save);
+    this.world.requireUse = true;
     this.cds = this.world.skills.map(() => 0);
     this.buildPortal(this.world.exitX); this.buildMerchant();
     const h = this.world.hero!;
@@ -83,13 +87,24 @@ export class BattleScene extends Phaser.Scene {
   }
   buildPortal(x: number) {
     const c = this.add.container(x, GROUND_Y - 120).setDepth(4);
-    const rings = [0x6a2cff, 0x3a8cff, 0xc070ff].map((col, i) => {
+    const core = this.add.ellipse(0, 10, 140, 220, 0x40c8ff, 0.35).setBlendMode(Phaser.BlendModes.ADD);
+    this.tweens.add({ targets: core, alpha: { from: 0.25, to: 0.55 }, duration: 900, yoyo: true, repeat: -1 });
+    const rings = [0x3ad0ff, 0x3a8cff, 0x9a70ff].map((col, i) => {
       const e = this.add.ellipse(0, 0, 150 - i * 34, 230 - i * 50).setStrokeStyle(8 - i * 2, col, 0.9).setFillStyle(col, 0.12);
       this.tweens.add({ targets: e, scaleX: { from: 0.92, to: 1.06 }, alpha: { from: 0.7, to: 1 }, duration: 700 + i * 200, yoyo: true, repeat: -1 });
       return e;
     });
-    const t = this.add.text(0, -150, '下一层', { fontFamily: FONT, fontSize: '22px', color: '#e0c8ff', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5);
-    c.add([...rings, t]); this.portal = c;
+    // 参考原作：石质拱门 + 蓝色漩涡 + 上升光点
+    const arch = this.add.graphics();
+    arch.fillStyle(0x4a4e58, 1).fillRect(-98, -100, 26, 225).fillRect(72, -100, 26, 225);
+    arch.lineStyle(26, 0x4a4e58, 1).beginPath().arc(0, -100, 85, Math.PI, 0, false).strokePath();
+    arch.lineStyle(2, 0x9aa0ac, 0.8).strokeRect(-98, -100, 26, 225).strokeRect(72, -100, 26, 225);
+    for (let i = -3; i <= 3; i++) { const a = Math.PI * (1 + (i + 3) / 6); arch.fillStyle(0x6a7080, 1).fillRect(Math.cos(a) * 85 - 7, -100 + Math.sin(a) * 85 - 7, 14, 14); }
+    const motes = this.add.particles(0, 0, '__WHITE', { x: { min: -60, max: 60 }, y: { min: 60, max: 110 }, speedY: { min: -60, max: -25 }, lifespan: 1800, scale: { start: 3, end: 0 }, alpha: { start: 0.8, end: 0 }, tint: [0x66ccff, 0xaa88ff], frequency: 120 });
+    const t = this.add.text(0, -205, '下一层', { fontFamily: FONT, fontSize: '22px', color: '#e0c8ff', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5);
+    this.portalHint = this.add.text(0, -235, IS_MOBILE ? '点「传送」进入' : '按 空格 进入', { fontFamily: FONT, fontSize: '18px', color: '#ffffff', fontStyle: 'bold', stroke: '#2a0a5a', strokeThickness: 5 }).setOrigin(0.5).setVisible(false);
+    this.tweens.add({ targets: this.portalHint, y: -242, duration: 500, yoyo: true, repeat: -1 });
+    c.add([arch, core, ...rings, motes, t, this.portalHint]); this.portal = c;
   }
   /** 商人：本层起点的小摊（背景层，不参与战斗） */
   buildMerchant() {
@@ -120,6 +135,7 @@ export class BattleScene extends Phaser.Scene {
     if (k === 'F') return this.openPanel('shop');
     if (k === 'K') return this.openPanel('skills');
     if (this.paused || this.state !== 'play') return;
+    if (k === ' ') { this.usePortal(); return; }
     const h = this.world.hero; if (!h) return;
     const si = this.world.skills.findIndex(s => s.key === k);
     if (si >= 0) {
@@ -196,10 +212,11 @@ export class BattleScene extends Phaser.Scene {
         const [icon, ...rest] = objs; rest.forEach(o => o.destroy());
         if (icon && (icon as any).x !== undefined) {
           const cam = this.cameras.main; this.tweens.killTweensOf(icon); (icon as any).setDepth(95);
-          this.tweens.add({ targets: icon, x: cam.scrollX + 815, y: cam.scrollY + 640, scale: (icon as any).scale * 0.4, alpha: 0.6, duration: 420, ease: 'Cubic.easeIn', onComplete: () => icon.destroy() });
+          this.tweens.add({ targets: icon, x: cam.scrollX + (this.hud?.bagPos.x ?? 815), y: cam.scrollY + (this.hud?.bagPos.y ?? 640), scale: (icon as any).scale * 0.4, alpha: 0.6, duration: 420, ease: 'Cubic.easeIn', onComplete: () => icon.destroy() });
         }
         this.sfx(e.item === 'gold' ? 'coin' : 'loot', 0.5); this.log(`获得 ${e.name}`, true);
       } else if (e.type === 'aggro') this.views.get(e.uid)?.alert(WORLD.alertSec);
+      else if (e.type === 'leap') this.views.get(e.uid)?.leap(WORLD.leapSec * 1000);
       else if (e.type === 'leash') { const v = this.views.get(e.uid); if (v) fx.floatNumber(this, v.cx, v.cy - v.h * 0.3, v.h, '脱离战斗', FX.statusColor, 0.6); }
       else if (e.type === 'floor') this.enterFloor(e.index, e.name);
       else if (e.type === 'cleared') this.log('首领已被击败！出口已开启，向右前往下一层');
@@ -217,6 +234,15 @@ export class BattleScene extends Phaser.Scene {
       else if (e.type === 'inventory') { if (this.ui?.panel?.open) this.ui.panel.render(); }
       else if (e.type === 'log') this.log(e.text, e.color === 'green');
     }
+  }
+  useNext = false; fading = false; portalHint!: Phaser.GameObjects.Text;
+  /** 传送门：在出口处按空格 → 黑屏淡出 → 切层（新楼层再淡入） */
+  usePortal() {
+    const w = this.world; if (!w.atExit || this.fading) return;
+    if (w.floor.boss && w.alive('enemy').some(u => u.tier === 'boss')) { this.useNext = true; return; }
+    this.fading = true; this.sfx('summon', 0.4);
+    this.cameras.main.fadeOut(450, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => { this.useNext = true; this.fading = false; });
   }
   heroDied() {
     if (this.state !== 'play') return;
@@ -266,12 +292,20 @@ export class BattleScene extends Phaser.Scene {
     }, onComplete: () => {
       if (!this.groundObjs.has(g.gid)) return;
       icon.setDepth(5 + g.y / 1000);
-      this.tweens.add({ targets: icon, y: ty - S / 2 - FX.dropBounce, duration: 110, yoyo: true, ease: 'Quad.easeOut' });
-      const color = RARITY_COLOR[g.rarity];
+      // 落地弹两下（第二下更低）
+      this.tweens.chain({ targets: icon, tweens: [
+        { y: ty - S / 2 - FX.dropBounce * 2, duration: 120, ease: 'Quad.easeOut' }, { y: ty - S / 2, duration: 120, ease: 'Quad.easeIn' },
+        { y: ty - S / 2 - FX.dropBounce * 0.7, duration: 80, ease: 'Quad.easeOut' }, { y: ty - S / 2, duration: 80, ease: 'Quad.easeIn' }] });
+      const color = RARITY_COLOR[g.rarity], PH = PILLAR_H[g.rarity];
       const p = this.add.graphics().setDepth(4.9);
-      p.fillGradientStyle(color, color, color, color, 0, 0, 0.55, 0.55); p.fillRect(tx - 9, ty - FX.pillarHeight, 18, FX.pillarHeight);
+      p.setPosition(tx, ty);
+      p.setBlendMode(Phaser.BlendModes.ADD);
+      p.fillGradientStyle(color, color, color, color, 0, 0, 0.4, 0.4); p.fillRect(-18, -PH, 36, PH);
+      p.fillGradientStyle(0xffffff, 0xffffff, color, color, 0, 0, 0.95, 0.95); p.fillRect(-5, -PH, 10, PH);
+      p.fillStyle(color, 0.35).fillEllipse(0, 0, 54, 12);
+      p.setScale(1, 0.05); this.tweens.add({ targets: p, scaleY: 1, duration: 260, ease: 'Back.easeOut' });
       this.tweens.add({ targets: p, alpha: 0.5, duration: 600, yoyo: true, repeat: -1 });
-      const label = this.add.text(tx, ty - S - 4, g.name, { fontFamily: FONT, fontSize: '12px', color: RARITY_TEXT[g.rarity], stroke: '#000', strokeThickness: 3 }).setOrigin(0.5, 1).setDepth(5);
+      const label = this.add.text(tx, ty - S - 4, g.name, { fontFamily: FONT, fontSize: g.rarity === 'rare' ? '14px' : '12px', fontStyle: 'bold', color: RARITY_TEXT[g.rarity], stroke: '#000', strokeThickness: 3 }).setOrigin(0.5, 1).setDepth(5);
       objs.push(p, label);
     } });
   }
@@ -301,7 +335,7 @@ export class BattleScene extends Phaser.Scene {
       const pad = this.ui?.pad;
       const dx = this.state === 'play' ? Math.sign((k.RIGHT.isDown || k.D.isDown ? 1 : 0) - (k.LEFT.isDown || k.A.isDown ? 1 : 0) + (pad?.dx ?? 0)) : 0;
       const dy = this.state === 'play' ? Math.sign((k.DOWN.isDown ? 1 : 0) - (k.UP.isDown ? 1 : 0) + (pad?.dy ?? 0)) : 0;
-      this.world.step(dt, { dx, dy });
+      this.world.step(dt, { dx, dy, use: this.useNext }); this.useNext = false;
       this.cds = this.cds.map(c => Math.max(0, c - dt));
       this.saveT += dt; if (this.saveT > 15) { this.saveT = 0; this.saveGame(); }
     }
@@ -309,6 +343,8 @@ export class BattleScene extends Phaser.Scene {
     this.layoutQueue();
     this.views.forEach(v => { v.sync(); v.anim(time); v.setDepth(10 + v.unit.y / 1000 + (v.unit.isHero ? 0.0005 : 0)); });
     this.portal.setAlpha(!this.world.cleared ? 0.35 : 1);
+    this.portalHint?.setVisible(this.world.atExit && this.state === 'play' && !(this.world.floor.boss && this.world.alive('enemy').some(u => u.tier === 'boss')));
+    this.hud?.setExp(this.world.level, this.world.exp, this.world.expNext);
     // 接近首领时切换首领战音乐，击败后回到本层音乐
     const boss = this.world.alive('enemy').find(e => e.tier === 'boss'), hh = this.world.hero;
     const nearBoss = !!boss && !!hh && Math.abs(boss.x - hh.x) < 900;
@@ -320,7 +356,7 @@ export class BattleScene extends Phaser.Scene {
     this.hud?.update(dt, h?.hp ?? 0, h?.maxHp ?? st.hp, h?.mp ?? 0, h?.maxMp ?? st.mp, this.cds, dead, w.pots, info);
   }
   end() {
-    if (this.state === 'win') return; this.state = 'win'; SaveStore.clear(); playMusic(this, 'title'); this.ui?.panel?.close();
+    if (this.state === 'win') return; this.state = 'win'; this.cameras.main.fadeIn(500, 0, 0, 0); SaveStore.clear(); playMusic(this, 'title'); this.ui?.panel?.close();
     const ui = this.scene.get('UI'), w = this.world;
     const t = (y: number, str: string, size: number, color: string) => ui.add.text(640, y, str, { fontFamily: FONT, fontSize: size + 'px', color, fontStyle: 'bold', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5).setDepth(100);
     ui.add.rectangle(640, 300, 1280, 600, 0x000000, 0.55).setDepth(99);

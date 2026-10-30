@@ -137,6 +137,7 @@ const free = (w: World) => w.skills.map(() => 0);
       while (w.gold >= 60 && w.pots[3] < 3) w.buyPotion(3);
       w.step(0.05, { dx: 1, dy: 0 }); w.drainEvents(); t += 0.05; for (let i = 0; i < cds.length; i++) cds[i] = Math.max(0, cds[i] - 0.05);
     }
+    ok(w.deaths >= 1 && w.deaths <= 4, `${CLASSES[c].name} 难度适中：模拟通关死亡 1–4 次（实际 ${w.deaths}）`);
     console.log(`  ${CLASSES[c].name}: 通关=${w.done} 用时 ${Math.round(t)}s 等级 ${w.level} 死亡 ${w.deaths} 次 层 ${w.floorIndex + 1} 红药 ${potUsed} 瓶`);
     ok(potUsed >= 3, `${CLASSES[c].name} 通关需要吃药（${potUsed} 瓶，难度不再过于简单）`);
     ok(w.done && w.deaths <= 6, `${CLASSES[c].name} 可通关 5 层（死亡 ${w.deaths} 次）`);
@@ -153,5 +154,16 @@ const free = (w: World) => w.skills.map(() => 0);
   ok(!detectMobile(fw('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/130', false, 1920, 1080)), '桌面浏览器不显示虚拟按键');
   ok(detectMobile(fw('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Safari', true, 1024, 1366, '', 5)), 'iPadOS（伪装 Mac）识别为触屏');
   ok(!detectMobile(fw('iPhone', true, 390, 844, '?mobile=0')) && detectMobile(fw('Chrome', false, 1920, 1080, '?mobile=1')), '?mobile= 参数可强制覆盖');
+}
+{ // 传送门：requireUse 时站在出口不按空格不切层，按下后切层
+  const w = mk([], [{ name: '下一层', spawns: [] }]); w.requireUse = true; const h = w.hero!; h.x = w.exitX;
+  w.step(0.05); ok(w.floorIndex === 0 && w.atExit, '到达传送门但未按空格：不切层');
+  w.step(0.05, { dx: 0, dy: 0, use: true }); ok(w.floorIndex === 1, '按空格后进入下一层');
+}
+{ // 近战怪跳跃补位：玩家后退拉开距离时触发 leap 并加速
+  const w = mk([{ id: 'wolf', x: 900 }]); const h = w.hero!; const z = w.units.find(u => u.team === 'enemy')!;
+  z.ai = 'chase'; h.x = 600; z.x = 1100; let leaps = 0; const x0 = z.x;
+  for (let i = 0; i < 6; i++) { w.step(0.05); for (const e of w.drainEvents()) if (e.type === 'leap') leaps++; }
+  ok(leaps >= 1 && x0 - z.x > WORLD.heroSpeed * WORLD.chaseSpeedRatio * 0.3 * 1.5, `距离拉开时近战怪跳跃补位（leap ${leaps} 次，位移 ${Math.round(x0 - z.x)}）`);
 }
 console.log(`全部通过 ${pass} 项`);

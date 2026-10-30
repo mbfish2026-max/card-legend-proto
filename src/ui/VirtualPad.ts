@@ -29,15 +29,15 @@ export class VirtualPad {
     const dirBtn = (k: keyof VirtualPad['dir'], x: number, y: number, l: string) => btn(x, y, rr, l, null, () => (this.dir[k] = true), () => (this.dir[k] = false), 34);
     dirBtn('left', cx - d, cy, '◀'); dirBtn('right', cx + d, cy, '▶'); dirBtn('up', cx, cy - d, '▲'); dirBtn('down', cx, cy + d * 0.95, '▼');
     // 右下：技能扇形
-    const ox = 1236, oy = 590, rad = 190;
+    const ox = 1252, oy = 600, rad = 170;
     skills.forEach((k, i) => {
       const a = Math.PI + (i * Math.PI / 2) / 3, x = ox + Math.cos(a) * rad, y = oy + Math.sin(a) * rad;
       btn(x, y, 52, k.key, 'sk_' + k.id, () => onKey(k.key)); this.skillBtns.push({ x, y, r: 52 });
     });
     // 右上：药水
-    POTIONS.forEach((p, i) => btn(995 + i * 82, 150, 37, p.key, 'potion_' + i, () => onKey(p.key)));
+    POTIONS.forEach((p, i) => btn(935 + i * 96, 160, 45, p.key, 'potion_' + i, () => onKey(p.key)));
     // 顶部：功能键
-    [['背包', 'B'], ['商人', 'F'], ['设置', 'ESCAPE'], ['静音', 'M']].forEach(([l, k], i) => btn(560 + i * 84, 44, 34, l, null, () => onKey(k), undefined, 17));
+    [['背包', 'B'], ['商人', 'F'], ['传送', ' '], ['设置', 'ESCAPE'], ['静音', 'M']].forEach(([l, k], i) => btn(420 + i * 100, 52, 45, l, null, () => onKey(k), undefined, 19));
     this.cdG = s.add.graphics(); R.add(this.cdG);
     R.setAlpha(1);
   }

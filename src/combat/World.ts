@@ -8,7 +8,7 @@ import { HERO, ENEMIES, EXP_PER_LEVEL, SUMMON } from '../data/units';
 import { WORLD, FLOORS, Floor } from '../data/world';
 
 export const CRIT_CHANCE = 0.15, CRIT_MULT = 1.8;
-export interface Input { dx: number; dy: number }
+export interface Input { dx: number; dy: number; use?: boolean }
 export interface SaveData {
   v: 1; cls: ClassId; level: number; exp: number; gold: number; pots: number[];
   equip: Partial<Record<Slot, InvItem>>; bag: InvItem[]; floorIndex: number; kills: number; nextUid: number;
@@ -22,6 +22,8 @@ export class World {
   pots = POTIONS.map(p => p.count); gold = 0;
   /** 背包（最多 WORLD.bagSize 格）与装备栏 */
   bag: InvItem[] = []; equip: Partial<Record<Slot, InvItem>> = {};
+  /** true：到达传送点后需按空格（Input.use）才切层；模拟/测试默认自动 */
+  requireUse = false; atExit = false; private exitHintT = -99;
   floorIndex = 0; cleared = false; done = false; private sealedLogT = -99; private bagFullLogT = -99;
   kills = 0; deaths = 0;
   constructor(public rng: () => number = Math.random, public level = 1, public floors: Floor[] = FLOORS, public cls: ClassId = 'warrior', save?: SaveData) {
@@ -243,7 +245,7 @@ export class World {
       if (ex) { this.heal(ex, ex.maxHp); this.events.push({ type: 'log', text: '骷髅已存在：恢复其生命' }); }
       else {
         const tao = h.tao ?? 0;
-        const def: UnitDef = { ...SUMMON, level: this.level, hp: Math.round(180 + tao * 7), atk: Math.round(8 + tao * 0.9), def: Math.round(3 + this.level * 0.8) };
+        const def: UnitDef = { ...SUMMON, level: this.level, hp: Math.round(140 + tao * 5), atk: Math.round(8 + tao * 0.9), def: Math.round(3 + this.level * 0.8) };
         const u = this.spawn(def, 'ally', h.x - h.facing * 110, WORLD.summonLane); u.summon = true; u.facing = h.facing; u.ai = 'chase';
         this.events.push({ type: 'summon', uid: u.uid });
       }
@@ -332,7 +334,12 @@ export class World {
           u.facing = -side as 1 | -1;
           const sp = chase * (u.slowUntil && u.slowUntil > this.time ? 0.5 : 1);
           const tx = dist > stop ? h.x + side * stop : u.x;
-          this.toward(u, tx, h.y, sp, dt);
+          // 近战怪：玩家后退拉开距离时，跳跃式扑上去补位（短时间 3 倍速，有冷却）
+          if (u.tier !== 'boss' && dist > stop + WORLD.leapGap && this.time >= (u.leapReady ?? 0)) {
+            u.leapUntil = this.time + WORLD.leapSec; u.leapReady = this.time + WORLD.leapCd; this.events.push({ type: 'leap', uid: u.uid });
+          }
+          const leaping = (u.leapUntil ?? 0) > this.time;
+          this.toward(u, tx, h.y, sp * (leaping ? WORLD.leapSpeed : 1), dt);
         }
         prevDist = Math.abs(u.x - h.x); prev = u;
       }
@@ -372,7 +379,10 @@ export class World {
     this.units = this.units.filter(u => u.alive);
     const hh = this.hero; if (!hh) return;
     for (const g of [...this.ground]) if (g.landAt <= this.time && Math.hypot(g.x - hh.x, (g.y - hh.y) * 0.5) <= WORLD.pickupRadius) this.pickup(g);
-    if (Math.abs(hh.x - this.exitX) <= WORLD.exitRadius || hh.x >= this.exitX) {
+    this.atExit = Math.abs(hh.x - this.exitX) <= WORLD.exitRadius || hh.x >= this.exitX;
+    if (this.atExit && this.requireUse && !inp.use) {
+      if (!(this.floor.boss && this.alive('enemy').some(u => u.tier === 'boss')) && this.time - this.exitHintT > 4) { this.exitHintT = this.time; this.events.push({ type: 'log', text: '到达传送门：按 空格 进入下一层' }); }
+    } else if (this.atExit) {
       const boss = this.alive('enemy').find(u => u.tier === 'boss');
       if (this.floor.boss && boss) {
         if (this.time - this.sealedLogT > 3) { this.sealedLogT = this.time; this.events.push({ type: 'log', text: `出口被${boss.name}的力量封印，击败${boss.name}后开启` }); }

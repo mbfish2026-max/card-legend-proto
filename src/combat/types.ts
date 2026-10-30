@@ -18,7 +18,7 @@ export interface Unit extends UnitDef {
   uid: number; team: Team; x: number; y: number; maxHp: number; maxMp: number; cd: number;
   alive: boolean; isHero?: boolean; summon?: boolean;
   armorUntil?: number; armorReduce?: number;
-  slowUntil?: number; poisonUntil?: number; poisonDps?: number; poisonTick?: number;
+  leapUntil?: number; leapReady?: number; slowUntil?: number; poisonUntil?: number; poisonDps?: number; poisonTick?: number;
   mag?: number; tao?: number;
   homeX: number; homeY: number; ai: AIState; alertT: number; facing: 1 | -1; moving: boolean;
 }
@@ -35,6 +35,7 @@ export type BattleEvent =
   | { type: 'pickup'; gid: number; name: string; item: string }
   | { type: 'aggro'; uid: number }
   | { type: 'leash'; uid: number }
+  | { type: 'leap'; uid: number }
   | { type: 'floor'; index: number; name: string }
   | { type: 'cleared' }
   | { type: 'win' }
