@@ -1,0 +1,14 @@
+{
+  "name": "card-legend-proto",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host --port 5180",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "tsx tests/battle.test.ts"
+  },
+  "dependencies": { "phaser": "^3.80.1" },
+  "devDependencies": { "typescript": "^5.5.4", "vite": "^5.4.0", "tsx": "^4.19.0" }
+}

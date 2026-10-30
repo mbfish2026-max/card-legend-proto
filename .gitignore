@@ -1,0 +1,10 @@
+node_modules
+dist
+dev.log
+*.log
+.DS_Store
+.env
+.env.*
+*/backup*/
+backup_*/
+**/backup_v*/
