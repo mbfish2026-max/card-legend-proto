@@ -32,7 +32,10 @@ export class CardView extends Phaser.GameObjects.Container {
     const g = scene.add.graphics();
     g.fillStyle(c.bg ?? BG[unit.tier]).fillRoundedRect(-w / 2, -ch, w, ch, 5);
     g.fillGradientStyle(0xffffff, 0xffffff, 0x000000, 0x000000, 0.08, 0.08, 0.25, 0.25).fillRect(-w / 2 + 2, -ch + 2, w - 4, ch - barH - 2);
+    // 参考 video2 g_024：深棕外框 + 内侧细金属线
+    g.lineStyle(5, 0x2a1c10, 1).strokeRoundedRect(-w / 2 - 2, -ch - 2, w + 4, ch + 4, 6);
     g.lineStyle(2, EDGE[unit.tier], 0.95).strokeRoundedRect(-w / 2, -ch, w, ch, 5);
+    g.lineStyle(1, 0x000000, 0.6).strokeRoundedRect(-w / 2 + 3, -ch + 3, w - 6, ch - 6, 4);
     // 立绘：脚底锚点在信息条上边缘（略下沉，让信息条遮住脚踝）
     // 立绘高度 = 卡面区域(卡框减信息条)高度 × figureScale（≈1.0–1.2），人物基本在框内，只有头/武器略探出
     const faceH = ch - barH, maxW = w * (c.maxWidthRatio ?? 1.3);
@@ -147,8 +150,9 @@ export class CardView extends Phaser.GameObjects.Container {
     const dir = this.unit.facing;
     this.scene.tweens.add({ targets: this.art, angle: -dir * 4, scaleY: this.artSY * 0.95, duration: FX.hitShakeMs / 2, yoyo: true, onComplete: () => { this.art.setAngle(0); } });
     this.scene.tweens.killTweensOf(this.inner); this.inner.x = 0;
-    const amp = this.w * FX.hitShakeRatio;
-    this.scene.tweens.add({ targets: this.inner, x: { from: -amp, to: amp }, duration: FX.hitShakeMs / FX.hitShakeCycles / 2, yoyo: true, repeat: FX.hitShakeCycles - 1, onComplete: () => (this.inner.x = 0) });
+    const amp = this.w * FX.hitShakeRatio, kb = -dir * 10;
+    // 受击后退：整卡往后弹 10px 再回位
+    this.scene.tweens.add({ targets: this.inner, x: { from: kb - amp, to: kb + amp }, duration: FX.hitShakeMs / FX.hitShakeCycles / 2, yoyo: true, repeat: FX.hitShakeCycles - 1, onComplete: () => (this.inner.x = 0) });
   }
   /** 死亡：立绘变灰后仰倒下，整卡淡出 */
   die(done: () => void) {

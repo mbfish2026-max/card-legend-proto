@@ -114,14 +114,18 @@ export function lightning(s: S, x: number, yTop: number, yHit: number) {
   const g = s.add.graphics().setDepth(58);
   const draw = () => {
     g.clear(); let px = x + (Math.random() - 0.5) * 40, py = yTop;
-    for (const [w, c, a] of [[10, 0x6aa0ff, 0.5], [4, 0xffffff, 1]] as const) {
-      g.lineStyle(w, c, a); g.beginPath(); px = x; py = yTop; g.moveTo(px, py);
-      let seed = 0; while (py < yHit) { py += 30; px = x + Math.sin(py * 0.13 + seed++) * 22; g.lineTo(px, py); }
-      g.strokePath();
+    const pts: [number, number][] = []; py = yTop; px = x;
+    while (py < yHit) { pts.push([px, py]); py += 24 + Math.random() * 20; px = x + (Math.random() - 0.5) * 70; }
+    pts.push([x, yHit]);
+    // 参考 video2 g_033：粗蓝色外辉 + 白芯 + 分叉
+    for (const [w, c, a] of [[38, 0x2a5aff, 0.25], [18, 0x5a9aff, 0.55], [6, 0xffffff, 1]] as const) {
+      g.lineStyle(w, c, a); g.beginPath(); g.moveTo(pts[0][0], pts[0][1]); pts.forEach(p => g.lineTo(p[0], p[1])); g.strokePath();
     }
+    for (let b = 0; b < 3; b++) { const [bx, by] = pts[2 + Math.floor(Math.random() * (pts.length - 3))]; g.lineStyle(3, 0xcfe0ff, 0.9); g.beginPath(); g.moveTo(bx, by); let qx = bx, qy = by; for (let i = 0; i < 4; i++) { qx += (Math.random() - 0.3) * 40 * (b % 2 ? 1 : -1); qy += 22; g.lineTo(qx, qy); } g.strokePath(); }
+    g.fillStyle(0x9ac0ff, 0.5).fillEllipse(x, yHit + 40, 160, 34);
   };
-  draw(); s.time.delayedCall(70, draw);
-  s.tweens.add({ targets: g, alpha: 0, delay: 140, duration: 200, onComplete: () => g.destroy() });
+  draw(); s.time.delayedCall(70, draw); s.time.delayedCall(150, draw);
+  s.tweens.add({ targets: g, alpha: 0, delay: 260, duration: 260, onComplete: () => g.destroy() });
   sparks(s, x, yHit, 14, 0xaaccff, 50, 300); s.cameras.main.flash(80, 180, 200, 255);
 }
 /** 冰咆哮：地面冰环扩散 + 冰晶碎片 */
@@ -140,7 +144,15 @@ export function frostTint(img: Phaser.GameObjects.GameObject, ms: number) {
 }
 /** 魔法盾：蓝色泡泡罩住施法者，持续闪烁 */
 export function magicShield(s: S, target: Phaser.GameObjects.Container, cy: number, h: number, ms: number) {
-  const e = s.add.ellipse(0, cy - target.y, h * 0.85, h * 1.05, 0x3a7aff, 0.18).setStrokeStyle(4, 0x8ac8ff, 0.9);
+  // 参考 video2 g_110：金橙色球形护罩，亮边 + 内部淡填充 + 旋转弧光
+  const r = h * 0.62;
+  const e = s.add.container(0, cy - target.y);
+  const glow = s.add.circle(0, 0, r + 8, 0xffa020, 0.12);
+  const ball = s.add.circle(0, 0, r, 0xffc860, 0.1).setStrokeStyle(5, 0xffb030, 0.95);
+  const rim = s.add.graphics(); rim.lineStyle(3, 0xfff0a0, 1); rim.beginPath(); rim.arc(0, 0, r - 4, -2.4, -0.9); rim.strokePath(); rim.beginPath(); rim.arc(0, 0, r - 4, 0.7, 1.6); rim.strokePath();
+  const hl = s.add.ellipse(-r * 0.35, -r * 0.5, r * 0.5, r * 0.22, 0xffffff, 0.35).setAngle(-30);
+  e.add([glow, ball, rim, hl]);
+  s.tweens.add({ targets: rim, angle: 360, duration: 2600, repeat: -1 });
   target.add(e); e.setScale(0.2);
   s.tweens.add({ targets: e, scale: 1, duration: 260, ease: 'Back.easeOut' });
   s.tweens.add({ targets: e, alpha: 0.55, duration: 500, yoyo: true, repeat: -1, delay: 260 });

@@ -18,7 +18,8 @@ import { FxQuality } from '../ui/Fx';
 // 稀有度：光柱颜色 = 地上物品名颜色；越稀有光柱越高
 const RARITY_COLOR = { common: 0xf0e6c0, magic: 0x3d9bff, rare: 0xffa020 };
 const RARITY_TEXT = { common: '#f0e6c0', magic: '#3d9bff', rare: '#ffa020' };
-const PILLAR_H = { common: 46, magic: 120, rare: 240 };
+// 参考 video2 g_103：细长光柱（4px 芯 + 16px 辉），高度按稀有度
+const PILLAR_H = { common: 70, magic: 150, rare: 250 };
 const MERCHANT_X = 110, SHOP_RANGE = 380;
 
 export class BattleScene extends Phaser.Scene {
@@ -45,7 +46,16 @@ export class BattleScene extends Phaser.Scene {
     const qs = new URLSearchParams(location.search), W = WORLD.mapWidth;
     // 横版地图：本层背景分段拼接（交替镜像）
     this.bgImgs = [];
-    for (let x = 0; x < W; x += 1280) this.bgImgs.push(this.add.image(x + 640, 300, 'bg').setDisplaySize(1280, 720).setFlipX((x / 1280) % 2 === 1).setTint(0xa0a0a0));
+    for (let x = 0; x < W; x += 1280) this.bgImgs.push(this.add.image(x + 640, 300, 'bg').setDisplaySize(1280, 720).setFlipX((x / 1280) % 2 === 1).setTint(0xa0a0a0).setScrollFactor(0.7));
+    // 多层视差：远景 0.7，前景暗色岩石剪影 1.25 + 漂浮尘埃 + 屏幕暗角
+    const fg = this.add.graphics().setDepth(40).setScrollFactor(1.25);
+    for (let x = 0; x < W * 1.3; x += 140 + ((x * 7919) % 170)) { const h = 40 + ((x * 31) % 70); fg.fillStyle(0x060405, 0.95).fillTriangle(x - 26, 0, x + 26, 0, x + ((x % 3) - 1) * 6, h); fg.fillStyle(0x060405, 0.9).fillTriangle(x + 18, 0, x + 40, 0, x + 30, h * 0.55); }
+    fg.fillStyle(0x060405, 0.95).fillRect(0, 0, W * 1.3, 8);
+    this.add.particles(0, 0, '__WHITE', { x: { min: 0, max: W }, y: { min: 80, max: 560 }, speedX: { min: -8, max: 8 }, speedY: { min: -12, max: -3 }, lifespan: 6000, scale: { start: 1.6, end: 0 }, alpha: { start: 0.35, end: 0 }, frequency: 90, tint: 0xffe0b0 }).setDepth(39);
+    const vg = this.add.graphics().setScrollFactor(0).setDepth(38);
+    vg.fillGradientStyle(0x000000, 0x000000, 0x000000, 0x000000, 0.55, 0.55, 0, 0).fillRect(0, 0, 1280, 110);
+    vg.fillGradientStyle(0x000000, 0, 0x000000, 0, 0.5, 0, 0.5, 0).fillRect(0, 0, 140, 720);
+    vg.fillGradientStyle(0, 0x000000, 0, 0x000000, 0, 0.5, 0, 0.5).fillRect(1140, 0, 140, 720);
     this.add.rectangle(W / 2, GROUND_Y + 10, W, 90, 0x000000, 0.25);
     this.add.rectangle(6, 300, 12, 600, 0x000000, 0.8); this.add.rectangle(W - 6, 300, 12, 600, 0x000000, 0.8);
     const lv = Number(qs.get('lv')) || 1;
@@ -87,24 +97,28 @@ export class BattleScene extends Phaser.Scene {
   }
   buildPortal(x: number) {
     const c = this.add.container(x, GROUND_Y - 120).setDepth(4);
-    const core = this.add.ellipse(0, 10, 140, 220, 0x40c8ff, 0.35).setBlendMode(Phaser.BlendModes.ADD);
+    const core = this.add.ellipse(0, 10, 150, 225, 0x8a2cff, 0.45).setBlendMode(Phaser.BlendModes.ADD);
     this.tweens.add({ targets: core, alpha: { from: 0.25, to: 0.55 }, duration: 900, yoyo: true, repeat: -1 });
-    const rings = [0x3ad0ff, 0x3a8cff, 0x9a70ff].map((col, i) => {
+    // 参考 video2 g_070：紫色漩涡
+    const swirl = this.add.graphics().setBlendMode(Phaser.BlendModes.ADD);
+    for (let k = 0; k < 3; k++) { swirl.lineStyle(5, [0xd080ff, 0xa040ff, 0xff90ff][k], 0.7); swirl.beginPath(); for (let a = 0; a < Math.PI * 3; a += 0.15) { const r = 8 + a * 11; const px = Math.cos(a + k * 2.1) * r * 0.62, py = Math.sin(a + k * 2.1) * r * 0.95; if (a === 0) swirl.moveTo(px, py); else swirl.lineTo(px, py); } swirl.strokePath(); }
+    this.tweens.add({ targets: swirl, angle: 360, duration: 4000, repeat: -1 });
+    const rings = [0xb050ff, 0x7a2cff, 0xe090ff].map((col, i) => {
       const e = this.add.ellipse(0, 0, 150 - i * 34, 230 - i * 50).setStrokeStyle(8 - i * 2, col, 0.9).setFillStyle(col, 0.12);
       this.tweens.add({ targets: e, scaleX: { from: 0.92, to: 1.06 }, alpha: { from: 0.7, to: 1 }, duration: 700 + i * 200, yoyo: true, repeat: -1 });
       return e;
     });
-    // 参考原作：石质拱门 + 蓝色漩涡 + 上升光点
+    // 参考原作：石质拱门 + 紫色漩涡 + 上升光点
     const arch = this.add.graphics();
     arch.fillStyle(0x4a4e58, 1).fillRect(-98, -100, 26, 225).fillRect(72, -100, 26, 225);
     arch.lineStyle(26, 0x4a4e58, 1).beginPath().arc(0, -100, 85, Math.PI, 0, false).strokePath();
     arch.lineStyle(2, 0x9aa0ac, 0.8).strokeRect(-98, -100, 26, 225).strokeRect(72, -100, 26, 225);
     for (let i = -3; i <= 3; i++) { const a = Math.PI * (1 + (i + 3) / 6); arch.fillStyle(0x6a7080, 1).fillRect(Math.cos(a) * 85 - 7, -100 + Math.sin(a) * 85 - 7, 14, 14); }
-    const motes = this.add.particles(0, 0, '__WHITE', { x: { min: -60, max: 60 }, y: { min: 60, max: 110 }, speedY: { min: -60, max: -25 }, lifespan: 1800, scale: { start: 3, end: 0 }, alpha: { start: 0.8, end: 0 }, tint: [0x66ccff, 0xaa88ff], frequency: 120 });
+    const motes = this.add.particles(0, 0, '__WHITE', { x: { min: -60, max: 60 }, y: { min: 60, max: 110 }, speedY: { min: -60, max: -25 }, lifespan: 1800, scale: { start: 3, end: 0 }, alpha: { start: 0.8, end: 0 }, tint: [0xd090ff, 0xaa66ff], frequency: 120 });
     const t = this.add.text(0, -205, '下一层', { fontFamily: FONT, fontSize: '22px', color: '#e0c8ff', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5);
     this.portalHint = this.add.text(0, -235, IS_MOBILE ? '点「传送」进入' : '按 空格 进入', { fontFamily: FONT, fontSize: '18px', color: '#ffffff', fontStyle: 'bold', stroke: '#2a0a5a', strokeThickness: 5 }).setOrigin(0.5).setVisible(false);
     this.tweens.add({ targets: this.portalHint, y: -242, duration: 500, yoyo: true, repeat: -1 });
-    c.add([arch, core, ...rings, motes, t, this.portalHint]); this.portal = c;
+    c.add([arch, core, swirl, ...rings, motes, t, this.portalHint]); this.portal = c;
   }
   /** 商人：本层起点的小摊（背景层，不参与战斗） */
   buildMerchant() {
@@ -300,9 +314,9 @@ export class BattleScene extends Phaser.Scene {
       const p = this.add.graphics().setDepth(4.9);
       p.setPosition(tx, ty);
       p.setBlendMode(Phaser.BlendModes.ADD);
-      p.fillGradientStyle(color, color, color, color, 0, 0, 0.4, 0.4); p.fillRect(-18, -PH, 36, PH);
-      p.fillGradientStyle(0xffffff, 0xffffff, color, color, 0, 0, 0.95, 0.95); p.fillRect(-5, -PH, 10, PH);
-      p.fillStyle(color, 0.35).fillEllipse(0, 0, 54, 12);
+      p.fillGradientStyle(color, color, color, color, 0, 0, 0.4, 0.4); p.fillRect(-8, -PH, 16, PH);
+      p.fillGradientStyle(0xffffff, 0xffffff, color, color, 0, 0, 0.95, 0.95); p.fillRect(-2, -PH, 4, PH);
+      p.fillStyle(color, 0.35).fillEllipse(0, 0, 40, 10);
       p.setScale(1, 0.05); this.tweens.add({ targets: p, scaleY: 1, duration: 260, ease: 'Back.easeOut' });
       this.tweens.add({ targets: p, alpha: 0.5, duration: 600, yoyo: true, repeat: -1 });
       const label = this.add.text(tx, ty - S - 4, g.name, { fontFamily: FONT, fontSize: g.rarity === 'rare' ? '14px' : '12px', fontStyle: 'bold', color: RARITY_TEXT[g.rarity], stroke: '#000', strokeThickness: 3 }).setOrigin(0.5, 1).setDepth(5);
