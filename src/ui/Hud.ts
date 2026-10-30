@@ -51,13 +51,13 @@ export class Hud {
     });
   }
   static SK = 60; gold = 0;
-  constructor(public s: Phaser.Scene, levelName: string, waveIcons: string[], public skills: SkillDef[], onMenu: (i: number) => void) {
+  constructor(public s: Phaser.Scene, levelName: string, waveIcons: string[], public skills: SkillDef[], onMenu: (i: number) => void, mobile = false) {
     // 右上角牌匾（层名）+ 本层怪物进度小图标
     s.add.rectangle(1130, 36, 270, 46, 0x8a1010).setStrokeStyle(3, 0xd4a64a).setDepth(20);
     s.add.rectangle(1130, 36, 258, 34).setStrokeStyle(1, 0xffe8a0, 0.6).setDepth(20);
     this.plaque = txt(s, 1130, 36, levelName, 22, '#ffe8a0', { fontStyle: 'bold' }).setOrigin(0.5).setDepth(21);
     this.setFloor(levelName, waveIcons);
-    txt(s, 640, 588, '移动 ←→/AD  纵深 ↑↓  技能 QWER  药水 1-4  背包 B/C  商人 F  设置 Esc  静音 M', 13, '#cccccc', { strokeThickness: 2 }).setOrigin(0.5).setDepth(30);
+    if (!mobile) txt(s, 640, 588, '移动 ←→/AD  纵深 ↑↓  技能 QWER  药水 1-4  背包 B/C  商人 F  设置 Esc  静音 M', 13, '#cccccc', { strokeThickness: 2 }).setOrigin(0.5).setDepth(30);
     // 底部栏
     s.add.rectangle(640, 662, 1280, 116, 0x140f0a, 0.92).setStrokeStyle(2, 0x6a5030).setDepth(19);
     this.hp = new Orb(s, 74, 652, 58, 0xd01818, 0x700000);
@@ -91,7 +91,7 @@ export class Hud {
       txt(s, x, y + 34, label, 12, '#ffe8a0').setOrigin(0.5).setDepth(21);
       if (i === 1) this.bagPos = { x, y };
     });
-    for (let i = 0; i < 6; i++) this.logT.push(txt(s, 12, 448 + i * 18, '', 14, '#fff', { strokeThickness: 2 }).setDepth(30));
+    for (let i = 0; i < 6; i++) this.logT.push(txt(s, 12, (mobile ? 92 : 34) + i * 18, '', 14, '#fff', { strokeThickness: 2 }).setDepth(30));
     this.info = txt(s, 12, 10, '', 14, '#ffe8a0').setDepth(30);
   }
   /** 日志：白字系统提示、绿字拾取/经验 */

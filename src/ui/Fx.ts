@@ -9,7 +9,10 @@ function crescent(g: Phaser.GameObjects.Graphics, r: number, thick: number, span
   for (let i = 20; i >= 0; i--) { const a = -span + (2 * span * i) / 20; pts.push(new Phaser.Math.Vector2(Math.cos(a) * (r - thick) - thick * 0.6, Math.sin(a) * (r - thick * 0.3))); }
   g.fillPoints(pts, true);
 }
+/** 低特效模式（手机默认开启）：粒子数量减半 */
+export const FxQuality = { low: false };
 function sparks(s: S, x: number, y: number, n: number, color: number, dist: number, ms: number) {
+  if (FxQuality.low) n = Math.ceil(n / 2);
   for (let i = 0; i < n; i++) {
     const a = Math.random() * Math.PI * 2, d = dist * (0.5 + Math.random() * 0.5);
     const p = s.add.circle(x, y, 2 + Math.random() * 2, color).setDepth(60);

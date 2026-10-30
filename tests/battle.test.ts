@@ -1,7 +1,8 @@
 import { World, SaveData } from '../src/combat/World';
 import { WORLD, Floor, FLOORS } from '../src/data/world';
 import { CLASSES, ClassId } from '../src/data/classes';
-import { ENEMIES } from '../src/data/units';
+import { ENEMIES, DIFF } from '../src/data/units';
+import { detectMobile } from '../src/mobile';
 import { POTIONS } from '../src/data/skills';
 let pass = 0; const ok = (c: boolean, m: string) => { if (!c) { console.error('FAIL', m); throw new Error(m); } pass++; console.log('ok', m); };
 function seeded(s: number) { return () => (s = (s * 16807) % 2147483647) / 2147483647; }
@@ -123,11 +124,11 @@ const free = (w: World) => w.skills.map(() => 0);
 }
 { // 平衡：每个职业的自动脚本能打通全部 5 层（允许死亡复活）
   for (const c of ['warrior', 'mage', 'taoist'] as ClassId[]) {
-    const w = new World(seeded(11), 1, FLOORS, c); const cds = w.skills.map(() => 0); let t = 0;
+    const w = new World(seeded(11), 1, FLOORS, c); const cds = w.skills.map(() => 0); let t = 0, potUsed = 0;
     while (!w.done && t < 3600) {
       const h = w.hero;
       if (!h) { w.respawn(); continue; }
-      if (h.hp < h.maxHp * 0.4) w.usePotion(w.pots[1] > 0 ? 1 : 0);
+      if (h.hp < h.maxHp * 0.4 && w.usePotion(w.pots[1] > 0 ? 1 : 0)) potUsed++;
       if ((h.mp ?? 0) < 40) w.usePotion(w.pots[3] > 0 ? 3 : 2);
       for (let i = 0; i < 4; i++) w.cast(i, cds);
       for (let i = w.bag.length - 1; i >= 0; i--) { const it = w.bag[i]; if (it.slot && it.req <= w.level && !w.equip[it.slot]) w.equipItem(i); }
@@ -136,8 +137,21 @@ const free = (w: World) => w.skills.map(() => 0);
       while (w.gold >= 60 && w.pots[3] < 3) w.buyPotion(3);
       w.step(0.05, { dx: 1, dy: 0 }); w.drainEvents(); t += 0.05; for (let i = 0; i < cds.length; i++) cds[i] = Math.max(0, cds[i] - 0.05);
     }
-    console.log(`  ${CLASSES[c].name}: 通关=${w.done} 用时 ${Math.round(t)}s 等级 ${w.level} 死亡 ${w.deaths} 次 层 ${w.floorIndex + 1}`);
+    console.log(`  ${CLASSES[c].name}: 通关=${w.done} 用时 ${Math.round(t)}s 等级 ${w.level} 死亡 ${w.deaths} 次 层 ${w.floorIndex + 1} 红药 ${potUsed} 瓶`);
+    ok(potUsed >= 3, `${CLASSES[c].name} 通关需要吃药（${potUsed} 瓶，难度不再过于简单）`);
     ok(w.done && w.deaths <= 6, `${CLASSES[c].name} 可通关 5 层（死亡 ${w.deaths} 次）`);
   }
+}
+{ // 难度曲线：怪物强度倍率已上调
+  ok(DIFF.atk > 1 && DIFF.bossAtk >= DIFF.atk && ENEMIES.boss_lich.atk > ENEMIES.orc_chief.atk, '难度倍率上调且首领逐层变强');
+  ok(['wolf_king', 'spider_queen', 'skeleton_lord', 'orc_chief', 'boss_lich'].every(id => ENEMIES[id].art?.startsWith('boss_')), '每层首领有专属立绘');
+}
+{ // 手机检测：UA / 触屏小屏 / URL 覆盖
+  const fw = (ua: string, coarse: boolean, sw: number, sh: number, search = '', tp = 0) => ({ location: { search }, navigator: { userAgent: ua, maxTouchPoints: tp }, matchMedia: () => ({ matches: coarse }), screen: { width: sw, height: sh } }) as any;
+  ok(detectMobile(fw('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)', true, 390, 844)), 'iPhone UA 识别为手机');
+  ok(detectMobile(fw('Mozilla/5.0 (Linux; Android 14; Pixel 8) Mobile', true, 412, 915)), 'Android UA 识别为手机');
+  ok(!detectMobile(fw('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/130', false, 1920, 1080)), '桌面浏览器不显示虚拟按键');
+  ok(detectMobile(fw('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Safari', true, 1024, 1366, '', 5)), 'iPadOS（伪装 Mac）识别为触屏');
+  ok(!detectMobile(fw('iPhone', true, 390, 844, '?mobile=0')) && detectMobile(fw('Chrome', false, 1920, 1080, '?mobile=1')), '?mobile= 参数可强制覆盖');
 }
 console.log(`全部通过 ${pass} 项`);

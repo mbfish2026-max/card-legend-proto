@@ -8,6 +8,7 @@ export const ASSETS: Record<string, string> = {
   deer: P + 'deer_full.png', wolf: P + 'wolf_full.png', bat: P + 'bat_full.png', spider: P + 'spider_full.png',
   skeleton: P + 'skeleton_full.png', zombie: P + 'zombie_full.png', orc: P + 'orc_full.png', darkmage: P + 'darkmage_full.png',
   boss_lich: P + 'boss_lich_full.png',
+  boss_wolf_king: P + 'boss_wolf_king_full.png', boss_spider_queen: P + 'boss_spider_queen_full.png', boss_skeleton_lord: P + 'boss_skeleton_lord_full.png', boss_orc_chief: P + 'boss_orc_chief_full.png',
   merchant: P + 'INV_Misc_Head_Human_02.png',
   // 每层场景背景（AI 生成，1280×720）
   bg: 'assets/ui/bg_dungeon.jpg',

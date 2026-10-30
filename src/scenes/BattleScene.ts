@@ -11,6 +11,8 @@ import { PanelMode } from '../ui/Panel';
 import * as fx from '../ui/Fx';
 import { Settings, SaveStore } from '../settings';
 import type { UIScene } from './UIScene';
+import { playMusic } from '../music';
+import { FxQuality } from '../ui/Fx';
 
 const RARITY_COLOR = { common: FX.pillarCommon, magic: FX.pillarMagic, rare: FX.pillarRare };
 const RARITY_TEXT = { common: '#ffffaa', magic: '#66aaff', rare: '#ffb020' };
@@ -23,7 +25,7 @@ export class BattleScene extends Phaser.Scene {
   dropOrigin = new Map<number, { x: number; y: number; h: number; w: number }>();
   keys!: Record<string, Phaser.Input.Keyboard.Key>; portal!: Phaser.GameObjects.Container; bgImgs: Phaser.GameObjects.Image[] = [];
   merchant!: Phaser.GameObjects.Container; overlay: Phaser.GameObjects.GameObject[] = [];
-  expTotal = 0; saveT = 0;
+  expTotal = 0; saveT = 0; bossMusic = false;
   constructor() { super('Battle'); }
 
   sfx(id: string, volume = 0.6) { try { if (this.cache.audio.exists('sfx_' + id)) this.sound.play('sfx_' + id, { volume }); } catch { /* ignore */ } }
@@ -150,7 +152,7 @@ export class BattleScene extends Phaser.Scene {
           this.sfx('fireball_impact', 0.5); fx.explosion(this, t.cx, t.cy, t.h * 0.35, skill === 'fireball' ? 0xffdd55 : 0xfff2a0, skill === 'fireball' ? 0xff4400 : 0x3ac83a); done();
         });
       } return done();
-      case 'thunder': if (tv[0]) { fx.lightning(this, tv[0].cx, tv[0].y - 600, tv[0].cy); this.cameras.main.shake(120, 0.004); } return done();
+      case 'thunder': if (tv[0]) { fx.lightning(this, tv[0].cx, tv[0].y - 600, tv[0].cy); if (!FxQuality.low) this.cameras.main.shake(120, 0.004); } return done();
       case 'ice_roar': fx.iceRoar(this, hv.cx, GROUND_Y + hv.unit.y - 10, sk?.range ?? 420); tv.forEach(v => fx.frostTint(v.art, (sk?.duration ?? 4) * 1000)); return done();
       case 'magic_shield': fx.magicShield(this, hv, hv.cy, hv.h, (sk?.duration ?? 12) * 1000); fx.floatNumber(this, hv.cx, hv.cy - hv.h * 0.2, hv.h, '魔法盾', '#88ccff', 0.7); return done();
       case 'poison': if (tv[0]) { const t = tv[0]; return fx.projectile(this, hv.cx + dir * hv.w * 0.4, hv.cy - 20, t.cx, t.cy, 'poison', () => { fx.poisonCloud(this, t.cx, t.cy, t.h); done(); }); } return done();
@@ -174,8 +176,8 @@ export class BattleScene extends Phaser.Scene {
         if (e.heal) { fx.floatNumber(this, v.cx, y, v.h, '+' + e.amount, FX.healColor, 0.8); continue; }
         if (e.dot) { fx.floatNumber(this, v.cx + 20, y, v.h, '-' + e.amount, '#5aff3a', 0.7); v.hit(); continue; }
         v.hit(); fx.hitSpark(this, v.cx, v.cy);
-        fx.floatNumber(this, v.cx, y, v.h, (e.crit ? '暴击 ' : '-') + e.amount, e.crit ? '#ffcc00' : FX.dmgColor, e.crit ? FX.critScale : 1);
-        if (e.crit) this.cameras.main.shake(80, 0.003);
+        fx.floatNumber(this, v.cx, y, v.h, '-' + e.amount + (e.crit ? '!' : ''), e.crit ? '#ff5a1a' : FX.dmgColor, e.crit ? FX.critScale : 1);
+        if (e.crit && !FxQuality.low) this.cameras.main.shake(80, 0.003);
         if (e.source !== undefined) this.sfx(v.unit.isHero ? 'hit_hero' : e.crit ? 'swing_crit' : 'hit', 0.35);
       } else if (e.type === 'death') {
         const v = this.views.get(e.uid); if (!v) continue;
@@ -189,7 +191,13 @@ export class BattleScene extends Phaser.Scene {
         const o = this.dropOrigin.get(e.uid) ?? { x: e.x, y: GROUND_Y + e.y - 100, h: 180, w: 130 };
         e.items.forEach(g => this.throwDrop(g, o));
       } else if (e.type === 'pickup') {
-        this.groundObjs.get(e.gid)?.forEach(o => o.destroy()); this.groundObjs.delete(e.gid);
+        // 拾取：图标飞向屏幕下方背包按钮后消失，光柱/名字立即移除
+        const objs = this.groundObjs.get(e.gid) ?? []; this.groundObjs.delete(e.gid);
+        const [icon, ...rest] = objs; rest.forEach(o => o.destroy());
+        if (icon && (icon as any).x !== undefined) {
+          const cam = this.cameras.main; this.tweens.killTweensOf(icon); (icon as any).setDepth(95);
+          this.tweens.add({ targets: icon, x: cam.scrollX + 815, y: cam.scrollY + 640, scale: (icon as any).scale * 0.4, alpha: 0.6, duration: 420, ease: 'Cubic.easeIn', onComplete: () => icon.destroy() });
+        }
         this.sfx(e.item === 'gold' ? 'coin' : 'loot', 0.5); this.log(`获得 ${e.name}`, true);
       } else if (e.type === 'aggro') this.views.get(e.uid)?.alert(WORLD.alertSec);
       else if (e.type === 'leash') { const v = this.views.get(e.uid); if (v) fx.floatNumber(this, v.cx, v.cy - v.h * 0.3, v.h, '脱离战斗', FX.statusColor, 0.6); }
@@ -240,6 +248,7 @@ export class BattleScene extends Phaser.Scene {
     this.cameras.main.centerOn(WORLD.heroStartX, 360); this.cameras.main.fadeIn(700, 0, 0, 0);
     const hv = this.world.hero && this.views.get(this.world.hero.uid); if (hv) hv.x = this.world.hero!.x;
     if (i > 0) this.sfx('summon', 0.4);
+    playMusic(this, 'floor' + Math.min(5, i + 1)); this.bossMusic = false;
     this.saveGame();
   }
 
@@ -275,10 +284,11 @@ export class BattleScene extends Phaser.Scene {
     const sm = this.world.summon, sv = sm && this.views.get(sm.uid);
     if (sm && sv) { const gap = sm.x - h.x, want = -h.facing * 115; if (Math.abs(gap) < 115) sv.dispOff = want - gap; }
     for (const side of [1, -1]) {
-      const q = this.world.alive('enemy').filter(e => Math.sign(e.x - h.x) === side && e.ai !== 'idle').sort((a, b) => Math.abs(a.x - h.x) - Math.abs(b.x - h.x));
+      const q = this.world.alive('enemy').filter(e => Math.sign(e.x - h.x) === side && (e.ai !== 'idle' || Math.abs(e.x - h.x) < 700)).sort((a, b) => Math.abs(a.x - h.x) - Math.abs(b.x - h.x));
       let edge = -Infinity;
       for (const e of q) {
-        const d = Math.abs(e.x - h.x), want = Math.max(d, edge);
+        // 前排与主角至少留出 半卡宽之和 + 28px 的视觉空隙，避免主角卡与怪物卡贴得过近
+        const d = Math.abs(e.x - h.x), want = Math.max(d, edge, (h.width + e.width) / 2 + 28);
         const v = this.views.get(e.uid); if (v) v.dispOff = side * (want - d);
         edge = want + e.width * WORLD.visualSpacing;
       }
@@ -288,8 +298,9 @@ export class BattleScene extends Phaser.Scene {
   update(time: number, dms: number) {
     const dt = Math.min(0.05, dms / 1000), k = this.keys;
     if (this.state !== 'win' && !this.paused) {
-      const dx = this.state === 'play' ? (k.RIGHT.isDown || k.D.isDown ? 1 : 0) - (k.LEFT.isDown || k.A.isDown ? 1 : 0) : 0;
-      const dy = this.state === 'play' ? (k.DOWN.isDown ? 1 : 0) - (k.UP.isDown ? 1 : 0) : 0;
+      const pad = this.ui?.pad;
+      const dx = this.state === 'play' ? Math.sign((k.RIGHT.isDown || k.D.isDown ? 1 : 0) - (k.LEFT.isDown || k.A.isDown ? 1 : 0) + (pad?.dx ?? 0)) : 0;
+      const dy = this.state === 'play' ? Math.sign((k.DOWN.isDown ? 1 : 0) - (k.UP.isDown ? 1 : 0) + (pad?.dy ?? 0)) : 0;
       this.world.step(dt, { dx, dy });
       this.cds = this.cds.map(c => Math.max(0, c - dt));
       this.saveT += dt; if (this.saveT > 15) { this.saveT = 0; this.saveGame(); }
@@ -298,6 +309,10 @@ export class BattleScene extends Phaser.Scene {
     this.layoutQueue();
     this.views.forEach(v => { v.sync(); v.anim(time); v.setDepth(10 + v.unit.y / 1000 + (v.unit.isHero ? 0.0005 : 0)); });
     this.portal.setAlpha(!this.world.cleared ? 0.35 : 1);
+    // 接近首领时切换首领战音乐，击败后回到本层音乐
+    const boss = this.world.alive('enemy').find(e => e.tier === 'boss'), hh = this.world.hero;
+    const nearBoss = !!boss && !!hh && Math.abs(boss.x - hh.x) < 900;
+    if (nearBoss !== this.bossMusic && this.state !== 'win') { this.bossMusic = nearBoss; playMusic(this, nearBoss ? 'boss' : 'floor' + Math.min(5, this.world.floorIndex + 1), 900); }
     const w = this.world, h = w.hero, st = w.stats();
     const dead = this.floorUids.map(id => !w.units.some(u => u.uid === id && u.alive));
     const pw = { atk: '攻击', mag: '魔法', tao: '道术' }[w.classDef.autoStat];
@@ -305,13 +320,14 @@ export class BattleScene extends Phaser.Scene {
     this.hud?.update(dt, h?.hp ?? 0, h?.maxHp ?? st.hp, h?.mp ?? 0, h?.maxMp ?? st.mp, this.cds, dead, w.pots, info);
   }
   end() {
-    if (this.state === 'win') return; this.state = 'win'; SaveStore.clear(); this.ui?.panel?.close();
+    if (this.state === 'win') return; this.state = 'win'; SaveStore.clear(); playMusic(this, 'title'); this.ui?.panel?.close();
     const ui = this.scene.get('UI'), w = this.world;
     const t = (y: number, str: string, size: number, color: string) => ui.add.text(640, y, str, { fontFamily: FONT, fontSize: size + 'px', color, fontStyle: 'bold', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5).setDepth(100);
     ui.add.rectangle(640, 300, 1280, 600, 0x000000, 0.55).setDepth(99);
     t(230, '通 关 ！', 72, '#ffd700');
     t(310, `${CLASSES[w.cls].name} Lv${w.level}  通关 ${w.floors.length} 层   击杀 ${w.kills}   死亡 ${w.deaths}   金币 ${w.gold}`, 22, '#ffe8a0');
-    t(370, '按 空格 返回标题', 24, '#fff');
+    t(370, '按 空格 返回标题' + (this.ui?.pad ? '（或点击屏幕）' : ''), 24, '#fff');
+    if (this.ui?.pad) ui.input.once('pointerdown', () => this.onKey(' '));
   }
 }
 export type { Unit };

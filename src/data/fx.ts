@@ -16,7 +16,7 @@ export const FX = {
   halfMoonColor: 0x9933ff, halfMoonMs: 420,
   shadowColors: [0x5a1a8a, 0x111111, 0xcc0000], shadowMs: 380, shadowShake: 0.004,
   // 伤害数字
-  dmgSizeRatio: 1 / 6, dmgColor: '#ff2a2a', healColor: '#33ff55', statusColor: '#cc66ff', critScale: 1.7,
+  dmgSizeRatio: 1 / 6, dmgColor: '#ff2a2a', healColor: '#33ff55', statusColor: '#cc66ff', critScale: 1.3,
   dmgPopMs: 80, dmgRiseRatio: 0.18, dmgLifeMs: 650,
   // 死亡/掉落
   deathDarkMs: 200, deathFadeMs: 300,

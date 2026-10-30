@@ -54,11 +54,23 @@ export class CardView extends Phaser.GameObjects.Container {
     const hpY = -7, hpH = 8;
     const hpBg = scene.add.rectangle(-this.barW / 2, hpY, this.barW, hpH, 0x2a0000).setOrigin(0, 0.5);
     this.hpFill = scene.add.rectangle(-this.barW / 2, hpY, this.barW, hpH, 0xc01818).setOrigin(0, 0.5);
-    this.lvlText = scene.add.text(-w / 2 + 4, -barH + 3, '', { fontFamily: FONT, fontSize: '11px', color: '#ffd24a', fontStyle: 'bold', stroke: '#000', strokeThickness: 2 });
+    // 等级圆标：卡牌左上角（参考原作），首领/精英为金色
+    const lv = scene.add.graphics(), lr = 13, lx = -w / 2 + 4, ly = -ch + 4;
+    lv.fillStyle(0x000000, 0.85).fillCircle(lx, ly, lr).lineStyle(2, unit.tier === 'boss' ? 0xffcc44 : unit.isHero ? 0xb8a070 : 0x9a9aa2, 1).strokeCircle(lx, ly, lr);
+    this.lvlText = scene.add.text(lx, ly, '', { fontFamily: FONT, fontSize: '12px', color: '#ffd24a', fontStyle: 'bold', stroke: '#000', strokeThickness: 2 }).setOrigin(0.5);
+    // 首领：华丽边框（双层金边 + 四角尖刺）
+    if (unit.tier === 'boss') {
+      g.lineStyle(3, 0x6a0a0a, 1).strokeRoundedRect(-w / 2 - 4, -ch - 4, w + 8, ch + 8, 7);
+      g.lineStyle(1.5, 0xffd870, 1).strokeRoundedRect(-w / 2 - 6, -ch - 6, w + 12, ch + 12, 8);
+      g.fillStyle(0xd4a64a, 1);
+      for (const [cx, cy, sx, sy] of [[-w / 2, -ch, -1, -1], [w / 2, -ch, 1, -1], [-w / 2, 0, -1, 1], [w / 2, 0, 1, 1]])
+        g.fillTriangle(cx + sx * 10, cy + sy * 10, cx - sx * 6, cy + sy * 10, cx + sx * 10, cy - sy * 6);
+      g.fillTriangle(-10, -ch - 5, 10, -ch - 5, 0, -ch - 20);
+    }
     const name = scene.add.text(w / 2 - 4, -barH + 3, unit.name, { fontFamily: FONT, fontSize: '12px', color: '#fff', fontStyle: 'bold', stroke: '#000', strokeThickness: 2 }).setOrigin(1, 0);
     this.hpText = scene.add.text(0, hpY, '', { fontFamily: FONT, fontSize: '8px', color: '#fff', stroke: '#000', strokeThickness: 2 }).setOrigin(0.5).setVisible(!!unit.isHero);
     this.flash = scene.add.rectangle(0, -ch / 2, w, ch, 0xffffff, 0);
-    this.inner.add([g, this.flash, this.art, bar, hpBg, this.hpFill, this.lvlText, name, this.hpText]);
+    this.inner.add([g, this.flash, this.art, bar, hpBg, this.hpFill, lv, this.lvlText, name, this.hpText]);
     this.add([shadow, this.inner]);
     scene.add.existing(this); this.sync();
   }
@@ -67,7 +79,8 @@ export class CardView extends Phaser.GameObjects.Container {
     if (this.dying) return;
     this.x += (this.unit.x + this.dispOff - this.x) * (Math.abs(this.unit.x + this.dispOff - this.x) > 300 ? 1 : 0.25); this.y = GROUND_Y + this.unit.y;
     if (this.art instanceof Phaser.GameObjects.Image) this.art.setFlipX(this.unit.facing !== this.artFacing);
-    this.lvlText.setText('Lv' + this.unit.level);
+    this.lvlText.setText(String(this.unit.level));
+    this.statusTint();
     this.hpText.setText(`${Math.max(0, Math.ceil(this.unit.hp))}/${this.unit.maxHp}`);
     this.hpFill.width = Math.max(0, this.barW * Math.max(0, this.unit.hp) / this.unit.maxHp);
   }
@@ -78,9 +91,21 @@ export class CardView extends Phaser.GameObjects.Container {
     if (this.unit.moving) { this.inner.y = -Math.abs(Math.sin(ph * 10)) * 5; this.art.scaleY = this.artSY; }
     else { this.inner.y = 0; this.art.scaleY = this.artSY * (1 + Math.sin(ph * 2.4) * 0.018); }
   }
+  flashing = false; private curStatus = 0;
+  /** 状态色：中毒亮绿、减速冰蓝，持续期间整张立绘染色 */
+  private statusTint() {
+    const a = this.art; if (!(a instanceof Phaser.GameObjects.Image) || this.flashing) return;
+    const t = (this.scene as any).world?.time ?? 0, u = this.unit;
+    const c = u.poisonUntil && u.poisonUntil > t ? 0x66ff55 : u.slowUntil && u.slowUntil > t ? 0x88ccff : 0;
+    if (c === this.curStatus) return; this.curStatus = c;
+    if (c) a.setTint(c); else a.clearTint();
+  }
   private tint(color: number, ms: number) {
     const a = this.art; if (!(a instanceof Phaser.GameObjects.Image)) return;
-    a.setTintFill(color); this.scene.time.delayedCall(ms, () => { if (!this.dying && a.active) a.clearTint(); });
+    // 参考原作：先整卡闪白，再短暂偏红
+    this.flashing = true; a.setTintFill(0xffffff);
+    this.scene.time.delayedCall(ms * 0.45, () => { if (!this.dying && a.active && color !== 0xffffff) a.setTint(color); });
+    this.scene.time.delayedCall(ms * 1.3, () => { this.flashing = false; this.curStatus = -1; if (!this.dying && a.active) a.clearTint(); });
   }
   /** 被吸引：感叹号 + 立绘闪橙 */
   alert(sec: number) {
@@ -122,8 +147,11 @@ export class CardView extends Phaser.GameObjects.Container {
   /** 死亡：立绘变灰后仰倒下，整卡淡出 */
   die(done: () => void) {
     this.dying = true;
-    if (this.art instanceof Phaser.GameObjects.Image) this.art.setTint(0x555555);
-    this.scene.tweens.add({ targets: this.art, angle: -this.unit.facing * 12, duration: FX.deathDarkMs, onComplete: () =>
-      this.scene.tweens.add({ targets: this, alpha: 0, duration: FX.deathFadeMs, onComplete: () => { this.destroy(); done(); } }) });
+    if (this.art instanceof Phaser.GameObjects.Image) this.art.setTintFill(0xffffff);
+    // 死亡：整卡闪烁 3 次（白→暗）后淡出
+    this.scene.tweens.add({ targets: this.inner, alpha: 0.25, duration: 70, yoyo: true, repeat: 2, onComplete: () => {
+      if (this.art instanceof Phaser.GameObjects.Image) this.art.setTint(0x555555);
+      this.scene.tweens.add({ targets: this, alpha: 0, duration: FX.deathFadeMs, onComplete: () => { this.destroy(); done(); } });
+    } });
   }
 }

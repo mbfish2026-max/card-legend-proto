@@ -4,6 +4,8 @@ import { ITEMS } from '../data/items';
 import { CLASSES, CLASS_IDS, ClassId } from '../data/classes';
 import { FONT } from '../data/fx';
 import { Settings, SaveStore } from '../settings';
+import { MUSIC, playMusic } from '../music';
+import { IS_MOBILE } from '../mobile';
 
 export const txt = (s: Phaser.Scene, x: number, y: number, t: string, size: number, color = '#fff', extra: Phaser.Types.GameObjects.Text.TextStyle = {}) =>
   s.add.text(x, y, t, { fontFamily: FONT, fontSize: size + 'px', color, stroke: '#000', strokeThickness: 3, ...extra });
@@ -33,16 +35,18 @@ export class TitleScene extends Phaser.Scene {
     for (const c of Object.values(CLASSES)) for (const s of c.skills) this.load.image('sk_' + s.id, s.icon);
     for (const it of Object.values(ITEMS)) this.load.image('item_' + it.id, it.icon);
     for (const [id, p] of Object.entries(SFX)) if (p) this.load.audio('sfx_' + id, p);
+    for (const [id, p] of Object.entries(MUSIC)) this.load.audio('bgm_' + id, p);
   }
   create() {
     Settings.load(); Settings.apply(this.sound);
     const qs = new URLSearchParams(location.search);
     // 调试/截图参数：?class=mage&floor=3 直接进入战斗；?title=class 直接显示职业选择
     if (qs.has('class') || qs.has('floor')) { this.scene.start('Battle', { cls: (qs.get('class') as ClassId) || 'warrior' }); return; }
+    playMusic(this, 'title');
     if (this.textures.exists('bg_floor1')) this.add.image(640, 360, 'bg_floor1').setDisplaySize(1280, 720).setTint(0x777777);
     this.add.rectangle(640, 360, 1280, 720, 0x000000, 0.35);
     txt(this, 640, 120, '卡 牌 传 奇', 72, '#ffd24a', { fontStyle: 'bold', strokeThickness: 8 }).setOrigin(0.5);
-    txt(this, 640, 190, '横版卡牌动作 · 原型', 20, '#e8d8b0').setOrigin(0.5);
+    txt(this, 640, 190, IS_MOBILE ? '横版卡牌动作 · 原型（触屏：屏幕虚拟按键操作）' : '横版卡牌动作 · 原型', 20, '#e8d8b0').setOrigin(0.5);
     if (qs.get('title') === 'class') this.classSelect(); else this.mainMenu();
   }
   clear() { this.layer?.destroy(true); this.layer = this.add.container(0, 0); return this.layer; }
@@ -64,7 +68,6 @@ export class TitleScene extends Phaser.Scene {
     L.add([...button(this, 780, 370, 56, 44, '＋', () => { Settings.volume = Math.min(1, +(Settings.volume + 0.1).toFixed(1)); refresh(); })]);
     L.add([...button(this, 640, 440, 220, 46, '静音开/关 (M)', () => { Settings.muted = !Settings.muted; refresh(); }, 18)]);
     L.add([...button(this, 640, 510, 220, 46, '返回', () => this.mainMenu())]);
-    L.add(txt(this, 640, 552, '无背景音乐素材（未找到 ogg），仅音效', 13, '#999').setOrigin(0.5));
     refresh();
   }
   classSelect() {

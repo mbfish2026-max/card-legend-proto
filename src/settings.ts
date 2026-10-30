@@ -3,9 +3,9 @@ import type { SaveData } from './combat/World';
 const SET_KEY = 'fcl_settings_v1', SAVE_KEY = 'fcl_save_v1';
 const ls = () => { try { return globalThis.localStorage; } catch { return undefined; } };
 export const Settings = {
-  volume: 0.7, muted: false,
+  volume: 0.7, muted: false, music: 0.5, showPad: null as boolean | null, lowFx: null as boolean | null,
   load() { try { Object.assign(this, JSON.parse(ls()?.getItem(SET_KEY) ?? '{}')); } catch { /* ignore */ } return this; },
-  save() { ls()?.setItem(SET_KEY, JSON.stringify({ volume: this.volume, muted: this.muted })); },
+  save() { ls()?.setItem(SET_KEY, JSON.stringify({ volume: this.volume, muted: this.muted, music: this.music, showPad: this.showPad, lowFx: this.lowFx })); },
   apply(sound: { volume: number; mute: boolean }) { sound.volume = this.volume; sound.mute = this.muted; },
 };
 export const SaveStore = {
