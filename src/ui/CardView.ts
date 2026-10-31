@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { Unit } from '../combat/types';
 import { FX, FONT, GROUND_Y } from '../data/fx';
+import { equipLook } from './EquipLayers';
 
 const FALLBACK: Record<string, number> = { hero: 0x3366cc, deer: 0x887744, wolf: 0x777766, skeleton: 0xcccccc, zombie: 0x557744, boss_lich: 0x442255 };
 // 卡框背景色：敌方深红，战士深灰/黑（法师蓝 0x1c3a7a、道士金黄 0x7a5c14 预留）
@@ -98,6 +99,21 @@ export class CardView extends Phaser.GameObjects.Container {
     this.inner.add([g, this.flash, this.art, bar, hpBg, this.hpFill, lv, this.lvlText, name, this.hpText]);
     this.add([shadow, this.inner]);
     scene.add.existing(this); this.sync();
+  }
+  /** 装备上身：当前组合签名（不变则不刷新） */
+  private eqSig = ''; eqState = 'base';
+  /**
+   * 穿/脱装备后调用：把立绘纹理换成 body+衣服+武器 合成图（同一张 Image，缩放/朝向/闪白/动作全部照常生效）。
+   * 缺素材/加载失败 → 保持原立绘；加载中先显示原立绘，就绪后自动切换。
+   */
+  refreshEquip(cls: string, equip: Parameters<typeof equipLook>[3]) {
+    if (!this.active || this.dying) return;
+    const base = this.unit.art ?? this.unit.id;
+    const look = equipLook(this.scene, cls, base, equip, () => { this.eqSig = '#'; this.refreshEquip(cls, equip); });
+    const sig = look.sig + ':' + look.state;
+    if (sig === this.eqSig) return; this.eqSig = sig; this.eqState = look.state;
+    if (!this.scene.textures.exists(look.key) || this.art.texture.key === look.key) return;
+    const ang = this.art.angle; this.art.setTexture(look.key); this.fitArt(); this.art.setAngle(ang);
   }
   /** 按卡面高度/最大宽度缩放立绘，返回实际图高 */
   private fitArt() {

@@ -6,7 +6,7 @@ import { FONT } from '../data/fx';
 import { Settings, SaveStore } from '../settings';
 import { STARTER } from '../data/books';
 import { renderSettingsView } from '../ui/SettingsView';
-import { queueCritical, queueImages, floorKeys, PreloadScene } from '../loader';
+import { queueCritical, queueImages, imagePending, floorKeys, PreloadScene } from '../loader';
 import { FLOORS } from '../data/world';
 import type { SaveData } from '../combat/World';
 import { MUSIC, playMusic } from '../music';
@@ -68,13 +68,15 @@ export class TitleScene extends Phaser.Scene {
     const fi = data.save ? Math.min(data.save.floorIndex, FLOORS.length - 1) : 0;
     const keys = floorKeys(FLOORS[fi]);
     (this.scene.get('Preload') as PreloadScene | undefined)?.prioritize?.(floorKeys(FLOORS[fi + 1]));
-    if (!queueImages(this.load, this.textures, keys)) { this.scene.start('Battle', data); return; }
+    // 已在 Preload 加载器里排队的贴图不重复下载，等它们完成后再进战斗（BUG-003）
+    const go = () => { if (keys.some(imagePending)) { this.time.delayedCall(50, go); return; } this.scene.start('Battle', data); };
+    if (!queueImages(this.load, this.textures, keys)) { go(); return; }
     const L = this.clear();
     L.add(txt(this, 640, 320, `载入 第 ${fi + 1} 层…`, 22, '#ffe8a0').setOrigin(0.5));
     L.add(this.add.rectangle(640, 360, 604, 22).setStrokeStyle(2, 0x8a7a55));
     const bar = this.add.rectangle(340, 360, 0, 16, 0xd4a64a).setOrigin(0, 0.5); L.add(bar);
     this.load.on('progress', (v: number) => (bar.width = 600 * v));
-    this.load.once('complete', () => { this.load.off('progress'); this.scene.start('Battle', data); });
+    this.load.once('complete', () => { this.load.off('progress'); go(); });
     this.load.start();
   }
   setCls: ClassId = 'warrior';

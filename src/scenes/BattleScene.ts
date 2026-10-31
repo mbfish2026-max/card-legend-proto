@@ -70,7 +70,7 @@ export class BattleScene extends Phaser.Scene {
     this.registry.set('fxCls', this.world.cls); this.registry.set('fxLearned', [...this.world.learned]);
     this.buildPortal(this.world.exitX); this.buildMerchant();
     const h = this.world.hero!;
-    this.views.set(h.uid, new CardView(this, h));
+    this.views.set(h.uid, new CardView(this, h)); this.refreshHeroLook();
     this.cameras.main.setBounds(0, 0, W, 720).startFollow(this.views.get(h.uid)!, true, 0.12, 0.12, 0, 120).setDeadzone(320, 720);
     this.keys = this.input.keyboard!.addKeys('LEFT,RIGHT,UP,DOWN,A,D') as any;
     // F1~F4 技能：阻止浏览器默认行为（F1 帮助等）；不占用 F5 等其它功能键
@@ -246,7 +246,7 @@ export class BattleScene extends Phaser.Scene {
         tv.forEach(v => fx.frostTint(v.art, (sk?.duration ?? 4) * 1000)); return done();
       }
       case 'magic_shield': {
-        const sc = Phaser.Math.Clamp(hv.h / 256 * 1.1, 1.0, 1.3), ms = dur * 1000;
+        const sc = 1, ms = dur * 1000; // R13 F3：非命中特效统一 1×（原按卡高放大至 1.0–1.3）
         const startLoop = () => { const l = playFx(this, 'fx_magic_shield_loop', hv.cx, hv.cy, { scale: sc, ms }); if (l) follow(this, l, () => hv.active ? { x: hv.cx, y: hv.cy } : null); return !!l; };
         const c = playFx(this, 'fx_magic_shield_cast', hv.cx, hv.cy, { scale: sc, onDone: () => { startLoop(); } });
         if (!c && !startLoop()) fx.magicShield(this, hv, hv.cy, hv.h, ms);
@@ -320,8 +320,34 @@ export class BattleScene extends Phaser.Scene {
         const u = this.world.units.find(x => x.uid === e.uid);
         if (u && !this.views.has(u.uid)) { const v = new CardView(this, u); v.setAlpha(0); this.tweens.add({ targets: v, alpha: 1, duration: 400 }); this.views.set(u.uid, v); this.sfx('summon2'); }
       } else if (e.type === 'respawn') this.onRespawn();
-      else if (e.type === 'inventory') { if (this.ui?.panel?.open) this.ui.panel.render(); }
+      else if (e.type === 'inventory') { this.refreshHeroLook(); if (this.ui?.panel?.open) this.ui.panel.render(); }
       else if (e.type === 'log') this.log(e.text, e.color === 'green');
+      else if (e.type === 'bossfx') this.bossFx(e);
+    }
+  }
+  /** R13 官方 BOSS 机制表现：沃玛电火花、祖玛火球、赤月地刺预警/冒刺、发呆/狂暴/瞬移/召唤提示（1× 简易图形） */
+  bossFx(e: Extract<BattleEvent, { type: 'bossfx' }>) {
+    const v = this.views.get(e.uid), t = e.target !== undefined ? this.views.get(e.target) : undefined;
+    const hv = this.world.hero ? this.views.get(this.world.hero.uid) : undefined, gy = hv ? hv.y : GROUND_Y;
+    const tip = (txt: string, c: string) => v && fx.floatNumber(this, v.cx, v.cy - v.h * 0.35, v.h, txt, c, 0.8);
+    switch (e.kind) {
+      case 'spark': if (v && t) { const dir = t.x >= v.x ? 1 : -1; v.swing(dir); v.lunge(dir, 18); fx.lightning(this, t.cx, t.cy - 220, t.cy); } break;
+      case 'fireball': if (v && t) { const dir = t.x >= v.x ? 1 : -1; v.swing(dir); fx.projectile(this, v.cx + dir * 30, v.cy - 20, t.cx, t.cy, 'fire', () => fx.explosion(this, t.cx, t.cy, t.h * 0.3)); } break;
+      case 'spike_warn': {
+        const g = this.add.ellipse(e.x, gy, 120, 30, 0xff2020, 0.35).setStrokeStyle(2, 0xff5050).setDepth(8);
+        this.tweens.add({ targets: g, alpha: 0.9, duration: 200, yoyo: true, repeat: 1, onComplete: () => g.destroy() }); break;
+      }
+      case 'spike': {
+        const g = this.add.graphics().setDepth(57); g.fillStyle(0x8a1010, 1);
+        for (let i = -2; i <= 2; i++) g.fillTriangle(e.x + i * 22 - 9, gy, e.x + i * 22 + 9, gy, e.x + i * 22, gy - 70 + Math.abs(i) * 14);
+        g.setScale(1, 0.1); g.y = gy * 0.9;
+        this.tweens.add({ targets: g, scaleY: 1, y: 0, duration: 120, onComplete: () => this.tweens.add({ targets: g, alpha: 0, delay: 250, duration: 250, onComplete: () => g.destroy() }) });
+        if (!FxQuality.low) this.cameras.main.shake(80, 0.003); break;
+      }
+      case 'daze': tip('发呆', '#c0c0c0'); break;
+      case 'crazy': tip('狂暴！', '#ff4040'); break;
+      case 'fly': tip('飞！', '#ffd080'); break;
+      case 'call': tip('召唤', '#ffd080'); break;
     }
   }
   useNext = false; fading = false; portalHint!: Phaser.GameObjects.Text;
@@ -343,9 +369,11 @@ export class BattleScene extends Phaser.Scene {
     this.overlay = [dim, t, t2];
     this.time.delayedCall(3000, () => { this.world.respawn(); this.handle(this.world.drainEvents()); });
   }
+  /** 装备上身：主角卡立绘按当前衣服/武器刷新（懒加载层图） */
+  refreshHeroLook() { const h = this.world.hero; const v = h && this.views.get(h.uid); v?.refreshEquip(this.world.cls, this.world.equip); }
   onRespawn() {
     this.overlay.forEach(o => o.destroy()); this.overlay = [];
-    const h = this.world.hero!; const v = new CardView(this, h); this.views.set(h.uid, v);
+    const h = this.world.hero!; const v = new CardView(this, h); this.views.set(h.uid, v); this.refreshHeroLook();
     this.cameras.main.startFollow(v, true, 0.12, 0.12, 0, 120).setDeadzone(320, 720); this.cameras.main.fadeIn(500);
     this.state = 'play'; this.sfx('heal'); this.log('你在本层起点复活了'); this.saveGame();
   }

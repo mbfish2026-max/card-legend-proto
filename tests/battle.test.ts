@@ -1,7 +1,7 @@
 declare const process: { env: Record<string, string | undefined> };
-import { World, SaveData, OIL_PRICE, IRON_PRICE } from '../src/combat/World';
+import { World, SaveData, OIL_PRICE, IRON_PRICE, OFFICIAL } from '../src/combat/World';
 import { ITEMS, SETS, ENHANCE_MAX, enhanceChance, shatterChance } from '../src/data/items';
-import { WORLD, Floor, FLOORS } from '../src/data/world';
+import { WORLD, CARD, Floor, FLOORS } from '../src/data/world';
 import { CLASSES, ClassId } from '../src/data/classes';
 import { ENEMIES, DIFF } from '../src/data/units';
 import { QUESTS, ACHIEVES } from '../src/data/quests';
@@ -10,6 +10,9 @@ import { detectMobile } from '../src/mobile';
 import { StepGate, stepDir, HoldKeys, HOLD } from '../src/input/stepKeys';
 import { POTIONS } from '../src/data/skills';
 import { TOWNS, NODE_TOWN, WEAPON_GOODS, ARMOR_GOODS, GENERAL_GOODS, STORAGE_SIZE } from '../src/data/towns';
+import { resolveLayers, pickTexture, comboKey, changedSlots, fallbackId } from '../src/data/equipLayers';
+// @ts-ignore 测试运行于 node（tsx），项目未装 @types/node
+import { existsSync } from 'node:fs';
 import { Settings, DEFAULT_AUTO_SKILLS, ZOOM_MIN, ZOOM_MAX, ZOOM_STEP, fitScale } from '../src/settings';
 let pass = 0; const ok = (c: boolean, m: string) => { if (!c) { console.error('FAIL', m); throw new Error(m); } pass++; console.log('ok', m); };
 function seeded(s: number) { return () => (s = (s * 16807) % 2147483647) / 2147483647; }
@@ -48,9 +51,26 @@ const free = (w: World) => w.skills.map(() => 0);
 { // 脱战回位
   const w = mk([{ id: 'zombie', x: 3500 }]); tough(w); const h = w.hero!, z = w.alive('enemy')[0];
   h.x = z.x - WORLD.aggroRange + 5; run(w, 1.5); ok(z.ai === 'chase' && z.x < 3500, '开始追击');
-  let left = 0; while (z.ai === 'chase' && left < 30) { w.step(0.05, { dx: -1, dy: 0 }); left += 0.05; if (h.x <= h.width / 2) break; }
+  let left = 0; while (z.ai === 'chase' && left < 30) { w.step(0.05, { dx: -1, dy: 0 }); left += 0.05; }
   ok(z.ai === 'return' || z.ai === 'idle', '超过脱战距离放弃追击');
-  run(w, 20); ok(z.ai === 'idle' && z.x === 3500 && z.hp === z.maxHp, '回到原位回满血');
+  run(w, 20); ok(z.ai === 'idle' && z.x === 3500, '回到原位');
+}
+{ // 脱战规则：距离阈值、保留血量、缓慢回血、BOSS 一致、不卡死
+  ok(WORLD.leashRange === 6 * CARD && WORLD.leashRange * 1.5 < WORLD.mapWidth, '脱战距离 6 卡宽（用户反馈 10 卡宽太长跑不掉），离家上限 < 地图宽');
+  for (const id of ['zombie', 'boss_woma']) {
+    const w = mk([{ id, x: 3000 }]); const h = w.hero!, z = w.alive('enemy')[0]; h.hp = h.maxHp = 1e9;
+    z.ai = 'chase'; h.x = z.x - WORLD.leashRange + 20; w.step(0.05); ok(z.ai === 'chase', `${id} 阈值内不脱战`);
+    z.hp = Math.round(z.maxHp * 0.3); if (z.boss) Object.assign(z.boss, { dazeUntil: w.time + 99, crazyUntil: w.time + 99 });
+    h.x = z.x - WORLD.leashRange - 20; w.step(0.05); ok((z.ai as string) === 'return', `${id} 超过阈值脱战`);
+    ok(!z.boss || (z.boss.dazeUntil === 0 && z.boss.crazyUntil === 0), `${id} 脱战清除狂暴/发呆计时`);
+    h.x = 200; const hp0 = z.hp; let t = 0; while ((z.ai as string) === 'return' && t < 60) { w.step(0.05); t += 0.05; }
+    ok((z.ai as string) === 'idle' && Math.abs(z.x - 3000) < 1, `${id} 能回到原位（不卡死）`);
+    ok(z.hp < z.maxHp * 0.3 + z.maxHp * WORLD.leashRegen * (t + 0.1) && z.hp > hp0, `${id} 回位保留血量，仅缓慢回血`);
+    const a = z.hp; run(w, 10); ok(Math.abs(z.hp - a - z.maxHp * WORLD.leashRegen * 10) < z.maxHp * 0.002, `${id} 待机每秒回 1% 最大血量`);
+    run(w, 120); ok(z.hp === z.maxHp, `${id} 回血不超过上限`);
+    z.hp = z.maxHp * 0.5; z.poisonUntil = w.time + 5; z.poisonTick = w.time + 99; const p = z.hp; run(w, 3); ok(z.hp === p, `${id} 中毒时不回血`);
+    z.ai = 'chase'; h.x = z.x - 300; h.hp = 1e9; z.hp = z.maxHp * 0.5; z.poisonUntil = 0; const c = z.hp; w.step(0.5); ok(z.hp <= c, `${id} 追击中不回血（风筝也能击杀）`);
+  }
 }
 { // 职业属性与成长
   for (const c of ['warrior', 'mage', 'taoist'] as ClassId[]) {
@@ -117,7 +137,8 @@ const free = (w: World) => w.skills.map(() => 0);
   w2.cast(idx(w2, 'fireball'), free(w2)); const a40 = (w2.drainEvents().find(e => e.type === 'damage') as any).amount;
   ok(d1 > 0 && a40 > a20 * 1.5, `火球伤害随等级成长（20级 ${a20} → 40级 ${a40}）`);
   const w4 = mk([{ id: 'orc', x: 900 }, { id: 'orc', x: 1000 }], [], 'mage', 40); tough(w4); w4.hero!.x = 600;
-  const sh = w4.cast(idx(w4, 'magic_shield'), free(w4)); ok(sh.ok && w4.hero!.armorReduce === 0.4, '魔法盾减伤 40%');
+  const sh = w4.cast(idx(w4, 'magic_shield'), free(w4)); ok(sh.ok && OFFICIAL.shieldReduce.includes(w4.hero!.armorReduce!), `魔法盾按官方等级减伤（${w4.hero!.armorReduce}）`);
+  ok(!w4.cast(idx(w4, 'magic_shield'), free(w4)).ok, '魔法盾持续期间重复开启无效（官方）');
   ok(!mk([{ id: 'orc', x: 900 }], [], 'mage', 30).cast(idx(w4, 'magic_shield'), free(w4)).ok, '魔法盾 31 级前不可用');
   ok(w4.skills[idx(w4, 'fireball')].mana === 12, '火球耗魔 = 官方 4 × 3（适配）');
 }
@@ -125,8 +146,9 @@ const free = (w: World) => w.skills.map(() => 0);
   const w = mk([{ id: 'orc', x: 800 }], [], 'taoist'); const o = w.alive('enemy')[0]; o.hp = o.maxHp = 1e6;
   const h = w.hero!; h.x = 500;
   ok(w.cast(idx(w, 'poison'), free(w)).ok, '施毒术施放'); w.drainEvents();
-  let dots = 0; for (let i = 0; i < 100; i++) { w.step(0.05); for (const e of w.drainEvents()) if (e.type === 'damage' && e.dot) dots++; }
-  ok(dots >= 4, `中毒每秒掉血（5 秒内 ${dots} 跳）`);
+  let dots = 0; for (let i = 0; i < 110; i++) { w.step(0.05); for (const e of w.drainEvents()) if (e.type === 'damage' && e.dot) dots++; }
+  ok(dots === 2, `绿毒每 2.5 秒掉血（5.5 秒内 ${dots} 跳）`);
+  ok(o.redUntil! > w.time, '红毒同时生效');
   const r = w.cast(idx(w, 'summon_skeleton'), free(w)); const sm = w.summon;
   ok(r.ok && !!sm && sm.team === 'ally' && sm.card?.bg === 0x7a5c14, '召唤出金色卡底的友方骷髅');
   h.hp = h.maxHp = 1e9; let sDmg = 0;
@@ -214,6 +236,25 @@ const free = (w: World) => w.skills.map(() => 0);
   ok(QUESTS.find(q => q.target === 'orc')!.floor === 1 && QUESTS.find(q => q.target === 'spider')!.floor === 2 && QUESTS.find(q => q.target === 'skeleton')!.floor === 4, '悬赏随层移动');
   const lv = FLOORS.map(f => Math.max(...f.spawns.map(sp => ENEMIES[sp.id].tier === 'boss' ? 0 : ENEMIES[sp.id].level)));
   ok(lv.every((v, i) => i === 0 || v >= lv[i - 1]), `各层普通怪最高等级递增 ${lv.join('/')}`);
+}
+{ // R13 官方 BOSS 机制
+  const ww = mk([{ id: 'boss_woma', x: 800 }], [], 'warrior', 30); const h = ww.hero!; h.hp = h.maxHp = 1e9; h.x = 600; const b = ww.alive('enemy')[0]; b.ai = 'chase';
+  b.hp = b.maxHp * 0.7; ww.step(0.05); ww.drainEvents();
+  ok(b.boss!.stage === 1 && b.boss!.dazeUntil > ww.time, '沃玛教主血量跌破 5/7 进入发呆');
+  let atk = 0; for (let i = 0; i < 100; i++) { ww.step(0.05); atk += ww.drainEvents().filter(e => e.type === 'attack' && e.source === b.uid).length; }
+  ok(atk === 0, '沃玛教主发呆期间不攻击');
+  ww.time = b.boss!.dazeUntil; b.cd = 0; atk = 0; for (let i = 0; i < 80; i++) { ww.step(0.05); atk += ww.drainEvents().filter(e => e.type === 'attack' && e.source === b.uid).length; }
+  ok(atk >= 7, `沃玛教主狂暴每秒攻击 2 次（4 秒 ${atk} 次）`);
+  const x0 = b.x; b.boss!.flyT = 30; ww.step(0.05); ok(Math.sign(b.x - h.x) !== Math.sign(x0 - h.x), '沃玛教主 30 秒后飞到主角背后');
+  const wz = mk([{ id: 'boss_zuma', x: 950 }], [], 'mage', 30); wz.hero!.hp = wz.hero!.maxHp = 1e9; wz.hero!.x = 600; const z = wz.alive('enemy')[0]; z.ai = 'chase'; z.cd = 0;
+  wz.step(0.05); const ev = wz.drainEvents();
+  ok(ev.some(e => e.type === 'bossfx' && e.kind === 'fireball') && wz.alive('enemy').length === 2, '祖玛教主远程火球并唤醒祖玛怪');
+  const wr = mk([{ id: 'boss_redmoon', x: 900 }], [], 'warrior', 30); const rh = wr.hero!; rh.hp = rh.maxHp = 1e9; rh.x = 600; const r = wr.alive('enemy')[0]; r.ai = 'chase';
+  const rx = r.x; let hit = 0, warn = 0;
+  for (let i = 0; i < 60; i++) { wr.step(0.05); for (const e of wr.drainEvents()) { if (e.type === 'bossfx' && e.kind === 'spike_warn') { warn++; rh.x += 200; } if (e.type === 'damage' && e.target === rh.uid) hit++; } }
+  ok(r.x === rx && warn >= 1 && hit === 0, '赤月恶魔不移动，地刺预警后走开可躲');
+  for (let i = 0; i < 80; i++) { wr.step(0.05); for (const e of wr.drainEvents()) if (e.type === 'damage' && e.target === rh.uid) hit++; }
+  ok(hit >= 1, '站在地刺上会受伤');
 }
 { // 平衡：每个职业的自动脚本能打通全部 5 层（允许死亡复活）
   for (const c of ['warrior', 'mage', 'taoist'] as ClassId[]) {
@@ -575,6 +616,33 @@ const free = (w: World) => w.skills.map(() => 0);
   const f = mk([]); for (let i = 0; i < 8; i++) f.reached.add(i); f.checkAchieves();
   ok(f.achieves.has('a_floors_8'), '到达 8 层成就');
   ok(ACHIEVES.length >= 7, '成就定义齐全');
+}
+
+{ // 装备上身分层（docs/equip-layers.md）
+  const it = (item: string, slot: any, req = 1) => ({ uid: 1, item, name: item, rarity: 'common', slot, stats: {}, req, price: 1 } as any);
+  const ls = resolveLayers('warrior', { armor: it('cloth', 'armor'), weapon: it('iron_sword', 'weapon', 4), helmet: it('helmet', 'helmet') });
+  ok(ls.map(l => l.slot).join() === 'body,armor,weapon', '映射：叠加顺序 body→armor→weapon，头盔不出层');
+  ok(ls[2].url === 'assets/equip/warrior/weapon/iron_sword.png' && ls.every(l => l.dx === 0 && l.dy === 0 && l.scale === 1), '映射：文件名=装备 id，左上零偏移');
+  ok(ls.every(l => existsSync('public/' + l.url)), '战士映射到的素材文件存在');
+  ok(resolveLayers('warrior', { weapon: it('magic_staff', 'weapon', 6) })[1].id === 'iron_sword', '战士拿魔杖兜底铁剑');
+  ok(fallbackId('armor', 20) === 'armor' && fallbackId('weapon', 2) === 'wood_sword' && fallbackId('weapon', 30) === 'dragon_sword', '未知装备按等级兜底');
+  const lm = resolveLayers('mage', { armor: it('cloth', 'armor'), weapon: it('magic_staff', 'weapon', 6) });
+  ok(lm.map(l => l.id).join() === 'body,cloth,magic_staff' && lm.every(l => existsSync('public/' + l.url)), '法师映射：魔杖有专属图，素材存在');
+  const lt = resolveLayers('taoist', { armor: it('armor', 'armor', 12), weapon: it('tao_sword', 'weapon', 6) });
+  ok(lt.map(l => l.id).join() === 'body,armor,tao_sword' && lt.every(l => existsSync('public/' + l.url)), '道士映射：银蛇剑有专属图，素材存在');
+  ok(resolveLayers('unknown_cls', { weapon: it('iron_sword', 'weapon') }).length === 0, '未知职业无素材 → 无层（原立绘）');
+  const none = () => false, all = () => true;
+  ok(pickTexture('warrior', 'hero', ls, all, k => k.includes('weapon')).key === 'hero', '缺素材/加载失败回退原立绘');
+  ok(pickTexture('warrior', 'hero', ls, none, none).state === 'pending' && pickTexture('warrior', 'hero', ls, none, none).key === 'hero', '加载中先显示原立绘');
+  ok(pickTexture('warrior', 'hero', ls, all, none).key === comboKey('warrior', ls) && comboKey('warrior', ls) === 'eqc_warrior_body+cloth+iron_sword', '全部就绪用合成缓存 key');
+  const ls2 = resolveLayers('warrior', { armor: it('cloth', 'armor'), weapon: it('dragon_sword', 'weapon', 15) });
+  ok(changedSlots(ls, ls2).join() === 'weapon', '换武器只影响武器层');
+  ok(changedSlots(ls, resolveLayers('warrior', {})).join() === 'body,armor,weapon' && resolveLayers('warrior', {}).length === 0, '全脱 → 回原立绘');
+  const w = mk([]); w.equipItem(0);
+  const old = new World(seeded(1), 1, [{ name: 't', spawns: [] }], 'warrior', (({ equip, ...r }) => r)(w.toSave()) as any);
+  ok(resolveLayers(old.cls, old.equip).length === 0 && resolveLayers('warrior', undefined).length === 0, '旧存档/无装备照常（无层）');
+  const w2 = mk([]); w2.bag.push(it('dragon_sword', 'weapon', 1)); const wi = w2.bag.length - 1;
+  { const a = comboKey('warrior', resolveLayers('warrior', w2.equip)); w2.equipItem(wi); const b = comboKey('warrior', resolveLayers('warrior', w2.equip)); w2.unequip('weapon'); const c2 = comboKey('warrior', resolveLayers('warrior', w2.equip)); ok(a !== b && c2 === a, '穿/脱武器后组合签名刷新并可还原'); }
 }
 
 { // R13 超大世界地图 + 区域小地图入口

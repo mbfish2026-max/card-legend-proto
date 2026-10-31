@@ -11,6 +11,14 @@ function crescent(g: Phaser.GameObjects.Graphics, r: number, thick: number, span
 }
 /** 低特效模式（手机默认开启）：粒子数量减半 */
 export const FxQuality = { low: false };
+/** 同屏特效预算（图集精灵 + Graphics 兜底共用）：低特效 10 / 普通 28；超出则不画（BUG-002） */
+export const FxBudget = {
+  live: 0,
+  cap: () => (FxQuality.low ? 10 : 28),
+  free() { return this.live < this.cap(); },
+  track<T extends Phaser.GameObjects.GameObject>(o: T): T { this.live++; o.once(Phaser.GameObjects.Events.DESTROY, () => { this.live--; }); return o; },
+};
+const G = (s: S, o?: Phaser.Types.GameObjects.Graphics.Options) => FxBudget.track(s.add.graphics(o));
 function sparks(s: S, x: number, y: number, n: number, color: number, dist: number, ms: number) {
   if (FxQuality.low) n = Math.ceil(n / 2);
   for (let i = 0; i < n; i++) {
@@ -21,8 +29,9 @@ function sparks(s: S, x: number, y: number, n: number, color: number, dist: numb
 }
 /** 普攻刀光：攻击者前方的橙红月牙 + 少许黄火花 */
 export function slash(s: S, x: number, y: number, cardH: number, dir: number) {
+  if (!FxBudget.free()) return;
   const r = cardH * FX.slashHeightRatio / 2;
-  const g = s.add.graphics({ x, y }).setDepth(55);
+  const g = G(s, { x, y }).setDepth(55);
   g.fillStyle(FX.slashColor, 0.95); crescent(g, r, r * 0.35, 1.0);
   g.fillStyle(0xffe08a, 0.8); crescent(g, r * 0.98, r * 0.1, 0.9);
   g.setScale(dir, 1).setAlpha(1);
@@ -33,8 +42,9 @@ export function hitSpark(s: S, x: number, y: number) { sparks(s, x, y, 5, FX.sla
 
 /** 血红正圆剑气（烈火剑法），边缘暗红/黑色撕裂拖尾 */
 export function bloodBlade(s: S, x: number, y: number, cardH: number, color = FX.bloodColor) {
+  if (!FxBudget.free()) return;
   const R = cardH * FX.bloodRadiusRatio;
-  const g = s.add.graphics({ x, y }).setDepth(56);
+  const g = G(s, { x, y }).setDepth(56);
   g.fillStyle(color, 0.5).fillCircle(0, 0, R);
   g.fillStyle(color, 0.75).fillCircle(0, 0, R * 0.55);
   g.lineStyle(6, FX.bloodEdge, 0.9).strokeCircle(0, 0, R);
@@ -49,8 +59,9 @@ export function bloodBlade(s: S, x: number, y: number, cardH: number, color = FX
 }
 /** 半月弯刀：巨大紫色半月剑气从左向右扫过各目标 */
 export function halfMoon(s: S, x0: number, x1: number, y: number, cardH: number) {
+  if (!FxBudget.free()) return;
   const R = cardH * 0.7;
-  const g = s.add.graphics({ x: x0, y }).setDepth(56);
+  const g = G(s, { x: x0, y }).setDepth(56);
   g.fillStyle(FX.halfMoonColor, 0.75); crescent(g, R, R * 0.4, 1.3);
   g.fillStyle(FX.bloodColor, 0.5); crescent(g, R * 0.97, R * 0.12, 1.25);
   g.setScale(x1 >= x0 ? 1 : -1, 1);
@@ -59,8 +70,9 @@ export function halfMoon(s: S, x0: number, x1: number, y: number, cardH: number)
 }
 /** 暗影斩击：紫黑+红交织的撕裂刀光，覆盖目标，小幅屏幕震动 */
 export function shadowSlash(s: S, x: number, y: number, cardH: number) {
+  if (!FxBudget.free()) return;
   const L = cardH * 0.75;
-  const g = s.add.graphics({ x, y }).setDepth(56);
+  const g = G(s, { x, y }).setDepth(56);
   FX.shadowColors.forEach((c, i) => {
     const a = -0.9 + i * 0.6;
     g.lineStyle(14 - i * 3, c, 0.9).lineBetween(-Math.cos(a) * L / 2, -Math.sin(a) * L / 2, Math.cos(a) * L / 2, Math.sin(a) * L / 2);
@@ -87,12 +99,13 @@ export function floatNumber(s: S, x: number, y: number, cardH: number, text: str
 
 // ===== 法师 / 道士特效（同样用 Graphics + Tween 程序化绘制） =====
 function glowBall(s: S, x: number, y: number, r: number, core: number, edge: number) {
-  const g = s.add.graphics({ x, y }).setDepth(57);
+  const g = G(s, { x, y }).setDepth(57);
   g.fillStyle(edge, 0.35).fillCircle(0, 0, r * 1.6); g.fillStyle(edge, 0.8).fillCircle(0, 0, r); g.fillStyle(core, 1).fillCircle(0, 0, r * 0.5);
   return g;
 }
 /** 弹道：从施法者飞向目标，带拖尾粒子，到达后回调 */
 export function projectile(s: S, x0: number, y0: number, x1: number, y1: number, kind: 'fire' | 'talisman' | 'poison', onHit: () => void) {
+  if (!FxBudget.free()) { s.time.delayedCall(Math.max(160, Math.abs(x1 - x0) * 0.7), onHit); return; }
   const col = kind === 'fire' ? [0xffee88, 0xff5a00] : kind === 'talisman' ? [0xfff2a0, 0xd4a020] : [0xc8ff80, 0x2a9a20];
   const g = kind === 'talisman' ? s.add.rectangle(x0, y0, 16, 26, 0xf0d060).setStrokeStyle(2, 0xa01010).setDepth(57) : glowBall(s, x0, y0, 14, col[0], col[1]);
   const ms = Math.max(160, Math.abs(x1 - x0) * 0.7);
@@ -104,14 +117,16 @@ export function projectile(s: S, x0: number, y0: number, x1: number, y1: number,
 }
 /** 火焰爆炸 */
 export function explosion(s: S, x: number, y: number, r: number, inner = 0xffdd55, outer = 0xff4400) {
-  const g = s.add.graphics({ x, y }).setDepth(58);
+  if (!FxBudget.free()) return;
+  const g = G(s, { x, y }).setDepth(58);
   g.fillStyle(outer, 0.6).fillCircle(0, 0, r); g.fillStyle(inner, 0.9).fillCircle(0, 0, r * 0.5);
   g.setScale(0.3); s.tweens.add({ targets: g, scale: 1.2, alpha: 0, duration: 360, ease: 'Quad.easeOut', onComplete: () => g.destroy() });
   sparks(s, x, y, 12, inner, r * 1.2, 380);
 }
 /** 雷电术：从屏幕上方劈下折线闪电 + 白闪 */
 export function lightning(s: S, x: number, yTop: number, yHit: number) {
-  const g = s.add.graphics().setDepth(58);
+  if (!FxBudget.free()) return;
+  const g = G(s).setDepth(58);
   const draw = () => {
     g.clear(); let px = x + (Math.random() - 0.5) * 40, py = yTop;
     const pts: [number, number][] = []; py = yTop; px = x;
@@ -130,6 +145,7 @@ export function lightning(s: S, x: number, yTop: number, yHit: number) {
 }
 /** 冰咆哮：地面冰环扩散 + 冰晶碎片 */
 export function iceRoar(s: S, x: number, y: number, r: number) {
+  if (!FxBudget.free()) return;
   const ring = s.add.ellipse(x, y, r * 2, r * 0.5).setStrokeStyle(8, 0x9ae6ff, 0.9).setFillStyle(0x5ac8ff, 0.25).setDepth(9).setScale(0.1);
   s.tweens.add({ targets: ring, scale: 1, alpha: 0, duration: 520, ease: 'Quad.easeOut', onComplete: () => ring.destroy() });
   for (let i = 0; i < 18; i++) {
@@ -149,7 +165,7 @@ export function magicShield(s: S, target: Phaser.GameObjects.Container, cy: numb
   const e = s.add.container(0, cy - target.y);
   const glow = s.add.circle(0, 0, r + 8, 0xffa020, 0.12);
   const ball = s.add.circle(0, 0, r, 0xffc860, 0.1).setStrokeStyle(5, 0xffb030, 0.95);
-  const rim = s.add.graphics(); rim.lineStyle(3, 0xfff0a0, 1); rim.beginPath(); rim.arc(0, 0, r - 4, -2.4, -0.9); rim.strokePath(); rim.beginPath(); rim.arc(0, 0, r - 4, 0.7, 1.6); rim.strokePath();
+  const rim = G(s); rim.lineStyle(3, 0xfff0a0, 1); rim.beginPath(); rim.arc(0, 0, r - 4, -2.4, -0.9); rim.strokePath(); rim.beginPath(); rim.arc(0, 0, r - 4, 0.7, 1.6); rim.strokePath();
   const hl = s.add.ellipse(-r * 0.35, -r * 0.5, r * 0.5, r * 0.22, 0xffffff, 0.35).setAngle(-30);
   e.add([glow, ball, rim, hl]);
   s.tweens.add({ targets: rim, angle: 360, duration: 2600, repeat: -1 });
@@ -160,6 +176,7 @@ export function magicShield(s: S, target: Phaser.GameObjects.Container, cy: numb
 }
 /** 施毒术：绿色毒雾笼罩 */
 export function poisonCloud(s: S, x: number, y: number, h: number) {
+  if (!FxBudget.free()) return;
   for (let i = 0; i < 10; i++) {
     const c = s.add.circle(x + (Math.random() - 0.5) * h * 0.5, y + (Math.random() - 0.5) * h * 0.5, h * (0.08 + Math.random() * 0.08), 0x4ad820, 0.45).setDepth(57);
     s.tweens.add({ targets: c, y: c.y - 30, scale: 1.8, alpha: 0, duration: 700 + Math.random() * 400, onComplete: () => c.destroy() });
@@ -167,16 +184,18 @@ export function poisonCloud(s: S, x: number, y: number, h: number) {
 }
 /** 召唤：地面暗绿法阵 + 光柱 */
 export function summonCircle(s: S, x: number, y: number) {
+  if (!FxBudget.free()) return;
   const ring = s.add.ellipse(x, y, 200, 50).setStrokeStyle(4, 0x7aff7a, 0.9).setFillStyle(0x0a3a0a, 0.5).setDepth(9).setScale(0.2);
   s.tweens.add({ targets: ring, scale: 1, duration: 300, ease: 'Back.easeOut' });
   s.tweens.add({ targets: ring, alpha: 0, delay: 700, duration: 400, onComplete: () => ring.destroy() });
-  const p = s.add.graphics().setDepth(56); p.fillGradientStyle(0x9aff9a, 0x9aff9a, 0x9aff9a, 0x9aff9a, 0, 0, 0.6, 0.6).fillRect(x - 40, y - 260, 80, 260);
+  const p = G(s).setDepth(56); p.fillGradientStyle(0x9aff9a, 0x9aff9a, 0x9aff9a, 0x9aff9a, 0, 0, 0.6, 0.6).fillRect(x - 40, y - 260, 80, 260);
   s.tweens.add({ targets: p, alpha: 0, duration: 900, onComplete: () => p.destroy() });
   sparks(s, x, y - 60, 16, 0xc8ffc8, 80, 600);
 }
 /** 神圣光环：金色光柱 + 上升光点（道士治疗/护甲） */
 export function holyLight(s: S, x: number, y: number, h: number) {
-  const p = s.add.graphics().setDepth(56); p.fillGradientStyle(0xffe680, 0xffe680, 0xffe680, 0xffe680, 0, 0, 0.55, 0.55).fillRect(x - h * 0.3, y - h * 0.6, h * 0.6, h * 1.1);
+  if (!FxBudget.free()) return;
+  const p = G(s).setDepth(56); p.fillGradientStyle(0xffe680, 0xffe680, 0xffe680, 0xffe680, 0, 0, 0.55, 0.55).fillRect(x - h * 0.3, y - h * 0.6, h * 0.6, h * 1.1);
   s.tweens.add({ targets: p, alpha: 0, duration: 900, onComplete: () => p.destroy() });
   for (let i = 0; i < 12; i++) {
     const d = s.add.circle(x + (Math.random() - 0.5) * h * 0.5, y + h * 0.4, 3, 0xfff2a0).setDepth(58);
@@ -186,7 +205,8 @@ export function holyLight(s: S, x: number, y: number, h: number) {
 
 /** 火墙：目标脚下橙红火柱简效 */
 export function fireWall(s: S, x: number, y: number) {
-  const g = s.add.graphics().setDepth(30).setBlendMode(Phaser.BlendModes.ADD);
+  if (!FxBudget.free()) return;
+  const g = G(s).setDepth(30).setBlendMode(Phaser.BlendModes.ADD);
   g.fillStyle(0xff4400, 0.55); g.fillEllipse(x, y, 120, 36);
   g.fillStyle(0xffaa22, 0.7); g.fillTriangle(x - 18, y, x + 18, y, x, y - 70);
   g.fillStyle(0xffee88, 0.5); g.fillTriangle(x - 8, y - 10, x + 8, y - 10, x, y - 55);
