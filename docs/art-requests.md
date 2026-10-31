@@ -333,3 +333,25 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 1. 背景 3 张（1920×1080 起）：兽人古墓（bg_floor14/15）、天然洞穴（骷髅洞，bg_floor16/17）、沃玛自然洞穴（bg_floor18/19）；现占位复用 bg_floor3 / bg_floor2。
 2. 怪物立绘 5 张：骷髅战士、骷髅战将、掷斧骷髅、洞蛆、山洞蝙蝠（现复用已有贴图）。
 3. 特效：掷斧骷髅飞斧弹道 1 个。
+
+
+## 传奇世界/传奇3 新增地图怪立绘（art/sq-mir3）
+
+统一规格：`public/assets/portraits/<id>_full.png`，透明底 PNG，最长边 960，卡通厚描边、3/4 战斗姿态。「外观」列标「未查到/推测」「部分推测」者为原作外观资料不足、按名称与设定原创推测。
+
+### 批次1：BOSS（10）
+
+预览：`docs/art-gap-preview/sq_b1_boss.jpg`
+
+| 文件 | 尺寸 | id | 名称 | 地图 | 外观 | 备注 |
+|---|---|---|---|---|---|---|
+| boss_shiba_full.png | 710x960 | boss_shiba | 尸霸 | 将军坟（传世） | 据描述 | 52pk 将军坟系：帝王亲信，紧握一双数百公斤巨锤 |
+| boss_ant_general_full.png | 926x960 | boss_ant_general | 蚂蚁将军 | 蚂蚁洞穴（传奇3） | 据描述 | 17173 传奇3：巨大蚂蚁，前额巨钳，体格强壮 |
+| boss_jiguan_beast_full.png | 960x737 | boss_jiguan_beast | 机关巨兽 | 机关洞·中枢大殿（传世） | 部分推测 | 17173 传世：机关洞最深处 BOSS，攻击时巨石从天而降；体型/兽形为推测 |
+| boss_skeleton_cult_full.png | 699x960 | boss_skeleton_cult | 骷髅教主 | 潘夜石窟（传奇3） | 据描述 | 17173/新浪：控制亡灵，魔杖由含冤骷髅聚成；袍服/冠为推测 |
+| boss_white_snake_full.png | 716x960 | boss_white_snake | 白蛇妖 | 蛇魔谷/五蛇殿（传世） | 据描述 | 17173 传世：蛇魔军团长，高大威猛，利爪 |
+| boss_snake_king_full.png | 710x960 | boss_snake_king | 三头蛇王 | 五蛇殿（传世） | 据描述 | 17173：三头；妖气游戏网：不如白蛇妖高大，携三职业标志性武器 |
+| boss_great_pharaoh_full.png | 729x960 | boss_great_pharaoh | 大法老 | 沙漠绿洲（传奇3） | 部分推测 | 新浪/17173：诺玛族守卫，用魔法拐棍，攻击为电；诺玛着皮衣骨甲；法老头饰为推测 |
+| boss_nimo_full.png | 709x960 | boss_nimo | 逆魔 | 逆魔古刹/逆魔大殿（传世） | 据描述 | 17173：巨斧之下烈焰横生；角/体型为推测 |
+| boss_jindi_king_full.png | 960x752 | boss_jindi_king | 禁地魔王 | 禁地（传世） | 未查到/推测 | 仅查到全屏攻击、不移动；外形未查到 |
+| boss_panye_bull_full.png | 733x960 | boss_panye_bull | 潘夜牛魔王 | 潘夜神殿（传奇3） | 据描述 | 17173：统治畜界的魔王，牛的样子；武器为推测 |
