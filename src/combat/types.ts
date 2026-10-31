@@ -23,7 +23,11 @@ export type AIState = 'idle' | 'alert' | 'chase' | 'return';
 export interface Unit extends UnitDef {
   uid: number; team: Team; x: number; y: number; maxHp: number; maxMp: number; cd: number;
   alive: boolean; isHero?: boolean; summon?: boolean;
+  /** 诱惑之光宠物（summon=true 且 pet=true）；petUntil = 叛变时间。不存档 */
+  pet?: boolean; petUntil?: number;
   armorUntil?: number; armorReduce?: number;
+  /** #12 幽灵盾（魔御）/神圣战甲术（防御）增益，不存档 */
+  mdefUpUntil?: number; mdefUp?: number; defUpUntil?: number; defUp?: number;
   leapUntil?: number; leapReady?: number; slowUntil?: number; poisonUntil?: number; poisonDps?: number; poisonTick?: number;
   /** R13 红毒：受到伤害 +20% 截止时间 */
   redUntil?: number;
@@ -36,7 +40,7 @@ export interface BossState { stage: number; dazeUntil: number; crazyUntil: numbe
 export type Rarity = 'common' | 'magic' | 'rare';
 export interface ItemDef { id: string; name: string; icon: string; potion?: number; slot?: Slot; equip?: Partial<Stats>; req?: number; price?: number; set?: string; /** 技能书：对应技能 id */ book?: string; /** 职业限制（空 = 通用） */ cls?: ('warrior' | 'mage' | 'taoist')[]; /** 合击版：火龙之心（英雄栏专属） */ heart?: boolean; /** 合击版：补充怒槽/火龙之心的量 */ rage?: number }
 /** 背包/装备栏里的一件物品 */
-export interface InvItem { uid: number; item: string; name: string; rarity: Rarity; slot?: Slot; stats: Partial<Stats>; req: number; price: number; luck?: number; /** 强化等级 0..7 */ enhance?: number; /** 黑铁矿石纯度 1..5 */ purity?: number; /** 堆叠数量（黑铁等） */ qty?: number }
+export interface InvItem { uid: number; item: string; name: string; rarity: Rarity; slot?: Slot; stats: Partial<Stats>; req: number; price: number; luck?: number; /** 强化等级 0..7 */ enhance?: number; /** R14 鉴定词条数 1–3 */ ided?: number; /** 黑铁矿石纯度 1..5 */ purity?: number; /** 堆叠数量（黑铁等） */ qty?: number }
 export interface GroundItem { gid: number; item: string; name: string; rarity: Rarity; x: number; y: number; landAt: number; atk: number; hp: number; amount: number; inv?: InvItem }
 export type BattleEvent =
   | { type: 'attack'; source: number; target: number; skill?: string }
@@ -56,6 +60,7 @@ export type BattleEvent =
   | { type: 'exp'; amount: number }
   | { type: 'levelup'; level: number }
   | { type: 'summon'; uid: number }
+  | { type: 'charm'; uid: number; result: 'ok' | 'fail' | 'immune' | 'high' | 'betray' }
   | { type: 'respawn' }
   | { type: 'inventory' }
   | { type: 'bossfx'; uid: number; kind: 'spark' | 'fireball' | 'spike_warn' | 'spike' | 'daze' | 'crazy' | 'fly' | 'call'; x: number; target?: number }
