@@ -551,3 +551,23 @@ thunder_sword 雷霆剑、break_strike 破击剑法、shield_break 破盾斩、v
 | bronze_beast_full.png | 960x720 | bronze_beast | 青铜兽 | 机关洞（传世） | 部分推测 | 兽化的铜机关；兽形为推测 |
 | ant_poison_full.png | 960x490 | ant_poison | 爆毒蚂蚁 | 蚂蚁洞穴（传奇3） | 据描述 | 小腹有喷毒射管，钳/爪不发达 |
 | red_snake_yao_full.png | 720x960 | red_snake_yao | 红蛇妖 | 蛇魔谷（传世） | 部分推测 | 蛇妖小喽啰 |
+
+## art/maps-batch3 交付（对应 feat/maps-batch3 章）
+
+原创绘制，未描摹原作/WoW 素材；立绘透明底 PNG 最长边 960，背景 1920×1080 JPG（下 40% 空地面）。预览：docs/art-gap-preview/maps_batch3.jpg
+
+| 文件 | 尺寸 | 外观依据 |
+|---|---|---|
+| portraits/pincer_bug_full.png 钳虫 | 941×960 | 新浪游戏：额前巨钳、硬壳、六足、无眼靠触角 |
+| portraits/giant_worm_full.png 巨型蠕虫 | 865×960 | 新浪游戏：形似蜈蚣；颜色为推测 |
+| portraits/wedge_moth_full.png 楔蛾 | 960×913 | 搜狐：会喷毒；外观未查到/推测 |
+| portraits/horn_fly_full.png 角蝇 | 960×945 | 搜狐：会放蝙蝠；外观未查到/推测（独角苍蝇） |
+| portraits/boss_evil_pincer_full.png 邪恶钳虫 | 932×960 | 新浪游戏：巨型变异钳虫、锻造般坚硬外壳；配色推测 |
+| portraits/boss_evil_snake_full.png 邪恶毒蛇 | 915×960 | 未查到/推测（巨型毒蛇） |
+| portraits/boss_shimu_lich_full.png 石墓尸王 | 921×960 | 未查到/推测（尸王/巫妖形象） |
+| bg/bg_floor35.jpg 蜈蚣洞地牢（35–39） | 1920×1080 | 未查到/推测 |
+| bg/bg_floor40.jpg 蜈蚣洞深层（40–46） | 1920×1080 | 未查到/推测 |
+| bg/bg_floor47.jpg 石墓（47–53） | 1920×1080 | 未查到/推测 |
+| bg/bg_floor54.jpg 香石墓穴（54–56） | 1920×1080 | 未查到/推测 |
+
+存疑：钳虫/邪恶钳虫腿数画成约 8 条（原作描述六足）；楔蛾、角蝇、邪恶毒蛇、石墓尸王外观均为推测。
