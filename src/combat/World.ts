@@ -274,9 +274,9 @@ export class World {
     return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, kills: this.kills, nextUid: this.nextItem };
   }
 
-  /** 点按一格：正在滑行时再按排队 1 次（输入缓冲），不丢输入 */
+  /** 点按一格：滑行中的按键全部排队（同向最多 10 格，反向则替换队列），每次按键都会走一格 */
   stepTarget: number | null = null; stepQueued = 0;
-  queueStep(d: number) { const h = this.hero; if (!h || !d) return; if (this.stepTarget === null) this.stepTarget = h.x + Math.sign(d) * WORLD.stepPx; else this.stepQueued = Math.sign(d); }
+  queueStep(d: number) { const h = this.hero; if (!h || !d) return; if (this.stepTarget === null) this.stepTarget = h.x + Math.sign(d) * WORLD.stepPx; else { const sd = Math.sign(d); this.stepQueued = Math.sign(this.stepQueued) === sd ? Math.min(10, Math.abs(this.stepQueued) + 1) * sd : (Math.sign(this.stepTarget - h.x) === sd ? sd : sd); } }
   private moveHero(h: Unit, inp: Input, dt: number) {
     if (inp.step) this.queueStep(inp.step);
     let speed = WORLD.heroSpeed, sdx = 0;
@@ -298,7 +298,7 @@ export class World {
     }
     if (this.stepTarget !== null && (inp.dx || !sdx || Math.abs(h.x - this.stepTarget) < 0.5 || h.x === x0)) {
       this.stepTarget = null; // 到达 / 被怪或边界挡住：结束本格
-      if (this.stepQueued) { this.stepTarget = h.x + this.stepQueued * WORLD.stepPx; this.stepQueued = 0; }
+      if (this.stepQueued) { const sd = Math.sign(this.stepQueued); this.stepTarget = h.x + sd * WORLD.stepPx; this.stepQueued -= sd; }
     }
     if (dy) h.y = Math.max(WORLD.laneMin, Math.min(WORLD.laneMax, h.y + dy * WORLD.heroLaneSpeed * dt));
   }
