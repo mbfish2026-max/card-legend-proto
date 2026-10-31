@@ -64,10 +64,24 @@ for (const c of Object.keys(CS) as ClassId[]) for (const id of CS[c]) {
 { // 金甲骷髅：升级变色 + 强于普通骷髅
   const w = mkW('taoist', 45, [{ id: 'zombie', x: 2000 }]); w.learned.add('summon_skeleton'); w.learned.add('summon_golden_skeleton'); w.hero!.mp = w.hero!.maxMp = 9999;
   w.cast(w.skills.findIndex(k => k.id === 'summon_skeleton'), w.skills.map(() => 0)); const sk0 = { ...w.summon! };
-  w.cast(w.skills.findIndex(k => k.id === 'summon_golden_skeleton'), w.skills.map(() => 0)); const g = w.summon!;
-  ok(g.id === 'summon_golden_skeleton' && g.maxHp > sk0.maxHp && g.atk > sk0.atk, `金甲骷髅替换骷髅且更强（HP ${g.maxHp}>${sk0.maxHp}，攻 ${g.atk}>${sk0.atk}）`);
+  w.cast(w.skills.findIndex(k => k.id === 'summon_golden_skeleton'), w.skills.map(() => 0)); const gs = w.summons, g = gs[0];
+  ok(gs.length === 2 && gs.every(u => u.id === 'summon_golden_skeleton'), `金甲骷髅一次召唤 2 只并解散骷髅（${gs.map(u => u.id)}）`);
+  const tH = gs[0].maxHp + gs[1].maxHp, tA = gs[0].atk + gs[1].atk;
+  ok(g.maxHp > sk0.maxHp && tA > sk0.atk && tA < sk0.atk * 2 && tH < sk0.maxHp * 2.5, `金甲骷髅合计强于骷髅但不过强（单只 HP ${g.maxHp} 攻 ${g.atk}；合计 HP ${tH}/攻 ${tA} vs 骷髅 ${sk0.maxHp}/${sk0.atk}）`);
+  ok(gs[0].sLv === gs[1].sLv && gs[0].sLv === w.skillLevel(sk('taoist', 'summon_golden_skeleton')!), '两只等级 = 技能等级');
+  ok(gs.every(u => w.summonAggro !== undefined) && Math.abs(gs[0].x - gs[1].x) > 0, '两只错位站位');
   ok(g.card?.tint === 0xffd040, '金甲骷髅金色底色');
   const l0 = g.sLv ?? 0, c0 = g.nameColor, hp0 = g.maxHp; g.sKills = 1e6; w.kill(w.alive('enemy')[0]); ok((g.sLv ?? 0) > l0 && g.nameColor !== c0 && g.maxHp > hp0, `金甲骷髅击杀升级变色（${l0}→${g.sLv}，${c0}→${g.nameColor}，HP ${hp0}→${g.maxHp}）`);
+  // 上限 2：再召唤替换最旧
+  const gi = w.skills.findIndex(k => k.id === 'summon_golden_skeleton'), old = [...w.summons].sort((a, b) => a.uid - b.uid);
+  w.cast(gi, w.skills.map(() => 0)); const now = w.summons;
+  ok(now.length === 2 && !now.includes(old[0]) && now.includes(old[1]), `再召唤：仍 2 只，替换最旧（uid ${old[0].uid}）`);
+  old[1].alive = false; w.cast(gi, w.skills.map(() => 0)); ok(w.summons.length === 2, '死 1 只后再召唤补足到 2 只');
+  // autoCast：健康 2 只不重放；1 只 / 2 只受伤则重放
+  const ar = () => w.autoCast(['summon_golden_skeleton'], w.skills.map(() => 0))?.id;
+  ok(ar() === undefined, '健康 2 只存在：autoCast 不重放');
+  w.summons[0].alive = false; ok(ar() === 'summon_golden_skeleton' && w.summons.length === 2, '只剩 1 只：autoCast 补召');
+  w.summons[1].hp = 1; ok(ar() === 'summon_golden_skeleton', '有 1 只重伤：autoCast 重放（替换最旧）');
 }
 { // 旧存档兼容：无 learned 的旧档不会自动学会传世技能；有 learned 的旧档原样
   const m = new World(seeded(3), 50, [{ name: 't', spawns: [] }], 'taoist');

@@ -55,8 +55,11 @@ export const isUndead = (u: { id: string; team?: string }) => u.team !== 'ally' 
 /** 传世召唤：基础单位与相对骷髅的属性倍率 [适配] */
 const CS_SUMMON: Record<string, { base: UnitDef; hp: number; atk: number; def: number }> = {
   drive_corpse: { base: SUMMON_CORPSE, hp: 1.25, atk: 1.25, def: 1.2 },
-  summon_golden_skeleton: { base: SUMMON_GOLDEN, hp: 2, atk: 1.6, def: 1.5 },
+  // 官方一次召唤 2 只；[适配] 单只 HP×1.1 攻×0.85 防×1.5（2 只合计 HP×2.2 攻×1.7 ≈ 原单只 HP×2/攻×1.6 的 1.1 倍，另分摊仇恨）
+  summon_golden_skeleton: { base: SUMMON_GOLDEN, hp: 1.1, atk: 0.85, def: 1.5 },
 };
+/** 同时存在上限（官方金甲骷髅一次 2 只；其余召唤 1 只） */
+export const SUMMON_MAX: Record<string, number> = { summon_golden_skeleton: 2 };
 export type CastResult = { ok: true; targets: number[]; skill: string; kind: string } | { ok: false; reason: string };
 /** R13 官方 BOSS 机制（来源见 docs/combat-official.md）：沃玛教主/祖玛教主/赤月恶魔由 bossStep 接管攻击 */
 /**
@@ -204,6 +207,8 @@ export class World {
   get hero() { return this.units.find(u => u.isHero && u.alive); }
   /** 道士骷髅/神兽（不含诱惑之光宠物） */
   get summon() { return this.units.find(u => u.summon && !u.pet && u.alive); }
+  /** 全部存活召唤物（不含宠物） */
+  get summons() { return this.units.filter(u => u.summon && !u.pet && u.alive); }
   get decoy() { return this.units.find(u => u.decoy && u.alive); }
   /** 自动施放门槛 [适配]：射程内最近目标可驯服且成功率 ≥50% 才放（免疫/等级过高/满宠不浪费魔法） */
   charmAutoOk() {
@@ -219,6 +224,21 @@ export class World {
     if (t.level > this.level + CHARM.levelGap) return { res: 'high', p: 0 };
     if (this.pets.length >= CHARM.maxPets[Math.min(3, slv)]) return { res: 'full', p: 0 };
     return { res: 'ok', p: CHARM.chance(slv, this.level, t) };
+  }
+  private spawnSummon(base: UnitDef, beast: boolean, cs: { hp: number; atk: number; def: number } | undefined, slv: number, lvF: number, h: Unit, off: number) {
+    const tao = h.tao ?? 0;
+    // 骷髅 / 神兽：随道术与技能等级成长（C：神兽 1/2/3 级）
+    const hp0 = beast ? 250 + tao * 7 : 140 + tao * 5;
+    const atk0 = beast ? 14 + tao * 1.15 : SKELETON_OFFICIAL.atkMin + tao * 1.0;
+    const def0 = beast ? 7 + this.level * 1.0 : 3 + this.level * 0.8;
+    // [适配] 加强骷髅：按官方成长比例（相对 0 级）放大，HP ×1/1.4/2/2.8、攻击 ×(官方攻击上限/25)；基础攻击 8+道术×0.9 → 10+道术×1.0（10=官方下限）；神兽仍 ×(1+0.1×等级)
+    const L = Math.min(3, slv), hpF = beast ? lvF : SKELETON_OFFICIAL.hp[L] / SKELETON_OFFICIAL.hp[0], atkF = beast ? lvF : SKELETON_OFFICIAL.atkMax[L] / SKELETON_OFFICIAL.atkMax[0];
+    const k = cs ?? { hp: 1, atk: 1, def: 1 }; // 传世：赶尸/金甲骷髅 = 骷髅公式 × 倍率 [适配]
+    const def: UnitDef = { ...base, level: this.level + (beast ? slv : 0), hp: Math.round(hp0 * hpF * k.hp), atk: Math.round(atk0 * atkF * k.atk), def: Math.round(def0 * k.def) };
+    const u = this.spawn(def, 'ally', h.x - h.facing * (110 + off), WORLD.summonLane); u.summon = true; u.facing = h.facing; u.ai = 'chase';
+    // 召唤物等级：初始 = 技能等级（最高 3）；「重启」= 重新召唤从技能等级对应初始等级开始，不继承上一只已升等级
+    u.sLv = L; u.sKills = 0; u.sBase = { hp: def.hp, atk: def.atk, start: L, name: base.name }; this.applySummonLv(u);
+    this.events.push({ type: 'summon', uid: u.uid });
   }
   /** [适配] 召唤物仇恨：怪被召唤物打过（aggroUid）且主角离怪 > summonAggroNear 时，返回该召唤物；否则 undefined（走原主角/50% 规则） */
   summonAggro(u: Unit): Unit | undefined {
@@ -803,8 +823,9 @@ export class World {
     if (cds[i] > 0) return { ok: false, reason: `${s.name} 冷却中（${cds[i].toFixed(1)}s）` };
     if ((h.mp ?? 0) < s.mana) return { ok: false, reason: '魔法值不足' };
     if (s.kind === 'summon' && opts.auto) {
-      const ex = this.summon;
-      if (ex && ex.hp >= ex.maxHp * AUTO_RESUMMON_HP) return { ok: false, reason: `${ex.name}已存在` };
+      const max = SUMMON_MAX[s.id] ?? 1, mine = this.summons.filter(u => u.id === (CS_SUMMON[s.id]?.base.id ?? ''));
+      if (max > 1) { if (mine.length >= max && mine.every(u => u.hp >= u.maxHp * AUTO_RESUMMON_HP)) return { ok: false, reason: `${s.name}已有 ${max} 只` }; }
+      else { const ex = this.summon; if (ex && ex.hp >= ex.maxHp * AUTO_RESUMMON_HP) return { ok: false, reason: `${ex.name}已存在` }; }
     }
     if (s.buffBoth && ((h.defUpUntil ?? 0) > this.time || (h.mdefUpUntil ?? 0) > this.time)) return { ok: false, reason: `${s.name}持续中（持续期间重复开启无效）` };
     if (s.kind === 'decoy') {
@@ -898,24 +919,19 @@ export class World {
     } else if (s.kind === 'summon') {
       const beast = s.id === 'summon_beast', cs = CS_SUMMON[s.id];
       const base = beast ? SUMMON_BEAST : cs?.base ?? SUMMON;
-      const ex = this.summon;
-      if (ex && ex.id === base.id) {
+      const max = SUMMON_MAX[s.id] ?? 1, ex = this.summon;
+      if (max > 1) {
+        // 金甲骷髅：解散其他召唤物；补足到 2 只，已满则替换最旧（uid 最小）一只
+        for (const o of this.summons) if (o.id !== base.id) { o.alive = false; this.events.push({ type: 'death', uid: o.uid }, { type: 'log', text: `解散 ${o.name}，召唤 ${base.name}` }); }
+        const mine = this.summons.filter(o => o.id === base.id).sort((a, b) => a.uid - b.uid);
+        let n = max - mine.length;
+        if (n <= 0) { const old = mine[0]; old.alive = false; this.events.push({ type: 'death', uid: old.uid }, { type: 'log', text: `替换旧的${base.name}` }); n = 1; }
+        for (let k = 0; k < n; k++) this.spawnSummon(base, beast, cs, slv, lvF, h, k * 60);
+      } else if (ex && ex.id === base.id) {
         this.heal(ex, ex.maxHp); this.events.push({ type: 'log', text: `${base.name}已存在：恢复其生命` });
       } else {
         if (ex) { ex.alive = false; this.events.push({ type: 'death', uid: ex.uid }); this.events.push({ type: 'log', text: `解散 ${ex.name}，召唤 ${base.name}` }); }
-        const tao = h.tao ?? 0;
-        // 骷髅 / 神兽：随道术与技能等级成长（C：神兽 1/2/3 级）
-        const hp0 = beast ? 250 + tao * 7 : 140 + tao * 5;
-        const atk0 = beast ? 14 + tao * 1.15 : SKELETON_OFFICIAL.atkMin + tao * 1.0;
-        const def0 = beast ? 7 + this.level * 1.0 : 3 + this.level * 0.8;
-        // [适配] 加强骷髅：按官方成长比例（相对 0 级）放大，HP ×1/1.4/2/2.8、攻击 ×(官方攻击上限/25)；基础攻击 8+道术×0.9 → 10+道术×1.0（10=官方下限）；神兽仍 ×(1+0.1×等级)
-        const L = Math.min(3, slv), hpF = beast ? lvF : SKELETON_OFFICIAL.hp[L] / SKELETON_OFFICIAL.hp[0], atkF = beast ? lvF : SKELETON_OFFICIAL.atkMax[L] / SKELETON_OFFICIAL.atkMax[0];
-        const k = cs ?? { hp: 1, atk: 1, def: 1 }; // 传世：赶尸/金甲骷髅 = 骷髅公式 × 倍率 [适配]
-        const def: UnitDef = { ...base, level: this.level + (beast ? slv : 0), hp: Math.round(hp0 * hpF * k.hp), atk: Math.round(atk0 * atkF * k.atk), def: Math.round(def0 * k.def) };
-        const u = this.spawn(def, 'ally', h.x - h.facing * 110, WORLD.summonLane); u.summon = true; u.facing = h.facing; u.ai = 'chase';
-        // 召唤物等级：初始 = 技能等级（最高 3）；「重启」= 重新召唤从技能等级对应初始等级开始，不继承上一只已升等级
-        u.sLv = L; u.sKills = 0; u.sBase = { hp: def.hp, atk: def.atk, start: L, name: base.name }; this.applySummonLv(u);
-        this.events.push({ type: 'summon', uid: u.uid });
+        this.spawnSummon(base, beast, cs, slv, lvF, h, 0);
       }
     } else if (s.kind === 'charm') {
       const t = targets[0], c = this.charmCheck(t);
