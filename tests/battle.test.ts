@@ -5,7 +5,7 @@ import { ENEMIES, DIFF } from '../src/data/units';
 import { detectMobile } from '../src/mobile';
 import { StepGate, stepDir, HoldKeys, HOLD } from '../src/input/stepKeys';
 import { POTIONS } from '../src/data/skills';
-import { Settings } from '../src/settings';
+import { Settings, DEFAULT_AUTO_SKILLS, ZOOM_MIN, ZOOM_MAX, ZOOM_STEP } from '../src/settings';
 let pass = 0; const ok = (c: boolean, m: string) => { if (!c) { console.error('FAIL', m); throw new Error(m); } pass++; console.log('ok', m); };
 function seeded(s: number) { return () => (s = (s * 16807) % 2147483647) / 2147483647; }
 const mk = (spawns: Floor['spawns'], extra: Floor[] = [], cls: ClassId = 'warrior', lv = 20, seed = 1) => new World(seeded(seed), lv, [{ name: '测试层', spawns }, ...extra], cls);
@@ -272,4 +272,58 @@ const free = (w: World) => w.skills.map(() => 0);
   ok(xs[60] > 200 && xs[150] < xs[60], `同时按左右以后按下的为准：按住右再按左 → 反向（${Math.round(xs[60])}→${Math.round(xs[150])}）`);
   xs = sim([[0, 'down', R], [300, 'up', R], [400, 'down', R], [430, 'up', R], [500, 'down', R], [530, 'up', R]], 800); ok(xs[79] > xs[52] && xs[52] > xs[42], '丢 keyup 后再次按下（新 keydown）依然生效');
 }
+
+{ // 道士 1 级即可召唤骷髅
+  const sk = CLASSES.taoist.skills.find(s => s.id === 'summon_skeleton')!;
+  ok((sk.unlock ?? 1) <= 1, '召唤骷髅解锁等级 ≤ 1');
+  const w = mk([{ id: 'orc', x: 900 }], [], 'taoist', 1); const h = w.hero!;
+  h.x = 500; h.mp = h.maxMp;
+  const r = w.cast(idx(w, 'summon_skeleton'), free(w));
+  ok(r.ok && !!w.summon, `道士 1 级可召唤骷髅（ok=${r.ok}）`);
+  ok(!!w.summon && w.summon.hp > 0 && w.summon.atk > 0, `1 级骷髅有基础属性 hp=${w.summon?.hp} atk=${w.summon?.atk}`);
+  const w20 = mk([{ id: 'orc', x: 900 }], [], 'taoist', 20); w20.hero!.mp = 9999;
+  w20.cast(idx(w20, 'summon_skeleton'), free(w20));
+  ok(w20.summon!.maxHp > w.summon!.maxHp, `高等级骷髅更强（${w.summon!.maxHp} → ${w20.summon!.maxHp}）`);
+}
+{ // 自动普攻开关：autoAttack=false 时贴脸不打
+  const w = mk([{ id: 'zombie', x: 600 }], [], 'warrior', 10); tough(w);
+  const h = w.hero!, z = w.alive('enemy')[0];
+  h.x = z.x - (h.width + z.width) / 2 - Math.max(h.range, z.range) + 2;
+  h.hp = h.maxHp = 1e9; z.ai = 'chase';
+  let hits = 0;
+  for (let i = 0; i < 80; i++) {
+    w.step(0.05, { dx: 0, dy: 0, autoAttack: false });
+    for (const e of w.drainEvents()) if (e.type === 'damage' && e.source === h.uid) hits++;
+  }
+  ok(hits === 0, `关闭自动普攻：贴脸 ${hits} 次伤害（应为 0）`);
+  hits = 0;
+  for (let i = 0; i < 80; i++) {
+    w.step(0.05, { dx: 0, dy: 0, autoAttack: true });
+    for (const e of w.drainEvents()) if (e.type === 'damage' && e.source === h.uid) hits++;
+  }
+  ok(hits > 0, `开启自动普攻：贴脸有伤害（${hits}）`);
+}
+{ // Settings：自动攻击 / 缩放持久化字段与推荐技能
+  ok(DEFAULT_AUTO_SKILLS.warrior[0] === 'fire_sword', '战士推荐 F1 烈火');
+  ok(DEFAULT_AUTO_SKILLS.mage.includes('thunder') && DEFAULT_AUTO_SKILLS.mage.includes('fireball'), '法师推荐雷电+火球');
+  ok(DEFAULT_AUTO_SKILLS.taoist.includes('summon_skeleton') && DEFAULT_AUTO_SKILLS.taoist.includes('holy_armor'), '道士推荐召唤+治疗');
+  const bak = { aa: Settings.autoAttack, as: Settings.autoSkills, z: Settings.zoom };
+  Settings.autoAttack = false; Settings.autoSkills = ['fire_sword']; Settings.setZoom(1.15);
+  ok(Settings.zoom === 1.15, '缩放步进对齐 1.15');
+  Settings.setZoom(0.7); ok(Settings.zoom === ZOOM_MIN, `缩放下限 ${ZOOM_MIN}`);
+  Settings.setZoom(1.5); ok(Settings.zoom === ZOOM_MAX, `缩放上限 ${ZOOM_MAX}`);
+  Settings.setZoom(1); Settings.autoAttack = bak.aa; Settings.autoSkills = bak.as;
+  ok(Settings.skillsFor('warrior').length >= 1, 'skillsFor 返回推荐或勾选');
+  Settings.autoSkills = []; ok(Settings.skillsFor('mage').length === 0, '显式空列表 = 不自动放技能');
+  Settings.autoSkills = null; ok(Settings.skillsFor('taoist').includes('summon_skeleton'), 'null → 职业推荐');
+  Settings.autoSkills = bak.as; Settings.zoom = bak.z; Settings.autoAttack = bak.aa;
+}
+{ // 技能未达解锁等级不可放
+  const w = mk([{ id: 'orc', x: 700 }], [], 'warrior', 1);
+  const sk = w.skills[0]; const old = sk.unlock; (sk as any).unlock = 5;
+  const r = w.cast(0, free(w));
+  ok(!r.ok && (r as any).reason.includes('等级'), `未达解锁等级拒绝（${(r as any).reason}）`);
+  (sk as any).unlock = old;
+}
+
 console.log(`全部通过 ${pass} 项`);

@@ -5,7 +5,7 @@ import { SLOTS, SLOT_NAMES, STAT_NAMES, ITEMS } from '../data/items';
 import { POTIONS } from '../data/skills';
 import { WORLD } from '../data/world';
 import { CLASSES } from '../data/classes';
-import { Settings } from '../settings';
+import { Settings, ZOOM_STEP } from '../settings';
 import { txt, button, sfx } from '../scenes/TitleScene';
 import { IS_MOBILE } from '../mobile';
 import { FxQuality } from './Fx';
@@ -27,7 +27,7 @@ export class Panel {
     if (!this.mode) return;
     const s = this.s, R = this.root = s.add.container(0, 0).setDepth(200);
     R.add(s.add.rectangle(640, 360, 1280, 720, 0x000000, 0.45).setInteractive());
-    const W = this.mode === 'settings' ? 520 : 1000, H = this.mode === 'settings' ? 430 : 500, top = 300 - H / 2;
+    const W = this.mode === 'settings' ? 640 : 1000, H = this.mode === 'settings' ? 580 : 500, top = Math.max(40, 360 - H / 2);
     R.add(s.add.rectangle(640, 300, W, H, 0x15100b, 0.97).setStrokeStyle(3, 0xd4a64a));
     const titles = { bag: '角色 / 背包', shop: '商人 · 杂货铺', skills: '技能', settings: '设置' };
     R.add(txt(s, 640, top + 22, titles[this.mode], 24, '#ffd24a', { fontStyle: 'bold' }).setOrigin(0.5));
@@ -106,29 +106,54 @@ export class Panel {
     w.skills.forEach((k, i) => {
       const y = top + 100 + i * 90;
       if (s.textures.exists('sk_' + k.id)) R.add(s.add.image(220, y, 'sk_' + k.id).setDisplaySize(60, 60));
-      R.add(txt(s, 270, y - 28, `[${k.key}] ${k.name}`, 20, '#ffd24a', { fontStyle: 'bold' }));
-      R.add(txt(s, 270, y + 2, `${k.desc}    消耗 ${k.mana} 魔法  冷却 ${k.cooldown}s`, 15, '#ddd', { strokeThickness: 2 }));
+      const need = k.unlock ?? 1, locked = w.level < need;
+      R.add(txt(s, 270, y - 28, `[${k.key}] ${k.name}${locked ? `（需 Lv${need}）` : need <= 1 ? '' : ` · Lv${need}`}`, 20, locked ? '#888' : '#ffd24a', { fontStyle: 'bold' }));
+      R.add(txt(s, 270, y + 2, `${k.desc}    消耗 ${k.mana} 魔法  冷却 ${k.cooldown}s`, 15, locked ? '#777' : '#ddd', { strokeThickness: 2 }));
     });
     R.add(txt(s, 220, top + 460, `技能伤害随等级提升：当前 ×${w.skillScale().toFixed(2)}（基于${{ atk: '攻击', mag: '魔法', tao: '道术' }[w.classDef.autoStat]}）`, 14, '#9fd'));
   }
   private renderSettings(R: Phaser.GameObjects.Container, top: number) {
-    const s = this.s, vol = txt(s, 640, top + 90, '', 22).setOrigin(0.5); R.add(vol);
+    const s = this.s, w = this.world(), cls = w.cls;
+    const vol = txt(s, 640, top + 70, '', 20).setOrigin(0.5); R.add(vol);
     const refresh = () => { vol.setText(`音量 ${Math.round(Settings.volume * 100)}%${Settings.muted ? '（静音）' : ''}`); Settings.apply(s.sound); Settings.save(); };
-    R.add([...button(s, 500, top + 90, 50, 40, '－', () => { Settings.volume = Math.max(0, +(Settings.volume - 0.1).toFixed(1)); refresh(); })]);
-    R.add([...button(s, 780, top + 90, 50, 40, '＋', () => { Settings.volume = Math.min(1, +(Settings.volume + 0.1).toFixed(1)); refresh(); })]);
-    R.add([...button(s, 640, top + 150, 220, 42, '静音开/关 (M)', () => { Settings.muted = !Settings.muted; refresh(); }, 18)]);
+    R.add([...button(s, 500, top + 70, 50, 36, '－', () => { Settings.volume = Math.max(0, +(Settings.volume - 0.1).toFixed(1)); refresh(); })]);
+    R.add([...button(s, 780, top + 70, 50, 36, '＋', () => { Settings.volume = Math.min(1, +(Settings.volume + 0.1).toFixed(1)); refresh(); })]);
+    R.add([...button(s, 560, top + 118, 160, 36, '静音 (M)', () => { Settings.muted = !Settings.muted; refresh(); }, 16)]);
+    R.add([...button(s, 740, top + 118, 160, 36, `低特效：${Settings.lowFx ? '开' : '关'}`, () => { Settings.lowFx = !Settings.lowFx; FxQuality.low = !!Settings.lowFx; Settings.save(); this.render(); }, 15)]);
     if (IS_MOBILE) {
       const on = Settings.wantPad(true);
-      R.add([...button(s, 520, top + 210, 230, 42, `虚拟按键：${on ? '开' : '关'}`, () => {
+      R.add([...button(s, 640, top + 162, 220, 36, `虚拟按键：${on ? '开' : '关'}`, () => {
         Settings.showPadMobile = !Settings.wantPad(true); Settings.save(); this.render();
-      }, 17)]);
+      }, 15)]);
     } else {
-      R.add(txt(s, 520, top + 210, '虚拟按键：电脑默认关', 14, '#888').setOrigin(0.5));
+      R.add(txt(s, 640, top + 162, '虚拟按键：电脑默认关', 13, '#888').setOrigin(0.5));
     }
-    R.add([...button(s, 760, top + 210, 230, 42, `低特效：${Settings.lowFx ? '开' : '关'}`, () => { Settings.lowFx = !Settings.lowFx; FxQuality.low = !!Settings.lowFx; Settings.save(); this.render(); }, 17)]);
-    R.add([...button(s, 640, top + 270, 220, 42, '保存并返回标题', () => { this.close(); this.onTitle(); }, 18)]);
-    R.add([...button(s, 640, top + 328, 220, 42, '继续游戏', () => this.close(), 18)]);
-    R.add(txt(s, 640, top + 380, IS_MOBILE ? '手机/平板：虚拟按键默认开启，可在此关闭；竖屏会提示旋转' : '电脑不显示虚拟按键；手机浏览器打开会默认开启', 13, '#999').setOrigin(0.5));
+    // 自动攻击
+    R.add([...button(s, 640, top + 210, 280, 38, `自动攻击：${Settings.autoAttack ? '开' : '关'}`, () => {
+      Settings.autoAttack = !Settings.autoAttack; Settings.save(); this.render();
+    }, 17)]);
+    R.add(txt(s, 640, top + 248, '开启后贴脸自动普攻（不追怪）；勾选技能按优先级/冷却自动放；手动按键优先', 12, '#9ab').setOrigin(0.5));
+    // 自动技能勾选（null=职业推荐默认勾选）
+    const selected = new Set(Settings.skillsFor(cls));
+    w.skills.forEach((sk, i) => {
+      const on = selected.has(sk.id);
+      const x = 280 + (i % 4) * 180, y = top + 288;
+      R.add([...button(s, x, y, 168, 34, `${on ? '✓' : '○'} ${sk.key} ${sk.name}`, () => {
+        Settings.toggleAutoSkill(sk.id, cls); this.render();
+      }, 13)]);
+    });
+    // 画面缩放
+    const zlab = txt(s, 640, top + 340, `画面缩放 ${Math.round(Settings.zoom * 100)}%`, 18, '#ffe8a0').setOrigin(0.5); R.add(zlab);
+    R.add([...button(s, 480, top + 340, 50, 36, '－', () => { Settings.setZoom(Settings.zoom - ZOOM_STEP); this.render(); })]);
+    R.add([...button(s, 800, top + 340, 50, 36, '＋', () => { Settings.setZoom(Settings.zoom + ZOOM_STEP); this.render(); })]);
+    ;[0.8, 0.9, 1, 1.1, 1.2].forEach((z, i) => {
+      R.add([...button(s, 400 + i * 80, top + 386, 70, 30, `${Math.round(z * 100)}%`, () => { Settings.setZoom(z); this.render(); }, 13)]);
+    });
+    R.add([...button(s, 520, top + 440, 200, 40, '保存并返回标题', () => { this.close(); this.onTitle(); }, 16)]);
+    R.add([...button(s, 760, top + 440, 160, 40, '继续游戏', () => this.close(), 16)]);
+    R.add(txt(s, 640, top + 490, IS_MOBILE
+      ? '缩放用于适配不同手机；虚拟键/HUD 随画布一起缩放。竖屏会提示旋转'
+      : '电脑也可调缩放预览；手机浏览器打开虚拟按键默认开', 12, '#999').setOrigin(0.5));
     refresh();
   }
   showTip(it: InvItem, x: number, y: number, touch = false) {

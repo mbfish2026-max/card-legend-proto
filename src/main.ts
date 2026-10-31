@@ -6,6 +6,7 @@ import { IS_MOBILE, setupMobile, enableMobileOnTouch } from './mobile';
 import { Settings } from './settings';
 import { FxQuality } from './ui/Fx';
 Settings.load();
+Settings.applyZoom();
 // 虚拟按键：手机端 showPadMobile===null 即默认开（Settings.wantPad），不写死进存档，避免电脑设置污染手机
 if (Settings.lowFx === null) Settings.lowFx = IS_MOBILE;
 FxQuality.low = !!Settings.lowFx;
@@ -18,3 +19,6 @@ const game = new Phaser.Game({
   scene: [TitleScene, BattleScene, UIScene],
 });
 (window as any).__game = game; (window as any).__mobile = IS_MOBILE;
+// 画布创建后再应用一次缩放
+game.events.once('ready', () => Settings.applyZoom());
+window.addEventListener('resize', () => Settings.applyZoom());

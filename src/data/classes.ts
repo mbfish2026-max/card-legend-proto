@@ -5,7 +5,7 @@ export type SkillKind = 'melee' | 'pierce' | 'ranged' | 'aoe' | 'dot' | 'buff' |
 export interface SkillDef {
   key: string; id: string; name: string; kind: SkillKind; stat: 'atk' | 'mag' | 'tao';
   mana: number; cooldown: number; mult?: number; pierce?: number; range?: number;
-  duration?: number; reduce?: number; slow?: number; heal?: number; icon: string; sfx: string; desc: string;
+  duration?: number; reduce?: number; slow?: number; heal?: number; unlock?: number; icon: string; sfx: string; desc: string;
 }
 export interface ClassDef {
   id: ClassId; name: string; art: string; bg: number; artFacing: 1 | -1; atkInterval: number;
@@ -42,7 +42,7 @@ export const CLASSES: Record<ClassId, ClassDef> = {
     skills: [
       { key: 'F1', id: 'soul_fire', name: '灵魂火符', kind: 'ranged', stat: 'tao', mana: 15, cooldown: 1.5, mult: 2.0, range: 500, icon: S + 'Spell_Fire_FlameBolt.png', sfx: 'fireball_cast', desc: '远程火符，200% 道术' },
       { key: 'F2', id: 'poison', name: '施毒术', kind: 'dot', stat: 'tao', mana: 20, cooldown: 3, mult: 0.6, range: 500, duration: 8, icon: S + 'Spell_Shadow_ShadowBolt.png', sfx: 'summon2', desc: '中毒 8 秒，每秒 60% 道术' },
-      { key: 'F3', id: 'summon_skeleton', name: '召唤骷髅', kind: 'summon', stat: 'tao', mana: 50, cooldown: 12, icon: S + 'Spell_Shadow_RaiseDead.png', sfx: 'summon', desc: '召唤一具骷髅协同作战（已存在则治疗）' },
+      { key: 'F3', id: 'summon_skeleton', name: '召唤骷髅', kind: 'summon', stat: 'tao', mana: 50, cooldown: 12, unlock: 1, icon: S + 'Spell_Shadow_RaiseDead.png', sfx: 'summon', desc: '1 级即可召唤骷髅协同作战（已存在则治疗；等级越高越强）' },
       { key: 'F4', id: 'holy_armor', name: '神圣战甲术', kind: 'buff', stat: 'tao', mana: 40, cooldown: 16, duration: 10, reduce: 0.3, heal: 2.5, icon: S + 'Spell_Holy_HolyBolt.png', sfx: 'heal', desc: '10 秒减伤 30%，并回复 250% 道术生命' },
     ],
   },

@@ -8,7 +8,7 @@ import { HERO, ENEMIES, EXP_PER_LEVEL, SUMMON } from '../data/units';
 import { WORLD, FLOORS, Floor } from '../data/world';
 
 export const CRIT_CHANCE = 0.15, CRIT_MULT = 1.8;
-export interface Input { dx: number; dy: number; use?: boolean; step?: number }
+export interface Input { dx: number; dy: number; use?: boolean; step?: number; /** false 时关闭自动普攻；缺省/true 保持原行为 */ autoAttack?: boolean }
 export interface SaveData {
   v: 1; cls: ClassId; level: number; exp: number; gold: number; pots: number[];
   equip: Partial<Record<Slot, InvItem>>; bag: InvItem[]; floorIndex: number; kills: number; nextUid: number;
@@ -219,6 +219,8 @@ export class World {
   cast(i: number, cds: number[]): CastResult {
     const s = this.skills[i], h = this.hero;
     if (!s || !h) return { ok: false, reason: '' };
+    const need = s.unlock ?? 1;
+    if (this.level < need) return { ok: false, reason: `${s.name} 需等级 ${need}` };
     if (cds[i] > 0) return { ok: false, reason: `${s.name} 冷却中` };
     if ((h.mp ?? 0) < s.mana) return { ok: false, reason: '魔法值不足' };
     let targets: Unit[] = [];
@@ -245,6 +247,7 @@ export class World {
       if (ex) { this.heal(ex, ex.maxHp); this.events.push({ type: 'log', text: '骷髅已存在：恢复其生命' }); }
       else {
         const tao = h.tao ?? 0;
+        // 随等级/道术成长：1 级较弱，高等级更强（base + tao 缩放）
         const def: UnitDef = { ...SUMMON, level: this.level, hp: Math.round(140 + tao * 5), atk: Math.round(8 + tao * 0.9), def: Math.round(3 + this.level * 0.8) };
         const u = this.spawn(def, 'ally', h.x - h.facing * 110, WORLD.summonLane); u.summon = true; u.facing = h.facing; u.ai = 'chase';
         this.events.push({ type: 'summon', uid: u.uid });
@@ -374,7 +377,8 @@ export class World {
     }
     if (h && h.alive) {
       const side = this.meleeSide();
-      if (side !== null && h.cd <= 0) {
+      // 自动普攻：仅在近战贴脸时打（不追怪）；可由 Input.autoAttack=false 关闭
+      if (inp.autoAttack !== false && side !== null && h.cd <= 0) {
         const f = this.queue(side)[0]; h.cd = h.atkInterval; if (!h.moving) h.facing = side as 1 | -1;
         this.events.push({ type: 'attack', source: h.uid, target: f.uid });
         this.damage(f, this.autoDamage(h) * (0.9 + this.rng() * 0.2), h);

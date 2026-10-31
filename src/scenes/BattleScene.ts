@@ -364,13 +364,31 @@ export class BattleScene extends Phaser.Scene {
   /** 点按移动一格（键盘与虚拟方向键共用）；同帧多次按以最后一次为准，World 内再做 1 次排队 */
   hold = new HoldKeys();
   stepKey(d: number) { if (this.state === 'play' && !this.paused) this.world.queueStep(d); }
+  /** 自动技能：按 Settings.autoSkills（或职业推荐）优先级尝试释放；失败静默；手动按键走 onKey 优先占冷却 */
+  tryAutoSkills() {
+    if (!Settings.autoAttack) return;
+    const h = this.world.hero; if (!h?.alive) return;
+    const list = Settings.skillsFor(this.world.cls);
+    for (const id of list) {
+      const si = this.world.skills.findIndex(s => s.id === id);
+      if (si < 0 || this.cds[si] > 0) continue;
+      const r = this.world.cast(si, this.cds);
+      if (!r.ok) continue;
+      const evs = this.world.drainEvents();
+      const hv = this.views.get(h.uid);
+      if (hv) { hv.windup(h.facing); this.time.delayedCall(FX.windupMs, () => this.skillFx(r.skill, hv, r.targets, evs)); }
+      else this.handle(evs);
+      return;
+    }
+  }
   update(time: number, dms: number) {
     const dt = Math.min(0.05, dms / 1000), k = this.keys;
     if (this.state !== 'win' && !this.paused) {
       const pad = this.ui?.pad;
       const dx = this.state === 'play' ? (this.hold.dir(performance.now()) || (pad?.dx ?? 0)) : 0;
       const dy = this.state === 'play' ? Math.sign((k.DOWN.isDown ? 1 : 0) - (k.UP.isDown ? 1 : 0) + (pad?.dy ?? 0)) : 0;
-      this.world.step(dt, { dx, dy, use: this.useNext }); this.useNext = false;
+      if (this.state === 'play') this.tryAutoSkills();
+      this.world.step(dt, { dx, dy, use: this.useNext, autoAttack: Settings.autoAttack }); this.useNext = false;
       this.cds = this.cds.map(c => Math.max(0, c - dt));
       this.saveT += dt; if (this.saveT > 15) { this.saveT = 0; this.saveGame(); }
     }
