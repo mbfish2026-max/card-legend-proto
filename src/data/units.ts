@@ -21,7 +21,8 @@ export const ENEMIES: Record<string, UnitDef> = {
   deer: n('deer', '鹿', 1, 60, 6, 0, 22, [{ item: 'meat', chance: 0.5 }, G(0.5), { item: 'cloth', chance: 0.12 }], { deathSfx: 'deer_death' }),
   bat: n('bat', '蝙蝠', 2, 80, 9, 1, 28, [G(0.5), { item: 'hp_small', chance: 0.25 }, { item: 'boots', chance: 0.08 }], { deathSfx: 'death', card: card({ figureScale: 1.0 }) }),
   wolf: n('wolf', '狼', 3, 140, 12, 2, 40, [{ item: 'chicken', chance: 0.4 }, { item: 'hp_small', chance: 0.3 }, { item: 'iron_ring', chance: 0.12 }, { item: 'wood_sword', chance: 0.1 }], { deathSfx: 'death2', card: card({ anchorX: 0.56 }) }),
-  wolf_king: b('wolf_king', 'boss_wolf_king', '狼王', 6, 900, 20, 5, 260, [{ item: 'iron_sword', chance: 1 }, { item: 'helmet', chance: 0.8 }, { item: 'hp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'death2' }),
+  // 首图削弱 [适配]：血 900→680（-24%）、攻 20→13（-35%），9 种子网格搜索选出（中位数 3/2/1、最大 9）；首图可反复刷
+  wolf_king: b('wolf_king', 'boss_wolf_king', '狼王', 6, 680, 13, 5, 260, [{ item: 'iron_sword', chance: 1 }, { item: 'helmet', chance: 0.8 }, { item: 'hp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'death2' }),
   // R11 第3层 蛛网晶洞（数值随层位调整：沿用原第 3 层强度）
   spider: n('spider', '洞穴蜘蛛', 9, 380, 26, 7, 90, [G(0.5), { item: 'mp_small', chance: 0.3 }, { item: 'bracelet', chance: 0.1 }, { item: 'boots', chance: 0.08 }], { deathSfx: 'death' }),
   spider_queen: b('spider_queen', 'boss_spider_queen', '蜘蛛女王', 13, 3200, 44, 12, 900, [{ item: 'magic_staff', chance: 1 }, { item: 'tao_sword', chance: 1 }, { item: 'pearl', chance: 0.8 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1)], { deathSfx: 'death' }),

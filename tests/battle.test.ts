@@ -970,4 +970,45 @@ console.log('# 诱惑之光');
   { const w = mk([{ id: 'deer', x: 600 }], [], 'mage', 20); const s = w.toSave(); const w2 = new World(seeded(1), 1, w.floors, 'mage', s);
     ok(w2.pets.length === 0 && w2.hero!.alive, '旧档/存档读入无宠物残留'); }
 }
+{ // feat/first-map-farm：首图练级
+  const { FARM_RESPAWN } = await import('../src/data/world');
+  ok(FLOORS[0].farm === true && FLOORS.slice(1).every(f => !f.farm), '只有第 1 层是练级图');
+  ok(ENEMIES.wolf_king.hp < 900 * DIFF.bossHp && ENEMIES.wolf_king.atk < Math.round(20 * 1.4 * DIFF.bossAtk), '狼王已削弱');
+  const w = new World(seeded(5), 3, FLOORS, 'warrior'); w.requireUse = true;
+  const n0 = w.alive('enemy').filter(u => u.tier !== 'boss').length;
+  for (const u of w.alive('enemy')) w.kill(u); w.step(0.05);
+  ok(w.cleared && w.farmQueue.length === n0, '清图后小怪进入刷新队列');
+  w.hero!.x = 3600; for (let t = 0; t < FARM_RESPAWN + 1; t += 0.05) w.step(0.05);
+  ok(w.floorIndex === 0 && w.alive('enemy').filter(u => u.tier !== 'boss').length > 0, '清完仍可刷（小怪刷新，不强制进下一层）');
+  ok(!w.alive('enemy').some(u => u.tier === 'boss'), 'BOSS 不随小怪刷新（重进地图才刷）');
+  w.loadFloor(0); ok(w.alive('enemy').some(u => u.tier === 'boss') && w.farmQueue.length === 0, '重进首图：BOSS 与小怪重置');
+  const w2 = new World(seeded(5), 30, FLOORS, 'warrior'); w2.loadFloor(1); const k = w2.alive('enemy')[0]; w2.kill(k); ok(w2.farmQueue.length === 0, '其他层不刷新');
+  const sv = w.toSave(); ok(new World(seeded(5), 1, FLOORS, 'warrior', sv).floorIndex === 0, '旧档兼容');
+}
+{ // feat/bag-200
+  ok(WORLD.bagSize === 200, '背包 200 格');
+  const w = new World(seeded(9), 10, FLOORS, 'warrior'); w.gold = 99999;
+  const old = w.toSave(); old.bag = Array.from({ length: 30 }, () => w.makeItem('bone'));
+  const w2 = new World(seeded(9), 10, FLOORS, 'warrior', old); ok(w2.bag.length === 30 && w2.buyBook !== undefined, '旧档 30 格背包读入不变');
+  w.bag = Array.from({ length: 199 }, () => w.makeItem('bone'));
+  ok(w.storage.length === 0 && w.buyOil() === null && w.bag.length === 200, '199 格时仍可购买');
+  ok(w.buyOil() !== null && w.bag.length === 200, '满 200 格不能再买');
+  w.ground.push(w.rollDrop('wood_sword', undefined, w.hero!.x, w.hero!.y)); w.ground[w.ground.length - 1].landAt = 0; w.step(0.05);
+  ok(w.bag.length === 200 && w.ground.some(g => g.item === 'wood_sword') && w.drainEvents().some(e => e.type === 'log' && /满/.test((e as any).text)), '满包拾取提示且物品留在地上');
+  ok(w.sellItem(0) > 0 && w.bag.length === 199, '满包可出售');
+}
+// 画质/分辨率（feat/hd-resolution）
+{
+  const { resolveResK, RES_OPTIONS, isResId, hdFixed, Render, toLogic } = await import('../src/render');
+  ok(RES_OPTIONS.map(r => r.k).join() === '1,1.5,2', '三档 720p/1080p/2K 倍率 1/1.5/2');
+  ok(resolveResK('720', 3, 844, 390, true) === 1 && resolveResK('1440', 1, 1280, 720, false) === 2, '手动档位优先');
+  ok(resolveResK('auto', 1, 1280, 720, false) === 1, '自动：1x 屏 1280 宽 → 720p');
+  ok(resolveResK('auto', 2, 1280, 720, false) === 2, '自动：2x 屏 → 2K');
+  ok(resolveResK('auto', 1, 1920, 1080, false) === 1.5, '自动：1080p 显示器 → 1080p');
+  ok(resolveResK('auto', 3, 844, 390, true) === 1.5, '自动：手机最高 1080p');
+  ok(resolveResK(undefined, 1, 1280, 720, false) === 1 && resolveResK('bogus', 1, 1280, 720, false) === 1, '旧设置无 res/非法值 → 自动');
+  ok(isResId('auto') && isResId('1080') && !isResId('4k') && !isResId(null), 'isResId 校验');
+  Render.k = 2; const o = hdFixed({ x: 0, y: 0 }); ok(o.x === 640 && o.y === 360 && toLogic(1280) === 640, 'k=2 屏幕固定物体平移/坐标换算');
+  Render.k = 1; const o1 = hdFixed({ x: 5, y: 6 }); ok(o1.x === 5 && o1.y === 6, 'k=1 不变');
+}
 console.log(`全部通过 ${pass} 项`);

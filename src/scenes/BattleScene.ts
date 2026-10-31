@@ -1,3 +1,4 @@
+import { hdFixed } from '../render';
 import { REGIONS } from '../data/map';
 import { fmtExp } from '../data/expCurve';
 import { floorKeys, PreloadScene } from '../loader';
@@ -60,7 +61,7 @@ export class BattleScene extends Phaser.Scene {
     for (let x = 0; x < W * 1.3; x += 140 + ((x * 7919) % 170)) { const h = 40 + ((x * 31) % 70); fg.fillStyle(0x060405, 0.95).fillTriangle(x - 26, 0, x + 26, 0, x + ((x % 3) - 1) * 6, h); fg.fillStyle(0x060405, 0.9).fillTriangle(x + 18, 0, x + 40, 0, x + 30, h * 0.55); }
     fg.fillStyle(0x060405, 0.95).fillRect(0, 0, W * 1.3, 8);
     this.add.particles(0, 0, '__WHITE', { x: { min: 0, max: W }, y: { min: 80, max: 560 }, speedX: { min: -8, max: 8 }, speedY: { min: -12, max: -3 }, lifespan: 6000, scale: { start: 1.6, end: 0 }, alpha: { start: 0.35, end: 0 }, frequency: 90, tint: 0xffe0b0 }).setDepth(39);
-    const vg = this.add.graphics().setScrollFactor(0).setDepth(38);
+    const vg = hdFixed(this.add.graphics().setScrollFactor(0).setDepth(38));
     vg.fillGradientStyle(0x000000, 0x000000, 0x000000, 0x000000, 0.55, 0.55, 0, 0).fillRect(0, 0, 1280, 110);
     vg.fillGradientStyle(0x000000, 0, 0x000000, 0, 0.5, 0, 0.5, 0).fillRect(0, 0, 140, 720);
     vg.fillGradientStyle(0, 0x000000, 0, 0x000000, 0, 0.5, 0, 0.5).fillRect(1140, 0, 140, 720);
@@ -158,8 +159,8 @@ export class BattleScene extends Phaser.Scene {
     if (need.length) { need.forEach(k => this.load.image(k, `assets/town/${k}.${k === 'bg_far' || k === 'ground_strip' ? 'jpg' : 'png'}`)); this.load.once('complete', () => { if (this.world.town === id) this.buildStreet(id); }); this.load.start(); }
     const C = this.street = this.add.container(0, 0).setDepth(3), W = TOWN_W, has = (k: string) => this.textures.exists(k);
     // 远景（0.3x 视差，固定在屏幕上平铺滚动）
-    if (has('bg_far')) { const far = this.add.tileSprite(0, 0, 1280, 720, 'bg_far').setOrigin(0).setScrollFactor(0).setTileScale(K); this.streetFar = far; C.add(far); }
-    else { const far = this.add.graphics().setScrollFactor(0); far.fillGradientStyle(0x6ab0ff, 0x6ab0ff, 0xc8e8a0, 0xc8e8a0, 1).fillRect(0, 0, 1280, 720); C.add(far); }
+    if (has('bg_far')) { const far = hdFixed(this.add.tileSprite(0, 0, 1280, 720, 'bg_far').setOrigin(0).setScrollFactor(0).setTileScale(K)); this.streetFar = far; C.add(far); }
+    else { const far = hdFixed(this.add.graphics().setScrollFactor(0)); far.fillGradientStyle(0x6ab0ff, 0x6ab0ff, 0xc8e8a0, 0xc8e8a0, 1).fillRect(0, 0, 1280, 720); C.add(far); }
     // 地面（原 y=720~1080 → 480~720，平铺）
     if (has('ground_strip')) C.add(this.add.tileSprite(0, 720 * K, W, 360 * K, 'ground_strip').setOrigin(0).setTileScale(K));
     else C.add(this.add.rectangle(0, 720 * K, W, 360 * K, 0x9a8a70).setOrigin(0));

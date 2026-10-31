@@ -1,4 +1,5 @@
 import { COMPANION_UNLOCK_LEVEL, RECRUIT_DIALOG } from '../data/companion';
+import { toLogic } from '../render';
 import { RING_MIN_LEVEL, IDENT_PRICE, IDENT_MIN_LEVEL } from '../data/r14b';
 import { fmtExp, scaledExp } from '../data/expCurve';
 import Phaser from 'phaser';
@@ -8,6 +9,7 @@ import { EQUIP_SLOTS, EQUIP_SLOT_NAMES, SLOT_NAMES, STAT_NAMES, ITEMS, SETS, ENH
 import { OIL_PRICE } from '../combat/World';
 import { POTIONS } from '../data/skills';
 import { WORLD } from '../data/world';
+export const BAG_PAGE = 30;
 import { CLASSES, CLASS_IDS } from '../data/classes';
 import { renderSettingsView } from './SettingsView';
 import { txt, button, sfx } from '../scenes/TitleScene';
@@ -36,6 +38,8 @@ export class Panel {
   region: string | null = null;
   /** 背包选中的黑铁矿石下标：下一次点装备栏即强化 */
   ironIdx: number | null = null;
+  /** 背包分页（200 格，每页 BAG_PAGE 格） */
+  bagPage = 0;
   /** 商店分页：杂货 / 书店（R11 技能书） */
   shopTab: 'goods' | 'books' = 'goods';
   onTeleport?: () => void;
@@ -178,8 +182,15 @@ export class Panel {
   private renderBag(R: Phaser.GameObjects.Container, top: number) {
     const s = this.s, w = this.world(), cols = 6, size = 56, x0 = 600, y0 = top + 100;
     R.add(txt(s, x0 - size / 2, top + 50, `背包 ${w.bag.length}/${WORLD.bagSize}`, 15, '#ffe8a0'));
-    for (let i = 0; i < WORLD.bagSize; i++) {
-      const it = w.bag[i], x = x0 + (i % cols) * (size + 6), y = y0 + Math.floor(i / cols) * (size + 6);
+    const pages = Math.ceil(WORLD.bagSize / BAG_PAGE); this.bagPage = Math.max(0, Math.min(pages - 1, this.bagPage));
+    const go = (d: number) => { this.bagPage = (this.bagPage + d + pages) % pages; this.sel = null; this.render(); };
+    R.add([...button(s, x0 + 150, top + 52, 40, 30, '◀', () => go(-1), 15)]);
+    R.add(txt(s, x0 + 175, top + 50, `${this.bagPage + 1}/${pages}`, 15, '#ffe8a0'));
+    R.add([...button(s, x0 + 250, top + 52, 40, 30, '▶', () => go(1), 15)]);
+    R.add([...button(s, x0 + 300, top + 52, 50, 30, '末页', () => { this.bagPage = Math.floor(Math.max(0, w.bag.length - 1) / BAG_PAGE); this.render(); }, 13)]);
+    const p0 = this.bagPage * BAG_PAGE;
+    for (let i = p0; i < Math.min(WORLD.bagSize, p0 + BAG_PAGE); i++) {
+      const it = w.bag[i], k = i - p0, x = x0 + (k % cols) * (size + 6), y = y0 + Math.floor(k / cols) * (size + 6);
       this.slotBox(R, x, y, size, it, '', right => {
         if (this.mode === 'shop' || this.npcKind() && this.npcKind() !== 'storage') { const g = w.sellItem(i); sfx(s, 'coin'); this.onChange(`出售 ${it!.name} 获得 ${g} 金币`, true); }
         else if (this.npcKind() === 'storage') { const e = w.deposit(i); this.onChange(e ?? `存入 ${it!.name}`, !e); }
@@ -339,10 +350,10 @@ export class Panel {
       });
       apply();
       // 拖动 / 双指缩放 / 滚轮缩放（桌面与手机通用）
-      const inV = (p: Phaser.Input.Pointer) => p.x >= VX && p.x <= VX + VW && p.y >= VY && p.y <= VY + VH;
+      const inV = (p: Phaser.Input.Pointer) => toLogic(p.x) >= VX && toLogic(p.x) <= VX + VW && toLogic(p.y) >= VY && toLogic(p.y) <= VY + VH;
       s.input.addPointer(1);
       let pinch = 0;
-      const onDown = (p: Phaser.Input.Pointer) => { if (inV(p)) { downAt = { x: p.x, y: p.y }; moved = 0; } };
+      const onDown = (p: Phaser.Input.Pointer) => { if (inV(p)) { downAt = { x: toLogic(p.x), y: toLogic(p.y) }; moved = 0; } };
       const onMove = (p: Phaser.Input.Pointer) => {
         const p1 = s.input.pointer1, p2 = s.input.pointer2;
         if (p1?.isDown && p2?.isDown) {
@@ -352,11 +363,11 @@ export class Panel {
         }
         pinch = 0;
         if (!downAt || !p.isDown) return;
-        const dx = p.x - p.prevPosition.x, dy = p.y - p.prevPosition.y; moved += Math.abs(dx) + Math.abs(dy);
+        const dx = toLogic(p.x) - toLogic(p.prevPosition.x), dy = toLogic(p.y) - toLogic(p.prevPosition.y); moved += Math.abs(dx) + Math.abs(dy);
         this.view = clampView({ ...this.view!, x: this.view!.x + dx, y: this.view!.y + dy }, VW, VH); apply();
       };
       const onUp = () => { downAt = null; pinch = 0; s.time.delayedCall(0, () => { moved = 0; }); };
-      const onWheel = (p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => { if (!inV(p)) return; this.view = zoomAt(this.view!, p.x - VX, p.y - VY, dy > 0 ? 0.9 : 1.1, VW, VH); apply(); };
+      const onWheel = (p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => { if (!inV(p)) return; this.view = zoomAt(this.view!, toLogic(p.x) - VX, toLogic(p.y) - VY, dy > 0 ? 0.9 : 1.1, VW, VH); apply(); };
       s.input.on('pointerdown', onDown); s.input.on('pointermove', onMove); s.input.on('pointerup', onUp); s.input.on('wheel', onWheel);
       this.mapOff.push(() => { s.input.off('pointerdown', onDown); s.input.off('pointermove', onMove); s.input.off('pointerup', onUp); s.input.off('wheel', onWheel); mk.destroy(); });
       const zb = (f: number) => { this.view = zoomAt(this.view!, VW / 2, VH / 2, f, VW, VH); apply(); };

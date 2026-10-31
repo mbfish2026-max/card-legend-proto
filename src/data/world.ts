@@ -31,14 +31,16 @@ export const WORLD = {
   rarityRoll: { magic: 0.3, rare: 0.1 },
   affix: { magic: 0.5, rare: 1.2 },
   goldAmount: [5, 40] as [number, number],
-  bagSize: 30,
+  bagSize: 200, // feat/bag-200：用户要求扩到 200 格（[适配]；原版格数此处未查证）；面板分页 30 格/页
   deathGoldLoss: 0.1,          // 死亡损失金币比例
   summonLane: -36,             // 召唤物站位（纵深偏后）
 };
 export interface Spawn { id: string; x: number; y?: number }
-export interface Floor { name: string; spawns: Spawn[]; boss?: boolean; bg?: string; /** R11 对应原版区域（docs/legend-research.md「地图递进」） */ zone?: string }
+export interface Floor { name: string; spawns: Spawn[]; boss?: boolean; bg?: string; /** R11 对应原版区域（docs/legend-research.md「地图递进」） */ zone?: string; /** 练级图：小怪死后定时原地刷新（[适配]，见 FARM_RESPAWN） */ farm?: boolean }
+/** 练级图小怪刷新间隔（秒）。官方各图刷怪间隔未查到 → [适配] 20s，且主角在 400px 内时顺延，避免贴脸刷出 */
+export const FARM_RESPAWN = 20, FARM_SAFE_DIST = 400;
 export const FLOORS: Floor[] = [
-  { name: '幽暗森林', bg: 'bg_floor1', boss: true, zone: '比奇省·新手村周边（原版 1–7 级）', spawns: [
+  { name: '幽暗森林', bg: 'bg_floor1', boss: true, farm: true, zone: '比奇省·新手村周边（原版 1–7 级）', spawns: [
     { id: 'deer', x: 800 }, { id: 'deer', x: 900, y: 20 },
     { id: 'bat', x: 1500 }, { id: 'wolf', x: 1620, y: -15 },
     { id: 'wolf', x: 2300 }, { id: 'bat', x: 2400, y: -20 }, { id: 'deer', x: 2480, y: 15 },
