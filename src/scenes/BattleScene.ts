@@ -1,3 +1,4 @@
+import { overview, posBar } from '../data/mapOverview';
 import { foesWithoutView } from '../ui/foeViews';
 import { hdFixed, Render, MAX_LW } from '../render';
 import { ComboStatusTracker, COMBO_STATUS } from '../ui/comboStatus';
@@ -793,7 +794,11 @@ export class BattleScene extends Phaser.Scene {
     const pw = { atk: '攻击', mag: '魔法', tao: '道术' }[w.classDef.autoStat];
     const info = `${w.classDef.name} Lv${w.level}   经验 ${fmtExp(w.exp)}/${fmtExp(w.expNext)}   金币 ${w.gold}   ${pw} ${st[w.classDef.autoStat]}  防御 ${Math.round(st.def)}   第 ${floorNo(w.floorIndex, w.floors)}/${w.floors.length} 层`;
     this.hud?.update(dt, h?.hp ?? 0, h?.maxHp ?? st.hp, h?.mp ?? 0, h?.maxMp ?? st.mp, this.cds, dead, w.pots, info);
+    if (this.hud) { this.hud.onOverview ??= () => this.hud!.toggleOverview(this.mapOverview()); this.hud.setPos(this.mapPos()); }
   }
+  /** 地图总览/位置条数据（城内与自定义层表不显示） */
+  mapOverview() { const w = this.world; return w.town || w.floors !== FLOORS ? null : overview(w.floorIndex); }
+  mapPos() { const w = this.world; return w.town || w.floors !== FLOORS || !w.hero ? null : posBar(w.floorIndex, w.hero.x); }
   end() {
     if (this.state === 'win') return; this.state = 'win'; this.cameras.main.fadeIn(500, 0, 0, 0); SaveStore.clear(); playMusic(this, 'title'); this.ui?.panel?.close();
     const ui = this.scene.get('UI'), w = this.world;
