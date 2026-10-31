@@ -1,3 +1,4 @@
+import { foesWithoutView } from '../ui/foeViews';
 import { hdFixed, Render, MAX_LW } from '../render';
 import { ComboStatusTracker, COMBO_STATUS } from '../ui/comboStatus';
 import { REGIONS } from '../data/map';
@@ -127,7 +128,7 @@ export class BattleScene extends Phaser.Scene {
     }
     this.handle(w.drainEvents());
     // 号角召出的沃玛教主、第一张图的刷新怪不发 summon 事件：补建缺失的视图，避免「有怪无图」
-    if (!w.town) for (const u of w.alive('enemy')) if (!this.views.has(u.uid)) { const v = new CardView(this, u); v.setAlpha(0); this.tweens.add({ targets: v, alpha: 1, duration: 400 }); this.views.set(u.uid, v); }
+    this.ensureFoeViews();
     this.views.forEach(v => { v.x = v.unit.x; v.sync(); });
     const last = es.filter(e => e.tier !== 'boss').pop();
     if (last && !qs.has('nodrop')) { last.drops = [{ item: 'gold', chance: 1 }, { item: 'hp_small', chance: 1 }, { item: 'iron_sword', chance: 1, rarity: 'rare' }]; w.kill(last); this.handle(w.drainEvents()); }
@@ -678,6 +679,10 @@ export class BattleScene extends Phaser.Scene {
       return;
     }
   }
+  /** 存活怪物都要有卡牌：练级图（farm）刷新怪、号角召出的怪等不发 summon 事件，逐帧补建缺失视图，避免「看不到的怪在攻击我」 */
+  ensureFoeViews() {
+    for (const u of foesWithoutView(this.world, uid => this.views.has(uid))) { const v = new CardView(this, u); v.x = u.x; v.setAlpha(0); this.tweens.add({ targets: v, alpha: 1, duration: 400 }); this.views.set(u.uid, v); }
+  }
   update(time: number, dms: number) {
     const dt = Math.min(0.05, dms / 1000), k = this.keys;
     if (this.skillsDirty && !this.paused) { this.skillsDirty = false; this.cds = this.world.skills.map(() => 0); this.scene.stop('UI'); this.scene.launch('UI'); }
@@ -693,6 +698,7 @@ export class BattleScene extends Phaser.Scene {
       this.saveT += dt; if (this.saveT > 15) { this.saveT = 0; this.saveGame(); }
     }
     this.handle(this.world.drainEvents());
+    this.ensureFoeViews();
     this.layoutQueue();
     this.comboStatus.sync(this.world.time, uid => this.views.get(uid)?.unit);
     this.views.forEach(v => { v.sync(); v.anim(time); v.setDepth(10 + v.unit.y / 1000 + (v.unit.isHero ? 0.0005 : 0)); });
