@@ -12,6 +12,7 @@ import { POTIONS } from '../data/skills';
 import { FX, FONT, GROUND_Y } from '../data/fx';
 import { WORLD, FLOORS, nextFloorOf, floorNo } from '../data/world';
 import { ClassId, CLASSES } from '../data/classes';
+import { playCombatAnim } from '../ui/combatAnim';
 import { CardView } from '../ui/CardView';
 import { Hud } from '../ui/Hud';
 import { PanelMode } from '../ui/Panel';
@@ -380,9 +381,8 @@ export class BattleScene extends Phaser.Scene {
   handle(evs: BattleEvent[]) {
     for (const e of evs) {
       if (e.type === 'attack') {
-        if (e.skill) continue;
-        const sv = this.views.get(e.source), tv = this.views.get(e.target); if (!sv || !tv) continue;
-        const dir = tv.x >= sv.x ? 1 : -1; sv.swing(dir); sv.lunge(dir, 18);
+        const r = playCombatAnim(e, uid => this.views.get(uid)); if (r?.kind !== 'attack') continue;
+        const sv = r.sv as CardView, tv = r.tv as CardView, dir = r.dir;
         if (sv.unit.isHero) playFx(this, 'fx_common_slash', sv.cx + dir * sv.w * 0.25, sv.cy - 10, { tint: SLASH_TINT[this.world.cls], flip: dir < 0, decorative: this.world.cls !== 'warrior' });
         if (sv.unit.isHero && this.world.cls !== 'warrior') fx.projectile(this, sv.cx + dir * 30, sv.cy - 20, tv.cx, tv.cy, this.world.cls === 'mage' ? 'fire' : 'talisman', () => { if (this.world.cls !== 'mage' || !playFx(this, 'fx_common_explosion', tv.cx, tv.cy, { scale: 0.7, decorative: true })) fx.hitSpark(this, tv.cx, tv.cy); });
         else if (sv.unit.isHero && this.textures.exists('fx_common_slash')) { /* 已播放图集挥砍 */ }
@@ -391,8 +391,9 @@ export class BattleScene extends Phaser.Scene {
         const v = this.views.get(e.target); if (!v) continue;
         const y = v.cy - v.h * 0.15;
         if (e.heal) { fx.floatNumber(this, v.cx, y, v.h, '+' + e.amount, FX.healColor, 0.8); continue; }
-        if (e.dot) { fx.floatNumber(this, v.cx + 20, y, v.h, '-' + e.amount, '#5aff3a', 0.7); v.hit(); continue; }
-        v.hit(); if (!playFx(this, 'fx_common_hitspark', v.cx, v.cy)) fx.hitSpark(this, v.cx, v.cy);
+        playCombatAnim(e, uid => this.views.get(uid)); // 受击动作（主角/怪物/召唤物同一套）
+        if (e.dot) { fx.floatNumber(this, v.cx + 20, y, v.h, '-' + e.amount, '#5aff3a', 0.7); continue; }
+        if (!playFx(this, 'fx_common_hitspark', v.cx, v.cy)) fx.hitSpark(this, v.cx, v.cy);
         fx.floatNumber(this, v.cx, y, v.h, '-' + e.amount + (e.crit ? '!' : ''), e.crit ? '#ff5a1a' : FX.dmgColor, e.crit ? FX.critScale : 1);
         if (e.crit && !FxQuality.low) this.cameras.main.shake(80, 0.003);
         if (e.source !== undefined) this.sfx(v.unit.isHero ? 'hit_hero' : e.crit ? 'swing_crit' : 'hit', 0.35);

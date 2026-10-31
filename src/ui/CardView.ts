@@ -163,14 +163,14 @@ export class CardView extends Phaser.GameObjects.Container {
     const ex = this.scene.add.text(this.x, this.y - this.h - 8, '!', { fontFamily: FONT, fontSize: '40px', color: '#ffdd00', fontStyle: 'bold', stroke: '#600', strokeThickness: 5 }).setOrigin(0.5, 1).setDepth(70);
     this.scene.tweens.add({ targets: ex, y: ex.y - 10, duration: 120, yoyo: true });
     this.scene.time.delayedCall(sec * 1000 + 200, () => ex.destroy());
-    if (this.art instanceof Phaser.GameObjects.Image) { this.art.setTint(0xffa060); this.scene.time.delayedCall(sec * 1000, () => { if (!this.dying && this.art.active) (this.art as Phaser.GameObjects.Image).clearTint(); }); }
+    if (this.art instanceof Phaser.GameObjects.Image) { this.art.setTint(0xffa060); this.scene.time.delayedCall(sec * 1000, () => { if (!this.dying && this.art.active) { (this.art as Phaser.GameObjects.Image).clearTint(); this.curStatus = -1; } }); }
   }
   private reset() { const a = this.art; this.scene.tweens.killTweensOf(a); a.setPosition(this.artX, this.artY).setAngle(0).setScale(this.artSX, this.artSY); }
   /** 普攻：卡框不动，立绘向前冲、前倾、横向拉伸 */
   swing(dir: number) {
     this.reset(); const a = this.art;
     this.scene.tweens.add({ targets: a, x: this.artX + dir * FX.portraitSwingDx, angle: dir * FX.portraitSwingAngle, scaleX: this.artSX * 1.08, scaleY: this.artSY * 0.96,
-      duration: FX.portraitSwingMs / 2, yoyo: true, ease: 'Quad.easeOut' });
+      duration: FX.portraitSwingMs / 2, yoyo: true, ease: 'Quad.easeOut', onComplete: () => { if (!this.dying) a.setPosition(this.artX, this.artY).setAngle(0).setScale(this.artSX, this.artSY); } });
   }
   /** 跳跃补位：整卡弧线跃起再落地 */
   leaping = false;
@@ -187,7 +187,7 @@ export class CardView extends Phaser.GameObjects.Container {
   windup(dir: number) {
     this.reset(); const a = this.art;
     this.scene.tweens.add({ targets: a, x: this.artX - dir * FX.windupBackDx, angle: -dir * 6, scaleX: this.artSX * 1.06, scaleY: this.artSY * 1.06, duration: FX.windupMs, yoyo: true, hold: 40 });
-    if (a instanceof Phaser.GameObjects.Image) { a.setTint(FX.windupGlow); this.scene.time.delayedCall(FX.windupMs * 2, () => { if (!this.dying) a.clearTint(); }); }
+    if (a instanceof Phaser.GameObjects.Image) { a.setTint(FX.windupGlow); this.scene.time.delayedCall(FX.windupMs * 2, () => { if (!this.dying) { a.clearTint(); this.curStatus = -1; } }); }
   }
   /** 受击：立绘闪色 + 后仰压缩 + 整卡水平震动 */
   hit() {
@@ -196,7 +196,7 @@ export class CardView extends Phaser.GameObjects.Container {
     this.flash.setFillStyle(0xffffff, 0.25).setAlpha(1);
     this.scene.tweens.add({ targets: this.flash, alpha: 0, duration: FX.hitFlashMs });
     const dir = this.unit.facing;
-    this.scene.tweens.add({ targets: this.art, angle: -dir * 4, scaleY: this.artSY * 0.95, duration: FX.hitShakeMs / 2, yoyo: true, onComplete: () => { this.art.setAngle(0); } });
+    this.scene.tweens.add({ targets: this.art, angle: -dir * 4, scaleY: this.artSY * 0.95, duration: FX.hitShakeMs / 2, yoyo: true, onComplete: () => { this.art.setAngle(0); this.art.scaleY = this.artSY; } });
     this.scene.tweens.killTweensOf(this.inner); this.inner.x = 0;
     const amp = this.w * FX.hitShakeRatio, kb = -dir * 10;
     // 受击后退：整卡往后弹 10px 再回位

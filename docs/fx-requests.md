@@ -98,3 +98,14 @@
 - 宠物标识：当前用卡面粉色着色 + 粉色等级字占位；需要 `ui_pet_badge`（卡面角标）时在 CardView 接入。
 - 飘字：诱惑成功（粉）/诱惑失败（灰）/免疫（灰）/叛变（红），用现有 floatNumber，无需素材。
 - 音效：复用 `shockwave`。
+
+## 召唤物动作（feat/summon-anim）
+现状：召唤骷髅/召唤神兽/诱惑之光宠物的攻击与受伤，复用主角/怪物同一套 CardView 动作（attack 事件 → `swing` 立绘前冲前倾 + `lunge` 整卡突进 18px；damage 事件 → `hit` 闪白→偏红、后仰压缩、整卡后退震动 + 受击火花 + 飘字）。无专用帧，缺素材不报错。
+可选美术/特效交付（有则替换占位，命名放 `public/assets/fx/`，图集 png+json，帧名 `<key>_00..`）：
+| key | 用途 | 尺寸/帧 | 混合 |
+|---|---|---|---|
+| fx_skeleton_claw | 骷髅挥砍弧（替代 Graphics 挥砍） | 256×256，8 帧 @20fps | ADD |
+| fx_beast_bite | 神兽撕咬/爪击 | 256×256，8 帧 @20fps | ADD |
+| fx_pet_hit_pink | 宠物攻击命中（粉色调） | 192×192，6 帧 @20fps | ADD |
+| summon_skeleton_atk / summon_beast_atk | 立绘攻击姿势单帧（与现立绘同尺寸、同脚底锚点） | 同立绘，1 帧 | NORMAL |
+| summon_skeleton_hurt / summon_beast_hurt | 立绘受击后仰单帧 | 同立绘，1 帧 | NORMAL |

@@ -15,6 +15,7 @@ import { TOWNS, NODE_TOWN, WEAPON_GOODS, ARMOR_GOODS, GENERAL_GOODS, STORAGE_SIZ
 import { resolveLayers, pickTexture, comboKey, changedSlots, fallbackId } from '../src/data/equipLayers';
 // @ts-ignore 测试运行于 node（tsx），项目未装 @types/node
 import { existsSync } from 'node:fs';
+import { playCombatAnim, AnimView } from '../src/ui/combatAnim';
 import { Settings, DEFAULT_AUTO_SKILLS, ZOOM_MIN, ZOOM_MAX, ZOOM_STEP, fitScale } from '../src/settings';
 let pass = 0; const ok = (c: boolean, m: string) => { if (!c) { console.error('FAIL', m); throw new Error(m); } pass++; console.log('ok', m); };
 function seeded(s: number) { return () => (s = (s * 16807) % 2147483647) / 2147483647; }
@@ -382,6 +383,29 @@ const free = (w: World) => w.skills.map(() => 0);
     ok(median(rs.map(r => r.potUsed)) >= 3, `${CLASSES[c].name} 通关需要吃药（红药中位数 ${median(rs.map(r => r.potUsed))} 瓶）`);
     if (!process.env.SIM) ok(rs.every(r => r.done && r.deaths <= PASS_MAX_DEATHS), `${CLASSES[c].name} 每个种子都可通关全部层且死亡 ≤ ${PASS_MAX_DEATHS}（${rs.map(r => (r.done ? '' : '未通关') + r.deaths).join('/')}）`);
   }
+}
+{ // 召唤物攻击/受伤动作：与主角/怪物同一套事件→动画分发（纯表现）
+  const runAnim = (kind: 'summon_skeleton' | 'summon_beast' | 'pet') => {
+    const w = mk([{ id: 'zombie', x: 900 }, { id: 'deer', x: 3000 }], [], 'taoist', 45); const h = w.hero!; h.hp = h.maxHp = 1e9; h.mp = h.maxMp = 1e9;
+    let sm: any;
+    if (kind === 'pet') { sm = w.alive('enemy').find(e => e.id === 'deer')!; Object.assign(sm, { team: 'ally', summon: true, pet: true, petUntil: 1e9, ai: 'chase', y: WORLD.summonLane, x: 700, facing: 1 }); }
+    else { ok(w.cast(idx(w, kind), free(w)).ok, `${kind} 召唤`); sm = w.units.find(u => u.summon && u.alive); }
+    const z = w.alive('enemy').find(e => e.id === 'zombie')!; z.hp = z.maxHp = 1e9; z.ai = 'chase'; sm.hp = sm.maxHp = 1e9;
+    const calls: Record<string, string[]> = {}; const views = new Map<number, AnimView>();
+    const get = (uid: number) => { const u = w.units.find(x => x.uid === uid); if (!u) return undefined; if (!views.has(uid)) { const l = calls[uid] = [] as string[]; views.set(uid, { unit: u, get x() { return u.x; }, swing: () => l.push('swing'), lunge: () => l.push('lunge'), hit: () => l.push('hit') }); } return views.get(uid); };
+    const snap = () => JSON.stringify([sm.hp, sm.atk, sm.def, z.hp, z.atk]);
+    let before = '', after = '';
+    for (let i = 0; i < 400; i++) { h.x = z.x - 600; w.step(0.05); for (const e of w.drainEvents()) { before = snap(); playCombatAnim(e, get); after = snap(); if (before !== after) throw new Error('动画改变了数值'); } }
+    return { calls: calls[sm.uid] ?? [], sm };
+  };
+  for (const k of ['summon_skeleton', 'summon_beast', 'pet'] as const) {
+    const { calls } = runAnim(k);
+    ok(calls.includes('swing') && calls.includes('lunge'), `${k} 攻击触发 swing+lunge（${calls.filter(c => c === 'swing').length} 次）`);
+    ok(calls.includes('hit'), `${k} 受击触发 hit（${calls.filter(c => c === 'hit').length} 次）`);
+  }
+  const nv = { unit: {} as any, x: 0, swing() {}, lunge() {}, hit() {} };
+  ok(playCombatAnim({ type: 'damage', target: 1, amount: 5, x: 0, heal: true } as any, () => nv) === null, '治疗不播受击');
+  ok(playCombatAnim({ type: 'attack', source: 1, target: 2, skill: 'fireball' } as any, () => nv) === null, '技能攻击走技能表现');
 }
 { // 难度曲线：怪物强度倍率已上调
   ok(DIFF.atk > 1 && DIFF.bossAtk > 1 && ENEMIES.boss_lich.atk > ENEMIES.orc_chief.atk, '难度倍率上调且首领逐层变强');
