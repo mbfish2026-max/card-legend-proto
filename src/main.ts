@@ -6,7 +6,7 @@ import { UIScene } from './scenes/UIScene';
 import { IS_MOBILE, setupMobile, enableMobileOnTouch } from './mobile';
 import { Settings } from './settings';
 import { FxQuality } from './ui/Fx';
-import { Render, resolveResK, LOGIC_W, LOGIC_H } from './render';
+import { Render, resolveResK, LOGIC_W, LOGIC_H, logicWidthFor, fixedShiftX } from './render';
 Settings.load();
 Settings.applyZoom();
 // 虚拟按键：手机端 showPadMobile===null 即默认开（Settings.wantPad），不写死进存档，避免电脑设置污染手机
@@ -15,13 +15,17 @@ FxQuality.low = !!Settings.lowFx;
 setupMobile(); enableMobileOnTouch();
 // 画质：画布 = 1280k×720k，各场景相机 zoom=k 居中，逻辑坐标不变；文字按 k 倍分辨率栅格化
 const K = Render.k = resolveResK(Settings.res, window.devicePixelRatio || 1, window.innerWidth, window.innerHeight, IS_MOBILE);
+// 手机铺满（docs/mobile-ui.md「铺满方案」）：逻辑高 720 不变，逻辑宽按可视区（visualViewport，含地址栏收起/展开）宽高比扩展
+const vp = () => { const v = window.visualViewport; return { w: v?.width || window.innerWidth, h: v?.height || window.innerHeight }; };
+const isMob = () => !!(window as any).__mobile || IS_MOBILE;
+{ const v = vp(); Render.lw = logicWidthFor(v.w, v.h, IS_MOBILE); Render.ox = (Render.lw - LOGIC_W) / 2; }
 const origText = Phaser.GameObjects.GameObjectFactory.prototype.text;
 Phaser.GameObjects.GameObjectFactory.prototype.text = function (this: Phaser.GameObjects.GameObjectFactory, ...a: Parameters<typeof origText>) { const t = origText.apply(this, a); if (K !== 1) t.setResolution(K); return t; };
 const origMake = Phaser.GameObjects.GameObjectCreator.prototype.text;
 Phaser.GameObjects.GameObjectCreator.prototype.text = function (this: Phaser.GameObjects.GameObjectCreator, ...a: Parameters<typeof origMake>) { const t = origMake.apply(this, a); if (K !== 1) t.setResolution(K); return t; };
 // 逻辑分辨率固定 1280×720，Scale.FIT 等比缩放居中，适配不同手机比例（画布像素与 devicePixelRatio 无关，手机上不会按 3x 渲染）
 const game = new Phaser.Game({
-  type: Phaser.AUTO, width: LOGIC_W * K, height: LOGIC_H * K, parent: 'game', backgroundColor: '#111',
+  type: Phaser.AUTO, width: Render.lw * K, height: LOGIC_H * K, parent: 'game', backgroundColor: '#111',
   // 720p 维持原 pixelArt（最近邻）；高档位：素材多为手绘插画（非像素画），非整数倍放大时最近邻粗细不均，改线性过滤 + 抗锯齿
   pixelArt: K === 1, antialias: K !== 1, roundPixels: K === 1,
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
@@ -29,12 +33,35 @@ const game = new Phaser.Game({
   scene: [TitleScene, BattleScene, UIScene, PreloadScene],
 });
 // 每个场景 create 后：相机 zoom=k；非跟随相机把视口中心对准逻辑中心（跟随相机由 Phaser 按 zoom 计算）
-if (K !== 1) game.events.once('ready', () => { for (const sc of game.scene.scenes) sc.sys.events.on('create', () => { const c = sc.cameras.main; c.setZoom(K); if (!(c as any)._follow) c.centerOn(LOGIC_W / 2, LOGIC_H / 2); }); });
+if (K !== 1 && !IS_MOBILE) game.events.once('ready', () => { for (const sc of game.scene.scenes) sc.sys.events.on('create', () => { const c = sc.cameras.main; c.setZoom(K); if (!(c as any)._follow) c.centerOn(LOGIC_W / 2, LOGIC_H / 2); }); });
+/** 手机：相机尺寸=加宽画布；非跟随相机把 1280 内容居中（两侧显示延伸背景）；sf0 屏幕固定物体按 fixedShiftX 补偿（宽度变化时增量修正） */
+function shiftFixed(list: any[]) {
+  const want = fixedShiftX();
+  for (const o of list) {
+    if (o.list && Array.isArray(o.list)) shiftFixed(o.list);
+    if (o.scrollFactorX === 0 && typeof o.x === 'number') { const cur = o.__hx ?? 0; if (cur !== want) { o.x += want - cur; o.__hx = want; } }
+  }
+}
+function fitCam(sc: Phaser.Scene) {
+  const c = sc.cameras?.main; if (!c) return;
+  c.setSize(Render.lw * K, LOGIC_H * K); c.setZoom(K);
+  if (!(c as any)._follow) c.centerOn(LOGIC_W / 2, LOGIC_H / 2);
+  shiftFixed(sc.children.list); sc.events.emit('fill-resize', Render.lw);
+}
+function applyFill() {
+  if (!isMob()) return;
+  const v = vp(), lw = logicWidthFor(v.w, v.h, true);
+  if (lw !== Render.lw) { Render.lw = lw; Render.ox = (lw - LOGIC_W) / 2; game.scale.setGameSize(lw * K, LOGIC_H * K); }
+  game.scale.refresh(); // 地址栏收起/展开：父容器尺寸变了也要重算 FIT
+  for (const sc of game.scene.getScenes(true)) fitCam(sc);
+}
+if (IS_MOBILE) game.events.once('ready', () => { for (const sc of game.scene.scenes) { sc.sys.events.on('create', () => fitCam(sc)); sc.sys.events.on('preupdate', () => shiftFixed(sc.children.list)); } });
+(window as any).__applyFill = applyFill; (window as any).__render = Render;
 (window as any).__game = game; (window as any).__mobile = IS_MOBILE;
 // 画布创建后再应用一次缩放
 game.events.once('ready', () => { Settings.applyZoom(); document.getElementById('boot')?.remove(); });
 // 尺寸变化/旋转实时重算（iOS 旋转后视口晚到，补两次）
-const reflow = () => { Settings.applyZoom(); setTimeout(() => Settings.applyZoom(), 120); setTimeout(() => Settings.applyZoom(), 400); };
+const reflow = () => { applyFill(); setTimeout(applyFill, 120); setTimeout(applyFill, 400); Settings.applyZoom(); setTimeout(() => Settings.applyZoom(), 120); setTimeout(() => Settings.applyZoom(), 400); };
 window.addEventListener('resize', reflow);
 window.addEventListener('orientationchange', reflow);
 window.visualViewport?.addEventListener('resize', reflow);

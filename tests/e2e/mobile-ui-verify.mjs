@@ -32,7 +32,7 @@ try {
     const ids = g.map(e => e.id); chk(new Set(ids.filter(i => i !== 'b')).size === ids.filter(i => i !== 'b').length, `${W}×${H} 无重复入口`);
     // 主角不被控件遮挡
     const hero = await p.evaluate(() => { const B = window.__game.scene.getScene('Battle'), h = B.world.hero, v = B.views.get(h.uid), cam = B.cameras.main, cv = window.__game.canvas.getBoundingClientRect();
-      const bb = v.getBounds(); return { x: cv.left + (bb.x - cam.scrollX) * cv.width / 1280, y: cv.top + (bb.y - cam.scrollY) * cv.height / 720, w: bb.width * cv.width / 1280, h: bb.height * cv.height / 720 }; });
+      const bb = v.getBounds(); const wv = cam.worldView, sx = cv.width / wv.width, sy = cv.height / wv.height; return { x: cv.left + (bb.x - wv.x) * sx, y: cv.top + (bb.y - wv.y) * sy, w: bb.width * sx, h: bb.height * sy }; }); // 铺满后可视宽≠1280：按相机 worldView 换算
     const cover = g.filter(e => e.x < hero.x + hero.w - 4 && e.x + e.w > hero.x + 4 && e.y < hero.y + hero.h - 4 && e.y + e.h > hero.y + 4).map(e => e.id);
     chk(cover.length === 0, `${W}×${H} 主角未被遮挡 ${cover.join(',')}`);
     await p.screenshot({ path: `${dir}/m-${W}x${H}-hud.png` });
@@ -63,7 +63,7 @@ try {
       const pi = await p.evaluate(() => { const P = window.__game.scene.getScene('UI').panel; const hud = document.getElementById('mhud').classList.contains('off');
         let close = null, minF = 99; const walk = l => l.forEach(o => { if (o.type === 'Text' && o.visible) { if (o.text === '✕') close = o; minF = Math.min(minF, parseFloat(o.style.fontSize) * (o.parentContainer?.scaleX ?? 1)); } if (o.list) walk(o.list); });
         walk(P.root?.list ?? []); const cv = window.__game.canvas.getBoundingClientRect(), k = cv.height / 720;
-        let cb = null; if (close) { const r = P.root.list[P.root.list.indexOf(close) - 1]; const bb = r.getBounds(); cb = { x: cv.left + bb.x * k, y: cv.top + bb.y * k, w: bb.width * k, h: bb.height * k }; }
+        let cb = null; if (close) { const r = P.root.list[P.root.list.indexOf(close) - 1]; const bb = r.getBounds(); const wv = window.__game.scene.getScene('UI').cameras.main.worldView; cb = { x: cv.left + (bb.x - wv.x) * k, /* 铺满：扣除居中偏移 */ y: cv.top + bb.y * k, w: bb.width * k, h: bb.height * k }; }
         return { open: P.open, mode: P.mode, hud, cb, minPx: minF * k }; });
       await p.screenshot({ path: `${dir}/m-${W}x${H}-panel-${id}.png` });
       chk(pi.open && pi.hud, `${W}×${H} ${id} 面板打开（HUD 让位） mode=${pi.mode}`);

@@ -38,3 +38,22 @@
 - 竖屏提示、`?mobile=0`、桌面 1280×720 与 main 的对象清单和像素对比。
 
 未在真机（iOS Safari / Android Chrome）测试，只用 Chromium 的触屏模拟验证。
+
+## 铺满方案（feat/mobile-fill）
+- **尺寸**：手机模式（IS_MOBILE）读取 `visualViewport.width/height`，缺省时用 innerWidth×innerHeight。
+  - 逻辑宽 `lw = clamp(round(720 × w / h), 1280, 2016)`，逻辑高恒为 720。
+  - 画布为 `lw·k × 720·k`，Phaser `Scale.FIT` 等比铺满。
+  - 在 resize、orientationchange 和 visualViewport resize 时调用 `applyFill()`，内部用 `scale.setGameSize` 加 `refresh`。iPhone 地址栏展开（844×345 → lw 1761）和收起（844×390 → lw 1558）都会实时重排。
+- **战斗**：相机宽度改为 lw，能看到更多场景；World 坐标、碰撞、怪物位置都不变。相机边界仍由 `setBounds(0,0,层宽,720)` 夹紧，Phaser 按新相机宽度计算。背景本来就沿整层镜像平铺。
+- **非跟随相机**（标题、UI 面板）：`centerOn(640,360)`，1280 内容居中，`Render.ox = (lw − 1280) / 2`。
+  - 两侧露出延伸背景：标题背景按 2016 宽铺满并裁切，面板遮罩为 2016 宽。
+- **屏幕固定物体（sf0）**：统一用 `fixedShiftX() = (k−1)·lw/2 + ox` 补偿。hdFixed 会记下 `__hx`；main.ts 每帧对 sf0 物体增量修正，宽度变化后也会跟着改。
+- **暗角**：按 ox 画到真实屏幕边缘；远景 tileSprite 和渐变按 2016 宽绘制。
+- **输入**：Phaser 指针自动换算；Panel 自己的拖动/滚轮用 `toLogicX`，已扣除 ox。
+- **安全区**：手机模式下 #game 不再加 padding，画布铺到刘海下面。HUD 按钮是 DOM，用 `env(safe-area-inset-*)`（--sl/--sr/--st/--sb）避开刘海。
+- **电脑**：lw 恒为 1280，代码路径和 main 相同；1280×720 截图与 main 的差异为 0.03%（≤0.1%）。
+- **验证**：
+  - `node tests/e2e/mobile-fill-verify.mjs` 覆盖 932×430、844×390、1024×470、667×375、844×345（地址栏展开 → 收起）、932×380（地址栏展开 → 收起），以及 844×390 加刘海 47/47/21（CDP Emulation.setSafeAreaInsetsOverride）。
+  - 检查项：画布铺满、逻辑宽、等比、两侧不是纯色黑边、HUD 避开刘海、无报错。
+  - 截图在 /workspace/shared-mobile/shots/mf-*.png。
+- **未验证**：iPhone 真机 Safari（刘海实测、地址栏动画过程中的抖动）；首次触摸才切成手机模式的设备要等下一次 resize 才会铺满。
