@@ -386,7 +386,14 @@ export class BattleScene extends Phaser.Scene {
         if (sv.unit.isHero) playFx(this, 'fx_common_slash', sv.cx + dir * sv.w * 0.25, sv.cy - 10, { tint: SLASH_TINT[this.world.cls], flip: dir < 0, decorative: this.world.cls !== 'warrior' });
         if (sv.unit.isHero && this.world.cls !== 'warrior') fx.projectile(this, sv.cx + dir * 30, sv.cy - 20, tv.cx, tv.cy, this.world.cls === 'mage' ? 'fire' : 'talisman', () => { if (this.world.cls !== 'mage' || !playFx(this, 'fx_common_explosion', tv.cx, tv.cy, { scale: 0.7, decorative: true })) fx.hitSpark(this, tv.cx, tv.cy); });
         else if (sv.unit.isHero && this.textures.exists('fx_common_slash')) { /* 已播放图集挥砍 */ }
-        else fx.slash(this, sv.x + dir * (sv.w / 2 + 6), sv.cy - 10, sv.h, dir);
+        else {
+          // 召唤物专属攻击特效（docs/fx-requests.md 召唤物动作 / v5）；缺图退回原 Graphics 挥砍
+          const u = sv.unit, fx0 = sv.x + dir * (sv.w / 2 + 6);
+          const ok = u.pet ? !!playFx(this, 'fx_pet_hit_pink', tv.cx, tv.cy)
+            : u.summon && u.id === 'summon_skeleton' ? !!playFx(this, 'fx_skeleton_claw', fx0, sv.cy - 10, { flip: dir < 0 })
+            : u.summon && u.id === 'summon_beast' ? !!playFx(this, 'fx_beast_bite', tv.cx, tv.cy) : false;
+          if (!ok) fx.slash(this, fx0, sv.cy - 10, sv.h, dir);
+        }
       } else if (e.type === 'damage') {
         const v = this.views.get(e.target); if (!v) continue;
         const y = v.cy - v.h * 0.15;
