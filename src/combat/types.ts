@@ -41,10 +41,16 @@ export interface Unit extends UnitDef {
   redUntil?: number;
   /** R13 官方 BOSS 机制状态（沃玛发呆/狂暴、瞬移计时；祖玛召唤；赤月地刺） */
   boss?: BossState;
+  /** feat/balance-battle 药水：冷却就绪时间、持续回复队列 */
+  potReady?: number; mpReady?: number; hots?: Hot[];
   mag?: number; tao?: number;
   homeX: number; homeY: number; ai: AIState; alertT: number; facing: 1 | -1; moving: boolean;
 }
-export interface BossState { stage: number; dazeUntil: number; crazyUntil: number; crazyOn: boolean; flyT: number; summonT: number; spikeT: number; spikeX?: number; spikeAt?: number; minions: number[] }
+/** 药水持续回复 */
+export interface Hot { hp: number; mp: number; next: number; left: number }
+export interface BossState { stage: number; dazeUntil: number; crazyUntil: number; crazyOn: boolean; flyT: number; summonT: number; spikeT: number; spikeX?: number; spikeAt?: number; minions: number[];
+  /** feat/balance-battle 通用 BOSS 机制 [适配]：狂暴截止/已触发、AOE 计时与落点、召唤已触发 */
+  enrageUntil?: number; enraged?: boolean; aoeT?: number; aoeX?: number; aoeAt?: number; called?: boolean }
 export type Rarity = 'common' | 'magic' | 'rare';
 export interface ItemDef { id: string; name: string; icon: string; potion?: number; slot?: Slot; equip?: Partial<Stats>; req?: number; price?: number; set?: string; /** 技能书：对应技能 id */ book?: string; /** 职业限制（空 = 通用） */ cls?: ('warrior' | 'mage' | 'taoist')[]; /** 合击版：火龙之心（英雄栏专属） */ heart?: boolean; /** 合击版：补充怒槽/火龙之心的量 */ rage?: number }
 /** 背包/装备栏里的一件物品 */
@@ -72,5 +78,5 @@ export type BattleEvent =
   | { type: 'charm'; uid: number; result: 'ok' | 'fail' | 'immune' | 'high' | 'betray' }
   | { type: 'respawn' }
   | { type: 'inventory' }
-  | { type: 'bossfx'; uid: number; kind: 'spark' | 'fireball' | 'spike_warn' | 'spike' | 'daze' | 'crazy' | 'fly' | 'call'; x: number; target?: number }
+  | { type: 'bossfx'; uid: number; kind: 'spark' | 'fireball' | 'spike_warn' | 'spike' | 'daze' | 'crazy' | 'fly' | 'call' | 'enrage' | 'aoe_warn' | 'aoe'; x: number; target?: number }
   | { type: 'log'; text: string; color?: 'white' | 'green' };

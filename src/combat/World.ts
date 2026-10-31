@@ -8,15 +8,15 @@ import { sortBag } from './bagSort';
 // 自动战斗与技能、召唤物、掉落/背包/装备/商店、死亡复活、存档序列化。
 import { BattleEvent, EquipSlot, GroundItem, InvItem, Rarity, Slot, Stats, Team, Unit, UnitDef } from './types';
 import { POTIONS } from '../data/skills';
-import { CLASSES, ClassId, SkillDef, CAST_GAP } from '../data/classes';
+import { CLASSES, ClassId, SkillDef, castGapOf } from '../data/classes';
 import { ITEMS, SLOTS, SETS, equipSlotsFor, EQUIP_VERSION, ENHANCE_SLOTS, ENHANCE_MAX, ENHANCE_STAT, IRON_PRICE, IRON_MAX_PURITY, enhanceChance, shatterChance } from '../data/items';
 import { HERO, ENEMIES, SUMMON, SUMMON_BEAST, SUMMON_CORPSE, SUMMON_GOLDEN, DECOY } from '../data/units';
 import { EXP_PER_LEVEL, EXP_VERSION, migrateExp, scaledExp, fmtExp } from '../data/expCurve';
-import { killExp, foeStatsAt } from '../data/balance';
+import { killExp, foeStatsAt, FLOOR_TARGET_LV } from '../data/balance';
 import '../data/drop-plan';
 import { REGIONS } from '../data/map';
 import { MINE_FLOORS, MINE_CAST, MINE_RESPAWN, MINE_RADIUS, mineX, minePurity, OIL_BOSSES, OIL_RATE } from '../data/mining'; // 阶段4：drop-plan 覆盖（副作用：改写 ENEMIES.drops）
-import { WORLD, FLOORS, Floor, FARM_RESPAWN, FARM_SAFE_DIST, nextFloorOf, SIDE_FLOORS, DEPTH_STEP, prevLayerOf, prevFloorOf, floorWidth, OLD_MAP_W } from '../data/world';
+import { WORLD, FLOORS, Floor, FARM_RESPAWN, FARM_SAFE_DIST, nextFloorOf, SIDE_FLOORS, DEPTH_STEP, prevLayerOf, prevFloorOf, floorWidth, OLD_MAP_W, summonMulAt } from '../data/world';
 /** 任务 A：待机怪离主角超过「半屏 + 2 屏」即休眠 */
 export const SLEEP_DIST = 640 + 2 * 1280;
 import { TOWNS, townFloors, townOfFloor, returnTownOf, STORAGE_SIZE, townWidth, TOWN_GATE_X, GATE_RANGE, TOWN_SPAWN_X, DOOR_RANGE, streetDoors } from '../data/towns';
@@ -139,10 +139,17 @@ const ZERO: Stats = { hp: 0, mp: 0, atk: 0, mag: 0, tao: 0, def: 0, mdef: 0 };
 
 /**
  * 防御结算（[适配] 卡牌化）：物理部分按防御、魔法部分按魔御（MAC）减免，各部分减免量按占比分摊：
- *   伤害 = Σ max(部分×20%, 部分 − 对应防御×defFactor×占比)；magic=0 与旧公式完全一致。
+ *   伤害 = Σ max(部分×dmgFloor, 部分 − 对应防御×defFactor×占比)；magic=0 与旧公式完全一致。
+ *   feat/balance-battle：dmgFloor 20%→30%、defFactor 0.6→0.5（首图沿用旧值，见 World.newbieFloor）。
  */
-export function mitigate(amount: number, def: number, mdef: number, magic = 0): number {
-  const m = Math.max(0, Math.min(1, magic)), red = (a: number, d: number, w: number) => w <= 0 ? 0 : Math.max(a * w * 0.2, a * w - d * WORLD.defFactor * w);
+/** 等级差修正（balance-plan B [适配]）：攻击方等级 − 受击方等级 = d；d>0 ×(1+0.03d)，d<0 ×max(0.7, 1+0.02d) */
+export function lvDiffMult(atkLv: number, defLv: number): number {
+  const d = atkLv - defLv; return d >= 0 ? 1 + WORLD.lvDiffUp * d : Math.max(WORLD.lvDiffMin, 1 + WORLD.lvDiffDown * d);
+}
+/**
+ */
+export function mitigate(amount: number, def: number, mdef: number, magic = 0, floorPct = WORLD.dmgFloor, f = WORLD.defFactor): number {
+  const m = Math.max(0, Math.min(1, magic)), red = (a: number, d: number, w: number) => w <= 0 ? 0 : Math.max(a * w * floorPct, a * w - d * f * w);
   return red(amount, def, 1 - m) + red(amount, mdef, m);
 }
 export class World {
@@ -485,6 +492,19 @@ export class World {
     const bs = this.floors === FLOORS ? foeStatsAt(id, this.floorIndex) : null; // balance-sys：按层目标等级生成面板（新手图豁免）
     if (bs) { u.level = bs.level; u.hp = u.maxHp = bs.hp; u.atk = bs.atk; u.def = bs.def; }
     else if (d > 1) { const k = 1 + DEPTH_STEP * (d - 1); u.hp = u.maxHp = Math.round(u.hp * k); u.atk = Math.round(u.atk * k); }
+    // feat/balance-battle：BOSS 攻击 = 同层普通怪均值 ×bossAtkVsNormal（取 max）、血 = 均值 ×bossHpVsNormal（取 min）[适配]；攻击间隔 1.5→1.2s。首图豁免
+    // 普通怪均值：主线取 balance-sys 的 foeStatsAt 面板；自定义层取 ENEMIES×深度系数
+    if (u.tier === 'boss' && !this.newbieFloor) {
+      const kd = d > 1 ? 1 + DEPTH_STEP * (d - 1) : 1;
+      const ns = this.floor.spawns.map(s => s.id).filter(sid => ENEMIES[sid] && ENEMIES[sid].tier !== 'boss')
+        .map(sid => (this.floors === FLOORS ? foeStatsAt(sid, this.floorIndex) : null) ?? { hp: ENEMIES[sid].hp * kd, atk: ENEMIES[sid].atk * kd });
+      if (bs) u.atk = Math.round(u.atk * (FLOOR_TARGET_LV[this.floorIndex] <= WORLD.bossEarlyLv ? WORLD.bossAtkEarly : FLOOR_TARGET_LV[this.floorIndex] <= WORLD.bossMidLv ? WORLD.bossAtkMid : WORLD.bossAtkLate)); // 主线：在 balance-sys 面板上乘倍率（早期 BOSS 削弱）
+      else if (ns.length) u.atk = Math.max(u.atk, Math.round(WORLD.bossAtkVsNormal * ns.reduce((a, x) => a + x.atk, 0) / ns.length));
+      if (ns.length) {
+        u.hp = u.maxHp = Math.min(u.maxHp, Math.round(WORLD.bossHpVsNormal * ns.reduce((a, x) => a + x.hp, 0) / ns.length));
+      }
+      if (!bs || FLOOR_TARGET_LV[this.floorIndex] >= WORLD.bossMechMinLv) u.atkInterval = Math.min(u.atkInterval, WORLD.bossAtkInterval); // 主线早中期层保留原攻速（1.2s 在 尸王殿 造成死亡螺旋）
+    }
     return u; }
   /** 子层：返回同图群上一层（仅非战斗、已到达过该层时可用），出生在起点 */
   upLayer(): string { const p = prevLayerOf(this.floorIndex, this.floors); if (p < 0) return '没有上一层';
@@ -528,7 +548,11 @@ export class World {
     if (!target.alive) return 0;
     const crit = canCrit && this.rng() < (source?.isHero ? this.critChance() : CRIT_CHANCE);
     if (crit) amount *= CRIT_MULT;
-    if (!ignoreDef) { const up = (u?: number, v?: number) => u && u > this.time ? v ?? 0 : 0; amount = mitigate(amount, (target.def ?? 0) + up(target.defUpUntil, target.defUp), (target.mdef ?? target.def ?? 0) + up(target.mdefUpUntil, target.mdefUp), magic); }
+    const nb = this.newbieFloor;
+    if (source?.boss?.enrageUntil && source.boss.enrageUntil > this.time) amount *= 1 + WORLD.bossEnrageAtk; // BOSS 狂暴 +30%
+    if (!ignoreDef) { const up = (u?: number, v?: number) => u && u > this.time ? v ?? 0 : 0; amount = mitigate(amount, (target.def ?? 0) + up(target.defUpUntil, target.defUp), (target.mdef ?? target.def ?? 0) + up(target.mdefUpUntil, target.mdefUp), magic, nb ? WORLD.legacyDmgFloor : WORLD.dmgFloor, nb ? WORLD.legacyDefFactor : WORLD.defFactor); }
+    // 等级差修正：仅「怪物 → 主角/英雄」（balance-plan B 只定义了主角受伤）；首图豁免
+    if (!nb && source && source.team === 'enemy' && (target.isHero || target.companion)) amount *= lvDiffMult(source.level ?? 1, target.isHero ? this.level : this.companion?.level ?? this.level);
     if (target.redUntil && target.redUntil > this.time) amount *= 1 + OFFICIAL.redAmp; // R13 红毒
     if (target.vulnUntil && target.vulnUntil > this.time) amount *= 1 + (target.vulnPhys ?? 0) * (1 - magic) + (target.vulnMag ?? 0) * magic; // 阶段 B 合击受伤加深 [适配]
     if (target.armorUntil && target.armorUntil > this.time) amount *= 1 - (target.armorReduce ?? 0.5);
@@ -587,8 +611,8 @@ export class World {
   }
   /** 召唤物等级 → 属性（相对初始等级按官方 HP/攻击上限比例放大）、名字「骷髅·3级」、名字颜色 */
   applySummonLv(u: Unit) {
-    const b = u.sBase!, L = u.sLv ?? 0, O = SKELETON_OFFICIAL, r = u.maxHp > 0 ? u.hp / u.maxHp : 1;
-    u.maxHp = u.hp = Math.round(b.hp * O.hp[L] / O.hp[b.start]); u.hp = Math.round(u.maxHp * r); u.atk = Math.round(b.atk * O.atkMax[L] / O.atkMax[b.start]);
+    const b = u.sBase!, L = u.sLv ?? 0, O = SKELETON_OFFICIAL, hm = summonMulAt(this.level, WORLD.summonHpMul), am = summonMulAt(this.level, WORLD.summonAtkMul), r = u.maxHp > 0 ? u.hp / u.maxHp : 1;
+    u.maxHp = u.hp = Math.round(hm * b.hp * O.hp[L] / O.hp[b.start]); u.hp = Math.round(u.maxHp * r); u.atk = Math.round(am * b.atk * O.atkMax[L] / O.atkMax[b.start]);
     u.name = `${b.name}·${L}级`; u.nameColor = SUMMON_NAME_COLORS[L];
   }
   private summonKill() {
@@ -647,7 +671,7 @@ export class World {
       });
       this.ground.push(...items); this.events.push({ type: 'drop', uid: u.uid, x: u.x, y: u.y, items });
     }
-    this.gainExp(killExp(u.id, this.floorIndex, this.level, u.level ?? 1) * this.clearMindMult()); // balance-sys：官方经验 × 层倍率 × 等级差衰减
+    this.gainExp(killExp(u.id, this.floorIndex, this.level, u.level ?? 1) * this.clearMindMult()); // balance-sys：官方经验 × 层倍率 × 等级差衰减；main：道心清明双倍经验
     if (!this.alive('enemy').length && !this.cleared && !this.womaPending) { this.cleared = true; this.events.push({ type: 'cleared' }); }
   }
   /** 道心清明（被动）：击杀几率双倍经验；未学 = 1（不消耗随机数） */
@@ -994,7 +1018,7 @@ export class World {
       }
     }
     if (s.area && s.kind === 'buff') targets = [h, ...this.units.filter(u => u.summon && u.alive && Math.abs(u.x - h.x) <= s.area!)];
-    h.mp = (h.mp ?? 0) - s.mana; for (let j = 0; j < cds.length; j++) cds[j] = Math.max(cds[j], CAST_GAP); cds[i] = Math.max(cds[i], s.cooldown); // 公共施法间隔 0.8s + 本技能轻量冷却（手动/自动共用）
+    h.mp = (h.mp ?? 0) - s.mana; for (let j = 0; j < cds.length; j++) cds[j] = Math.max(cds[j], castGapOf(this.cls)); cds[i] = Math.max(cds[i], s.cooldown); // 公共施法间隔 0.8s + 本技能轻量冷却（手动/自动共用）
     this.events.push({ type: 'attack', source: h.uid, target: targets[0]?.uid ?? h.uid, skill: s.id });
     this.addTrain(s, 100);
     const pw = this.power(s.stat) * this.skillScale() * (s.lvMult ? 1 : lvF);
@@ -1094,6 +1118,14 @@ export class World {
     }
     return { ok: true, targets: targets.map(t => t.uid), skill: s.id, kind: s.kind };
   }
+  /** 药水 HoT：总量 hp/mp 在 potHotSec 内分 potHotTicks 跳回复 */
+  addHot(u: Unit, hp: number, mp: number) { (u.hots ??= []).push({ hp: hp / WORLD.potHotTicks, mp: mp / WORLD.potHotTicks, next: this.time, left: WORLD.potHotTicks }); }
+  tickHots(u: Unit) {
+    if (!u.hots?.length) return;
+    for (const x of u.hots) while (x.left > 0 && this.time >= x.next - 1e-9) { x.left--; x.next += WORLD.potHotSec / WORLD.potHotTicks;
+      if (x.hp) this.heal(u, x.hp); if (x.mp) u.mp = Math.min(u.maxMp, (u.mp ?? 0) + x.mp); }
+    u.hots = u.hots.filter(x => x.left > 0);
+  }
   /** 己方负面状态（主角/召唤物）：中毒、红毒、减速、定身 */
   debuffed(): Unit[] { const t = this.time; return this.units.filter(u => u.alive && u.team === 'ally' && ((u.poisonUntil ?? 0) > t || (u.redUntil ?? 0) > t || (u.slowUntil ?? 0) > t || (u.stunUntil ?? 0) > t)); }
   /** 解毒术/神光术：按技能等级几率解除 area 内己方负面状态（lootRng，不扰动主随机序列） */
@@ -1116,9 +1148,9 @@ export class World {
     const p = POTIONS[i], h = this.hero;
     if (!p?.item || !h || this.pots[i] <= 0) return null;
     if ((p.hp && h.hp >= h.maxHp && !p.mp) || (p.mp && (h.mp ?? 0) >= h.maxMp && !p.hp)) return null;
-    this.pots[i]--;
-    if (p.hp) this.heal(h, p.hp);
-    if (p.mp) h.mp = Math.min(h.maxMp, (h.mp ?? 0) + p.mp);
+    if ((p.hp && this.time < (h.potReady ?? 0)) || (p.mp && this.time < (h.mpReady ?? 0))) return null; // 1s 冷却（红/蓝各自独立，[适配]）
+    this.pots[i]--; if (p.hp) h.potReady = this.time + WORLD.potCd; if (p.mp) h.mpReady = this.time + WORLD.potCd;
+    this.addHot(h, p.hp ?? 0, p.mp ?? 0);
     return ITEMS[p.item].name;
   }
 
@@ -1227,9 +1259,11 @@ export class World {
     const c = this.companion!, tb = this.potTable();
     for (const need of ['hp', 'mp'] as const) {
       const low = need === 'hp' ? u.hp < u.maxHp * COMPANION_POT_HP : u.maxMp > 0 && (u.mp ?? 0) < u.maxMp * COMPANION_POT_MP; if (!low) continue;
+      if (this.time < ((need === 'hp' ? u.potReady : u.mpReady) ?? 0)) continue; // 与主角同规则：红/蓝各 1s 冷却 + HoT
+      if (u.hots?.some(x => need === 'hp' ? x.hp > 0 : x.mp > 0)) continue; // 回复中不重复喝
       const i = pickPotion(c, need, tb); if (i < 0) continue; const it = c.bag[i], p = tb[it.item];
       if ((it.qty ?? 1) > 1) it.qty!--; else c.bag.splice(i, 1);
-      if (p.hp) this.heal(u, p.hp); if (p.mp) u.mp = Math.min(u.maxMp, (u.mp ?? 0) + p.mp);
+      if (p.hp) u.potReady = this.time + WORLD.potCd; if (p.mp) u.mpReady = this.time + WORLD.potCd; this.addHot(u, p.hp ?? 0, p.mp ?? 0);
       this.events.push({ type: 'log', text: `英雄使用 ${it.name}` }, { type: 'inventory' });
     }
   }
@@ -1431,7 +1465,7 @@ export class World {
       } else if (u.ai === 'chase' && (!h || Math.abs(u.x - h.x) > WORLD.leashRange || Math.abs(u.x - u.homeX) > WORLD.leashRange * 1.5)) {
         u.ai = 'return'; this.events.push({ type: 'leash', uid: u.uid });
         // BOSS 脱战：清除发呆/狂暴/飞身/地刺预警等计时残留；阶段 stage 随保留的血量保留，不会重复触发
-        if (u.boss) Object.assign(u.boss, { dazeUntil: 0, crazyUntil: 0, crazyOn: false, flyT: 0, spikeX: undefined, spikeT: OFFICIAL.spikeEvery });
+        if (u.boss) Object.assign(u.boss, { dazeUntil: 0, crazyUntil: 0, crazyOn: false, flyT: 0, spikeX: undefined, spikeT: OFFICIAL.spikeEvery, enrageUntil: 0, aoeX: undefined, aoeT: WORLD.bossAoeEvery });
       }
     }
     if (h) for (const side of [1, -1]) {
@@ -1492,6 +1526,7 @@ export class World {
       }
     }
     if (h && h.alive && this.companion?.out) this.companionStep(dt, h);
+    for (const u of this.units) if (u.alive && u.hots?.length) this.tickHots(u);
     if (h && h.alive) this.bossStep(dt, h);
     if (h && h.alive) {
       const side = this.meleeSide();
@@ -1548,8 +1583,48 @@ export class World {
       else this.loadFloor(nextFloorOf(this.floorIndex, this.floors));
     }
   }
+  /**
+   * feat/balance-battle 通用 BOSS 机制（balance-plan I，全部 [适配]；官方无统一机制，各 BOSS 官方机制优先）：
+   * - 狂暴：血量 ≤50% 触发一次，8 秒内攻击 +30%（沃玛教主已有官方发呆/狂暴，不叠加）
+   * - AOE：每 12 秒在主角当前位置预警 1 秒，半径 260 内受 18% 最大生命（无视防御，走开可躲；仅无官方机制的 BOSS）
+   * - 召唤：血量 ≤50% 召唤 2 只同层普通怪（0 经验/掉落；仅无官方机制的 BOSS，祖玛教主保留官方召唤）
+   */
+  bossGeneric(dt: number, h: Unit) {
+    for (const b of this.alive('enemy')) {
+      if (b.tier !== 'boss' || b.ai !== 'chase' || b.pet) continue;
+      const m = b.boss ??= { stage: 0, dazeUntil: 0, crazyUntil: 0, crazyOn: false, flyT: 0, summonT: 0, spikeT: OFFICIAL.spikeEvery, minions: [] };
+      const half = b.hp <= b.maxHp * WORLD.bossEnrageAt, official = BOSS_MECH.has(b.id);
+      const ea = this.floors !== FLOORS || WORLD.bossMainEnrageAoe; // 主线默认关（9 种子：开 0.15/0.08 战士中位 9→18）
+      if (ea && half && !m.enraged && b.id !== 'boss_woma') {
+        m.enraged = true; m.enrageUntil = this.time + WORLD.bossEnrageSec;
+        this.events.push({ type: 'bossfx', uid: b.uid, kind: 'enrage', x: b.x }, { type: 'log', text: `${b.name}狂暴了！攻击 +30%（8 秒）` });
+      }
+      if (official) continue;
+      if (half && !m.called) {
+        m.called = true; const pool = this.floor.spawns.map(s => s.id).filter(id => ENEMIES[id] && ENEMIES[id].tier !== 'boss');
+        for (let k = 0; k < WORLD.bossCallN && pool.length; k++) {
+          const base = ENEMIES[pool[k % pool.length]];
+          const u = this.spawn({ ...base, exp: 0, drops: [], setDrop: undefined, oilChance: 0 }, 'enemy', b.x + (k ? -1 : 1) * 90, b.y);
+          u.ai = 'chase'; m.minions.push(u.uid);
+          this.events.push({ type: 'summon', uid: u.uid }, { type: 'bossfx', uid: b.uid, kind: 'call', x: u.x }, { type: 'log', text: `${b.name}召唤了${base.name}` });
+        }
+      }
+      if (!ea) continue;
+      if (m.aoeX === undefined) {
+        m.aoeT = (m.aoeT ?? WORLD.bossAoeEvery) - dt;
+        if (m.aoeT <= 0) { m.aoeX = h.x; m.aoeAt = this.time + WORLD.bossAoeWarn; m.aoeT = WORLD.bossAoeEvery; this.events.push({ type: 'bossfx', uid: b.uid, kind: 'aoe_warn', x: h.x }, { type: 'log', text: `${b.name}正在蓄力范围攻击，快走开！` }); }
+      } else if (this.time >= (m.aoeAt ?? 0)) {
+        const x = m.aoeX; m.aoeX = undefined;
+        this.events.push({ type: 'bossfx', uid: b.uid, kind: 'aoe', x });
+        for (const t of [h, this.companionUnit, ...this.units.filter(u => u.summon && u.alive)]) if (t && t.alive && Math.abs(t.x - x) <= WORLD.bossAoeRadius) this.damage(t, t.maxHp * WORLD.bossAoePct / lvDiffMult(b.level ?? 1, t.isHero ? this.level : t.level ?? this.level) / (m.enrageUntil && m.enrageUntil > this.time ? 1 + WORLD.bossEnrageAtk : 1), b, false, true, true); // 精确 18%：抵消等级差/狂暴乘区
+      }
+    }
+  }
   /** R13 官方 BOSS 机制（沃玛教主 / 祖玛教主 / 赤月恶魔），来源与 [适配] 说明见 docs/combat-official.md */
+  /** 首图（主线 FLOORS 第 0 层 幽暗森林）：balance-plan 不变量，战斗系数全部保持改前值 */
+  get newbieFloor(): boolean { return this.floors === FLOORS && this.floorIndex === 0 && !this.town; }
   bossStep(dt: number, h: Unit) {
+    if (!this.newbieFloor && (this.floors !== FLOORS || FLOOR_TARGET_LV[this.floorIndex] >= WORLD.bossMechMinLv)) this.bossGeneric(dt, h); // 主线：仅目标等级 ≥bossMechMinLv 的层启用通用狂暴/AOE/召唤
     for (const b of this.alive('enemy')) {
       if (!BOSS_MECH.has(b.id) || b.ai !== 'chase') continue;
       const m = b.boss ??= { stage: 0, dazeUntil: 0, crazyUntil: 0, crazyOn: false, flyT: 0, summonT: 0, spikeT: OFFICIAL.spikeEvery, minions: [] };

@@ -342,7 +342,7 @@ export class BattleScene extends Phaser.Scene {
       return;
     }
     const pi = POTIONS.findIndex(p => p.key === k);
-    if (pi >= 0) { const n = this.world.usePotion(pi); if (n) { this.sfx('potion'); this.log(`${n}使用`, true); } }
+    if (pi >= 0) { const hh = this.world.hero, cdl = hh ? ((POTIONS[pi]?.mp && !POTIONS[pi]?.hp ? hh.mpReady : hh.potReady) ?? 0) - this.world.time : 0; const n = this.world.usePotion(pi); if (n) { this.sfx('potion'); this.log(`${n}使用（${WORLD.potHotSec} 秒内回复）`, true); } else if (cdl > 0 && this.world.pots[pi] > 0) this.log(`药水冷却中（${cdl.toFixed(1)} 秒）`); }
   }
   skillFx(skill: string, hv: CardView, targets: number[], evs: BattleEvent[]) {
     const tv = targets.map(id => this.views.get(id)).filter((v): v is CardView => !!v);
@@ -656,6 +656,17 @@ export class BattleScene extends Phaser.Scene {
       case 'crazy': tip('狂暴！', '#ff4040'); break;
       case 'fly': tip('飞！', '#ffd080'); break;
       case 'call': tip('召唤', '#ffd080'); break;
+      // feat/balance-battle 通用 BOSS 机制表现 [适配]
+      case 'enrage': tip('狂暴！攻击+30%', '#ff4040'); if (v) this.tweens.add({ targets: v, scale: 1.08, duration: 160, yoyo: true, repeat: 2 }); break;
+      case 'aoe_warn': {
+        const r = WORLD.bossAoeRadius, g = this.add.ellipse(e.x, gy, r * 2, r * 0.45, 0xff6020, 0.25).setStrokeStyle(3, 0xffa040).setDepth(8);
+        this.tweens.add({ targets: g, alpha: 0.85, duration: WORLD.bossAoeWarn * 250, yoyo: true, repeat: 1, onComplete: () => g.destroy() }); break;
+      }
+      case 'aoe': {
+        const r = WORLD.bossAoeRadius, g = this.add.ellipse(e.x, gy, r * 0.4, r * 0.1, 0xff3010, 0.8).setDepth(57);
+        this.tweens.add({ targets: g, scaleX: 5, scaleY: 4.5, alpha: 0, duration: 380, onComplete: () => g.destroy() });
+        if (!FxQuality.low) this.cameras.main.shake(140, 0.006); break;
+      }
     }
   }
   useNext = false; fading = false; portalHint!: Phaser.GameObjects.Text;

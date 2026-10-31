@@ -56,8 +56,9 @@ const hitsBy = (ev: any[], uid: number, target?: number) => ev.filter(e => e.typ
   const w = W(); const u = w.companionUnit!; w.companion!.bag.push(item('hp_strong', 2), item('mp_strong'));
   u.hp = u.maxHp * (COMPANION_POT_HP + 0.05); w.step(0.05); ok(w.companion!.bag[0].qty === 2, '阈值以上不喝');
   u.hp = Math.max(1, u.maxHp * 0.3); const h0 = u.hp; w.step(0.05); ok(u.hp > h0 && w.companion!.bag[0].qty === 1, 'HP < 50% 自动喝红');
+  for (let t = 0; t < 1.05; t += 0.05) w.step(0.05); // feat/balance-battle：药水 1s 冷却
   u.mp = 0; w.step(0.05); ok(!w.companion!.bag.some(b => b.item === 'mp_strong') && u.mp! > 0, 'MP < 30% 自动喝蓝');
-  w.companion!.bag = []; u.hp = 1; w.step(0.05); ok(u.hp < u.maxHp * 0.5, '无药不喝');
+  w.companion!.bag = []; u.hots = []; u.hp = 1; w.step(0.05); ok(u.hp < u.maxHp * 0.5, '无药不喝');
 }
 { // A4 rageTick / heartStore
   const c = newCompanion('mage', 'x'); c.out = true; rageTick(c, 10); ok(c.rage === 0, '无火龙之心不补怒');

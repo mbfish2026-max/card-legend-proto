@@ -58,7 +58,7 @@ export const CLASSES: Record<ClassId, ClassDef> = {
   warrior: {
     id: 'warrior', name: '战士', art: 'hero', bg: 0x2a2a2e, artFacing: 1, atkInterval: 1.1, autoStat: 'atk',
     // [适配] 改用官方学习等级后战士 19 级前无主动技能，提高基础/成长保持模拟死亡 1–4 次（R4 技能轮）
-    base: { hp: 800, mp: 120, atk: 70, mag: 0, tao: 0, def: 26 }, grow: { hp: 110, mp: 9, atk: 11, mag: 0, tao: 0, def: 5.5 },
+    base: { hp: 800, mp: 120, atk: 70, mag: 0, tao: 0, def: 26 }, grow: { hp: 110, mp: 9, atk: 11, mag: 0, tao: 0, def: 6.8 },
     desc: '近战肉盾，高血高防\n基本/攻杀被动 · 刺杀 · 半月 · 野蛮 · 烈火',
     skills: [
       // 被动不占 F 键；World.skills 只返回主动技能并重标 F1..
@@ -159,3 +159,17 @@ for (const c of ['mage', 'taoist'] as const) for (const s of CLASSES[c].skills) 
   s.mana = Math.round(s.mana * REBALANCE[c].mana); if (s.mult) s.mult = +(s.mult * REBALANCE[c].mult).toFixed(2);
 }
 export const CLASS_IDS: ClassId[] = ['warrior', 'mage', 'taoist'];
+/**
+ * feat/balance-battle 4/4（balance-plan 方案 G）[适配]：在上方 REBALANCE 之后再叠一层。改前值：PLAN_G_BEFORE。
+ * 法师：耗魔 ×1.3、火球/大火球倍率 ×0.9、公共施法间隔 0.8→1.0s、法师全部技能倍率再 ×mageMult；生存：HP 300+33/级 → hp/hpGrow、防御成长 1.2 → defGrow。
+ * 战士：烈火剑法冷却 4→6s、半月弯刀 2→3s。
+ */
+export const PLAN_G = { mageMana: 1.15, fireMult: 0.9, mageCastGap: 1.0, mageMult: 0.75, mageHp: 450, mageHpGrow: 140, mageDefGrow: 4.5, fireSwordCd: 6, halfMoonCd: 3 };
+export const PLAN_G_BEFORE = { mageHp: CLASSES.mage.base.hp, mageHpGrow: CLASSES.mage.grow.hp, mageDefGrow: CLASSES.mage.grow.def, mageCastGap: CAST_GAP, fireSwordCd: SKILL_CD.fire_sword, halfMoonCd: SKILL_CD.half_moon, mana: {} as Record<string, number>, mult: {} as Record<string, number> };
+for (const s of CLASSES.mage.skills) if (!s.passive) { PLAN_G_BEFORE.mana[s.id] = s.mana; if (s.mult) PLAN_G_BEFORE.mult[s.id] = s.mult;
+  s.mana = Math.round(s.mana * PLAN_G.mageMana); if (s.mult) s.mult = +(s.mult * PLAN_G.mageMult * (s.id === 'fireball' || s.id === 'big_fireball' ? PLAN_G.fireMult : 1)).toFixed(2); }
+CLASSES.mage.base.hp = PLAN_G.mageHp; CLASSES.mage.grow.hp = PLAN_G.mageHpGrow; CLASSES.mage.grow.def = PLAN_G.mageDefGrow;
+SKILL_CD.fire_sword = PLAN_G.fireSwordCd; SKILL_CD.half_moon = PLAN_G.halfMoonCd;
+for (const s of CLASSES.warrior.skills) { if (s.id === 'fire_sword') s.cooldown = PLAN_G.fireSwordCd; if (s.id === 'half_moon') s.cooldown = PLAN_G.halfMoonCd; }
+/** 公共施法间隔（按职业） */
+export const castGapOf = (c: ClassId) => c === 'mage' ? PLAN_G.mageCastGap : CAST_GAP;
