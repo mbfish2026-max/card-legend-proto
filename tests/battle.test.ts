@@ -281,7 +281,8 @@ const free = (w: World) => w.skills.map(() => 0);
       for (let i = w.bag.length - 1; i >= 0; i--) if (ITEMS[w.bag[i].item]?.book && w.learnBook(i).startsWith('学会')) { cds = w.skills.map(() => 0); learnLog.push(`${w.level}级${w.skillPool.find(x => x.id === [...w.learned].pop())!.name}@${w.floorIndex + 1}层`); }
       // #11 可选对照（NEWBOOKS=1）：模拟新法师书已接入——达到官方学习等级即学会
       if (process.env.NEWBOOKS) for (const b of Object.values(BOOKS)) if (b.cls === w.cls && !b.shop && !b.drops.length && !w.learned.has(b.skill) && w.level >= w.needLevel(w.skillPool.find(x => x.id === b.skill)!)) { w.learned.add(b.skill); cds = w.skills.map(() => 0); }
-      // 去城镇商人补药（简化：金币够就买）
+      // 去城镇商人补药（简化：金币够就买）。town-return 后战斗地图无商人，这里抽象为“随时回城补给”（回城免费），不调用战斗图商店。
+      // 实测：origin/main 2b14653 同样是战士 5/6/3/2/0/9/5/0/0（种子42=9），非本分支回归；改成仅脱战/换层补给会让战士中位数升到 5–8。
       // 有可学的书店技能书时攒钱（药只补到 1 瓶）
       const saving = w.shopBooks().some(b => !w.learned.has(b.skill) && w.level >= w.needLevel(w.skillPool.find(x => x.id === b.skill)!)); const cap = saving ? 1 : 3;
       while (w.gold >= 60 && w.pots[1] < cap) w.buyPotion(1);
@@ -909,5 +910,16 @@ const free = (w: World) => w.skills.map(() => 0);
   const old = new World(seeded(1), 40, FLOORS, 'taoist', JSON.parse(JSON.stringify({ ...new World(seeded(1), 40, FLOORS, 'taoist').toSave(), learned: undefined })));
   ok(NEW.every(([id]) => !old.learned.has(id)) && old.learned.has('heal'), '旧档（无 learned）不会白送新技能');
   ok(!JSON.stringify(new World(seeded(1), 40, FLOORS, 'taoist').toSave()).includes('UpUntil'), 'buff 状态不存档');
+}
+{ // town-return：每层回城/回村、战斗地图无商人、新档出生新手村、旧档兼容
+  const w = new World(seeded(1), 1, FLOORS, 'warrior'); w.startInVillage();
+  ok(w.town === 'xinshou' && TOWNS.xinshou.npcs.some(n => n.kind === 'potion') && TOWNS.xinshou.npcs.some(n => n.kind === 'weapon') && TOWNS.xinshou.npcs.some(n => n.kind === 'armor') && TOWNS.xinshou.npcs.some(n => n.kind === 'general'), '新档出生新手村，有药/武器/服装/杂货');
+  ok(w.leaveTown() === null && w.floorIndex === 0, '出村进入第 0 层');
+  ok(w.returnToTown() === null && w.town === 'xinshou', '第 0 层原路回新手村');
+  let all = true;
+  for (let f = 0; f < FLOORS.length; f++) { const x = new World(seeded(2), 40, FLOORS, 'mage'); x.reached.add(f); x.loadFloor(f); x.units = x.units.filter(u => u.isHero || u.summon); const e = x.returnToTown(); if (e !== null || !x.town || !TOWNS[x.town]) { all = false; console.log('  回城失败层', f, e); } }
+  ok(all, `每一层（${FLOORS.length}）起点都能回城/回村`);
+  const s = w.toSave(); ok(s.town === 'xinshou' && new World(seeded(1), 1, FLOORS, 'warrior', s).town === 'xinshou', '存档记住所在城镇');
+  const old: any = { ...s, floorIndex: 3 }; delete old.town; const o = new World(seeded(1), 1, FLOORS, 'warrior', old); ok(o.town === null && o.floorIndex === 3, '旧档（无 town 字段）保持原层');
 }
 console.log(`全部通过 ${pass} 项`);

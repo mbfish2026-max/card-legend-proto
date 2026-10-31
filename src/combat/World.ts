@@ -8,7 +8,7 @@ import { ITEMS, SLOTS, SETS, equipSlotsFor, EQUIP_VERSION, ENHANCE_SLOTS, ENHANC
 import { HERO, ENEMIES, SUMMON, SUMMON_BEAST } from '../data/units';
 import { EXP_PER_LEVEL, EXP_VERSION, migrateExp, scaledExp, fmtExp } from '../data/expCurve';
 import { WORLD, FLOORS, Floor } from '../data/world';
-import { TOWNS, townFloors, townOfFloor, STORAGE_SIZE, TOWN_W, TOWN_GATE_X, GATE_RANGE, TOWN_SPAWN_X, DOOR_RANGE, streetDoors } from '../data/towns';
+import { TOWNS, townFloors, townOfFloor, returnTownOf, STORAGE_SIZE, TOWN_W, TOWN_GATE_X, GATE_RANGE, TOWN_SPAWN_X, DOOR_RANGE, streetDoors } from '../data/towns';
 import { CONSUMABLE } from '../data/items-town';
 import { WOMA_FLOOR_NAME, WOMA_SECTIONS, WOMA_DOOR_X, HORN_MOB_CHANCE, HORN_MOBS, RING_MIN_LEVEL, RingQuest, ringReward, IDENT_MIN_LEVEL, IDENT_PRICE, IDENT_POOL, identValue } from '../data/r14b';
 import { QUESTS, ACHIEVES, QuestDef, AchieveDef } from '../data/quests';
@@ -28,6 +28,8 @@ export interface SaveData {
   learned?: string[];
   /** R11 地图顺序版本：缺省 = 旧顺序，读档时迁移层号 */
   mapV?: 2 | 3;
+  /** 城镇返回：存档时所在城镇/新手村（缺省 = 旧档，保持在原层） */
+  town?: string | null;
   /** R14 仓库物品 / 快捷栏技能顺序 */
   storage?: InvItem[]; skillOrder?: string[]; ringQ?: RingQuest | null; ringDone?: number;
   /** 装备结构版本：缺省/1 = 单戒单镯旧档，2 = 双戒双镯 */
@@ -142,7 +144,10 @@ export class World {
     this.expNext = EXP_PER_LEVEL(this.level);
     this.spawnHero();
     this.loadFloor(save ? Math.min(save.floorIndex, this.floors.length - 1) : 0);
+    if (save?.town && TOWNS[save.town]) this.enterTown(save.town, true);
   }
+  /** 新档：出生在新手村（银杏村） */
+  startInVillage() { this.enterTown('xinshou', true); }
   /** 兼容旧接口：已拾取的装备（背包+身上） */
   get inventory() { return [...Object.values(this.equip), ...this.bag].filter((x): x is InvItem => !!x && !!x.slot); }
   get classDef() { return CLASSES[this.cls]; }
@@ -786,7 +791,7 @@ export class World {
 
   // ---------- 存档 ----------
   toSave(): SaveData {
-    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], ringQ: this.ringQ, ringDone: this.ringDone, eqV: EQUIP_VERSION, expV: EXP_VERSION };
+    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, town: this.town, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], ringQ: this.ringQ, ringDone: this.ringDone, eqV: EQUIP_VERSION, expV: EXP_VERSION };
   }
 
   /** 点按一格：滑行中的按键全部排队（同向最多 10 格，反向则替换队列），每次按键都会走一格 */
@@ -1059,6 +1064,13 @@ export class World {
         }
       }
     }
+  }
+  /** 每张战斗层起点都有「回城/回村」入口：原路回到进来的城镇（未查到官方连接的统一回本区域主城） */
+  returnTownName(): string { return TOWNS[returnTownOf(this.floorIndex)].name; }
+  atReturnGate(): boolean { const h = this.hero; return !this.town && !!h && h.x <= WORLD.heroStartX + 150; }
+  returnToTown(): string | null {
+    if (this.town) return '已在城内'; if (!this.atReturnGate()) return '回城入口在本层起点（左侧）';
+    if (this.inCombat()) return '战斗中无法回城'; return this.enterTown(returnTownOf(this.floorIndex));
   }
   /** S 键：在本层起点附近返回上一层（出生在上一层出口前） */
   prevFloor(): boolean {
