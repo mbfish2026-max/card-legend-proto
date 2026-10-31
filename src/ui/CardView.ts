@@ -27,7 +27,7 @@ const DEFAULT_CARD = { w: 140, h: 190, figureScale: 1.15, anchorX: 0.5, footSink
  */
 export class CardView extends Phaser.GameObjects.Container {
   inner: Phaser.GameObjects.Container; art: Phaser.GameObjects.Image; figH0 = 0; maxW = 0;
-  hpFill: Phaser.GameObjects.Rectangle; hpText: Phaser.GameObjects.Text; lvlText: Phaser.GameObjects.Text;
+  hpFill: Phaser.GameObjects.Rectangle; hpText: Phaser.GameObjects.Text; lvlText: Phaser.GameObjects.Text; nameText!: Phaser.GameObjects.Text;
   flash: Phaser.GameObjects.Rectangle;
   /** w = 卡框宽；h = 视觉高度（立绘顶到地面），供特效定位 */
   w: number; h: number; cardH: number; barW: number; artX: number; artY: number; artSX = 1; artSY = 1; artFacing: 1 | -1; dying = false;
@@ -93,7 +93,7 @@ export class CardView extends Phaser.GameObjects.Container {
         g.fillTriangle(cx + sx * 10, cy + sy * 10, cx - sx * 6, cy + sy * 10, cx + sx * 10, cy - sy * 6);
       g.fillTriangle(-10, -ch - 5, 10, -ch - 5, 0, -ch - 20);
     }
-    const name = scene.add.text(w / 2 - 4, -barH + 3, unit.name, { fontFamily: FONT, fontSize: '12px', color: '#fff', fontStyle: 'bold', stroke: '#000', strokeThickness: 2 }).setOrigin(1, 0);
+    const name = this.nameText = scene.add.text(w / 2 - 4, -barH + 3, unit.name, { fontFamily: FONT, fontSize: '12px', color: unit.nameColor ?? '#fff', fontStyle: 'bold', stroke: '#000', strokeThickness: 2 }).setOrigin(1, 0);
     this.hpText = scene.add.text(0, hpY, '', { fontFamily: FONT, fontSize: '8px', color: '#fff', stroke: '#000', strokeThickness: 2 }).setOrigin(0.5).setVisible(!!unit.isHero);
     this.flash = scene.add.rectangle(0, -ch / 2, w, ch, 0xffffff, 0);
     this.inner.add([g, this.flash, this.art, bar, hpBg, this.hpFill, lv, this.lvlText, name, this.hpText]);
@@ -127,6 +127,8 @@ export class CardView extends Phaser.GameObjects.Container {
     this.x += (this.unit.x + this.dispOff - this.x) * (Math.abs(this.unit.x + this.dispOff - this.x) > 300 ? 1 : 0.25); this.y = GROUND_Y + this.unit.y;
     if (this.art instanceof Phaser.GameObjects.Image) this.art.setFlipX(this.unit.facing !== this.artFacing);
     this.lvlText.setText(String(this.unit.level));
+    // 召唤物升级：名字带等级、颜色蓝色逐级加深
+    if (this.unit.summon && this.nameText.text !== this.unit.name) this.nameText.setText(this.unit.name).setColor(this.unit.nameColor ?? '#fff');
     this.statusTint();
     this.hpText.setText(`${Math.max(0, Math.ceil(this.unit.hp))}/${this.unit.maxHp}`);
     this.hpFill.width = Math.max(0, this.barW * Math.max(0, this.unit.hp) / this.unit.maxHp);
@@ -161,14 +163,14 @@ export class CardView extends Phaser.GameObjects.Container {
     const ex = this.scene.add.text(this.x, this.y - this.h - 8, '!', { fontFamily: FONT, fontSize: '40px', color: '#ffdd00', fontStyle: 'bold', stroke: '#600', strokeThickness: 5 }).setOrigin(0.5, 1).setDepth(70);
     this.scene.tweens.add({ targets: ex, y: ex.y - 10, duration: 120, yoyo: true });
     this.scene.time.delayedCall(sec * 1000 + 200, () => ex.destroy());
-    if (this.art instanceof Phaser.GameObjects.Image) { this.art.setTint(0xffa060); this.scene.time.delayedCall(sec * 1000, () => { if (!this.dying && this.art.active) (this.art as Phaser.GameObjects.Image).clearTint(); }); }
+    if (this.art instanceof Phaser.GameObjects.Image) { this.art.setTint(0xffa060); this.scene.time.delayedCall(sec * 1000, () => { if (!this.dying && this.art.active) { (this.art as Phaser.GameObjects.Image).clearTint(); this.curStatus = -1; } }); }
   }
   private reset() { const a = this.art; this.scene.tweens.killTweensOf(a); a.setPosition(this.artX, this.artY).setAngle(0).setScale(this.artSX, this.artSY); }
   /** 普攻：卡框不动，立绘向前冲、前倾、横向拉伸 */
   swing(dir: number) {
     this.reset(); const a = this.art;
     this.scene.tweens.add({ targets: a, x: this.artX + dir * FX.portraitSwingDx, angle: dir * FX.portraitSwingAngle, scaleX: this.artSX * 1.08, scaleY: this.artSY * 0.96,
-      duration: FX.portraitSwingMs / 2, yoyo: true, ease: 'Quad.easeOut' });
+      duration: FX.portraitSwingMs / 2, yoyo: true, ease: 'Quad.easeOut', onComplete: () => { if (!this.dying) a.setPosition(this.artX, this.artY).setAngle(0).setScale(this.artSX, this.artSY); } });
   }
   /** 跳跃补位：整卡弧线跃起再落地 */
   leaping = false;
@@ -185,7 +187,7 @@ export class CardView extends Phaser.GameObjects.Container {
   windup(dir: number) {
     this.reset(); const a = this.art;
     this.scene.tweens.add({ targets: a, x: this.artX - dir * FX.windupBackDx, angle: -dir * 6, scaleX: this.artSX * 1.06, scaleY: this.artSY * 1.06, duration: FX.windupMs, yoyo: true, hold: 40 });
-    if (a instanceof Phaser.GameObjects.Image) { a.setTint(FX.windupGlow); this.scene.time.delayedCall(FX.windupMs * 2, () => { if (!this.dying) a.clearTint(); }); }
+    if (a instanceof Phaser.GameObjects.Image) { a.setTint(FX.windupGlow); this.scene.time.delayedCall(FX.windupMs * 2, () => { if (!this.dying) { a.clearTint(); this.curStatus = -1; } }); }
   }
   /** 受击：立绘闪色 + 后仰压缩 + 整卡水平震动 */
   hit() {
@@ -194,7 +196,7 @@ export class CardView extends Phaser.GameObjects.Container {
     this.flash.setFillStyle(0xffffff, 0.25).setAlpha(1);
     this.scene.tweens.add({ targets: this.flash, alpha: 0, duration: FX.hitFlashMs });
     const dir = this.unit.facing;
-    this.scene.tweens.add({ targets: this.art, angle: -dir * 4, scaleY: this.artSY * 0.95, duration: FX.hitShakeMs / 2, yoyo: true, onComplete: () => { this.art.setAngle(0); } });
+    this.scene.tweens.add({ targets: this.art, angle: -dir * 4, scaleY: this.artSY * 0.95, duration: FX.hitShakeMs / 2, yoyo: true, onComplete: () => { this.art.setAngle(0); this.art.scaleY = this.artSY; } });
     this.scene.tweens.killTweensOf(this.inner); this.inner.x = 0;
     const amp = this.w * FX.hitShakeRatio, kb = -dir * 10;
     // 受击后退：整卡往后弹 10px 再回位

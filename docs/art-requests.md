@@ -190,7 +190,7 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 - 白日门技能书、书页、金条图标（暂用 Pearl）
 
 ## 合击版 #8（feat/hj-maps）
-- 背景 bg_floor14–17（保卫家园/卧龙山庄/雷炎洞穴/火龙神殿），现回退为通用 bg
+- 背景 bg_floor20–23（保卫家园/卧龙山庄/雷炎洞穴/火龙神殿），现回退为通用 bg
 - 怪物立绘：家园守卫、卧龙护卫、火龙守卫（暂用 orc）、雷炎蜘蛛（暂用 spider）
 - BOSS 立绘：魔龙守将（暂用 boss_woma）、卧龙名将（暂用 boss_orc_chief）、雷炎蛛王/火龙（暂用 boss_redmoon）
 - 世界地图节点图标 map_node_hejiban（暂用 mengzhong）
@@ -203,3 +203,17 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 ## town-return（feat/town-return）
 - 银杏村（新手村）专属街景/门面（暂复用比奇长街素材）
 - 战斗层起点「回城」入口门图（暂用原商人摊 Graphics）
+
+## 高清/2K 画质所需 2x 素材（feat/hd-resolution，按优先级）
+现状（public/assets 源文件）：注意构建脚本 compress-assets 会把非立绘缩到 ≤1280 宽、立绘缩到 ≤640，**即使源图更大，dist 里也只有 1x**；要 2K 真正清晰，需先放宽该限制（会增大包体，手机流量需权衡）。
+1. 图标类（显示约 40–64 逻辑 px，2K 下需 128px）：items 39 张、skills 39 张、potions 20 张，现均 64×64；portraits 中 13 张 64×64 小怪头像 → 需 128×128。
+2. 战斗/地图背景：bg_floor1–5、ui/bg_dungeon、map/map_world 现 1280×720 → 需 2560×1440（bg_floor6–8、town 背景已是 1920×1080，可补到 2560）。
+3. 世界地图节点 map_node_* 128×72 → 256×144。
+4. UI 九宫格/边框（ui/UI-*：48–256px）→ 2x 版本；set_badge 48 → 96。
+5. 角色/NPC 立绘（600–960px 源图，构建缩到 640）：放宽构建上限即可，暂不需重画。
+文字与 Graphics（血条、面板底、按钮框）为矢量/运行时栅格化，已按倍率清晰，无需素材。
+
+## feat/maps-more（plan-60h B1）
+1. 背景 3 张（1920×1080 起）：兽人古墓（bg_floor14/15）、天然洞穴（骷髅洞，bg_floor16/17）、沃玛自然洞穴（bg_floor18/19）；现占位复用 bg_floor3 / bg_floor2。
+2. 怪物立绘 5 张：骷髅战士、骷髅战将、掷斧骷髅、洞蛆、山洞蝙蝠（现复用已有贴图）。
+3. 特效：掷斧骷髅飞斧弹道 1 个。

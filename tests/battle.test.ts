@@ -1,8 +1,8 @@
 declare const process: { env: Record<string, string | undefined> };
-import { World, SaveData, OIL_PRICE, IRON_PRICE, OFFICIAL, mitigate, taoBuffValue, taoBuffDur } from '../src/combat/World';
+import { World, SaveData, OIL_PRICE, IRON_PRICE, OFFICIAL, mitigate, taoBuffValue, taoBuffDur, SKELETON_OFFICIAL, SUMMON_NAME_COLORS, SUMMON_MAX_LV, SUMMON_LV_KILLS } from '../src/combat/World';
 import { ITEMS, SETS, ENHANCE_MAX, enhanceChance, shatterChance } from '../src/data/items';
-import { WORLD, CARD, Floor, FLOORS } from '../src/data/world';
-import { CLASSES, ClassId, CAST_GAP, COOLDOWN_BEFORE, REBALANCE, MANA_BEFORE } from '../src/data/classes';
+import { WORLD, CARD, Floor, FLOORS, FLOOR_ORDER, nextFloorOf, floorNo, DEPTH_STEP, prevLayerOf, groupOf } from '../src/data/world';
+import { CLASSES, ClassId, CAST_GAP, COOLDOWN_BEFORE, REBALANCE, MANA_BEFORE, SKILL_CD, CD_BEFORE_LIGHT } from '../src/data/classes';
 import { ENEMIES, DIFF } from '../src/data/units';
 import { QUESTS, ACHIEVES } from '../src/data/quests';
 import { REGIONS, floorBoss, regionOf, entrances, nodeOfFloor, clampView, zoomAt, WORLD_W, WORLD_H } from '../src/data/map';
@@ -15,6 +15,7 @@ import { TOWNS, NODE_TOWN, WEAPON_GOODS, ARMOR_GOODS, GENERAL_GOODS, STORAGE_SIZ
 import { resolveLayers, pickTexture, comboKey, changedSlots, fallbackId } from '../src/data/equipLayers';
 // @ts-ignore 测试运行于 node（tsx），项目未装 @types/node
 import { existsSync } from 'node:fs';
+import { playCombatAnim, AnimView } from '../src/ui/combatAnim';
 import { Settings, DEFAULT_AUTO_SKILLS, ZOOM_MIN, ZOOM_MAX, ZOOM_STEP, fitScale } from '../src/settings';
 let pass = 0; const ok = (c: boolean, m: string) => { if (!c) { console.error('FAIL', m); throw new Error(m); } pass++; console.log('ok', m); };
 function seeded(s: number) { return () => (s = (s * 16807) % 2147483647) / 2147483647; }
@@ -185,7 +186,7 @@ const free = (w: World) => w.skills.map(() => 0);
   w.ground.push(w.rollDrop('helmet', 'common', h.x, h.y)); w.time += 1; w.step(0.05); ok(w.ground.length === 1, '背包满时不拾取');
 }
 { // 5 层 + 每层 Boss + 出口封印
-  ok(FLOORS.length >= 8 && FLOORS.slice(8, 13).map(f => f.name).join() === '沃玛寺庙,祖玛阁,牛魔寺庙,封魔殿,赤月魔穴' && FLOORS.every(f => f.boss && f.spawns.some(s => ENEMIES[s.id].tier === 'boss')), `共 ${FLOORS.length} 层，每层末尾有 Boss`);
+  ok(FLOORS.length >= 8 && FLOORS.slice(8, 13).map(f => f.name).join() === '沃玛寺庙,祖玛阁,牛魔寺庙,封魔殿,赤月魔穴' && FLOORS.every(f => f.boss === f.spawns.some(s => ENEMIES[s.id].tier === 'boss')) && FLOORS.slice(0, 13).every(f => f.boss), `共 ${FLOORS.length} 层，原 13 层末尾有 Boss，新增层 boss 标记与刷怪一致`);
   ok(new Set(FLOORS.map(f => f.bg)).size === FLOORS.length, '每层背景不同');
   const w = new World(seeded(3), 30, FLOORS); const h = w.hero!;
   h.x = w.exitX; w.step(0.05); ok(w.floorIndex === 0, 'Boss 未死出口封印');
@@ -226,7 +227,7 @@ const free = (w: World) => w.skills.map(() => 0);
 { // R13 地图扩充：区域覆盖、旧存档迁移、传送
   const all = REGIONS.flatMap(r => r.floors).sort((a, b) => a - b);
   ok(all.join() === FLOORS.map((_, i) => i).join(), `世界地图区域覆盖全部 ${FLOORS.length} 层且不重复`);
-  ok(FLOORS.every((_, i) => !!floorBoss(i) && !!regionOf(i)), '每层有 BOSS 与所属区域');
+  ok(FLOORS.every((f, i) => !!floorBoss(i) === !!f.boss && !!regionOf(i)), '有 BOSS 的层都能查到 BOSS，每层有所属区域');
   ok(QUESTS.every(q => q.floor < FLOORS.length && FLOORS[q.floor].spawns.some(s => s.id === q.target)), '悬赏目标都在对应层');
   const m = new World(seeded(3), 30, FLOORS, 'mage'); const v2 = { ...m.toSave(), mapV: 2, floorIndex: 5, reached: [0, 1, 2, 3, 4, 5], bossKilled: [0, 1, 2, 3, 4], questDone: ['q0'] } as unknown as SaveData;
   const w2 = new World(seeded(3), 1, FLOORS, 'mage', v2);
@@ -235,10 +236,22 @@ const free = (w: World) => w.skills.map(() => 0);
   w3.gold = 9999; w3.reached.add(10); w3.time = 999; ok(w3.teleport(10) === null && w3.floor.name === '牛魔寺庙', '世界地图传送到新地图牛魔寺庙');
 }
 { // R11 地图按原版递进
-  ok(FLOORS.map(f => f.name).join() === '幽暗森林,兽人要塞,蛛网晶洞,毒蛇山谷,白骨墓穴,尸王殿,蜈蚣洞,石墓·猪洞,沃玛寺庙,祖玛阁,牛魔寺庙,封魔殿,赤月魔穴,保卫家园,卧龙山庄,雷炎洞穴,火龙神殿', '层序：新手村→沃玛森林(兽人/蛛洞)→兽人古墓→比奇矿区尸王殿→沃玛寺庙→祖玛→赤月→合击地图');
+  ok(FLOORS.slice(0, 13).map(f => f.name).join() === '幽暗森林,兽人要塞,蛛网晶洞,毒蛇山谷,白骨墓穴,尸王殿,蜈蚣洞,石墓·猪洞,沃玛寺庙,祖玛阁,牛魔寺庙,封魔殿,赤月魔穴', '层序：新手村→沃玛森林(兽人/蛛洞)→兽人古墓→比奇矿区尸王殿→沃玛寺庙→祖玛→赤月');
+  // feat/maps-more（plan-60h B1）：洞穴群子层追加在 13–18（旧档下标不变），通关顺序按 FLOOR_ORDER
+  ok(FLOORS.slice(13, 19).map(f => f.name).join() === '兽人古墓二层,兽人古墓三层,骷髅洞·洞穴一层,骷髅洞·洞穴二层,沃玛自然洞穴·一,沃玛自然洞穴·二' && FLOORS.slice(13, 19).every(f => f.farm && f.group && f.sub && f.src), 'B1 6 个子层：官方名/图群/子层名/来源，全部 farm');
+  ok([...FLOOR_ORDER].sort((a, b) => a - b).join() === FLOORS.map((_, i) => i).join() && FLOOR_ORDER.slice(0, 5).join() === '0,1,2,3,4', 'FLOOR_ORDER 覆盖全部层，新手段不变');
+  ok(nextFloorOf(4) === 13 && nextFloorOf(14) === 15 && nextFloorOf(18) === 5 && nextFloorOf(12) === 19 && nextFloorOf(22) === -1 && floorNo(13) === 6 && floorNo(5) === 12 && floorNo(12) === 19, '子层顺序：古墓一→二→三→洞穴一→二→自然洞穴一→二→尸王殿');
+  ok(nextFloorOf(2, FLOORS.slice(0, 3)) === -1 && floorNo(1, FLOORS.slice(0, 3)) === 2 && prevLayerOf(1, FLOORS.slice(0, 3)) === -1, '自定义层表仍按线性');
+  ok(prevLayerOf(13) === 4 && prevLayerOf(14) === 13 && prevLayerOf(16) === 15 && prevLayerOf(15) === -1 && prevLayerOf(17) === -1 && prevLayerOf(18) === 17 && prevLayerOf(5) === -1 && prevLayerOf(0) === -1, '上一层入口只在同图群内');
+  ok(groupOf(4) === 'shouren' && groupOf(13) === 'shouren' && groupOf(0) === undefined, '白骨墓穴并入兽人古墓图群（层本身不变）');
+  { const r = REGIONS.flatMap(g => g.nodes).filter(n => n.floor !== undefined && n.floor >= 13 && n.floor <= 18); ok(r.length === 6 && REGIONS.find(g => g.id === 'bichi')!.nodes.find(n => n.id === 'bichi_cave')!.floor === 15, '骷髅洞节点开放，6 个子层都有小地图入口'); }
+  { const x = new World(seeded(4), 30, FLOORS, 'warrior'); x.loadFloor(13); x.hero!.x = WORLD.heroStartX; ok(x.prevFloor() && x.floorIndex === 4, '起点「上一层」入口按通关顺序（兽人古墓二层→白骨墓穴，不是第 12 层）'); x.loadFloor(5); x.hero!.x = WORLD.heroStartX; ok(x.prevFloor() && (x.floorIndex as number) === 18, '尸王殿上一层=沃玛自然洞穴·二'); }
+  { const x = new World(seeded(4), 30, FLOORS, 'warrior'); x.loadFloor(14); ok(x.upLayer() === 'ok' && (x.floorIndex as number) === 13 && x.upLayer() === "ok" && (x.floorIndex as number) === 4 && x.upLayer() === '没有上一层' && x.floorIndex === 4, 'upLayer 逐层返回'); }
+  { const x = new World(seeded(4), 30, FLOORS, 'warrior'); x.loadFloor(17); for (let k = 0; k < 40 && x.floorIndex === 17; k++) { x.hero!.x = x.exitX; x.step(0.05); } ok(x.floorIndex === 18, '无 BOSS 层直接从出口进入下一层（沃玛自然洞穴·二）'); }
+  { const x = new World(seeded(4), 30, FLOORS, 'warrior'); x.loadFloor(15); const a = x.units.find(u => u.id === 'cave_skel_warrior')!; x.loadFloor(16); const b2 = x.units.find(u => u.id === 'cave_skel_warrior')!; x.loadFloor(0); const c = x.units.find(u => !u.isHero)!; ok(b2.maxHp === Math.round(a.maxHp * (1 + DEPTH_STEP)) && b2.atk === Math.round(a.atk * (1 + DEPTH_STEP)) && c.maxHp === ENEMIES[c.id].hp, '层深难度：洞穴二层同名怪更强，原有层不变'); }
   ok(QUESTS.find(q => q.target === 'orc')!.floor === 1 && QUESTS.find(q => q.target === 'spider')!.floor === 2 && QUESTS.find(q => q.target === 'skeleton')!.floor === 4, '悬赏随层移动');
-  const lv = FLOORS.map(f => Math.max(...f.spawns.map(sp => ENEMIES[sp.id].tier === 'boss' ? 0 : ENEMIES[sp.id].level)));
-  ok(lv.every((v, i) => i === 0 || v >= lv[i - 1]), `各层普通怪最高等级递增 ${lv.join('/')}`);
+  const lv = FLOOR_ORDER.map(i => FLOORS[i]).map(f => Math.max(...f.spawns.map(sp => ENEMIES[sp.id].tier === 'boss' ? 0 : ENEMIES[sp.id].level)));
+  ok(lv.every((v, i) => i === 0 || v >= lv[i - 1]), `各层（按通关顺序）普通怪最高等级递增 ${lv.join('/')}`);
 }
 { // R13 官方 BOSS 机制
   const ww = mk([{ id: 'boss_woma', x: 800 }], [], 'warrior', 30); const h = ww.hero!; h.hp = h.maxHp = 1e9; h.x = 600; const b = ww.alive('enemy')[0]; b.ai = 'chase';
@@ -259,6 +272,73 @@ const free = (w: World) => w.skills.map(() => 0);
   for (let i = 0; i < 80; i++) { wr.step(0.05); for (const e of wr.drainEvents()) if (e.type === 'damage' && e.target === rh.uid) hit++; }
   ok(hit >= 1, '站在地刺上会受伤');
 }
+{ // 召唤物仇恨 [适配]：召唤物打一下即记仇；主角走开（> summonAggroNear）只打召唤物；主角贴身不强制转移；召唤物死后回到主角；脱战仍按主角/出生点
+  const setup = () => { const w = mk([{ id: 'orc', x: 1200 }], [], 'taoist', 30); tough(w); const h = w.hero!; h.hp = h.maxHp = 1e9; h.x = 900;
+    w.cast(idx(w, 'summon_skeleton'), free(w)); const sm = w.summon!; sm.hp = sm.maxHp = 1e9; sm.x = 1080; const o = w.alive('enemy')[0]; o.ai = 'chase'; o.cd = 99; return { w, h, sm, o }; };
+  const hits = (w: World, sec: number, uid: number) => { let n = 0; for (let t = 0; t < sec; t += 0.05) { w.step(0.05, { dx: 0, dy: 0 }); for (const e of w.drainEvents()) if (e.type === 'damage' && e.target === uid && e.source !== undefined && w.units.find(u => u.uid === e.source)?.team === 'enemy') n++; } return n; };
+  { const { w, h, sm, o } = setup(); run(w, 2); ok(o.aggroUid === sm.uid, '召唤物攻击一次后怪物记仇（aggroUid=召唤物）');
+    h.x = o.x - 600; o.cd = 0; const hh = hits(w, 8, h.uid);
+    const w2 = setup(); run(w2.w, 2); w2.h.x = w2.o.x - 600; w2.o.cd = 0; const s2 = hits(w2.w, 8, w2.sm.uid);
+    ok(hh === 0 && s2 >= 3 && Math.abs(w2.o.x - w2.h.x) > WORLD.summonAggroNear, `主角走开（>${WORLD.summonAggroNear}px）：怪只打召唤物（主角 ${hh} 次，召唤物 ${s2} 次）`);
+    ok(o.ai === 'chase', '主角走开 600px（< 脱战 6 卡）怪仍在战斗');
+    w.kill(sm); let hit = 0; for (let t = 0; t < 10; t += 0.05) { w.step(0.05, { dx: 0, dy: 0 }); for (const e of w.drainEvents()) if (e.type === 'damage' && e.target === h.uid) hit++; }
+    ok(hit > 0 && !w.summonAggro(o), `召唤物死亡后仇恨回到主角（主角被打 ${hit} 次）`); }
+  { const { w, h, sm, o } = setup(); run(w, 2); h.x = o.x - 150; o.cd = 0; let hh = 0, hs = 0;
+    for (let t = 0; t < 20; t += 0.05) { h.x = o.x - 150; w.step(0.05, { dx: 0, dy: 0 }); for (const e of w.drainEvents()) if (e.type === 'damage' && e.source === o.uid) { if (e.target === h.uid) hh++; else if (e.target === sm.uid) hs++; } }
+    ok(!w.summonAggro(o) && hh > 0, `主角贴身（≤${WORLD.summonAggroNear}px）不强制转移：主角仍会被打（主角 ${hh} / 召唤物 ${hs}）`); }
+  { const { w, h, o } = setup(); run(w, 2); h.x = o.x - WORLD.leashRange - 200; w.step(0.05, { dx: 0, dy: 0 }); ok(o.ai === 'return', '脱战仍按主角距离判定（> 6 卡宽回位）'); }
+}
+{ // 治愈术：主角未满血治主角；满血治 170px 内最残召唤物；都满不施放（不耗蓝、不占公共间隔）
+  const w = mk([{ id: 'orc', x: 3000 }], [], 'taoist', 30); const h = w.hero!; w.cast(idx(w, 'summon_skeleton'), free(w)); const sm = w.summon!; sm.x = h.x + 100;
+  const hi = idx(w, 'heal'); h.mp = h.maxMp = 9999;
+  h.hp = h.maxHp - 50; sm.hp = 10; let cds = free(w); ok(w.cast(hi, cds).ok, '主角未满血：治愈术可施放'); run(w, 3); ok(h.hp === h.maxHp && sm.hp === 10, '主角未满血优先治主角（召唤物不回血）');
+  h.hp = h.maxHp; sm.hp = 10; cds = free(w); const mp0 = h.mp; ok(w.cast(hi, cds).ok, '主角满血：治愈术施放到召唤物'); run(w, 3); ok(sm.hp > 10 && h.mp < mp0, `召唤物回血 10→${Math.round(sm.hp)}`);
+  h.hp = h.maxHp; sm.hp = 10; sm.x = h.x + 400; cds = free(w); const r0 = w.cast(hi, cds) as any; ok(!r0.ok, '召唤物超出 170px：不施放');
+  sm.x = h.x + 100; sm.hp = sm.maxHp; h.hp = h.maxHp; cds = free(w); const mp1 = h.mp; const r = w.cast(hi, cds) as any;
+  ok(!r.ok && r.reason === '主角与召唤物生命已满' && h.mp === mp1 && Math.max(...cds) === 0, '都满血：不施放、不耗蓝、不占公共间隔');
+}
+{ // 召唤物等级 [适配]：初始=技能等级(≤3)；主角+召唤物总击杀累计阈值升级，最高 7；名字带等级、蓝色逐级加深；重新召唤从初始等级重启
+  const w = mk([{ id: 'orc', x: 3000 }], [], 'taoist', 30); const h = w.hero!; h.mp = h.maxMp = 9999;
+  const k = idx(w, 'summon_skeleton'); w.cast(k, free(w)); const sm = w.summon!; const L0 = sm.sLv!;
+  ok(L0 === Math.min(3, w.skillLevel(w.skills[k])) && sm.name === `骷髅·${L0}级` && sm.nameColor === SUMMON_NAME_COLORS[L0], `初始等级=技能等级（${L0}），名字「${sm.name}」颜色 ${sm.nameColor}`);
+  const hp0 = sm.maxHp, atk0 = sm.atk; const colors = [sm.nameColor];
+  for (let i = 0; i < 300; i++) { const e = w.spawn({ ...w.alive('enemy')[0] } as any, 'enemy', 2000, 0); w.kill(e); if (colors[colors.length - 1] !== sm.nameColor) colors.push(sm.nameColor); }
+  ok(sm.sLv === SUMMON_MAX_LV && sm.name === '骷髅·7级', `击杀 300 → 7 级封顶（${sm.name}）`);
+  ok(sm.maxHp === Math.round(hp0 * 480 / SKELETON_OFFICIAL.hp[L0]) && sm.atk > atk0, `7 级属性按官方比例：HP ${hp0}→${sm.maxHp}，攻击 ${atk0}→${sm.atk}`);
+  ok(colors.length === 8 - L0 && new Set(colors).size === colors.length, `每升一级换色：${colors.join(' ')}`);
+  w.kill(sm); w.cast(k, free(w)); const s2 = w.summon!; ok(s2.sLv === L0 && s2.sKills === 0, '重新召唤从技能等级对应初始等级重启（不继承 7 级）');
+  const w0 = mk([{ id: 'orc', x: 3000 }], [], 'taoist', 30); w0.skillTrain.summon_skeleton = 0; w0.cast(idx(w0, 'summon_skeleton'), free(w0)); const z = w0.summon!;
+  for (let i = 0; i < 9; i++) w0.kill(w0.spawn({ ...w0.alive('enemy')[0] } as any, 'enemy', 2000, 0)); const a = z.sLv; w0.kill(w0.spawn({ ...w0.alive('enemy')[0] } as any, 'enemy', 2000, 0));
+  ok(z.sBase!.start === 0 && a === 0 && z.sLv === 1, `技能 0 级召出 0 级（白名），召出后第 10 次击杀升 1 级（${a}→${z.sLv}）`);
+  for (const n of [1, 2, 3]) { const wn = mk([{ id: 'orc', x: 3000 }], [], 'taoist', 30); (wn as any).skillLevel = () => n; const kk = idx(wn, 'summon_skeleton');
+    wn.cast(kk, free(wn)); const x = wn.summon!; ok(x.sLv === n && x.name === `骷髅·${n}级`, `技能 ${n} 级 → 召出 ${n} 级`);
+    for (let i = 0; i < 300; i++) wn.kill(wn.spawn({ ...wn.alive('enemy')[0] } as any, 'enemy', 2000, 0)); ok(x.sLv === 7, `技能 ${n} 级召出后按总击杀成长到 7 级`);
+    wn.kill(x); wn.cast(kk, free(wn)); ok(wn.summon!.sLv === n && wn.summon!.sKills === 0, `重新召唤重置为技能等级 ${n}（不继承 7 级）`); }
+  ok(!('sLv' in (w.toSave() as any)) && !JSON.stringify(w.toSave()).includes('sKills'), '召唤物等级/击杀不存档');
+}
+{ // 自动施毒：跳过已中毒的怪；全部中毒则不施放（不耗蓝、不占公共间隔）；手动不受限
+  const w = mk([{ id: 'orc', x: 1300 }, { id: 'orc', x: 1500 }], [], 'taoist', 30); tough(w); const h = w.hero!; h.x = 1000; h.mp = h.maxMp = 9999;
+  const p = idx(w, 'poison'), [a, b] = w.alive('enemy').sort((x, y) => x.x - y.x);
+  let cds = free(w); let r = w.cast(p, cds, { auto: true }); ok(r.ok && (a.poisonUntil ?? 0) > w.time, '自动施毒：先毒最近的未中毒怪');
+  cds = free(w); r = w.cast(p, cds, { auto: true }); ok(r.ok && (b.poisonUntil ?? 0) > w.time, '自动施毒：跳过已中毒的怪，毒下一只');
+  cds = free(w); const mp0 = h.mp; const r2 = w.cast(p, cds, { auto: true }) as any;
+  ok(!r2.ok && r2.reason === '射程内敌人均已中毒' && h.mp === mp0 && Math.max(...cds) === 0, '全部已中毒：自动不施放、不耗蓝、不占公共间隔');
+  cds = free(w); ok(w.cast(p, cds).ok && h.mp < mp0, '手动施毒不受限（可重复施放）');
+}
+{ // 自动施放召唤：召唤物已存在且血量 ≥ AUTO_RESUMMON_HP 时跳过（不耗魔、不占间隔），后续技能可放；手动不受限
+  for (const sid of ['summon_skeleton', 'summon_beast']) {
+    const w = mk([{ id: 'orc', x: 1300 }], [], 'taoist', 40); tough(w); const h = w.hero!; h.x = 1000; h.mp = h.maxMp = 9999;
+    const k = idx(w, sid), p = idx(w, 'poison');
+    const auto = (cds: number[]) => { for (const i of [k, p]) { if (cds[i] > 0) continue; const r = w.cast(i, cds, { auto: true }); if (r.ok) return i; } return -1; };
+    let cds = free(w); ok(auto(cds) === k && !!w.summon, `${sid} 无召唤物：自动召唤`);
+    const sm = w.summon!; cds = free(w); const mp0 = h.mp!;
+    const r = w.cast(k, cds, { auto: true }); ok(!r.ok && h.mp === mp0 && Math.max(...cds) === 0, `${sid} 满血召唤物：自动跳过、不耗魔、不占间隔`);
+    cds = free(w); ok(auto(cds) === p && (w.alive('enemy')[0].poisonUntil ?? 0) > w.time && w.summon === sm, `${sid} 满血召唤物：自动轮到施毒术`);
+    sm.hp = sm.maxHp * 0.6; cds = free(w); ok(!w.cast(k, cds, { auto: true }).ok, `${sid} 召唤物 60% 血：自动仍跳过`);
+    sm.hp = sm.maxHp * 0.4; cds = free(w); ok(w.cast(k, cds, { auto: true }).ok && sm.hp === sm.maxHp, `${sid} 召唤物 <50% 血：自动重召（回满血）`);
+    cds = free(w); const mp1 = h.mp!; ok(w.cast(k, cds).ok && h.mp! < mp1, `${sid} 手动仍可重复召唤（耗魔）`);
+  }
+}
 { // 平衡：多种子自动脚本（单种子对随机序列太敏感，任何改动 RNG 消耗顺序的提交都会让结果漂移）
   const SEEDS = [3, 7, 11, 19, 23, 42, 57, 88, 101];
   const NEW_BOOKS = ['big_fireball', 'burst_fire', 'hell_fire', 'lightning_flash', 'hell_thunder', 'ghost_shield', 'holy_armor', 'mass_heal'];
@@ -273,6 +353,7 @@ const free = (w: World) => w.skills.map(() => 0);
       if (h.hp < h.maxHp * 0.4 && w.usePotion(w.pots[1] > 0 ? 1 : 0)) potUsed++;
       if ((h.mp ?? 0) < 40) w.usePotion(w.pots[3] > 0 ? 3 : 2);
       for (let i = 0; i < w.skills.length; i++) { if (w.skills[i].id === 'charm' && !w.charmAutoOk()) continue; w.cast(i, cds); }
+      for (let i = 0; i < w.skills.length; i++) w.cast(i, cds, { auto: true }); // 模拟 = 自动施法（施毒跳过已中毒）
       for (let i = w.bag.length - 1; i >= 0; i--) { const it = w.bag[i]; if (it.slot && it.req <= w.level && !w.equip[w.targetSlot(it)!]) w.equipItem(i); }
       // 黑铁：模拟脚本卖掉（避免碎装干扰难度基线；玩家可手动强化）
       for (let i = w.bag.length - 1; i >= 0; i--) if (w.bag[i]?.item === 'black_iron') w.sellItem(i);
@@ -302,6 +383,29 @@ const free = (w: World) => w.skills.map(() => 0);
     ok(median(rs.map(r => r.potUsed)) >= 3, `${CLASSES[c].name} 通关需要吃药（红药中位数 ${median(rs.map(r => r.potUsed))} 瓶）`);
     if (!process.env.SIM) ok(rs.every(r => r.done && r.deaths <= PASS_MAX_DEATHS), `${CLASSES[c].name} 每个种子都可通关全部层且死亡 ≤ ${PASS_MAX_DEATHS}（${rs.map(r => (r.done ? '' : '未通关') + r.deaths).join('/')}）`);
   }
+}
+{ // 召唤物攻击/受伤动作：与主角/怪物同一套事件→动画分发（纯表现）
+  const runAnim = (kind: 'summon_skeleton' | 'summon_beast' | 'pet') => {
+    const w = mk([{ id: 'zombie', x: 900 }, { id: 'deer', x: 3000 }], [], 'taoist', 45); const h = w.hero!; h.hp = h.maxHp = 1e9; h.mp = h.maxMp = 1e9;
+    let sm: any;
+    if (kind === 'pet') { sm = w.alive('enemy').find(e => e.id === 'deer')!; Object.assign(sm, { team: 'ally', summon: true, pet: true, petUntil: 1e9, ai: 'chase', y: WORLD.summonLane, x: 700, facing: 1 }); }
+    else { ok(w.cast(idx(w, kind), free(w)).ok, `${kind} 召唤`); sm = w.units.find(u => u.summon && u.alive); }
+    const z = w.alive('enemy').find(e => e.id === 'zombie')!; z.hp = z.maxHp = 1e9; z.ai = 'chase'; sm.hp = sm.maxHp = 1e9;
+    const calls: Record<string, string[]> = {}; const views = new Map<number, AnimView>();
+    const get = (uid: number) => { const u = w.units.find(x => x.uid === uid); if (!u) return undefined; if (!views.has(uid)) { const l = calls[uid] = [] as string[]; views.set(uid, { unit: u, get x() { return u.x; }, swing: () => l.push('swing'), lunge: () => l.push('lunge'), hit: () => l.push('hit') }); } return views.get(uid); };
+    const snap = () => JSON.stringify([sm.hp, sm.atk, sm.def, z.hp, z.atk]);
+    let before = '', after = '';
+    for (let i = 0; i < 400; i++) { h.x = z.x - 600; w.step(0.05); for (const e of w.drainEvents()) { before = snap(); playCombatAnim(e, get); after = snap(); if (before !== after) throw new Error('动画改变了数值'); } }
+    return { calls: calls[sm.uid] ?? [], sm };
+  };
+  for (const k of ['summon_skeleton', 'summon_beast', 'pet'] as const) {
+    const { calls } = runAnim(k);
+    ok(calls.includes('swing') && calls.includes('lunge'), `${k} 攻击触发 swing+lunge（${calls.filter(c => c === 'swing').length} 次）`);
+    ok(calls.includes('hit'), `${k} 受击触发 hit（${calls.filter(c => c === 'hit').length} 次）`);
+  }
+  const nv = { unit: {} as any, x: 0, swing() {}, lunge() {}, hit() {} };
+  ok(playCombatAnim({ type: 'damage', target: 1, amount: 5, x: 0, heal: true } as any, () => nv) === null, '治疗不播受击');
+  ok(playCombatAnim({ type: 'attack', source: 1, target: 2, skill: 'fireball' } as any, () => nv) === null, '技能攻击走技能表现');
 }
 { // 难度曲线：怪物强度倍率已上调
   ok(DIFF.atk > 1 && DIFF.bossAtk > 1 && ENEMIES.boss_lich.atk > ENEMIES.orc_chief.atk, '难度倍率上调且首领逐层变强');
@@ -444,6 +548,12 @@ const free = (w: World) => w.skills.map(() => 0);
   const w20 = mk([{ id: 'orc', x: 900 }], [], 'taoist', 20); w20.hero!.mp = 9999;
   w20.cast(idx(w20, 'summon_skeleton'), free(w20));
   ok(w20.summon!.maxHp > w.summon!.maxHp, `高等级骷髅更强（${w.summon!.maxHp} → ${w20.summon!.maxHp}）`);
+  { // 加强骷髅：官方成长比例（HP 60/84/120/168，攻击上限 25/26/28/30.4）
+    const hpAt = (L: number) => { const x = new World(seeded(1), 30, FLOORS, 'taoist'); learnAll(x); const sk = pool(x, 'summon_skeleton'); x.skillLevel = (s: any) => s.id === sk.id ? L : World.prototype.skillLevel.call(x, s); x.cast(idx(x, 'summon_skeleton'), free(x)); return x.summon!; };
+    const s0 = hpAt(0), s3 = hpAt(3), tao = new World(seeded(1), 30, FLOORS, 'taoist').hero!.tao ?? 0;
+    ok(Math.abs(s3.maxHp / s0.maxHp - 168 / 60) < 0.01 && s3.atk === Math.round((10 + tao) * 30.4 / 25), `骷髅 3 级 HP=0 级×2.8（${s0.maxHp}→${s3.maxHp}），攻击按官方上限比例（${s0.atk}→${s3.atk}）`);
+    ok(s3.maxHp > Math.round((140 + tao * 5) * 1.3) && s3.atk > Math.round((8 + tao * 0.9) * 1.3), '3 级骷髅比改前（×1.3）更强');
+  }
 }
 { // 自动普攻开关：autoAttack=false 时贴脸不打
   const w = mk([{ id: 'zombie', x: 600 }], [], 'warrior', 10); tough(w);
@@ -797,7 +907,7 @@ const free = (w: World) => w.skills.map(() => 0);
   // 官方跳变：9→10 ×2.4、13→14 ×2、20→21 ×1.79、37→38 ×1.46、45→46 ×4；相邻非跳变级 ≤ ×1.4
   ok(jump(10) >= 2.3 && jump(14) >= 1.9 && jump(21) >= 1.7 && jump(38) >= 1.4 && jump(46) >= 3.9, `10/14/21/38/46 级跳变（${[10, 14, 21, 38, 46].map(l => jump(l).toFixed(2)).join('/')}）`);
   ok(jump(11) <= 1.4 && jump(15) <= 1.4 && jump(22) <= 1.25 && jump(39) <= 1.1 && jump(36) <= 1.25, '跳变后的相邻级平缓（保留官方形状）');
-  ok(C.FLOOR_EXP_MULT.length === FLOORS.length && C.FLOOR_EXP_MULT.every((m, i) => i === 0 || m > C.FLOOR_EXP_MULT[i - 1]), '每层怪物经验倍率随层数递增');
+  ok(C.FLOOR_EXP_MULT.length === FLOORS.length && C.FLOOR_EXP_MULT.slice(0, 13).every((m, i) => i === 0 || m > C.FLOOR_EXP_MULT[i - 1]), '每层怪物经验倍率随层数递增');
   ok(C.scaledExp(ENEMIES.wolf.exp!, 0) === Math.round(ENEMIES.wolf.exp! * C.FLOOR_EXP_MULT[0]) && C.scaledExp(0, 5) === 0 && C.scaledExp(1, 0) >= 1, '怪物经验按层缩放（0 经验召唤物仍为 0，最少 1 点）');
   const wk = mk([{ id: 'zuma_statue', x: 3000 }], [], 'warrior', 20); wk.floorIndex = 9; const e0 = wk.exp; const z = wk.alive('enemy')[0]; wk.kill(z);
   ok(wk.exp - e0 === C.scaledExp(ENEMIES.zuma_statue.exp!, 9) || wk.level > 20, `击杀经验按所在层缩放（祖玛阁 ×${C.FLOOR_EXP_MULT[9].toFixed(1)}）`);
@@ -935,15 +1045,35 @@ const free = (w: World) => w.skills.map(() => 0);
   const s = w.toSave(); ok(s.town === 'xinshou' && new World(seeded(1), 1, FLOORS, 'warrior', s).town === 'xinshou', '存档记住所在城镇');
   const old: any = { ...s, floorIndex: 3 }; delete old.town; const o = new World(seeded(1), 1, FLOORS, 'warrior', old); ok(o.town === null && o.floorIndex === 3, '旧档（无 town 字段）保持原层');
 }
-{ // 取消冷却：官方无独立冷却，只保留公共施法间隔
+{ // 轻量冷却（feat/skill-cd-light）：各技能 1.5–6s 冷却 + 保留 0.8s 公共施法间隔
   const act = (Object.keys(CLASSES) as ClassId[]).flatMap(c => CLASSES[c].skills.filter(s => !s.passive));
-  ok(act.every(s => s.cooldown === CAST_GAP) && COOLDOWN_BEFORE.summon_beast === 15 && COOLDOWN_BEFORE.magic_shield === 20, `所有主动技能冷却 = 公共施法间隔 ${CAST_GAP}s（改前值保留在 COOLDOWN_BEFORE）`);
+  ok(act.every(s => s.cooldown === SKILL_CD[s.id] && s.cooldown >= 1.5 && s.cooldown <= 6 && CD_BEFORE_LIGHT[s.id] === CAST_GAP), `所有主动技能各有冷却 1.5–6s（${act.map(s => s.name + s.cooldown).join(' ')}）`);
+  ok(SKILL_CD.thrust === 1.5 && SKILL_CD.fire_sword === 4 && SKILL_CD.fireball === 1.5 && SKILL_CD.magic_shield === 6 && SKILL_CD.summon_skeleton === 6 && SKILL_CD.mass_heal === 3 && COOLDOWN_BEFORE.summon_beast === 15 && CAST_GAP === 0.8, '冷却值对照（改前值保留在 COOLDOWN_BEFORE）');
   const w = new World(seeded(2), 30, FLOORS, 'mage'); w.learned.add('thunder'); w.learned.add('hell_fire'); const h = w.hero!; h.mp = h.maxMp = 9999;
-  w.units.push(...[]); w.spawn(ENEMIES.orc, 'enemy', h.x + 200).ai = 'idle'; const cds = w.skills.map(() => 0);
-  const a = w.cast(idx(w, 'fireball'), cds), b = w.cast(idx(w, 'thunder'), cds);
-  ok(a.ok && !b.ok && cds.every(c => c >= CAST_GAP - 1e-9), '同帧不能连放第二个技能（公共间隔）');
-  for (let i = 0; i < cds.length; i++) cds[i] = Math.max(0, cds[i] - CAST_GAP); ok(w.cast(idx(w, 'fireball'), cds).ok, `间隔 ${CAST_GAP}s 后可再次施放同一技能（无独立冷却）`);
-  const ws = new World(seeded(2), 30, FLOORS, 'mage', JSON.parse(JSON.stringify(w.toSave()))); ok(ws.learned.has('hell_fire') && !('cds' in w.toSave()), '冷却不存档，旧档读档正常');
+  { const o = w.spawn(ENEMIES.orc, 'enemy', h.x + 200); o.ai = 'idle'; o.hp = o.maxHp = 1e9; } const cds = w.skills.map(() => 0);
+  const fb = idx(w, 'fireball'), th = idx(w, 'thunder');
+  const a = w.cast(fb, cds), b = w.cast(th, cds);
+  ok(a.ok && !b.ok && cds.every(c => c >= CAST_GAP - 1e-9), '同帧不能连放第二个技能（公共间隔仍在）');
+  const tick = (d: number) => { for (let i = 0; i < cds.length; i++) cds[i] = Math.max(0, cds[i] - d); };
+  tick(CAST_GAP); const c1 = w.cast(fb, cds); ok(!c1.ok && /冷却中/.test((c1 as any).reason), `公共间隔后、冷却内拒绝同技能（${(c1 as any).reason}）`);
+  ok(w.cast(th, cds).ok, '公共间隔后可放其他技能');
+  tick(SKILL_CD.fireball); ok(w.cast(fb, cds).ok, '冷却结束后可再次施放');
+  ok(!w.cast(fb, cds, { auto: true }).ok, '自动施放与手动共用冷却判断');
+  const ws = new World(seeded(2), 30, FLOORS, 'mage', JSON.parse(JSON.stringify(w.toSave()))); ok(ws.learned.has('hell_fire') && !('cds' in w.toSave()) && !JSON.stringify(w.toSave()).includes('"cds"'), '冷却不存档，读档正常');
+}
+{ // 自动施放轮转：多种技能都能放出，不被一个占满
+  const w = new World(seeded(5), 30, FLOORS, 'mage'); for (const id of ['thunder', 'hell_fire', 'big_fireball']) w.learned.add(id); const h = w.hero!; h.mp = h.maxMp = 99999;
+  const e = w.spawn(ENEMIES.orc, 'enemy', h.x + 250); e.ai = 'idle'; e.hp = e.maxHp = 1e9;
+  const list = ['fireball', 'thunder', 'hell_fire', 'big_fireball']; const cds = w.skills.map(() => 0); const cnt: Record<string, number> = {}; let last = '';
+  for (let t = 0; t < 30; t += 0.05) { h.mp = 99999; const r = w.autoCast(list, cds, last); if (r) { last = r.id; cnt[r.id] = (cnt[r.id] ?? 0) + 1; } w.drainEvents(); for (let i = 0; i < cds.length; i++) cds[i] = Math.max(0, cds[i] - 0.05); }
+  const vals = list.map(id => cnt[id] ?? 0), tot = vals.reduce((x, y) => x + y, 0);
+  ok(vals.every(v => v >= 3) && Math.max(...vals) / tot < 0.6, `自动 30s 各技能释放次数 ${list.map((id, i) => id + ':' + vals[i]).join(' ')}`);
+  const wt = new World(seeded(5), 30, FLOORS, 'taoist'); for (const id of ['poison', 'summon_skeleton', 'soul_fire']) wt.learned.add(id); wt.units = wt.units.filter(u => u.isHero); const ht = wt.hero!; ht.mp = ht.maxMp = 99999; const cdt = wt.skills.map(() => 0);
+  { const o = wt.spawn(ENEMIES.orc, 'enemy', ht.x + 250); o.ai = 'idle'; o.hp = o.maxHp = 1e9; }
+  const s1 = wt.autoCast(['summon_skeleton', 'poison', 'soul_fire'], cdt); for (let i = 0; i < cdt.length; i++) cdt[i] = 0;
+  const s2 = wt.autoCast(['summon_skeleton', 'poison', 'soul_fire'], cdt, ''); for (let i = 0; i < cdt.length; i++) cdt[i] = 0;
+  const s3 = wt.autoCast(['summon_skeleton', 'poison', 'soul_fire'], cdt, '');
+  ok(s1?.id === 'summon_skeleton' && s2?.id === 'poison' && s3?.id === 'soul_fire', `轮转保持跳过规则：召唤物已存在跳过、已中毒跳过（${s1?.id}/${s2?.id}/${s3?.id}）`);
 }
 
 console.log('# 诱惑之光');
@@ -969,5 +1099,46 @@ console.log('# 诱惑之光');
     ok(w.pets.length === 2 && !r.ok && r.reason.includes('上限'), '0 级上限 2 只'); }
   { const w = mk([{ id: 'deer', x: 600 }], [], 'mage', 20); const s = w.toSave(); const w2 = new World(seeded(1), 1, w.floors, 'mage', s);
     ok(w2.pets.length === 0 && w2.hero!.alive, '旧档/存档读入无宠物残留'); }
+}
+{ // feat/first-map-farm：首图练级
+  const { FARM_RESPAWN } = await import('../src/data/world');
+  ok(FLOORS[0].farm === true && FLOORS.slice(1, 13).every(f => !f.farm) && FLOORS.slice(13, 19).every(f => f.farm) && FLOORS.slice(19).every(f => !f.farm), '原有层只有第 1 层是练级图；B1 子层全部练级图');
+  ok(ENEMIES.wolf_king.hp < 900 * DIFF.bossHp && ENEMIES.wolf_king.atk < Math.round(20 * 1.4 * DIFF.bossAtk), '狼王已削弱');
+  const w = new World(seeded(5), 3, FLOORS, 'warrior'); w.requireUse = true;
+  const n0 = w.alive('enemy').filter(u => u.tier !== 'boss').length;
+  for (const u of w.alive('enemy')) w.kill(u); w.step(0.05);
+  ok(w.cleared && w.farmQueue.length === n0, '清图后小怪进入刷新队列');
+  w.hero!.x = 3600; for (let t = 0; t < FARM_RESPAWN + 1; t += 0.05) w.step(0.05);
+  ok(w.floorIndex === 0 && w.alive('enemy').filter(u => u.tier !== 'boss').length > 0, '清完仍可刷（小怪刷新，不强制进下一层）');
+  ok(!w.alive('enemy').some(u => u.tier === 'boss'), 'BOSS 不随小怪刷新（重进地图才刷）');
+  w.loadFloor(0); ok(w.alive('enemy').some(u => u.tier === 'boss') && w.farmQueue.length === 0, '重进首图：BOSS 与小怪重置');
+  const w2 = new World(seeded(5), 30, FLOORS, 'warrior'); w2.loadFloor(1); const k = w2.alive('enemy')[0]; w2.kill(k); ok(w2.farmQueue.length === 0, '其他层不刷新');
+  const sv = w.toSave(); ok(new World(seeded(5), 1, FLOORS, 'warrior', sv).floorIndex === 0, '旧档兼容');
+}
+{ // feat/bag-200
+  ok(WORLD.bagSize === 200, '背包 200 格');
+  const w = new World(seeded(9), 10, FLOORS, 'warrior'); w.gold = 99999;
+  const old = w.toSave(); old.bag = Array.from({ length: 30 }, () => w.makeItem('bone'));
+  const w2 = new World(seeded(9), 10, FLOORS, 'warrior', old); ok(w2.bag.length === 30 && w2.buyBook !== undefined, '旧档 30 格背包读入不变');
+  w.bag = Array.from({ length: 199 }, () => w.makeItem('bone'));
+  ok(w.storage.length === 0 && w.buyOil() === null && w.bag.length === 200, '199 格时仍可购买');
+  ok(w.buyOil() !== null && w.bag.length === 200, '满 200 格不能再买');
+  w.ground.push(w.rollDrop('wood_sword', undefined, w.hero!.x, w.hero!.y)); w.ground[w.ground.length - 1].landAt = 0; w.step(0.05);
+  ok(w.bag.length === 200 && w.ground.some(g => g.item === 'wood_sword') && w.drainEvents().some(e => e.type === 'log' && /满/.test((e as any).text)), '满包拾取提示且物品留在地上');
+  ok(w.sellItem(0) > 0 && w.bag.length === 199, '满包可出售');
+}
+// 画质/分辨率（feat/hd-resolution）
+{
+  const { resolveResK, RES_OPTIONS, isResId, hdFixed, Render, toLogic } = await import('../src/render');
+  ok(RES_OPTIONS.map(r => r.k).join() === '1,1.5,2', '三档 720p/1080p/2K 倍率 1/1.5/2');
+  ok(resolveResK('720', 3, 844, 390, true) === 1 && resolveResK('1440', 1, 1280, 720, false) === 2, '手动档位优先');
+  ok(resolveResK('auto', 1, 1280, 720, false) === 1, '自动：1x 屏 1280 宽 → 720p');
+  ok(resolveResK('auto', 2, 1280, 720, false) === 2, '自动：2x 屏 → 2K');
+  ok(resolveResK('auto', 1, 1920, 1080, false) === 1.5, '自动：1080p 显示器 → 1080p');
+  ok(resolveResK('auto', 3, 844, 390, true) === 1.5, '自动：手机最高 1080p');
+  ok(resolveResK(undefined, 1, 1280, 720, false) === 1 && resolveResK('bogus', 1, 1280, 720, false) === 1, '旧设置无 res/非法值 → 自动');
+  ok(isResId('auto') && isResId('1080') && !isResId('4k') && !isResId(null), 'isResId 校验');
+  Render.k = 2; const o = hdFixed({ x: 0, y: 0 }); ok(o.x === 640 && o.y === 360 && toLogic(1280) === 640, 'k=2 屏幕固定物体平移/坐标换算');
+  Render.k = 1; const o1 = hdFixed({ x: 5, y: 6 }); ok(o1.x === 5 && o1.y === 6, 'k=1 不变');
 }
 console.log(`全部通过 ${pass} 项`);

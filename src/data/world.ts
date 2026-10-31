@@ -16,6 +16,7 @@ export const WORLD = {
   chaseSpeedRatio: 0.85,
   returnSpeedRatio: 1.3,
   leashRange: 6 * CARD,        // 脱战距离恢复为 6 卡宽（1020px），离家上限 ×1.5=1530；用户反馈 10 卡宽太长跑不掉
+  summonAggroNear: 1.5 * CARD, // [适配] 召唤物仇恨：主角离怪中心 > 1.5 卡宽（255px，约贴身距离 ~165px + 半卡余量）时，被召唤物打过的怪只追打召唤物；≤ 该距离不强制转移
   leashRegen: 0.01,            // [适配] 脱战返回/待机时每秒回最大血量 1%（中毒时不回，追击中不回）；回位不再回满
   queueSpacing: 0.8,           // 逻辑排队间距（卡宽比例，<1 重叠）；渲染层另做视觉错开，不影响战斗
   leapGap: 120, leapSec: 0.35, leapSpeed: 3.2, leapCd: 2.5, // 近战怪跳跃补位
@@ -31,14 +32,16 @@ export const WORLD = {
   rarityRoll: { magic: 0.3, rare: 0.1 },
   affix: { magic: 0.5, rare: 1.2 },
   goldAmount: [5, 40] as [number, number],
-  bagSize: 30,
+  bagSize: 200, // feat/bag-200：用户要求扩到 200 格（[适配]；原版格数此处未查证）；面板分页 30 格/页
   deathGoldLoss: 0.1,          // 死亡损失金币比例
   summonLane: -36,             // 召唤物站位（纵深偏后）
 };
 export interface Spawn { id: string; x: number; y?: number }
-export interface Floor { name: string; spawns: Spawn[]; boss?: boolean; bg?: string; /** R11 对应原版区域（docs/legend-research.md「地图递进」） */ zone?: string }
+export interface Floor { name: string; spawns: Spawn[]; boss?: boolean; bg?: string; /** 来源链接 */ src?: string; /** 官方多层图中的第几层（1 起） */ depth?: number; /** 图群 id */ group?: string; /** 官方子层名 */ sub?: string; /** R11 对应原版区域（docs/legend-research.md「地图递进」） */ zone?: string; /** 练级图：小怪死后定时原地刷新（[适配]，见 FARM_RESPAWN） */ farm?: boolean }
+/** 练级图小怪刷新间隔（秒）。官方各图刷怪间隔未查到 → [适配] 20s，且主角在 400px 内时顺延，避免贴脸刷出 */
+export const FARM_RESPAWN = 20, FARM_SAFE_DIST = 400;
 export const FLOORS: Floor[] = [
-  { name: '幽暗森林', bg: 'bg_floor1', boss: true, zone: '比奇省·新手村周边（原版 1–7 级）', spawns: [
+  { name: '幽暗森林', bg: 'bg_floor1', boss: true, farm: true, zone: '比奇省·新手村周边（原版 1–7 级）', spawns: [
     { id: 'deer', x: 800 }, { id: 'deer', x: 900, y: 20 },
     { id: 'bat', x: 1500 }, { id: 'wolf', x: 1620, y: -15 },
     { id: 'wolf', x: 2300 }, { id: 'bat', x: 2400, y: -20 }, { id: 'deer', x: 2480, y: 15 },
@@ -103,25 +106,54 @@ export const FLOORS: Floor[] = [
     { id: 'blood_zombie', x: 1550 }, { id: 'redmoon_spider', x: 1650, y: -15 },
     { id: 'blood_zombie', x: 2300 }, { id: 'redmoon_spider', x: 2400, y: 15 },
     { id: 'boss_redmoon', x: 3380 } ] },
-  // 合击版 #8（docs/hejiban-official.md §4）：追加在末尾，旧存档层号不变
-  { name: '保卫家园', bg: 'bg_floor14', boss: true, zone: '合击·英雄地（保卫家园四连本合为一层 [适配]，官方 40 级）', spawns: [
+  // feat/maps-more（plan-60h B1）：洞穴群子层追加在下标 13–18（旧档下标不变；白骨墓穴=兽人古墓一层 D001 原样保留）。depth=官方第几层
+  { name: '兽人古墓二层', bg: 'bg_floor14', boss: true, farm: true, group: 'shouren', sub: '兽人古墓二层 D002', depth: 2, zone: '比奇省·兽人古墓二层（21cq：洞蛆/骷髅战士/掷斧骷髅/骷髅战将/骷髅/山洞蝙蝠 8 分钟，骷髅精灵×1 60 分钟）', src: 'https://www.21cq.com/mir/Map.aspx?id=218', spawns: [
+    { id: 'skeleton', x: 800 }, { id: 'cave_skel_warrior', x: 900, y: 20 }, { id: 'axe_skeleton', x: 1500 }, { id: 'cave_skel_general', x: 1600, y: -15 }, { id: 'cave_maggot', x: 1700 }, { id: 'cave_bat', x: 2300 }, { id: 'cave_skel_warrior', x: 2400, y: 15 }, { id: 'axe_skeleton', x: 2500 }, { id: 'skeleton_lord', x: 3350 } ] },
+  { name: '兽人古墓三层', bg: 'bg_floor15', boss: true, farm: true, group: 'shouren', sub: '兽人古墓三层 D003', depth: 3, zone: '兽人古墓三层（21cq：同二层，骷髅精灵×2 60 分钟；连通沃玛自然洞穴）', src: 'https://www.21cq.com/mir/Map.aspx?id=221', spawns: [
+    { id: 'cave_skel_general', x: 800 }, { id: 'cave_skel_warrior', x: 900, y: 20 }, { id: 'axe_skeleton', x: 1500 }, { id: 'skeleton', x: 1600, y: -15 }, { id: 'cave_maggot', x: 1700 }, { id: 'cave_bat', x: 2300 }, { id: 'cave_skel_general', x: 2400, y: 15 }, { id: 'axe_skeleton', x: 2500 }, { id: 'skeleton_lord', x: 3350 } ] },
+  { name: '骷髅洞·洞穴一层', bg: 'bg_floor16', boss: true, farm: true, group: 'tianran', sub: '洞穴一层 D011', depth: 1, zone: '比奇省·天然洞穴一层（21cq：骷髅/骷髅战士/蝎子/山洞蝙蝠/洞蛆 8 分钟，骷髅精灵×1 60 分钟）', src: 'https://www.21cq.com/mir/Map.aspx?id=248', spawns: [
+    { id: 'skeleton', x: 800 }, { id: 'cave_skel_warrior', x: 900, y: 20 }, { id: 'scorpion', x: 1500 }, { id: 'cave_bat', x: 1600, y: -15 }, { id: 'cave_maggot', x: 1700 }, { id: 'skeleton', x: 2300 }, { id: 'cave_skel_warrior', x: 2400, y: 15 }, { id: 'scorpion', x: 2500 }, { id: 'skeleton_lord', x: 3350 } ] },
+  { name: '骷髅洞·洞穴二层', bg: 'bg_floor17', boss: true, farm: true, group: 'tianran', sub: '洞穴二层 D012', depth: 2, zone: '天然洞穴二层（21cq：骷髅/战士/战将/掷斧/蝎子/洞蛆/蝙蝠 8 分钟，骷髅精灵×2 60 分钟；连通沃玛自然洞穴）', src: 'https://www.21cq.com/mir/Map.aspx?id=249', spawns: [
+    { id: 'skeleton', x: 800 }, { id: 'cave_skel_warrior', x: 900, y: 20 }, { id: 'cave_skel_general', x: 1500 }, { id: 'axe_skeleton', x: 1600, y: -15 }, { id: 'scorpion', x: 1700 }, { id: 'cave_maggot', x: 2300 }, { id: 'cave_bat', x: 2400, y: 15 }, { id: 'cave_skel_general', x: 2500 }, { id: 'skeleton_lord', x: 3350 } ] },
+  { name: '沃玛自然洞穴·一', bg: 'bg_floor18', boss: false, farm: true, group: 'woma_cave', sub: '沃玛自然洞穴 E001', depth: 1, zone: '沃玛自然洞穴 E001（21cq：骷髅系/山洞蝙蝠/洞蛆 23 分钟，无 BOSS；连通兽人古墓三层）', src: 'https://www.21cq.com/mir/Map.aspx?id=1506', spawns: [
+    { id: 'skeleton', x: 800 }, { id: 'cave_skel_warrior', x: 900, y: 20 }, { id: 'axe_skeleton', x: 1500 }, { id: 'cave_bat', x: 1600, y: -15 }, { id: 'cave_skel_general', x: 1700 }, { id: 'cave_maggot', x: 2300 }, { id: 'cave_skel_general', x: 2400, y: 15 }, { id: 'cave_skel_warrior', x: 2500 } ] },
+  { name: '沃玛自然洞穴·二', bg: 'bg_floor19', boss: false, farm: true, group: 'woma_cave', sub: '沃玛自然洞穴 E002', depth: 2, zone: '沃玛自然洞穴 E002（21cq：同 E001，无 BOSS；连通洞穴二层）', src: 'https://www.21cq.com/mir/Map.aspx?id=1507', spawns: [
+    { id: 'cave_skel_warrior', x: 800 }, { id: 'axe_skeleton', x: 900, y: 20 }, { id: 'cave_skel_general', x: 1500 }, { id: 'cave_bat', x: 1600, y: -15 }, { id: 'cave_maggot', x: 1700 }, { id: 'skeleton', x: 2300 }, { id: 'cave_skel_general', x: 2400, y: 15 }, { id: 'axe_skeleton', x: 2500 } ] },
+  // 合击版 #8（合并 main 后下标 19–22，排在洞穴群 13–18 之后）（docs/hejiban-official.md §4）：追加在末尾，旧存档层号不变
+  { name: '保卫家园', bg: 'bg_floor20', boss: true, zone: '合击·英雄地（保卫家园四连本合为一层 [适配]，官方 40 级）', spawns: [
     { id: 'hj_guard', x: 800 }, { id: 'redmoon_spider', x: 910, y: 20 },
     { id: 'hj_guard', x: 1550 }, { id: 'redmoon_spider', x: 1650, y: -15 },
     { id: 'hj_guard', x: 2300 }, { id: 'redmoon_spider', x: 2400, y: 15 },
     { id: 'boss_hj_home', x: 3380 } ] },
-  { name: '卧龙山庄', bg: 'bg_floor15', boss: true, zone: '盟重卧龙笔记(330,340)·卧龙山庄（官方 47 级）', spawns: [
+  { name: '卧龙山庄', bg: 'bg_floor21', boss: true, zone: '盟重卧龙笔记(330,340)·卧龙山庄（官方 47 级）', spawns: [
     { id: 'wolong_guard', x: 800 }, { id: 'hj_guard', x: 910, y: 20 },
     { id: 'wolong_guard', x: 1550 }, { id: 'hj_guard', x: 1650, y: -15 },
     { id: 'wolong_guard', x: 2300 }, { id: 'hj_guard', x: 2400, y: 15 },
     { id: 'boss_wolong', x: 3380 } ] },
-  { name: '雷炎洞穴', bg: 'bg_floor16', boss: true, zone: '盟重店小二(382,308)·雷炎洞穴（官方 47 级，2 层合 1 [适配]）', spawns: [
+  { name: '雷炎洞穴', bg: 'bg_floor22', boss: true, zone: '盟重店小二(382,308)·雷炎洞穴（官方 47 级，2 层合 1 [适配]）', spawns: [
     { id: 'leiyan_spider', x: 800 }, { id: 'wolong_guard', x: 910, y: 20 },
     { id: 'leiyan_spider', x: 1550 }, { id: 'wolong_guard', x: 1650, y: -15 },
     { id: 'leiyan_spider', x: 2300 }, { id: 'wolong_guard', x: 2400, y: 15 },
     { id: 'boss_leiyan', x: 3380 } ] },
-  { name: '火龙神殿', bg: 'bg_floor17', boss: true, zone: '火龙神殿（1.90 终章，入口/等级未查到）', spawns: [
+  { name: '火龙神殿', bg: 'bg_floor23', boss: true, zone: '火龙神殿（1.90 终章，入口/等级未查到）', spawns: [
     { id: 'fire_dragon_guard', x: 800 }, { id: 'leiyan_spider', x: 910, y: 20 },
     { id: 'fire_dragon_guard', x: 1550 }, { id: 'leiyan_spider', x: 1650, y: -15 },
     { id: 'fire_dragon_guard', x: 2300 }, { id: 'leiyan_spider', x: 2400, y: 15 },
-    { id: 'boss_fire_dragon', x: 3380 } ] },
+    { id: 'boss_fire_dragon', x: 3380 } ] }
 ];
+/** 通关顺序：兽人古墓一层(白骨墓穴)→二层→三层→洞穴一层→二层→沃玛自然洞穴一→二→尸王殿…（按 21cq 进出表连通） */
+export const FLOOR_ORDER = [0, 1, 2, 3, 4, 13, 14, 15, 16, 17, 18, 5, 6, 7, 8, 9, 10, 11, 12, 19, 20, 21, 22];
+/** 图群：白骨墓穴（下标 4）作为兽人古墓一层 */
+export const FLOOR_GROUP: Record<number, { group: string; depth: number }> = { 4: { group: 'shouren', depth: 1 } };
+export const groupOf = (i: number, floors: Floor[] = FLOORS) => floors[i]?.group ?? (floors === FLOORS ? FLOOR_GROUP[i]?.group : undefined);
+/** 同图群上一层下标（无则 -1），用于「上一层」入口 */
+export const prevLayerOf = (i: number, floors: Floor[] = FLOORS) => { const g = groupOf(i, floors); if (!g || floors !== FLOORS) return -1; const k = FLOOR_ORDER.indexOf(i); const p = FLOOR_ORDER[k - 1]; return p !== undefined && groupOf(p) === g ? p : -1; };
+/** 通关顺序上的前一层（无则 -1）；自定义层表线性 */
+export const prevFloorOf = (i: number, floors: Floor[] = FLOORS) => floors !== FLOORS ? i - 1 : (FLOOR_ORDER[FLOOR_ORDER.indexOf(i) - 1] ?? -1);
+/** [适配] 层深难度（plan-60h §4：每深一层 HP/ATK 约 +8%）；原有层无 depth 不受影响 */
+export const DEPTH_STEP = 0.08;
+/** 下标 i 的通关序号（1 起，显示「第 N 层」用）；非默认层表按下标 */
+export const floorNo = (i: number, floors: Floor[] = FLOORS) => floors === FLOORS ? FLOOR_ORDER.indexOf(i) + 1 : i + 1;
+/** 下一层下标；最后一层返回 -1 */
+export const nextFloorOf = (i: number, floors: Floor[] = FLOORS) => { if (floors !== FLOORS) return i + 1 < floors.length ? i + 1 : -1; const k = FLOOR_ORDER.indexOf(i); return k >= 0 && k + 1 < FLOOR_ORDER.length ? FLOOR_ORDER[k + 1] : -1; };
+

@@ -1,4 +1,5 @@
 import { IS_MOBILE } from './mobile';
+import { isResId, type ResId } from './render';
 // 设置与存档（localStorage）
 import type { SaveData } from './combat/World';
 import type { ClassId } from './data/classes';
@@ -30,6 +31,8 @@ export const Settings = {
   zoom: 1,
   /** 自适应：按视口（含安全区）等比 FIT，完整显示不裁切；null=手机默认开/电脑默认关 */
   zoomAuto: null as boolean | null,
+  /** 画质/渲染分辨率：auto=按设备像素比；旧设置无此字段 → auto */
+  res: 'auto' as ResId,
   load() {
     try {
       const raw = JSON.parse(ls()?.getItem(SET_KEY) ?? '{}') as Record<string, unknown>;
@@ -45,6 +48,7 @@ export const Settings = {
       else if (Array.isArray(raw.autoSkills)) this.autoSkills = raw.autoSkills.filter((x): x is string => typeof x === 'string');
       if (Array.isArray(raw.autoTouched)) this.autoTouched = raw.autoTouched.filter((x): x is ClassId => typeof x === 'string' && x in DEFAULT_AUTO_SKILLS);
       if (typeof raw.zoomAuto === 'boolean' || raw.zoomAuto === null) this.zoomAuto = raw.zoomAuto as boolean | null;
+      if (isResId(raw.res)) this.res = raw.res;
       if (typeof raw.zoom === 'number' && Number.isFinite(raw.zoom)) this.zoom = clampZoom(raw.zoom);
     } catch { /* ignore */ }
     return this;
@@ -53,7 +57,7 @@ export const Settings = {
     ls()?.setItem(SET_KEY, JSON.stringify({
       volume: this.volume, muted: this.muted, music: this.music,
       showPadMobile: this.showPadMobile, lowFx: this.lowFx,
-      autoAttack: this.autoAttack, autoSkills: this.autoSkills, autoTouched: this.autoTouched, zoom: this.zoom, zoomAuto: this.zoomAuto,
+      autoAttack: this.autoAttack, autoSkills: this.autoSkills, autoTouched: this.autoTouched, zoom: this.zoom, zoomAuto: this.zoomAuto, res: this.res,
     }));
   },
   /** 手机/触屏：null 或 true → 显示虚拟按键；电脑永远 false */

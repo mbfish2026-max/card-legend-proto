@@ -1,4 +1,5 @@
 import { COMPANION_UNLOCK_LEVEL, comboFor, BOOK_PAGE, BRM_BOOK, GOLD_BAR, PAGES_PER_BOOK, COMBO_LEVEL, heartFeedValue, RAGE_MAX, HEART_STORE_MAX, RECRUIT_DIALOG } from '../data/companion';
+import { toLogic } from '../render';
 import { RING_MIN_LEVEL, IDENT_PRICE, IDENT_MIN_LEVEL } from '../data/r14b';
 import { fmtExp, scaledExp } from '../data/expCurve';
 import Phaser from 'phaser';
@@ -9,6 +10,7 @@ import { OIL_PRICE } from '../combat/World';
 import { POTIONS } from '../data/skills';
 import { WORLD } from '../data/world';
 import { CLASSES, CLASS_IDS } from '../data/classes';
+export const BAG_PAGE = 30;
 import { renderSettingsView } from './SettingsView';
 import { txt, button, sfx } from '../scenes/TitleScene';
 import { IS_MOBILE } from '../mobile';
@@ -16,7 +18,7 @@ import { FxQuality } from './Fx';
 import { REGIONS, floorBoss, regionOf, clampView, zoomAt, WORLD_W, WORLD_H, View } from '../data/map';
 import { QUESTS, ACHIEVES } from '../data/quests';
 import { ENEMIES } from '../data/units';
-import { FLOORS } from '../data/world';
+import { FLOORS, floorNo } from '../data/world';
 import { World as WorldCls } from '../combat/World';
 import { BOOKS } from '../data/books';
 import { TOWNS, NODE_TOWN, STORAGE_SIZE, NPC_ART } from '../data/towns';
@@ -36,6 +38,8 @@ export class Panel {
   region: string | null = null;
   /** 背包选中的黑铁矿石下标：下一次点装备栏即强化 */
   ironIdx: number | null = null;
+  /** 背包分页（200 格，每页 BAG_PAGE 格） */
+  bagPage = 0;
   /** 商店分页：杂货 / 书店（R11 技能书） */
   shopTab: 'goods' | 'books' = 'goods';
   onTeleport?: () => void;
@@ -178,8 +182,15 @@ export class Panel {
   private renderBag(R: Phaser.GameObjects.Container, top: number) {
     const s = this.s, w = this.world(), cols = 6, size = 56, x0 = 600, y0 = top + 100;
     R.add(txt(s, x0 - size / 2, top + 50, `背包 ${w.bag.length}/${WORLD.bagSize}`, 15, '#ffe8a0'));
-    for (let i = 0; i < WORLD.bagSize; i++) {
-      const it = w.bag[i], x = x0 + (i % cols) * (size + 6), y = y0 + Math.floor(i / cols) * (size + 6);
+    const pages = Math.ceil(WORLD.bagSize / BAG_PAGE); this.bagPage = Math.max(0, Math.min(pages - 1, this.bagPage));
+    const go = (d: number) => { this.bagPage = (this.bagPage + d + pages) % pages; this.sel = null; this.render(); };
+    R.add([...button(s, x0 + 150, top + 52, 40, 30, '◀', () => go(-1), 15)]);
+    R.add(txt(s, x0 + 175, top + 50, `${this.bagPage + 1}/${pages}`, 15, '#ffe8a0'));
+    R.add([...button(s, x0 + 250, top + 52, 40, 30, '▶', () => go(1), 15)]);
+    R.add([...button(s, x0 + 300, top + 52, 50, 30, '末页', () => { this.bagPage = Math.floor(Math.max(0, w.bag.length - 1) / BAG_PAGE); this.render(); }, 13)]);
+    const p0 = this.bagPage * BAG_PAGE;
+    for (let i = p0; i < Math.min(WORLD.bagSize, p0 + BAG_PAGE); i++) {
+      const it = w.bag[i], k = i - p0, x = x0 + (k % cols) * (size + 6), y = y0 + Math.floor(k / cols) * (size + 6);
       this.slotBox(R, x, y, size, it, '', right => {
         if (this.mode === 'shop' || this.npcKind() && this.npcKind() !== 'storage') { const g = w.sellItem(i); sfx(s, 'coin'); this.onChange(`出售 ${it!.name} 获得 ${g} 金币`, true); }
         else if (this.npcKind() === 'storage') { const e = w.deposit(i); this.onChange(e ?? `存入 ${it!.name}`, !e); }
@@ -224,8 +235,8 @@ export class Panel {
       const compact = rowH < 50;
       if (!compact) R.add(txt(s, 212, y - rowH / 2 + 4 + fs + 5, `${k.desc}  各级：${lvVals.map((v, l) => `${l}级${v}`).join(' ')}`.slice(0, 64), fs, locked ? '#777' : '#ddd', { strokeThickness: 2 }));
       const up = lv >= 0 && lv < 3 && k.learn && k.train ? `升级：人物Lv${k.learn[lv + 1]} + 修炼点${k.train[lv]}` : lv === 3 ? '已满级' : '';
-      if (compact) R.add(txt(s, 212, y - rowH / 2 + 4 + fs + 5, `${k.passive ? '无需施放' : `耗魔${k.mana} 间隔${k.cooldown}s`} 修炼${pts}${k.train ? '/' + k.train[2] : ''} ${up}  ${k.desc}`.slice(0, 46), fs, locked ? '#777' : '#9fd', { strokeThickness: 2 }));
-      else R.add(txt(s, 212, y - rowH / 2 + 4 + (fs + 5) * 2, `${k.passive ? '无需施放' : `耗魔 ${k.mana}  施法间隔 ${k.cooldown}s`}  修炼点 ${pts}${k.train ? '/' + k.train[2] : ''}  ${up}`, fs, locked ? '#666' : '#9fd', { strokeThickness: 2 }));
+      if (compact) R.add(txt(s, 212, y - rowH / 2 + 4 + fs + 5, `${k.passive ? '无需施放' : `耗魔${k.mana} 冷却${k.cooldown}s`} 修炼${pts}${k.train ? '/' + k.train[2] : ''} ${up}  ${k.desc}`.slice(0, 46), fs, locked ? '#777' : '#9fd', { strokeThickness: 2 }));
+      else R.add(txt(s, 212, y - rowH / 2 + 4 + (fs + 5) * 2, `${k.passive ? '无需施放' : `耗魔 ${k.mana}  冷却 ${k.cooldown}s`}  修炼点 ${pts}${k.train ? '/' + k.train[2] : ''}  ${up}`, fs, locked ? '#666' : '#9fd', { strokeThickness: 2 }));
       // 修炼进度条（官方：修炼点达到下一级要求 + 人物等级达到即自动升级）
       if (k.train && lv >= 0 && lv < 3) { const p = Math.min(1, pts / k.train[lv]); R.add(s.add.rectangle(212, y + rowH / 2 - 6, 220, 4, 0x333333).setOrigin(0, 0.5)); R.add(s.add.rectangle(212, y + rowH / 2 - 6, 220 * p, 4, 0x55cc77).setOrigin(0, 0.5)); }
       if (inBar) {
@@ -245,7 +256,7 @@ export class Panel {
         } else R.add(txt(s, 975, y, '手动', 12, '#888').setOrigin(0.5));
       }
     });
-    R.add(txt(s, 160, top + 452, `▲▼/拖动≡ 调整快捷栏；☑自动 与设置页同一份，#n 为自动优先级。学习等级/修炼点取自 1.76 官方，修炼满足后自动升级；耗魔×3、无冷却，仅公共施法间隔 0.8s（适配）。等级加成 ×${w.skillScale().toFixed(2)}`, 12, '#aaa', { wordWrap: { width: 960 } }));
+    R.add(txt(s, 160, top + 452, `▲▼/拖动≡ 调整快捷栏；☑自动 与设置页同一份，#n 为自动优先级。学习等级/修炼点取自 1.76 官方，修炼满足后自动升级；耗魔×3；轻量冷却 1.5–6s + 公共施法间隔 0.8s（适配）。等级加成 ×${w.skillScale().toFixed(2)}`, 12, '#aaa', { wordWrap: { width: 960 } }));
   }
   // ---------- R14 城镇 ----------
   private npcDef() { const t = TOWNS[this.world().town ?? '']; return t?.npcs.find(n => n.id === this.npc); }
@@ -346,10 +357,10 @@ export class Panel {
       });
       apply();
       // 拖动 / 双指缩放 / 滚轮缩放（桌面与手机通用）
-      const inV = (p: Phaser.Input.Pointer) => p.x >= VX && p.x <= VX + VW && p.y >= VY && p.y <= VY + VH;
+      const inV = (p: Phaser.Input.Pointer) => toLogic(p.x) >= VX && toLogic(p.x) <= VX + VW && toLogic(p.y) >= VY && toLogic(p.y) <= VY + VH;
       s.input.addPointer(1);
       let pinch = 0;
-      const onDown = (p: Phaser.Input.Pointer) => { if (inV(p)) { downAt = { x: p.x, y: p.y }; moved = 0; } };
+      const onDown = (p: Phaser.Input.Pointer) => { if (inV(p)) { downAt = { x: toLogic(p.x), y: toLogic(p.y) }; moved = 0; } };
       const onMove = (p: Phaser.Input.Pointer) => {
         const p1 = s.input.pointer1, p2 = s.input.pointer2;
         if (p1?.isDown && p2?.isDown) {
@@ -359,22 +370,22 @@ export class Panel {
         }
         pinch = 0;
         if (!downAt || !p.isDown) return;
-        const dx = p.x - p.prevPosition.x, dy = p.y - p.prevPosition.y; moved += Math.abs(dx) + Math.abs(dy);
+        const dx = toLogic(p.x) - toLogic(p.prevPosition.x), dy = toLogic(p.y) - toLogic(p.prevPosition.y); moved += Math.abs(dx) + Math.abs(dy);
         this.view = clampView({ ...this.view!, x: this.view!.x + dx, y: this.view!.y + dy }, VW, VH); apply();
       };
       const onUp = () => { downAt = null; pinch = 0; s.time.delayedCall(0, () => { moved = 0; }); };
-      const onWheel = (p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => { if (!inV(p)) return; this.view = zoomAt(this.view!, p.x - VX, p.y - VY, dy > 0 ? 0.9 : 1.1, VW, VH); apply(); };
+      const onWheel = (p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => { if (!inV(p)) return; this.view = zoomAt(this.view!, toLogic(p.x) - VX, toLogic(p.y) - VY, dy > 0 ? 0.9 : 1.1, VW, VH); apply(); };
       s.input.on('pointerdown', onDown); s.input.on('pointermove', onMove); s.input.on('pointerup', onUp); s.input.on('wheel', onWheel);
       this.mapOff.push(() => { s.input.off('pointerdown', onDown); s.input.off('pointermove', onMove); s.input.off('pointerup', onUp); s.input.off('wheel', onWheel); mk.destroy(); });
       const zb = (f: number) => { this.view = zoomAt(this.view!, VW / 2, VH / 2, f, VW, VH); apply(); };
       R.add([...button(s, VX + VW - 70, VY + 26, 40, 34, '＋', () => zb(1.25), 18)]);
       R.add([...button(s, VX + VW - 26, VY + 26, 40, 34, '－', () => zb(0.8), 18)]);
-      R.add(txt(s, 640, top + 418, `当前：${cur.name} · 第 ${w.floorIndex + 1} 层 ${w.floor.name}    拖动平移 / 滚轮或双指缩放，点击区域进入小地图（M 关闭）`, 14, '#9fd').setOrigin(0.5));
+      R.add(txt(s, 640, top + 418, `当前：${cur.name} · 第 ${floorNo(w.floorIndex, w.floors)} 层 ${w.floor.name}    拖动平移 / 滚轮或双指缩放，点击区域进入小地图（M 关闭）`, 14, '#9fd').setOrigin(0.5));
       return;
     }
     const r = REGIONS.find(x => x.id === this.region)!;
     R.add([...button(s, 200, top + 22, 110, 32, '◀ 世界', () => { this.region = null; this.render(); }, 15)]);
-    R.add(txt(s, 640, top + 58, `${r.name}${r === cur ? `（你在第 ${w.floorIndex + 1} 层 ${w.floor.name}）` : ''}`, 18, '#ffe8a0').setOrigin(0.5));
+    R.add(txt(s, 640, top + 58, `${r.name}${r === cur ? `（你在第 ${floorNo(w.floorIndex, w.floors)} 层 ${w.floor.name}）` : ''}`, 18, '#ffe8a0').setOrigin(0.5));
     const RY = top + 80, RH = 320;
     if (s.textures.exists(r.bg ?? `map_region_${r.id}`)) R.add(s.add.image(VX, RY, r.bg ?? `map_region_${r.id}`).setOrigin(0).setDisplaySize(VW, RH));
     else R.add(s.add.rectangle(VX, RY, VW, RH, 0x1a2414).setOrigin(0).setStrokeStyle(2, 0x6a5030));

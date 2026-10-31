@@ -1,3 +1,4 @@
+import { hdFixed } from '../render';
 import { REGIONS } from '../data/map';
 import { fmtExp } from '../data/expCurve';
 import { floorKeys, PreloadScene } from '../loader';
@@ -9,8 +10,9 @@ import { World, SaveData } from '../combat/World';
 import { BattleEvent, GroundItem, Unit } from '../combat/types';
 import { POTIONS } from '../data/skills';
 import { FX, FONT, GROUND_Y } from '../data/fx';
-import { WORLD, FLOORS } from '../data/world';
+import { WORLD, FLOORS, nextFloorOf, floorNo } from '../data/world';
 import { ClassId, CLASSES } from '../data/classes';
+import { playCombatAnim } from '../ui/combatAnim';
 import { CardView } from '../ui/CardView';
 import { Hud } from '../ui/Hud';
 import { PanelMode } from '../ui/Panel';
@@ -60,7 +62,7 @@ export class BattleScene extends Phaser.Scene {
     for (let x = 0; x < W * 1.3; x += 140 + ((x * 7919) % 170)) { const h = 40 + ((x * 31) % 70); fg.fillStyle(0x060405, 0.95).fillTriangle(x - 26, 0, x + 26, 0, x + ((x % 3) - 1) * 6, h); fg.fillStyle(0x060405, 0.9).fillTriangle(x + 18, 0, x + 40, 0, x + 30, h * 0.55); }
     fg.fillStyle(0x060405, 0.95).fillRect(0, 0, W * 1.3, 8);
     this.add.particles(0, 0, '__WHITE', { x: { min: 0, max: W }, y: { min: 80, max: 560 }, speedX: { min: -8, max: 8 }, speedY: { min: -12, max: -3 }, lifespan: 6000, scale: { start: 1.6, end: 0 }, alpha: { start: 0.35, end: 0 }, frequency: 90, tint: 0xffe0b0 }).setDepth(39);
-    const vg = this.add.graphics().setScrollFactor(0).setDepth(38);
+    const vg = hdFixed(this.add.graphics().setScrollFactor(0).setDepth(38));
     vg.fillGradientStyle(0x000000, 0x000000, 0x000000, 0x000000, 0.55, 0.55, 0, 0).fillRect(0, 0, 1280, 110);
     vg.fillGradientStyle(0x000000, 0, 0x000000, 0, 0.5, 0, 0.5, 0).fillRect(0, 0, 140, 720);
     vg.fillGradientStyle(0, 0x000000, 0, 0x000000, 0, 0.5, 0, 0.5).fillRect(1140, 0, 140, 720);
@@ -115,7 +117,10 @@ export class BattleScene extends Phaser.Scene {
       for (const [id, r] of [['dragon_sword', 'rare'], ['bone_helm', 'magic'], ['armor', 'common'], ['pearl', 'magic'], ['gold_ring', 'rare'], ['boots', 'common'], ['bracelet', 'magic'], ['iron_sword', 'common'], ['magic_staff', 'magic'], ['meat', 'common'], ['bone', 'common'], ['helmet', 'rare']] as const) w.bag.push(w.makeItem(id, r));
       w.gold += 860; w.equipItem(1); w.equipItem(2); w.equipItem(4);
     }
-    this.handle(w.drainEvents()); this.views.forEach(v => { v.x = v.unit.x; v.sync(); });
+    this.handle(w.drainEvents());
+    // 号角召出的沃玛教主、第一张图的刷新怪不发 summon 事件：补建缺失的视图，避免「有怪无图」
+    if (!w.town) for (const u of w.alive('enemy')) if (!this.views.has(u.uid)) { const v = new CardView(this, u); v.setAlpha(0); this.tweens.add({ targets: v, alpha: 1, duration: 400 }); this.views.set(u.uid, v); }
+    this.views.forEach(v => { v.x = v.unit.x; v.sync(); });
     const last = es.filter(e => e.tier !== 'boss').pop();
     if (last && !qs.has('nodrop')) { last.drops = [{ item: 'gold', chance: 1 }, { item: 'hp_small', chance: 1 }, { item: 'iron_sword', chance: 1, rarity: 'rare' }]; w.kill(last); this.handle(w.drainEvents()); }
     const cast = qs.get('cast');
@@ -158,8 +163,8 @@ export class BattleScene extends Phaser.Scene {
     if (need.length) { need.forEach(k => this.load.image(k, `assets/town/${k}.${k === 'bg_far' || k === 'ground_strip' ? 'jpg' : 'png'}`)); this.load.once('complete', () => { if (this.world.town === id) this.buildStreet(id); }); this.load.start(); }
     const C = this.street = this.add.container(0, 0).setDepth(3), W = TOWN_W, has = (k: string) => this.textures.exists(k);
     // 远景（0.3x 视差，固定在屏幕上平铺滚动）
-    if (has('bg_far')) { const far = this.add.tileSprite(0, 0, 1280, 720, 'bg_far').setOrigin(0).setScrollFactor(0).setTileScale(K); this.streetFar = far; C.add(far); }
-    else { const far = this.add.graphics().setScrollFactor(0); far.fillGradientStyle(0x6ab0ff, 0x6ab0ff, 0xc8e8a0, 0xc8e8a0, 1).fillRect(0, 0, 1280, 720); C.add(far); }
+    if (has('bg_far')) { const far = hdFixed(this.add.tileSprite(0, 0, 1280, 720, 'bg_far').setOrigin(0).setScrollFactor(0).setTileScale(K)); this.streetFar = far; C.add(far); }
+    else { const far = hdFixed(this.add.graphics().setScrollFactor(0)); far.fillGradientStyle(0x6ab0ff, 0x6ab0ff, 0xc8e8a0, 0xc8e8a0, 1).fillRect(0, 0, 1280, 720); C.add(far); }
     // 地面（原 y=720~1080 → 480~720，平铺）
     if (has('ground_strip')) C.add(this.add.tileSprite(0, 720 * K, W, 360 * K, 'ground_strip').setOrigin(0).setTileScale(K));
     else C.add(this.add.rectangle(0, 720 * K, W, 360 * K, 0x9a8a70).setOrigin(0));
@@ -368,7 +373,7 @@ export class BattleScene extends Phaser.Scene {
         all.forEach((v, i) => this.time.delayedCall(i * 80, () => { if (v.active && !playFx(this, 'fx_heal_pillar', v.cx, v.y)) fx.holyLight(this, v.cx, v.cy, v.h); }));
         fx.floatNumber(this, hv.cx, hv.cy - hv.h * 0.2, hv.h, '群体治愈术', '#80ff90', 0.7); return done();
       }
-      case 'heal': if (!playFx(this, 'fx_heal_pillar', hv.cx, hv.y)) fx.holyLight(this, hv.cx, hv.cy, hv.h); fx.floatNumber(this, hv.cx, hv.cy - hv.h * 0.2, hv.h, '治愈术', '#80ff90', 0.7); return done();
+      case 'heal': { const v = tv[0] ?? hv; /* 主角满血时目标为召唤物 */ if (!playFx(this, 'fx_heal_pillar', v.cx, v.y)) fx.holyLight(this, v.cx, v.cy, v.h); fx.floatNumber(this, v.cx, v.cy - v.h * 0.2, v.h, '治愈术', '#80ff90', 0.7); return done(); }
       default: return done();
     }
   }
@@ -376,9 +381,8 @@ export class BattleScene extends Phaser.Scene {
   handle(evs: BattleEvent[]) {
     for (const e of evs) {
       if (e.type === 'attack') {
-        if (e.skill) continue;
-        const sv = this.views.get(e.source), tv = this.views.get(e.target); if (!sv || !tv) continue;
-        const dir = tv.x >= sv.x ? 1 : -1; sv.swing(dir); sv.lunge(dir, 18);
+        const r = playCombatAnim(e, uid => this.views.get(uid)); if (r?.kind !== 'attack') continue;
+        const sv = r.sv as CardView, tv = r.tv as CardView, dir = r.dir;
         if (sv.unit.isHero) playFx(this, 'fx_common_slash', sv.cx + dir * sv.w * 0.25, sv.cy - 10, { tint: SLASH_TINT[this.world.cls], flip: dir < 0, decorative: this.world.cls !== 'warrior' });
         if (sv.unit.isHero && this.world.cls !== 'warrior') fx.projectile(this, sv.cx + dir * 30, sv.cy - 20, tv.cx, tv.cy, this.world.cls === 'mage' ? 'fire' : 'talisman', () => { if (this.world.cls !== 'mage' || !playFx(this, 'fx_common_explosion', tv.cx, tv.cy, { scale: 0.7, decorative: true })) fx.hitSpark(this, tv.cx, tv.cy); });
         else if (sv.unit.isHero && this.textures.exists('fx_common_slash')) { /* 已播放图集挥砍 */ }
@@ -387,8 +391,9 @@ export class BattleScene extends Phaser.Scene {
         const v = this.views.get(e.target); if (!v) continue;
         const y = v.cy - v.h * 0.15;
         if (e.heal) { fx.floatNumber(this, v.cx, y, v.h, '+' + e.amount, FX.healColor, 0.8); continue; }
-        if (e.dot) { fx.floatNumber(this, v.cx + 20, y, v.h, '-' + e.amount, '#5aff3a', 0.7); v.hit(); continue; }
-        v.hit(); if (!playFx(this, 'fx_common_hitspark', v.cx, v.cy)) fx.hitSpark(this, v.cx, v.cy);
+        playCombatAnim(e, uid => this.views.get(uid)); // 受击动作（主角/怪物/召唤物同一套）
+        if (e.dot) { fx.floatNumber(this, v.cx + 20, y, v.h, '-' + e.amount, '#5aff3a', 0.7); continue; }
+        if (!playFx(this, 'fx_common_hitspark', v.cx, v.cy)) fx.hitSpark(this, v.cx, v.cy);
         fx.floatNumber(this, v.cx, y, v.h, '-' + e.amount + (e.crit ? '!' : ''), e.crit ? '#ff5a1a' : FX.dmgColor, e.crit ? FX.critScale : 1);
         if (e.crit && !FxQuality.low) this.cameras.main.shake(80, 0.003);
         if (e.source !== undefined) this.sfx(v.unit.isHero ? 'hit_hero' : e.crit ? 'swing_crit' : 'hit', 0.35);
@@ -505,7 +510,7 @@ export class BattleScene extends Phaser.Scene {
     // R10：本层背景未到 → 到了自动替换；下一层资源插队预加载
     const want = this.world.floor.bg;
     if (want && bg !== want) { const on = (k: string) => { if (k === want && this.world.floor.bg === want) { this.textures.off('addtexture', on); this.bgImgs.forEach(b => b.setTexture(want).setDisplaySize(1280, 720)); } }; this.textures.on('addtexture', on); this.events.once('shutdown', () => this.textures.off('addtexture', on)); }
-    (this.scene.get('Preload') as PreloadScene | undefined)?.prioritize?.([...floorKeys(this.world.floor), ...floorKeys(this.world.floors[this.world.floorIndex + 1])]);
+    (this.scene.get('Preload') as PreloadScene | undefined)?.prioritize?.([...floorKeys(this.world.floor), ...floorKeys(this.world.floors[nextFloorOf(this.world.floorIndex, this.world.floors)])]);
     this.hud?.setFloor(name, this.floorIcons());
     this.log(`进入 第 ${i + 1} 层 · ${name}（首领在地图尽头）`);
     this.cameras.main.centerOn(WORLD.heroStartX, 360); this.cameras.main.fadeIn(700, 0, 0, 0);
@@ -570,16 +575,13 @@ export class BattleScene extends Phaser.Scene {
   hold = new HoldKeys();
   stepKey(d: number) { if (this.state === 'play' && !this.paused) this.world.queueStep(d); }
   /** 自动技能：按 Settings.autoSkills（或职业推荐）优先级尝试释放；失败静默；手动按键走 onKey 优先占冷却 */
+  lastAuto = ''; autoCount: Record<string, number> = {};
   tryAutoSkills() {
     if (!Settings.autoAttack) return;
     const h = this.world.hero; if (!h?.alive) return;
-    const list = Settings.skillsFor(this.world.cls);
-    for (const id of list) {
-      const si = this.world.skills.findIndex(s => s.id === id);
-      if (si < 0 || this.cds[si] > 0) continue;
-      if (id === 'charm' && !this.world.charmAutoOk()) continue;
-      const r = this.world.cast(si, this.cds);
-      if (!r.ok) continue;
+    const a = this.world.autoCast(Settings.skillsFor(this.world.cls), this.cds, this.lastAuto); if (!a) return;
+    const r = a.r; this.lastAuto = a.id; this.autoCount[a.id] = (this.autoCount[a.id] ?? 0) + 1;
+    {
       const evs = this.world.drainEvents();
       const hv = this.views.get(h.uid);
       if (hv) { hv.windup(h.facing); this.time.delayedCall(FX.windupMs, () => this.skillFx(r.skill, hv, r.targets, evs)); }
@@ -615,7 +617,7 @@ export class BattleScene extends Phaser.Scene {
     const w = this.world, h = w.hero, st = w.stats();
     const dead = this.floorUids.map(id => !w.units.some(u => u.uid === id && u.alive));
     const pw = { atk: '攻击', mag: '魔法', tao: '道术' }[w.classDef.autoStat];
-    const info = `${w.classDef.name} Lv${w.level}   经验 ${fmtExp(w.exp)}/${fmtExp(w.expNext)}   金币 ${w.gold}   ${pw} ${st[w.classDef.autoStat]}  防御 ${Math.round(st.def)}   第 ${w.floorIndex + 1}/${w.floors.length} 层`;
+    const info = `${w.classDef.name} Lv${w.level}   经验 ${fmtExp(w.exp)}/${fmtExp(w.expNext)}   金币 ${w.gold}   ${pw} ${st[w.classDef.autoStat]}  防御 ${Math.round(st.def)}   第 ${floorNo(w.floorIndex, w.floors)}/${w.floors.length} 层`;
     this.hud?.update(dt, h?.hp ?? 0, h?.maxHp ?? st.hp, h?.mp ?? 0, h?.maxMp ?? st.mp, this.cds, dead, w.pots, info);
   }
   end() {
