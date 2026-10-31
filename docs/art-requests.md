@@ -1119,3 +1119,18 @@ public/assets/ui/UI-Tooltip-Border.png
 
 - 城门 / 西端出口要留传送门位置（portal_exit 可复用）。
 - 每个门面上方留招牌区，文字由程序写。
+
+## W 世界大地图（docs/world-map-plan.md，WoW 式两级地图）
+全部为新图，未有现成素材；风格与现有立绘一致（暗金传奇风，俯视手绘地图）。
+| 文件 | 尺寸 | 说明 |
+|---|---|---|
+| world_map_{0..3}_{0..1}.jpg | 1024×1152 ×8 块（拼 4096×2304） | 连续大陆底图，分块（推荐）；或整图 world_map.jpg 4096×2304 |
+| world_region_{bichi,woma,dushe,zuma,cangyue,fengmo,chiyue,hejiban}.jpg | 2048×1152 | 区域放大插画（每区 1 张，节点摆在其上） |
+| world_fog.png | 512×512 可平铺，带透明 | 迷雾覆盖 |
+| icon_wm_town.png / icon_wm_cave.png / icon_wm_dungeon.png / icon_wm_boss.png / icon_wm_portal.png / icon_wm_rift.png / icon_wm_player.png / icon_wm_locked.png | 128×128 透明 | 城、洞穴、副本、BOSS、传送点、异界裂隙、玩家标记、未探索 |
+| wm_frame.png | 9-slice 96×96 | 面板/确认卡边框 |
+摆位坐标表格式（美术交付时一并回填）：
+| 区域 id | 底图多边形（4096×2304 像素，顺时针） | 标签锚点 | 区域主色 | 插画内节点 node id | 节点 x,y（2048×1152 像素） |
+|---|---|---|---|---|---|
+| bichi | (x1,y1) (x2,y2) … | (x,y) | #c8a050 | bichi_town | (x,y) |
+大陆相对位置（适配）：比奇西南、沃玛其北、毒蛇其东、盟重最东荒漠、白日门西北雪山、封魔东北峡谷、苍月东海外岛、合击/魔龙盟重以北。
