@@ -459,3 +459,51 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 - 外观依据（热血传奇官方背景，百度百科）：原为人们祭奠的神将，与龙共同守护人类，龙堕落后随之化为妖魔；「神所赐的双翅」「由天地灵气化成的短枪」；作为龙命令的执行者带来血与火。据此绘制：龙角头盔的堕落神将、暗红金边重甲、一对龙翼、紫红灵气短枪、血火缭绕。
 - 未查到：原作具体配色与头部造型的官方立绘描述（配色暗红/黑红为玩家资料推测）；短枪画成两端带刃，属自由发挥。
 - 原创绘制，未描摹原作素材。
+
+### 批次5：蛇魔谷（下） + 禁地（12）
+
+预览：`docs/art-gap-preview/sq_b5_snake_jindi.jpg`
+
+| 文件 | 尺寸 | id | 名称 | 地图 | 外观 | 备注 |
+|---|---|---|---|---|---|---|
+| three_head_snake_full.png | 859x960 | three_head_snake | 三头蛇 | 蛇魔谷（传世） | 据描述 | 红蛇妖受魔法感染变成三个脑袋 |
+| scarab_full.png | 960x722 | scarab | 圣甲虫 | 蛇魔谷（传世） | 部分推测 | 防御极强的甲虫 |
+| magic_beetle_full.png | 960x888 | magic_beetle | 魔甲虫 | 蛇魔谷（传世） | 部分推测 | 会石化魔法的甲虫 |
+| termite_full.png | 960x701 | termite | 白蚁 | 蛇魔谷（传世） | 部分推测 | 蚁巢中的小生物 |
+| thorn_demon_full.png | 709x960 | thorn_demon | 刺魔 | 禁地（传世） | 据描述 | 剪刀般利爪，背上六根背鳍 |
+| claw_demon_full.png | 723x960 | claw_demon | 利爪魔 | 禁地（传世） | 未查到/推测 | 仅名称与掉落 |
+| flash_demon_full.png | 715x960 | flash_demon | 闪灵 | 禁地（传世） | 未查到/推测 | 又名闪电魔，外形未查到 |
+| vine_demon_full.png | 722x960 | vine_demon | 藤妖 | 禁地（传世） | 据描述 | 千年藤树化身，全身树藤 |
+| blood_demon_full.png | 722x960 | blood_demon | 血妖 | 禁地（传世） | 据描述 | 远程吐血攻击，类似僵尸 |
+| iron_wing_full.png | 960x702 | iron_wing | 铁翼魔 | 禁地（传世） | 据描述 | 像巨大蝙蝠 |
+| yao_lishi_full.png | 720x960 | yao_lishi | 妖力士 | 禁地（传世） | 据描述 | 面目狰狞，一只手臂粗大无比 |
+| ghost_bug_full.png | 960x830 | ghost_bug | 幽灵虫 | 禁地（传世） | 未查到/推测 | 仅名称（另有幽灵虫母） |
+
+### 批次6：潘夜神殿（8）
+
+预览：`docs/art-gap-preview/sq_b6_panye.jpg`
+
+| 文件 | 尺寸 | id | 名称 | 地图 | 外观 | 备注 |
+|---|---|---|---|---|---|---|
+| panye_warrior_full.png | 701x960 | panye_warrior | 潘夜战士 | 潘夜神殿（传奇3） | 据描述 | 牛的样子的潘夜族战士 |
+| panye_wind_full.png | 803x960 | panye_wind | 潘夜风魔 | 潘夜神殿（传奇3） | 据描述 | 牛形，黑甲，长柄斧 |
+| panye_cloud_full.png | 769x960 | panye_cloud | 潘夜云魔 | 潘夜神殿（传奇3） | 据描述 | 牛形，绿甲，双铁锤 |
+| panye_fire_full.png | 709x960 | panye_fire | 潘夜火魔 | 潘夜神殿（传奇3） | 据描述 | 牛形，黄甲，偃月刀 |
+| panye_ice_full.png | 782x960 | panye_ice | 潘夜冰魔 | 潘夜神殿（传奇3） | 据描述 | 牛形，蓝甲，两把双刃斧 |
+| panye_left_guard_full.png | 712x960 | panye_left_guard | 潘夜左护卫 | 潘夜神殿（传奇3） | 部分推测 | 黑太阳灵气，多种魔法；体型推测 |
+| panye_right_guard_full.png | 722x960 | panye_right_guard | 潘夜右护卫 | 潘夜神殿（传奇3） | 部分推测 | 黑月亮灵气，多种魔法；体型推测 |
+| panye_ghost_general_full.png | 708x960 | panye_ghost_general | 潘夜鬼将 | 潘夜神殿（传奇3） | 据描述 | 与潘夜战士非常像 |
+
+### 修正：去乱码字/结构问题（7 张重画）
+
+预览：`docs/art-gap-preview/sq_fix_glyphs.jpg`
+
+| 文件 | 尺寸 | id | 名称 | 地图 | 外观 | 备注 |
+|---|---|---|---|---|---|---|
+| boss_jiguan_beast_full.png | 960x789 | boss_jiguan_beast | 机关巨兽 | 机关洞·中枢大殿（传世） | 部分推测 | 17173 传世：机关洞最深处 BOSS，攻击时巨石从天而降；体型/兽形为推测 |
+| shiwei_full.png | 720x960 | shiwei | 尸卫 | 将军坟（传世） | 部分推测 | 殉葬帝王大军所化，千年不腐的尸兵 |
+| shiwei_general_full.png | 739x960 | shiwei_general | 尸卫战将 | 将军坟（传世） | 部分推测 | 亲卫军所化，最恐怖的部队 |
+| bronze_man_full.png | 699x960 | bronze_man | 铜人 | 机关洞（传世） | 据描述 | 纯铜组装，握铜矛 |
+| bronze_beast_full.png | 960x720 | bronze_beast | 青铜兽 | 机关洞（传世） | 部分推测 | 兽化的铜机关；兽形为推测 |
+| ant_poison_full.png | 960x490 | ant_poison | 爆毒蚂蚁 | 蚂蚁洞穴（传奇3） | 据描述 | 小腹有喷毒射管，钳/爪不发达 |
+| red_snake_yao_full.png | 720x960 | red_snake_yao | 红蛇妖 | 蛇魔谷（传世） | 部分推测 | 蛇妖小喽啰 |
