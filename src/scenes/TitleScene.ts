@@ -7,7 +7,7 @@ import { Settings, SaveStore } from '../settings';
 import { STARTER } from '../data/books';
 import { renderSettingsView } from '../ui/SettingsView';
 import { queueCritical, queueImages, imagePending, floorKeys, PreloadScene } from '../loader';
-import { FLOORS } from '../data/world';
+import { FLOORS, floorNo } from '../data/world';
 import type { SaveData } from '../combat/World';
 import { MUSIC, playMusic } from '../music';
 import { IS_MOBILE } from '../mobile';
@@ -59,7 +59,7 @@ export class TitleScene extends Phaser.Scene {
     const L = this.clear(), has = SaveStore.has(), save = SaveStore.load();
     L.add([...button(this, 640, 320, 280, 56, '新 游 戏', () => this.classSelect())]);
     L.add([...button(this, 640, 395, 280, 56, '继 续', () => save && this.startBattle({ save }), 22, has && !!save)]);
-    if (save) L.add(txt(this, 640, 432, `${CLASSES[save.cls].name}  Lv${save.level}  第 ${save.floorIndex + 1} 层  金币 ${save.gold}`, 14, '#cfc0a0').setOrigin(0.5, 0));
+    if (save) L.add(txt(this, 640, 432, `${CLASSES[save.cls].name}  Lv${save.level}  第 ${floorNo(save.floorIndex)} 层  金币 ${save.gold}`, 14, '#cfc0a0').setOrigin(0.5, 0));
     L.add([...button(this, 640, 490, 280, 56, '设 置', () => this.settings())]);
     L.add(txt(this, 640, 690, '素材：魔兽世界图标/音效（仅供个人原型）+ AI 生成立绘与背景', 13, '#999').setOrigin(0.5));
   }

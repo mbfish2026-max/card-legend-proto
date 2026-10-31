@@ -21,6 +21,8 @@ export const ASSETS: Record<string, string> = {
   bg_floor6: 'assets/bg/bg_floor6.jpg', bg_floor7: 'assets/bg/bg_floor7.jpg', bg_floor8: 'assets/bg/bg_floor8.jpg',
   // R13 新地图背景占位：复用现有背景文件（独立 key，美术到位后替换路径即可，见 art-requests §R13）
   bg_floor9: 'assets/bg/bg_floor2.jpg', bg_floor10: 'assets/bg/bg_floor3.jpg', bg_floor11: 'assets/bg/bg_floor4.jpg', bg_floor12: 'assets/bg/bg_floor6.jpg', bg_floor13: 'assets/bg/bg_floor7.jpg',
+  // feat/maps-more 占位（见 art-requests）
+  bg_floor14: 'assets/bg/bg_floor3.jpg', bg_floor15: 'assets/bg/bg_floor3.jpg', bg_floor16: 'assets/bg/bg_floor3.jpg', bg_floor17: 'assets/bg/bg_floor3.jpg', bg_floor18: 'assets/bg/bg_floor2.jpg', bg_floor19: 'assets/bg/bg_floor2.jpg', // [适配] 占位：古墓/天然洞穴/自然洞穴背景待美术（docs/art-requests.md）
   potion_0: 'assets/potions/INV_Potion_51.png', potion_1: 'assets/potions/INV_Potion_54.png',
   potion_2: 'assets/potions/INV_Potion_72.png', potion_3: 'assets/potions/INV_Potion_75.png',
   set_badge: 'assets/ui/set_badge.png', menu_0: 'assets/portraits/INV_Misc_Head_Human_01.png', menu_1: 'assets/items/INV_Misc_Bag_08.png',

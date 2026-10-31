@@ -37,7 +37,7 @@ export const WORLD = {
   summonLane: -36,             // 召唤物站位（纵深偏后）
 };
 export interface Spawn { id: string; x: number; y?: number }
-export interface Floor { name: string; spawns: Spawn[]; boss?: boolean; bg?: string; /** R11 对应原版区域（docs/legend-research.md「地图递进」） */ zone?: string; /** 练级图：小怪死后定时原地刷新（[适配]，见 FARM_RESPAWN） */ farm?: boolean }
+export interface Floor { name: string; spawns: Spawn[]; boss?: boolean; bg?: string; /** 来源链接 */ src?: string; /** 官方多层图中的第几层（1 起） */ depth?: number; /** 图群 id */ group?: string; /** 官方子层名 */ sub?: string; /** R11 对应原版区域（docs/legend-research.md「地图递进」） */ zone?: string; /** 练级图：小怪死后定时原地刷新（[适配]，见 FARM_RESPAWN） */ farm?: boolean }
 /** 练级图小怪刷新间隔（秒）。官方各图刷怪间隔未查到 → [适配] 20s，且主角在 400px 内时顺延，避免贴脸刷出 */
 export const FARM_RESPAWN = 20, FARM_SAFE_DIST = 400;
 export const FLOORS: Floor[] = [
@@ -105,5 +105,34 @@ export const FLOORS: Floor[] = [
     { id: 'blood_zombie', x: 800 }, { id: 'redmoon_spider', x: 910, y: 20 },
     { id: 'blood_zombie', x: 1550 }, { id: 'redmoon_spider', x: 1650, y: -15 },
     { id: 'blood_zombie', x: 2300 }, { id: 'redmoon_spider', x: 2400, y: 15 },
-    { id: 'boss_redmoon', x: 3380 } ] }
+    { id: 'boss_redmoon', x: 3380 } ] },
+  // feat/maps-more（plan-60h B1）：洞穴群子层追加在下标 13–18（旧档下标不变；白骨墓穴=兽人古墓一层 D001 原样保留）。depth=官方第几层
+  { name: '兽人古墓二层', bg: 'bg_floor14', boss: true, farm: true, group: 'shouren', sub: '兽人古墓二层 D002', depth: 2, zone: '比奇省·兽人古墓二层（21cq：洞蛆/骷髅战士/掷斧骷髅/骷髅战将/骷髅/山洞蝙蝠 8 分钟，骷髅精灵×1 60 分钟）', src: 'https://www.21cq.com/mir/Map.aspx?id=218', spawns: [
+    { id: 'skeleton', x: 800 }, { id: 'cave_skel_warrior', x: 900, y: 20 }, { id: 'axe_skeleton', x: 1500 }, { id: 'cave_skel_general', x: 1600, y: -15 }, { id: 'cave_maggot', x: 1700 }, { id: 'cave_bat', x: 2300 }, { id: 'cave_skel_warrior', x: 2400, y: 15 }, { id: 'axe_skeleton', x: 2500 }, { id: 'skeleton_lord', x: 3350 } ] },
+  { name: '兽人古墓三层', bg: 'bg_floor15', boss: true, farm: true, group: 'shouren', sub: '兽人古墓三层 D003', depth: 3, zone: '兽人古墓三层（21cq：同二层，骷髅精灵×2 60 分钟；连通沃玛自然洞穴）', src: 'https://www.21cq.com/mir/Map.aspx?id=221', spawns: [
+    { id: 'cave_skel_general', x: 800 }, { id: 'cave_skel_warrior', x: 900, y: 20 }, { id: 'axe_skeleton', x: 1500 }, { id: 'skeleton', x: 1600, y: -15 }, { id: 'cave_maggot', x: 1700 }, { id: 'cave_bat', x: 2300 }, { id: 'cave_skel_general', x: 2400, y: 15 }, { id: 'axe_skeleton', x: 2500 }, { id: 'skeleton_lord', x: 3350 } ] },
+  { name: '骷髅洞·洞穴一层', bg: 'bg_floor16', boss: true, farm: true, group: 'tianran', sub: '洞穴一层 D011', depth: 1, zone: '比奇省·天然洞穴一层（21cq：骷髅/骷髅战士/蝎子/山洞蝙蝠/洞蛆 8 分钟，骷髅精灵×1 60 分钟）', src: 'https://www.21cq.com/mir/Map.aspx?id=248', spawns: [
+    { id: 'skeleton', x: 800 }, { id: 'cave_skel_warrior', x: 900, y: 20 }, { id: 'scorpion', x: 1500 }, { id: 'cave_bat', x: 1600, y: -15 }, { id: 'cave_maggot', x: 1700 }, { id: 'skeleton', x: 2300 }, { id: 'cave_skel_warrior', x: 2400, y: 15 }, { id: 'scorpion', x: 2500 }, { id: 'skeleton_lord', x: 3350 } ] },
+  { name: '骷髅洞·洞穴二层', bg: 'bg_floor17', boss: true, farm: true, group: 'tianran', sub: '洞穴二层 D012', depth: 2, zone: '天然洞穴二层（21cq：骷髅/战士/战将/掷斧/蝎子/洞蛆/蝙蝠 8 分钟，骷髅精灵×2 60 分钟；连通沃玛自然洞穴）', src: 'https://www.21cq.com/mir/Map.aspx?id=249', spawns: [
+    { id: 'skeleton', x: 800 }, { id: 'cave_skel_warrior', x: 900, y: 20 }, { id: 'cave_skel_general', x: 1500 }, { id: 'axe_skeleton', x: 1600, y: -15 }, { id: 'scorpion', x: 1700 }, { id: 'cave_maggot', x: 2300 }, { id: 'cave_bat', x: 2400, y: 15 }, { id: 'cave_skel_general', x: 2500 }, { id: 'skeleton_lord', x: 3350 } ] },
+  { name: '沃玛自然洞穴·一', bg: 'bg_floor18', boss: false, farm: true, group: 'woma_cave', sub: '沃玛自然洞穴 E001', depth: 1, zone: '沃玛自然洞穴 E001（21cq：骷髅系/山洞蝙蝠/洞蛆 23 分钟，无 BOSS；连通兽人古墓三层）', src: 'https://www.21cq.com/mir/Map.aspx?id=1506', spawns: [
+    { id: 'skeleton', x: 800 }, { id: 'cave_skel_warrior', x: 900, y: 20 }, { id: 'axe_skeleton', x: 1500 }, { id: 'cave_bat', x: 1600, y: -15 }, { id: 'cave_skel_general', x: 1700 }, { id: 'cave_maggot', x: 2300 }, { id: 'cave_skel_general', x: 2400, y: 15 }, { id: 'cave_skel_warrior', x: 2500 } ] },
+  { name: '沃玛自然洞穴·二', bg: 'bg_floor19', boss: false, farm: true, group: 'woma_cave', sub: '沃玛自然洞穴 E002', depth: 2, zone: '沃玛自然洞穴 E002（21cq：同 E001，无 BOSS；连通洞穴二层）', src: 'https://www.21cq.com/mir/Map.aspx?id=1507', spawns: [
+    { id: 'cave_skel_warrior', x: 800 }, { id: 'axe_skeleton', x: 900, y: 20 }, { id: 'cave_skel_general', x: 1500 }, { id: 'cave_bat', x: 1600, y: -15 }, { id: 'cave_maggot', x: 1700 }, { id: 'skeleton', x: 2300 }, { id: 'cave_skel_general', x: 2400, y: 15 }, { id: 'axe_skeleton', x: 2500 } ] }
 ];
+/** 通关顺序：兽人古墓一层(白骨墓穴)→二层→三层→洞穴一层→二层→沃玛自然洞穴一→二→尸王殿…（按 21cq 进出表连通） */
+export const FLOOR_ORDER = [0, 1, 2, 3, 4, 13, 14, 15, 16, 17, 18, 5, 6, 7, 8, 9, 10, 11, 12];
+/** 图群：白骨墓穴（下标 4）作为兽人古墓一层 */
+export const FLOOR_GROUP: Record<number, { group: string; depth: number }> = { 4: { group: 'shouren', depth: 1 } };
+export const groupOf = (i: number, floors: Floor[] = FLOORS) => floors[i]?.group ?? (floors === FLOORS ? FLOOR_GROUP[i]?.group : undefined);
+/** 同图群上一层下标（无则 -1），用于「上一层」入口 */
+export const prevLayerOf = (i: number, floors: Floor[] = FLOORS) => { const g = groupOf(i, floors); if (!g || floors !== FLOORS) return -1; const k = FLOOR_ORDER.indexOf(i); const p = FLOOR_ORDER[k - 1]; return p !== undefined && groupOf(p) === g ? p : -1; };
+/** 通关顺序上的前一层（无则 -1）；自定义层表线性 */
+export const prevFloorOf = (i: number, floors: Floor[] = FLOORS) => floors !== FLOORS ? i - 1 : (FLOOR_ORDER[FLOOR_ORDER.indexOf(i) - 1] ?? -1);
+/** [适配] 层深难度（plan-60h §4：每深一层 HP/ATK 约 +8%）；原有层无 depth 不受影响 */
+export const DEPTH_STEP = 0.08;
+/** 下标 i 的通关序号（1 起，显示「第 N 层」用）；非默认层表按下标 */
+export const floorNo = (i: number, floors: Floor[] = FLOORS) => floors === FLOORS ? FLOOR_ORDER.indexOf(i) + 1 : i + 1;
+/** 下一层下标；最后一层返回 -1 */
+export const nextFloorOf = (i: number, floors: Floor[] = FLOORS) => { if (floors !== FLOORS) return i + 1 < floors.length ? i + 1 : -1; const k = FLOOR_ORDER.indexOf(i); return k >= 0 && k + 1 < FLOOR_ORDER.length ? FLOOR_ORDER[k + 1] : -1; };
+

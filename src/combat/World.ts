@@ -7,7 +7,7 @@ import { CLASSES, ClassId, SkillDef, CAST_GAP } from '../data/classes';
 import { ITEMS, SLOTS, SETS, equipSlotsFor, EQUIP_VERSION, ENHANCE_SLOTS, ENHANCE_MAX, ENHANCE_STAT, IRON_PRICE, IRON_MAX_PURITY, enhanceChance, shatterChance } from '../data/items';
 import { HERO, ENEMIES, SUMMON, SUMMON_BEAST } from '../data/units';
 import { EXP_PER_LEVEL, EXP_VERSION, migrateExp, scaledExp, fmtExp } from '../data/expCurve';
-import { WORLD, FLOORS, Floor, FARM_RESPAWN, FARM_SAFE_DIST } from '../data/world';
+import { WORLD, FLOORS, Floor, FARM_RESPAWN, FARM_SAFE_DIST, nextFloorOf, DEPTH_STEP, prevLayerOf, prevFloorOf } from '../data/world';
 import { TOWNS, townFloors, townOfFloor, returnTownOf, STORAGE_SIZE, TOWN_W, TOWN_GATE_X, GATE_RANGE, TOWN_SPAWN_X, DOOR_RANGE, streetDoors } from '../data/towns';
 import { CONSUMABLE } from '../data/items-town';
 import { WOMA_FLOOR_NAME, WOMA_SECTIONS, WOMA_DOOR_X, HORN_MOB_CHANCE, HORN_MOBS, RING_MIN_LEVEL, RingQuest, ringReward, IDENT_MIN_LEVEL, IDENT_PRICE, IDENT_POOL, identValue } from '../data/r14b';
@@ -402,10 +402,17 @@ export class World {
     this.units.filter(u => u.summon).forEach((s, k) => { s.x = WORLD.heroStartX - 110 - k * 60; s.y = WORLD.summonLane; });
     for (const sp of this.floor.spawns) {
       if (sp.id === 'boss_woma' && this.floor.name === WOMA_FLOOR_NAME) { this.womaPending = { x: sp.x, y: sp.y ?? 0 }; continue; } // R14 #14：教主之家需号角
-      this.spawn(ENEMIES[sp.id], 'enemy', sp.x, sp.y ?? 0);
+      this.spawnFoe(sp.id, sp.x, sp.y ?? 0);
     }
     this.events.push({ type: 'floor', index: i, name: this.floor.name });
   }
+  /** feat/maps-more：刷怪并按子层深度加成（官方第 d 层 攻/血 ×(1+DEPTH_STEP×(d−1))，原有层 depth 缺省=1 不变） */
+  spawnFoe(id: string, x: number, y: number) { const u = this.spawn(ENEMIES[id], 'enemy', x, y), d = this.floor.depth ?? 1;
+    if (d > 1) { const k = 1 + DEPTH_STEP * (d - 1); u.hp = u.maxHp = Math.round(u.hp * k); u.atk = Math.round(u.atk * k); }
+    return u; }
+  /** 子层：返回同图群上一层（仅非战斗、已到达过该层时可用），出生在起点 */
+  upLayer(): string { const p = prevLayerOf(this.floorIndex, this.floors); if (p < 0) return '没有上一层';
+    if (this.town) return '城内不可用'; this.loadFloor(p); this.events.push({ type: 'log', text: `返回上一层：${this.floor.name}` }); return 'ok'; }
   /** 主角死亡后：损失部分金币，在本层起点满血复活，本层怪物重置 */
   respawn() { this.stepTarget = null; this.stepQueued = 0;
     if (this.hero) return;
@@ -987,7 +994,7 @@ export class World {
   private farmTick() { const h = this.hero;
     for (const q of [...this.farmQueue]) if (q.at <= this.time) {
       if (h && Math.abs(h.x - q.x) < FARM_SAFE_DIST) { q.at = this.time + 3; continue; }
-      this.farmQueue.splice(this.farmQueue.indexOf(q), 1); this.spawn(ENEMIES[q.id], 'enemy', q.x, q.y); this.cleared = false;
+      this.farmQueue.splice(this.farmQueue.indexOf(q), 1); this.spawnFoe(q.id, q.x, q.y); this.cleared = false;
     } }
   step(dt: number, inp: Input = { dx: 0, dy: 0 }) {
     if (this.farmQueue.length) this.farmTick();
@@ -1136,8 +1143,8 @@ export class World {
       const boss = this.alive('enemy').find(u => u.tier === 'boss');
       if (this.floor.boss && boss) {
         if (this.time - this.sealedLogT > 3) { this.sealedLogT = this.time; this.events.push({ type: 'log', text: `出口被${boss.name}的力量封印，击败${boss.name}后开启` }); }
-      } else if (this.floorIndex >= this.floors.length - 1) { this.done = true; this.events.push({ type: 'win' }); }
-      else this.loadFloor(this.floorIndex + 1);
+      } else if (nextFloorOf(this.floorIndex, this.floors) < 0) { this.done = true; this.events.push({ type: 'win' }); }
+      else this.loadFloor(nextFloorOf(this.floorIndex, this.floors));
     }
   }
   /** R13 官方 BOSS 机制（沃玛教主 / 祖玛教主 / 赤月恶魔），来源与 [适配] 说明见 docs/combat-official.md */
@@ -1207,7 +1214,7 @@ export class World {
   /** S 键：在本层起点附近返回上一层（出生在上一层出口前） */
   prevFloor(): boolean {
     const h = this.hero; if (!h || this.floorIndex <= 0 || h.x > WORLD.heroStartX + 150) return false;
-    this.loadFloor(this.floorIndex - 1); h.x = this.exitX - WORLD.exitRadius - 80; return true;
+    const p = prevFloorOf(this.floorIndex, this.floors); if (p < 0) return false; this.loadFloor(p); h.x = this.exitX - WORLD.exitRadius - 80; return true;
   }
   drainEvents() { const e = this.events; this.events = []; return e; }
 }

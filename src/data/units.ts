@@ -68,9 +68,21 @@ export const ENEMIES: Record<string, UnitDef> = {
   hongmo_pig: n('hongmo_pig', '虹魔猪卫', 27, 1550, 64, 20, 410, [G(0.6), { item: 'hp_mid', chance: 0.35 }], { art: 'orc', deathSfx: 'death2', oilChance: 0.02 }),
   hongmo_scorpion: n('hongmo_scorpion', '虹魔蝎卫', 27, 1650, 66, 21, 420, [G(0.6), { item: 'mp_mid', chance: 0.3 }], { art: 'spider', deathSfx: 'death', oilChance: 0.02 }),
   boss_hongmo: b('boss_hongmo', 'boss_woma', '虹魔教主', 31, 14000, 92, 25, 5500, [{ item: 'dragon_sword', chance: 0.4 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'death2' }),
+  // feat/maps-more 新增 6 层（怪名/刷怪/BOSS 按 21cq，见 docs/map-system-full.md；数值按本作层位 [适配]，非原版数值）
+  cave_skel_warrior: n('cave_skel_warrior', '骷髅战士', 14, 670, 35, 10, 170, [G(0.4), { item: 'hp_small', chance: 0.3 }], { art: 'skeleton', speed: 95, deathSfx: 'skeleton_death', card: card({ figureScale: 1.2, anchorX: 0.56 }) }),
+  cave_skel_general: n('cave_skel_general', '骷髅战将', 14, 720, 37, 11, 185, [G(0.4), { item: 'mp_small', chance: 0.3 }], { art: 'skeleton', speed: 95, deathSfx: 'skeleton_death', card: card({ figureScale: 1.25, anchorX: 0.56 }) }),
+  axe_skeleton: n('axe_skeleton', '掷斧骷髅', 14, 600, 38, 9, 175, [G(0.4), { item: 'hp_small', chance: 0.3 }], { art: 'skeleton', range: 220, speed: 85, deathSfx: 'skeleton_death', card: card({ figureScale: 1.2, anchorX: 0.56 }) }),
+  cave_bat: n('cave_bat', '山洞蝙蝠', 14, 560, 34, 9, 165, [G(0.4), { item: 'hp_small', chance: 0.25 }], { art: 'bat', deathSfx: 'death', card: card({ figureScale: 1.0 }) }),
+  cave_maggot: n('cave_maggot', '洞蛆', 14, 740, 36, 12, 185, [G(0.4), { item: 'hp_mid', chance: 0.25 }], { art: 'zombie', speed: 70, deathSfx: 'ghoul_death' }),
 };
+/** feat/maps-more：同名官方怪的掉落沿用已有 21cq 表（id 不同仅因数值按层位区分）；无表的标「未查到」只给 [适配] 金币/药水 */
+/** [适配] 新洞穴怪的难度系数（攻/血），按 9 种子模拟调到死亡中位 1–4 */
+const NEW_IDS = ['cave_skel_warrior', 'cave_skel_general', 'axe_skeleton', 'cave_bat', 'cave_maggot'];
+const NEW_ATK = 1.3, NEW_HP = 1.2;
+for (const id of NEW_IDS) { const u = ENEMIES[id]; u.atk = Math.round(u.atk * NEW_ATK); u.hp = Math.round(u.hp * NEW_HP); }
+export const DROPS_AS: Record<string, string> = {};
 /** R13：有资料的怪，装备/药水/祝福油掉落替换为资料表（1/N）；金币条目保留 [适配]。见 docs/drops-official.md */
-for (const u of Object.values(ENEMIES)) { const od = officialDrops(u.id); if (od) u.drops = [...(u.drops ?? []).filter(d => d.item === 'gold'), ...od]; }
+for (const u of Object.values(ENEMIES)) { const od = officialDrops(DROPS_AS[u.id] || u.id); if (od) u.drops = [...(u.drops ?? []).filter(d => d.item === 'gold'), ...od]; }
 /** R14 #7：沃玛教主按 S9 结构（[适配] 倍率 K），见 drops-s9.ts */
 ENEMIES.boss_woma.drops = [...(ENEMIES.boss_woma.drops ?? []).filter(d => d.item === 'gold'), ...WOMA_S9];
 /** 道士召唤骷髅（金色卡底，友方） */
