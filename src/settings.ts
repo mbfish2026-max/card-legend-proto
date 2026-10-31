@@ -8,9 +8,9 @@ const ls = () => { try { return globalThis.localStorage; } catch { return undefi
 
 /** 各职业自动技能推荐（按优先级） */
 export const DEFAULT_AUTO_SKILLS: Record<ClassId, string[]> = {
-  warrior: ['fire_sword', 'half_moon', 'rush', 'thrust'],
-  mage: ['magic_shield', 'hell_thunder', 'ice_roar', 'lightning_flash', 'burst_fire', 'fire_wall', 'hell_fire', 'thunder', 'big_fireball', 'fireball', 'charm'],
-  taoist: ['summon_beast', 'summon_skeleton', 'holy_armor', 'ghost_shield', 'mass_heal', 'heal', 'poison', 'soul_fire'],
+  warrior: ['fire_sword', 'vajra_body', 'thunder_sword', 'shield_break', 'break_strike', 'half_moon', 'dash_slash', 'rush', 'thrust'],
+  mage: ['magic_shield', 'ice_whirl', 'hell_thunder', 'five_thunder', 'frost_blade', 'ice_roar', 'ice_dragon', 'lightning_flash', 'burst_fire', 'fire_wall', 'hell_fire', 'thunder', 'ice_arrow', 'big_fireball', 'fireball', 'charm'],
+  taoist: ['summon_golden_skeleton', 'summon_beast', 'drive_corpse', 'summon_skeleton', 'holy_armor', 'ghost_shield', 'decoy_talisman', 'cleanse', 'mass_heal', 'heal', 'soul_wall', 'poison', 'holy_light', 'soul_fire'],
 };
 export const ZOOM_MIN = 0.8, ZOOM_MAX = 1.2, ZOOM_STEP = 0.05;
 
@@ -76,8 +76,9 @@ export const Settings = {
     } catch { return 100; }
   },
   applyZoom() {
-    const z = this.isAutoZoom() ? 1 : clampZoom(this.zoom);
-    if (!this.isAutoZoom()) this.zoom = z;
+    // PWA 根因修复：手机上旧存档里的手动缩放（zoomAuto=false, zoom<1）会给画布加 scale(z)，铺满后四周露黑边 → 手机一律 1（存档值保留，回电脑仍生效）
+    const mob = IS_MOBILE || !!(globalThis as any).__mobile, z = mob || this.isAutoZoom() ? 1 : clampZoom(this.zoom);
+    if (!this.isAutoZoom() && !mob) this.zoom = z;
     try {
       const canvas = document.querySelector('#game canvas') as HTMLElement | null;
       if (canvas) {

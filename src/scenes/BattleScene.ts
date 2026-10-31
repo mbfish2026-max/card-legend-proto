@@ -1,9 +1,10 @@
-import { hdFixed } from '../render';
-import { ComboStatusTracker, COMBO_STATUS } from '../ui/comboStatus';
+import { foesWithoutView } from '../ui/foeViews';
+import { hdFixed, Render, MAX_LW } from '../render';
+import { ComboStatusTracker, COMBO_STATUS, comboStatusPlan } from '../ui/comboStatus';
 import { REGIONS } from '../data/map';
 import { fmtExp } from '../data/expCurve';
 import { floorKeys, PreloadScene } from '../loader';
-import { playFx, flyFx, follow, SLASH_TINT } from '../ui/FxPlayer';
+import { playFx, ensureAnim, flyFx, follow, SLASH_TINT } from '../ui/FxPlayer';
 import Phaser from 'phaser';
 import { IS_MOBILE } from '../mobile';
 import { HoldKeys, stepDir } from '../input/stepKeys';
@@ -64,9 +65,12 @@ export class BattleScene extends Phaser.Scene {
     fg.fillStyle(0x060405, 0.95).fillRect(0, 0, W * 1.3, 8);
     this.add.particles(0, 0, '__WHITE', { x: { min: 0, max: W }, y: { min: 80, max: 560 }, speedX: { min: -8, max: 8 }, speedY: { min: -12, max: -3 }, lifespan: 6000, scale: { start: 1.6, end: 0 }, alpha: { start: 0.35, end: 0 }, frequency: 90, tint: 0xffe0b0 }).setDepth(39);
     const vg = hdFixed(this.add.graphics().setScrollFactor(0).setDepth(38));
-    vg.fillGradientStyle(0x000000, 0x000000, 0x000000, 0x000000, 0.55, 0.55, 0, 0).fillRect(0, 0, 1280, 110);
-    vg.fillGradientStyle(0x000000, 0, 0x000000, 0, 0.5, 0, 0.5, 0).fillRect(0, 0, 140, 720);
-    vg.fillGradientStyle(0, 0x000000, 0, 0x000000, 0, 0.5, 0, 0.5).fillRect(1140, 0, 140, 720);
+    // 暗角按实际可视宽度画（手机铺满时 Render.ox>0，左右边贴真实屏幕边缘；电脑 ox=0 与原来一致）
+    const drawVg = () => { const o = Render.ox; vg.clear();
+      vg.fillGradientStyle(0x000000, 0x000000, 0x000000, 0x000000, 0.55, 0.55, 0, 0).fillRect(-o, 0, 1280 + 2 * o, 110);
+      vg.fillGradientStyle(0x000000, 0, 0x000000, 0, 0.5, 0, 0.5, 0).fillRect(-o, 0, 140, 720);
+      vg.fillGradientStyle(0, 0x000000, 0, 0x000000, 0, 0.5, 0, 0.5).fillRect(1140 + o, 0, 140, 720); };
+    drawVg(); this.events.on('fill-resize', drawVg);
     this.add.rectangle(W / 2, GROUND_Y + 10, W, 90, 0x000000, 0.25);
     this.add.rectangle(6, 300, 12, 600, 0x000000, 0.8); this.add.rectangle(W - 6, 300, 12, 600, 0x000000, 0.8);
     const lv = Number(qs.get('lv')) || 1;
@@ -92,11 +96,11 @@ export class BattleScene extends Phaser.Scene {
     // 合击版 A1：点怪物卡指定英雄目标（无英雄/未召唤时静默忽略，不影响原操作）
     this.events.on('cardTap', (uid: number) => { const w = this.world; if (!w.companion?.out || this.paused) return; const e = w.setCompanionTarget(uid); if (e) this.log(e); else { const v = this.views.get(uid); if (v) fx.floatNumber(this, v.cx, v.cy - v.h * 0.45, v.h, '英雄目标', '#7fd7ff', 0.6); } this.handle(w.drainEvents()); });
     this.events.once('shutdown', () => this.events.off('cardTap'));
-    this.events.once('shutdown', () => this.comboStatus.clear());
+    this.events.once('shutdown', () => { this.comboStatusClosing = true; this.comboStatus.clear(); this.comboStatusClosing = false; });
     // 其它键（F1~F4 技能等）：阻止 F1 帮助等默认行为；不占用 F5 等其它功能键
     this.input.keyboard!.on('keydown', (e: KeyboardEvent) => {
       if (stepDir(e)) return; if (/^F([1-9]|10)$/.test(e.key)) e.preventDefault(); this.onKey(e.key.toUpperCase()); });
-    this.input.keyboard!.addCapture('F1,F2,F3,F4,F5,F6,F7,F8,F9,F10,F11');
+    this.input.keyboard!.addCapture('F1,F2,F3,F4,F5,F6,F7,F8,F9,F10,F11,F12');
     // 失焦/切后台时清空按键状态，避免 keyup 丢失导致方向键"卡住"或失灵
     const reset = () => { hold.reset(); this.input.keyboard?.resetKeys(); this.ui?.pad?.reset?.(); };
     window.addEventListener('blur', reset); document.addEventListener('visibilitychange', reset); this.game.events.on('blur', reset);
@@ -124,7 +128,7 @@ export class BattleScene extends Phaser.Scene {
     }
     this.handle(w.drainEvents());
     // 号角召出的沃玛教主、第一张图的刷新怪不发 summon 事件：补建缺失的视图，避免「有怪无图」
-    if (!w.town) for (const u of w.alive('enemy')) if (!this.views.has(u.uid)) { const v = new CardView(this, u); v.setAlpha(0); this.tweens.add({ targets: v, alpha: 1, duration: 400 }); this.views.set(u.uid, v); }
+    this.ensureFoeViews();
     this.views.forEach(v => { v.x = v.unit.x; v.sync(); });
     const last = es.filter(e => e.tier !== 'boss').pop();
     if (last && !qs.has('nodrop')) { last.drops = [{ item: 'gold', chance: 1 }, { item: 'hp_small', chance: 1 }, { item: 'iron_sword', chance: 1, rarity: 'rare' }]; w.kill(last); this.handle(w.drainEvents()); }
@@ -152,9 +156,11 @@ export class BattleScene extends Phaser.Scene {
     for (let i = -3; i <= 3; i++) { const a = Math.PI * (1 + (i + 3) / 6); arch.fillStyle(0x6a7080, 1).fillRect(Math.cos(a) * 85 - 7, -100 + Math.sin(a) * 85 - 7, 14, 14); }
     const motes = this.add.particles(0, 0, '__WHITE', { x: { min: -60, max: 60 }, y: { min: 60, max: 110 }, speedY: { min: -60, max: -25 }, lifespan: 1800, scale: { start: 3, end: 0 }, alpha: { start: 0.8, end: 0 }, tint: [0xd090ff, 0xaa66ff], frequency: 120 });
     const t = this.add.text(0, -205, '下一层', { fontFamily: FONT, fontSize: '22px', color: '#e0c8ff', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5);
-    this.portalHint = this.add.text(0, -235, IS_MOBILE ? '点「传送」进入' : '按 W/空格 进入', { fontFamily: FONT, fontSize: '18px', color: '#ffffff', fontStyle: 'bold', stroke: '#2a0a5a', strokeThickness: 5 }).setOrigin(0.5).setVisible(false);
+    this.portalHint = this.add.text(0, -235, IS_MOBILE ? '点「进入」' : '按 W/空格 进入', { fontFamily: FONT, fontSize: '18px', color: '#ffffff', fontStyle: 'bold', stroke: '#2a0a5a', strokeThickness: 5 }).setOrigin(0.5).setVisible(false);
     this.tweens.add({ targets: this.portalHint, y: -242, duration: 500, yoyo: true, repeat: -1 });
     c.add([arch, core, swirl, ...rings, motes, t, this.portalHint]); this.portal = c;
+    // 手机：传送门本体可点（与「进入」键同效，不在门口则提示走近）；电脑不加交互，保持原样
+    if (IS_MOBILE) arch.setInteractive(new Phaser.Geom.Rectangle(-110, -200, 220, 330), Phaser.Geom.Rectangle.Contains).on('pointerdown', () => this.mobileAct('portal'));
   }
   // ===== R14 横版长街城镇 =====
   street?: Phaser.GameObjects.Container; streetFar?: Phaser.GameObjects.TileSprite; streetHint?: Phaser.GameObjects.Text; townTarget: { x: number; id: string } | null = null;
@@ -168,8 +174,8 @@ export class BattleScene extends Phaser.Scene {
     if (need.length) { need.forEach(k => this.load.image(k, `assets/town/${k}.${k === 'bg_far' || k === 'ground_strip' ? 'jpg' : 'png'}`)); this.load.once('complete', () => { if (this.world.town === id) this.buildStreet(id); }); this.load.start(); }
     const C = this.street = this.add.container(0, 0).setDepth(3), W = TOWN_W, has = (k: string) => this.textures.exists(k);
     // 远景（0.3x 视差，固定在屏幕上平铺滚动）
-    if (has('bg_far')) { const far = hdFixed(this.add.tileSprite(0, 0, 1280, 720, 'bg_far').setOrigin(0).setScrollFactor(0).setTileScale(K)); this.streetFar = far; C.add(far); }
-    else { const far = hdFixed(this.add.graphics().setScrollFactor(0)); far.fillGradientStyle(0x6ab0ff, 0x6ab0ff, 0xc8e8a0, 0xc8e8a0, 1).fillRect(0, 0, 1280, 720); C.add(far); }
+    if (has('bg_far')) { const far = hdFixed(this.add.tileSprite(-(MAX_LW - 1280) / 2, 0, MAX_LW, 720, 'bg_far').setOrigin(0).setScrollFactor(0).setTileScale(K)); this.streetFar = far; C.add(far); }
+    else { const far = hdFixed(this.add.graphics().setScrollFactor(0)); far.fillGradientStyle(0x6ab0ff, 0x6ab0ff, 0xc8e8a0, 0xc8e8a0, 1).fillRect(-(MAX_LW - 1280) / 2, 0, MAX_LW, 720); C.add(far); }
     // 地面（原 y=720~1080 → 480~720，平铺）
     if (has('ground_strip')) C.add(this.add.tileSprite(0, 720 * K, W, 360 * K, 'ground_strip').setOrigin(0).setTileScale(K));
     else C.add(this.add.rectangle(0, 720 * K, W, 360 * K, 0x9a8a70).setOrigin(0));
@@ -215,7 +221,7 @@ export class BattleScene extends Phaser.Scene {
     g.lineStyle(2, 0xd4a64a).strokeRect(-60, -10, 120, 70);
     c.add(g);
     if (this.textures.exists('merchant')) c.add(this.add.image(0, 22, 'merchant').setDisplaySize(52, 52));
-    this.gateLabel = this.add.text(0, -92, '回城 [S]', { fontFamily: FONT, fontSize: '16px', color: '#ffe8a0', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5); c.add(this.gateLabel);
+    this.gateLabel = this.add.text(0, -92, IS_MOBILE ? '回城' : '回城 [S]', { fontFamily: FONT, fontSize: '16px', color: '#ffe8a0', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5); c.add(this.gateLabel);
     g.setInteractive(new Phaser.Geom.Rectangle(-75, -70, 150, 130), Phaser.Geom.Rectangle.Contains).on('pointerdown', () => this.goBackTown());
     this.merchant = c;
   }
@@ -291,6 +297,34 @@ export class BattleScene extends Phaser.Scene {
         const d = playFx(this, 'fx_rush_dash', hv.cx, hv.cy, { flip, decorative: true }); if (d) follow(this, d, () => hv.active ? { x: hv.cx, y: hv.cy } : null);
         tv.forEach(v => { if (!playFx(this, 'fx_rush_hit', v.cx, v.cy)) fx.shadowSlash(this, v.cx, v.cy, v.h); });
         return done();
+      }
+      // 传世技能（docs/fx-requests.md #传世）：专属图集缺失 → 复用相近图集着色 / Graphics 占位
+      case 'thunder_sword': hv.lunge(dir, 34); if (tv[0]) { if (!playFx(this, 'fx_thunder_strike', tv[0].cx, tv[0].y, { tint: 0xc8e0ff })) fx.lightning(this, tv[0].cx, tv[0].y - 600, tv[0].cy); fx.bloodBlade(this, tv[0].cx, tv[0].cy, tv[0].h, 0x9fd0ff); } return done();
+      case 'break_strike': case 'shield_break': hv.lunge(dir, 30); if (tv[0]) { const c = skill === 'break_strike' ? 0xffa040 : 0x80b0ff; if (!playFx(this, 'fx_thrust_hit', tv[0].cx, tv[0].cy, { flip, tint: c })) fx.shadowSlash(this, tv[0].cx, tv[0].cy, tv[0].h); } return done();
+      case 'dash_slash': {
+        hv.lunge(dir, 60); const d = playFx(this, 'fx_rush_dash', hv.cx, hv.cy, { flip, decorative: true, tint: 0xffe0a0 }); if (d) follow(this, d, () => hv.active ? { x: hv.cx, y: hv.cy } : null);
+        tv.forEach(v => { if (!playFx(this, 'fx_rush_hit', v.cx, v.cy)) fx.shadowSlash(this, v.cx, v.cy, v.h); }); return done();
+      }
+      case 'vajra_body': {
+        const ms = dur * 1000, l = playFx(this, 'fx_holy_armor_loop', hv.cx, hv.cy, { ms, tint: 0xffc040, decorative: true });
+        if (l) follow(this, l, () => hv.active ? { x: hv.cx, y: hv.cy } : null); else fx.holyLight(this, hv.cx, hv.cy, hv.h);
+        fx.floatNumber(this, hv.cx, hv.cy - hv.h * 0.2, hv.h, '金刚护体', '#ffd060', 0.7); return done();
+      }
+      case 'ice_arrow': if (tv[0]) { const t = tv[0], x0 = hv.cx + dir * hv.w * 0.4, y0 = hv.cy - 20; fx.projectile(this, x0, y0, t.cx, t.cy, 'talisman', () => { if (!playFx(this, 'fx_ice_roar_burst', t.cx, t.y, { scale: 0.6 })) fx.hitSpark(this, t.cx, t.cy); fx.frostTint(t.art, 1500); done(); }); return; } return done();
+      case 'ice_dragon': case 'frost_blade': case 'ice_whirl': {
+        if (skill === 'frost_blade') fx.iceRoar(this, hv.cx, GROUND_Y + hv.unit.y - 10, sk?.range ?? 170);
+        tv.forEach((v, i) => this.time.delayedCall(i * 40, () => { if (v.active && !playFx(this, 'fx_ice_roar_burst', v.cx, v.y, { scale: skill === 'ice_whirl' ? 1.2 : 0.9 })) fx.hitSpark(this, v.cx, v.cy); }));
+        tv.forEach(v => fx.frostTint(v.art, 1200)); return done();
+      }
+      case 'five_thunder': { tv.forEach((v, i) => this.time.delayedCall(i * 70, () => { if (v.active && !playFx(this, 'fx_thunder_strike', v.cx, v.y, { tint: 0xd0a0ff })) fx.lightning(this, v.cx, v.y - 600, v.cy); })); if (!FxQuality.low) this.cameras.main.shake(140, 0.004); return done(); }
+      case 'soul_wall': { tv.forEach(v => { const l = playFx(this, 'fx_poison_loop', v.cx, v.cy, { ms: dur * 1000, tint: 0xa080ff }); if (!l) fx.poisonCloud(this, v.cx, v.cy, v.h); }); fx.floatNumber(this, tv[0]?.cx ?? hv.cx, (tv[0]?.cy ?? hv.cy) - 60, 120, '灵魂墙', '#c0a0ff', 0.7); return done(); }
+      case 'holy_light': if (tv[0]) { if (!playFx(this, 'fx_heal_pillar', tv[0].cx, tv[0].y, { tint: 0xfff0a0 })) fx.holyLight(this, tv[0].cx, tv[0].cy, tv[0].h); } return done();
+      case 'cleanse': { const all = [hv, ...tv.filter(v => v !== hv)]; all.forEach(v => { if (!playFx(this, 'fx_heal_pillar', v.cx, v.y, { tint: 0x90ffb0 })) fx.holyLight(this, v.cx, v.cy, v.h); }); fx.floatNumber(this, hv.cx, hv.cy - hv.h * 0.2, hv.h, '解毒术', '#90ffb0', 0.7); return done(); }
+      case 'decoy_talisman': { const x = hv.cx + dir * 120, y = GROUND_Y + WORLD.summonLane; if (!playFx(this, 'fx_summon_pillar', x, y, { tint: 0xe8d8a0 })) fx.summonCircle(this, x, y); return done(); }
+      case 'drive_corpse': case 'summon_golden_skeleton': {
+        const x = hv.x - dir * 110, y = GROUND_Y + WORLD.summonLane, tint = skill === 'drive_corpse' ? 0x90c060 : 0xffd040;
+        const c = playFx(this, 'fx_summon_circle', x, y, { tint, onFrame: [4, () => playFx(this, 'fx_summon_pillar', x, y, { tint })] });
+        if (!c) fx.summonCircle(this, x, y); return done();
       }
       case 'summon_beast': case 'summon_skeleton': {
         const x = skill === 'summon_beast' ? hv.cx - dir * 80 : hv.x - dir * 110, y = GROUND_Y + WORLD.summonLane;
@@ -399,7 +433,7 @@ export class BattleScene extends Phaser.Scene {
           const u = sv.unit, fx0 = sv.x + dir * (sv.w / 2 + 6);
           if (u.summon) sv.showPose(u.id + '_atk'); // 姿态帧（art-requests L.2），缺帧保留原动画
           const ok = u.pet ? !!playFx(this, 'fx_pet_hit_pink', tv.cx, tv.cy)
-            : u.summon && u.id === 'summon_skeleton' ? !!playFx(this, 'fx_skeleton_claw', fx0, sv.cy - 10, { flip: dir < 0 })
+            : u.summon && (u.id === 'summon_skeleton' || u.id === 'summon_corpse' || u.id === 'summon_golden_skeleton') ? !!playFx(this, 'fx_skeleton_claw', fx0, sv.cy - 10, { flip: dir < 0 })
             : u.summon && u.id === 'summon_beast' ? !!playFx(this, 'fx_beast_bite', tv.cx, tv.cy) : false;
           if (!ok) fx.slash(this, fx0, sv.cy - 10, sv.h, dir);
         }
@@ -441,7 +475,7 @@ export class BattleScene extends Phaser.Scene {
       } else if (e.type === 'aggro') this.views.get(e.uid)?.alert(WORLD.alertSec);
       else if (e.type === 'leap') this.views.get(e.uid)?.leap(WORLD.leapSec * 1000);
       else if (e.type === 'leash') { const v = this.views.get(e.uid); if (v) fx.floatNumber(this, v.cx, v.cy - v.h * 0.3, v.h, '脱离战斗', FX.statusColor, 0.6); }
-      else if (e.type === 'floor') { this.enterFloor(e.index, e.name); this.gateLabel?.setText(`回${this.world.returnTownName().replace(/（.*）/, '')} [S]`); }
+      else if (e.type === 'floor') { this.enterFloor(e.index, e.name); this.gateLabel?.setText(`回${this.world.returnTownName().replace(/（.*）/, '')}${IS_MOBILE ? '' : ' [S]'}`); }
       else if (e.type === 'town') this.buildStreet(e.id);
       else if (e.type === 'cleared') this.log('首领已被击败！出口已开启，向右前往下一层');
       else if (e.type === 'win') this.end();
@@ -479,29 +513,38 @@ export class BattleScene extends Phaser.Scene {
   }
   /** 合击持续状态（噬魂沼泽/末日审判循环段、劈星斩麻痹标记）；句柄生命周期见 ui/comboStatus.ts */
   comboStatus = new ComboStatusTracker((id, u) => this.makeComboStatus(id, u));
-  private loopAnim(id: string): string | null {
-    const k = 'fx_combo_' + id, a = k + '_loop', d = COMBO_STATUS[id];
-    if (this.anims.exists(a)) return a;
-    if (!d.loopFrames || !this.textures.exists(k)) return null;
-    const names = this.textures.get(k).getFrameNames().filter(n => n.startsWith(k + '_')).sort().slice(d.loopFrames[0], d.loopFrames[1] + 1);
+  private comboStatusClosing = false;
+  /** 循环段动画：专用素材 key（FX_DEFS 同名动画）优先；否则回退起手图集帧区间往返，key = cs_fallback_<id> */
+  private loopAnim(id: string): { tex: string; anim: string; fallback: boolean } | null {
+    const p = comboStatusPlan(id, k => this.textures.exists(k)).loop; if (!p) return null;
+    if (!p.fallback) return ensureAnim(this, p.anim) ? p : null;
+    if (this.anims.exists(p.anim)) return p;
+    const d = COMBO_STATUS[id], k = p.tex;
+    const names = this.textures.get(k).getFrameNames().filter(n => n.startsWith(k + '_')).sort().slice(d.loopFrames![0], d.loopFrames![1] + 1);
     if (!names.length) return null;
-    this.anims.create({ key: a, frames: names.map(frame => ({ key: k, frame })), frameRate: 12, repeat: -1, yoyo: true }); // 素材无独立循环段：取尾帧往返循环
-    return a;
+    this.anims.create({ key: p.anim, frames: names.map(frame => ({ key: k, frame })), frameRate: 12, repeat: -1, yoyo: true });
+    return p;
   }
   private makeComboStatus(id: string, u0: { uid: number }): { update(u: { uid: number }): void; destroy(): void } | null {
     const v0 = this.views.get(u0.uid); if (!v0) return null;
-    const a = this.loopAnim(id), d = COMBO_STATUS[id], objs: Phaser.GameObjects.GameObject[] = [];
-    let place: (cx: number, cy: number, h: number) => void;
+    const a = this.loopAnim(id), d = COMBO_STATUS[id], plan = comboStatusPlan(id, k => this.textures.exists(k)), objs: Phaser.GameObjects.GameObject[] = [];
+    let place: (cx: number, cy: number, h: number) => void, last = { x: v0.cx, y: v0.cy };
     if (d.kind === 'loop') {
       let o: Phaser.GameObjects.Sprite | Phaser.GameObjects.Ellipse;
-      if (a) o = this.add.sprite(v0.cx, v0.cy, 'fx_combo_' + id).play(a).setBlendMode(Phaser.BlendModes.ADD);
+      if (a) o = this.add.sprite(v0.cx, v0.cy, a.tex).play(a.anim).setBlendMode(Phaser.BlendModes.ADD);
       else o = this.add.ellipse(v0.cx, v0.cy, id === 'shihun' ? 500 : 220, id === 'shihun' ? 60 : 220, id === 'shihun' ? 0x40ff60 : 0xa040ff, 0.3).setBlendMode(Phaser.BlendModes.ADD);
       o.setDepth(id === 'shihun' ? 30 : 56).setAlpha(0);
-      this.tweens.add({ targets: o, alpha: 0.85, duration: 200 });
-      objs.push(o); place = (cx, cy) => o.setPosition(cx, cy);
+      this.tweens.add({ targets: o, alpha: a && !a.fallback ? 1 : 0.85, duration: 200 }); // 专用循环段已按 0.7× 亮度出图
+      objs.push(o); place = (cx, cy) => { o.setPosition(cx, cy); last = { x: cx, y: cy }; };
     } else {
-      const arc = a ? this.add.sprite(v0.cx, v0.cy, 'fx_combo_pixing').play(a).setBlendMode(Phaser.BlendModes.ADD).setScale(0.5).setAlpha(0.8).setDepth(57) : null;
-      const tag = this.add.text(v0.cx, 0, '⚡麻痹', { fontFamily: FONT, fontSize: '18px', color: '#ffe84a', fontStyle: 'bold', stroke: '#2a1a60', strokeThickness: 4 }).setOrigin(0.5, 1).setDepth(62);
+      // 专用 fx_combo_pixing_stun：播放 1 次（cs_once_ 动画 repeat 0，播完自毁，图标保留到麻痹结束）；回退起手帧：0.5× 往返循环
+      let once: string | null = null;
+      if (a && !a.fallback) { once = 'cs_once_' + a.tex; if (!this.anims.exists(once)) { const src = this.anims.get(a.anim); this.anims.create({ key: once, frames: src.frames.map(f => ({ key: f.textureKey, frame: f.textureFrame })), frameRate: src.frameRate, repeat: 0 }); } }
+      const arc = a ? this.add.sprite(v0.cx, v0.cy, a.tex).play(once ?? a.anim).setBlendMode(Phaser.BlendModes.ADD).setScale(a.fallback ? 0.5 : 1).setAlpha(a.fallback ? 0.8 : 1).setDepth(57) : null;
+      if (arc && once) arc.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => arc.setVisible(false));
+      const tag: Phaser.GameObjects.Image | Phaser.GameObjects.Text = plan.icon
+        ? this.add.image(v0.cx, 0, plan.icon).setDisplaySize(32, 32).setOrigin(0.5, 1).setDepth(62)
+        : this.add.text(v0.cx, 0, '⚡麻痹', { fontFamily: FONT, fontSize: '18px', color: '#ffe84a', fontStyle: 'bold', stroke: '#2a1a60', strokeThickness: 4 }).setOrigin(0.5, 1).setDepth(62);
       this.tweens.add({ targets: tag, alpha: { from: 1, to: 0.55 }, duration: 300, yoyo: true, repeat: -1 });
       if (arc) objs.push(arc); objs.push(tag);
       place = (cx, cy, h) => { arc?.setPosition(cx, cy); tag.setPosition(cx, cy - h / 2 - 6); };
@@ -509,7 +552,10 @@ export class BattleScene extends Phaser.Scene {
     objs.forEach(o => o.setName('comboStatus_' + id));
     return {
       update: u => { const v = this.views.get(u.uid); if (v) place(v.cx, v.cy, v.h); },
-      destroy: () => objs.forEach(o => { this.tweens.killTweensOf(o); o.destroy(); }),
+      destroy: () => {
+        objs.forEach(o => { this.tweens.killTweensOf(o); o.destroy(); });
+        if (plan.end && !this.comboStatusClosing) playFx(this, plan.end, last.x, last.y, { depth: id === 'shihun' ? 30 : 56 }); // 收尾段播一次后自毁；场景关闭时不播
+      },
     };
   }
   /** R13 官方 BOSS 机制表现：沃玛电火花、祖玛火球、赤月地刺预警/冒刺、发呆/狂暴/瞬移/召唤提示（1× 简易图形） */
@@ -550,6 +596,22 @@ export class BattleScene extends Phaser.Scene {
   }
   useNext = false; fading = false; portalHint!: Phaser.GameObjects.Text;
   /** 传送门：在出口处按空格 → 黑屏淡出 → 切层（新楼层再淡入） */
+  /** 当前位置可触发的入口（手机「进入」大键按此显示文字并执行）：右端出口 / 左端回城或上一层 / 城内门面与城门 */
+  entranceHere(): 'talk' | 'gate' | 'exit' | 'sealed' | 'town' | 'prev' | null {
+    const w = this.world; if (w.town) return w.atTownGate() ? 'gate' : w.nearDoor() ? 'talk' : null;
+    if (w.atExit) return w.floor.boss && w.alive('enemy').some(u => u.tier === 'boss') ? 'sealed' : 'exit';
+    if (w.atReturnGate()) return w.floorIndex === 0 || REGIONS.some(r => r.floors[0] === w.floorIndex) ? 'town' : 'prev';
+    return null;
+  }
+  /** 手机「进入」键 / 点传送门本体：覆盖桌面 W/空格/T/S 的全部入口（docs/mobile-ui.md 入口对照表） */
+  mobileAct(src: 'key' | 'portal' = 'key') {
+    if (this.state !== 'play' || this.paused) return; const e = this.entranceHere();
+    if (src === 'portal' && e !== 'exit' && e !== 'sealed') { this.log('走到传送门前再点'); return; }
+    if (e === 'talk' || e === 'gate' || this.world.town) return this.townUse();
+    if (e === 'exit' || e === 'sealed') return this.usePortal();
+    if (e === 'town' || e === 'prev') return this.onKey('S');
+    this.log('走到右端传送门进入下一层，或走到左端入口回城/返回上一层');
+  }
   usePortal() {
     const w = this.world; if (!w.atExit || this.fading) return;
     if (w.floor.boss && w.alive('enemy').some(u => u.tier === 'boss')) { this.useNext = true; return; }
@@ -582,7 +644,7 @@ export class BattleScene extends Phaser.Scene {
     this.groundObjs.forEach(os => os.forEach(o => o.destroy())); this.groundObjs.clear();
     this.floorUids = this.world.alive('enemy').map(u => u.uid);
     for (const u of this.world.alive('enemy')) this.views.set(u.uid, new CardView(this, u));
-    const s = this.world.summon; if (s) { const v = this.views.get(s.uid); if (v) v.x = s.x; }
+    for (const s of this.world.summons) { const v = this.views.get(s.uid); if (v) v.x = s.x; }
     const bg = this.world.floor.bg && this.textures.exists(this.world.floor.bg) ? this.world.floor.bg : 'bg';
     this.bgImgs.forEach(b => b.setTexture(bg).setDisplaySize(1280, 720));
     // R10：本层背景未到 → 到了自动替换；下一层资源插队预加载
@@ -668,6 +730,10 @@ export class BattleScene extends Phaser.Scene {
       return;
     }
   }
+  /** 存活怪物都要有卡牌：练级图（farm）刷新怪、号角召出的怪等不发 summon 事件，逐帧补建缺失视图，避免「看不到的怪在攻击我」 */
+  ensureFoeViews() {
+    for (const u of foesWithoutView(this.world, uid => this.views.has(uid))) { const v = new CardView(this, u); v.x = u.x; v.setAlpha(0); this.tweens.add({ targets: v, alpha: 1, duration: 400 }); this.views.set(u.uid, v); }
+  }
   update(time: number, dms: number) {
     const dt = Math.min(0.05, dms / 1000), k = this.keys;
     if (this.skillsDirty && !this.paused) { this.skillsDirty = false; this.cds = this.world.skills.map(() => 0); this.scene.stop('UI'); this.scene.launch('UI'); }
@@ -683,6 +749,7 @@ export class BattleScene extends Phaser.Scene {
       this.saveT += dt; if (this.saveT > 15) { this.saveT = 0; this.saveGame(); }
     }
     this.handle(this.world.drainEvents());
+    this.ensureFoeViews();
     this.layoutQueue();
     this.comboStatus.sync(this.world.time, uid => this.views.get(uid)?.unit);
     this.views.forEach(v => { v.sync(); v.anim(time); v.setDepth(10 + v.unit.y / 1000 + (v.unit.isHero ? 0.0005 : 0)); });

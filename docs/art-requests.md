@@ -814,3 +814,462 @@ thunder_sword 雷霆剑、break_strike 破击剑法、shield_break 破盾斩、v
 | bg_floor80.jpg | 80 | 潘夜神殿：牛角石柱、牛魔石像王座、熔岩裂缝 |
 
 存疑：场景细节由地图名推测（未查到/推测）。沙漠图比其他图亮。潘夜神殿石柱上的牛头浮雕为原创图形。
+
+## 手机界面（feat/mobile-ui）
+按钮底板、摇杆、技能圆框都用 CSS 代码绘制（暗金边框 + 径向渐变）。顶部功能图标暂用 emoji（🎒📜🎯🗺🏯⚙）。
+待美术：6 个手机顶部图标（48×46 CSS px，2x 出图 96×92）、摇杆底盘和摇杆头、「进入/对话」大圆键底板。
+
+## PWA 图标（feat/pwa-fullscreen）
+- apple-touch-icon.png（180×180）和 icon-512.png 目前是用 favicon.png（192）放大生成的占位图，512 会发糊。需要 1024×1024 的正式 App 图标（不透明、黑底、不带圆角，iOS 会自己加圆角）。
+
+## art/maps-sq-mir3 重画·第1组（15 张，取消复用）
+
+用户要求不再复用小怪素材，以下 id 的复制图都换成了各自的新立绘，外形和配色都与原图明显不同。路径：`public/assets/portraits/<id>_full.png`。预览：`docs/art-gap-preview/sq_mir3_redo1.jpg`。
+
+| 文件 | 尺寸 | 名称 | 状态 | 依据 |
+|---|---|---|---|---|
+| sq_shiwei_full.png | 525x960 | 尸卫 | 新画（取代原复用图） | 部分推测：殉葬尸兵，绷带木乃伊+青铜札甲+长戟 |
+| sq_shiwei_yong_full.png | 735x960 | 尸卫勇士 | 新画（取代原复用图） | 据描述：手臂化为巨刀；圆盾、铁面具为推测 |
+| sq_shiwei_qiang_full.png | 699x960 | 尸卫投枪兵 | 新画（取代原复用图） | 据描述：掷枪兵所化，投枪 |
+| sq_shiwei_zhan_full.png | 724x960 | 尸卫战将 | 新画（取代原复用图） | 部分推测：亲卫军所化，金黑重甲+偃月大刀 |
+| m3_ant_warrior_full.png | 960x636 | 蚂蚁战士 | 新画（取代原复用图） | 据描述：兵蚁，大头硬壳前额利钳；黑亮外壳为新设计 |
+| m3_ant_armor_full.png | 960x549 | 盔甲蚂蚁 | 新画（取代原复用图） | 据描述：前额巨钳；钢蓝铆甲为新设计（重画1次） |
+| m3_ant_bomb_full.png | 960x543 | 爆毒蚂蚁 | 新画（取代原复用图） | 据描述：小腹喷毒射管，钳不发达 |
+| m3_ant_tao_full.png | 751x960 | 蚂蚁道士 | 新画（取代原复用图） | 据描述：畸形巨大腹部、为同伴回血；骨杖叶披风为新设计 |
+| sq_stone_man_full.png | 747x960 | 石人 | 新画（取代原复用图） | 据描述：巨石堆砌；苔藓藤根为新设计 |
+| sq_bronze_man_full.png | 486x960 | 铜人 | 新画（取代原复用图） | 据描述：纯铜组装、握铜矛 |
+| sq_bronze_beast_full.png | 943x960 | 铜兽 | 新画（取代原复用图） | 部分推测：铜机关兽，狮犬形与蒸汽为推测 |
+| sq_blade_man_full.png | 695x960 | 滚刀手 | 新画（取代原复用图） | 据描述：迅猛刀手双刃；背负锯盘、白面具为新设计 |
+| sq_hammer_man_full.png | 651x960 | 锤手 | 新画（取代原复用图） | 据描述：持巨锤；矮胖黄铜机关身为新设计 |
+| sq_jingang_full.png | 690x960 | 金刚人 | 新画（取代原复用图） | 部分推测：金刚不坏巨人；铸铁肤色、袈裟为新设计 |
+| m3_skel_wushi_full.png | 683x960 | 骷髅武士 | 新画（取代原复用图） | 据描述：刀背带两环的刀 |
+
+
+## art/maps-sq-mir3 重画·第2组（9 张，取消复用）
+
+用户要求不再复用小怪素材，以下 id 的复制图都换成了各自的新立绘，外形和配色都与原图明显不同。路径：`public/assets/portraits/<id>_full.png`。预览：`docs/art-gap-preview/sq_mir3_redo2.jpg`。
+
+| 文件 | 尺寸 | 名称 | 状态 | 依据 |
+|---|---|---|---|---|
+| m3_skel_soldier_full.png | 438x960 | 骷髅士兵 | 新画（取代原复用图） | 据描述：持带旗长枪 |
+| m3_skel_archer_full.png | 674x960 | 骷髅弓箭手 | 新画（取代原复用图） | 据描述：弓箭手；兜帽跪射为新设计 |
+| m3_bone_general_full.png | 603x960 | 骨鬼将 | 新画（取代原复用图） | 未查到/推测：骷髅系将领，鬼烟下身、长柄刀为推测 |
+| sq_red_snake_yao_full.png | 746x960 | 红蛇妖 | 新画（取代原复用图） | 据描述：蛇妖喽啰；眼镜蛇兜帽、短弯刀为新设计 |
+| sq_black_snake_yao_full.png | 723x960 | 黑蛇妖 | 新画（取代原复用图） | 据描述：近卫、高防；塔盾三叉戟为新设计 |
+| sq_scarab_full.png | 960x703 | 圣甲虫 | 新画（取代原复用图） | 据描述：高防甲虫；翠玉壳、日珠为新设计 |
+| sq_magic_beetle_full.png | 960x785 | 魔甲虫 | 新画（取代原复用图） | 据描述：石化魔法；石纹壳、灰雾为新设计 |
+| sq_termite_full.png | 960x588 | 白蚁 | 新画（取代原复用图） | 据描述：小生物；兵蚁大头、朽木为新设计 |
+| sq_three_snake_full.png | 696x960 | 三头蛇 | 新画（取代原复用图） | 据描述：三头 |
+
+
+## art/maps-sq-mir3 重画·第3组（7 张，取消复用）
+
+用户要求不再复用小怪素材，以下 id 的复制图都换成了各自的新立绘，外形和配色都与原图明显不同。路径：`public/assets/portraits/<id>_full.png`。预览：`docs/art-gap-preview/sq_mir3_redo3.jpg`。
+
+| 文件 | 尺寸 | 名称 | 状态 | 依据 |
+|---|---|---|---|---|
+| m3_skel_wujiang_full.png | 728x960 | 骷髅武将 | 新画（取代原复用图） | 据描述：骨骼变异成巨躯；骨刺、劈刀为新设计 |
+| sq_white_snake_yao_full.png | 629x960 | 白蛇妖 | 新画（取代原复用图） | 据描述：蛇魔军团长、高大、利爪 |
+| sq_imp_full.png | 780x960 | 地下小鬼 | 新画（取代原复用图） | 据描述：一尺高、持石锤（弯柄改直柄，存疑） |
+| sq_nimo_archer_full.png | 628x960 | 逆魔弓箭手 | 新画（取代原复用图） | 部分推测：大漠善射民族被侵蚀；头巾面纱为新设计 |
+| sq_nimo_shiwei_full.png | 697x960 | 逆魔侍卫 | 新画（取代原复用图） | 据描述：身后箭型巨尾；蜥蜴形、盾矛为推测 |
+| sq_nimo_guard_full.png | 687x960 | 逆魔卫士 | 新画（取代原复用图） | 部分推测：迅猛近战卫士；双弯刀为新设计 |
+| sq_nimo_statue_full.png | 653x960 | 逆魔雕像 | 新画（取代原复用图） | 据描述："死神"、巨镰；砂岩活化为新设计 |
+
+
+## art/maps-sq-mir3 重画·第4组（8 张，取消复用）
+
+用户要求不再复用小怪素材，以下 id 的复制图都换成了各自的新立绘，外形和配色都与原图明显不同。路径：`public/assets/portraits/<id>_full.png`。预览：`docs/art-gap-preview/sq_mir3_redo4.jpg`。
+
+| 文件 | 尺寸 | 名称 | 状态 | 依据 |
+|---|---|---|---|---|
+| m3_noma_full.png | 746x960 | 诺玛 | 新画（取代原复用图） | 据描述：皮衣骨甲、骨制武器；兽颅盔为新设计 |
+| m3_noma_pharaoh_full.png | 689x960 | 诺玛法老 | 新画（取代原复用图） | 据描述：魔法拐棍；法老头饰木乃伊为推测 |
+| m3_desert_fish_full.png | 714x960 | 沙漠鱼魔 | 新画（取代原复用图） | 据描述：毒强、不死系；腐烂鱼形为新设计 |
+| m3_desert_wind_full.png | 693x960 | 沙漠风魔 | 新画（取代原复用图） | 据描述：持扇；沙旋风下身为新设计（无五官，存疑） |
+| m3_desert_tree_full.png | 703x960 | 沙漠树魔 | 新画（取代原复用图） | 据描述：仙人掌、射刺果 |
+| m3_desert_stone_full.png | 730x960 | 沙漠石人 | 新画（取代原复用图） | 据描述：石垒；红砂岩层叠、胸晶为新设计（与 sq_stone_man 区分） |
+| sq_cimo_full.png | 679x960 | 刺魔 | 新画（取代原复用图） | 据描述：剪刀爪、六背鳍（剪刀爪画成钩爪，存疑） |
+| sq_lizhua_full.png | 740x960 | 利爪魔 | 新画（取代原复用图） | 未查到/推测：按名称画长爪兽魔 |
+
+
+## art/maps-sq-mir3 重画·第5组（6 张，取消复用）
+
+用户要求不再复用小怪素材，以下 id 的复制图都换成了各自的新立绘，外形和配色都与原图明显不同。路径：`public/assets/portraits/<id>_full.png`。预览：`docs/art-gap-preview/sq_mir3_redo5.jpg`。
+
+| 文件 | 尺寸 | 名称 | 状态 | 依据 |
+|---|---|---|---|---|
+| sq_shanling_full.png | 717x960 | 闪灵 | 新画（取代原复用图） | 未查到/推测：闪电魔，雷纹暗影躯体为推测 |
+| sq_tengyao_full.png | 724x960 | 藤妖 | 新画（取代原复用图） | 据描述：藤树化身；紫花为新设计（与 tree_demon 同类，存疑） |
+| sq_xueyao_full.png | 700x960 | 血妖 | 新画（取代原复用图） | 据描述：吐血、似僵尸 |
+| sq_tieyi_full.png | 960x695 | 铁翼魔 | 新画（取代原复用图） | 据描述：巨蝙蝠；铁板翼为新设计 |
+| sq_yaolishi_full.png | 722x960 | 妖力士 | 新画（取代原复用图） | 据描述：一臂粗大；独角、锁链为新设计 |
+| sq_youling_bug_full.png | 960x746 | 幽灵虫 | 新画（取代原复用图） | 未查到/推测：按名称画幽灵螳蜂（重画1次） |
+
+
+## art/maps-sq-mir3 重画·第6组（8 张，取消复用）
+
+用户要求不再复用小怪素材，以下 id 的复制图都换成了各自的新立绘，外形和配色都与原图明显不同。路径：`public/assets/portraits/<id>_full.png`。预览：`docs/art-gap-preview/sq_mir3_redo6.jpg`。
+
+| 文件 | 尺寸 | 名称 | 状态 | 依据 |
+|---|---|---|---|---|
+| m3_panye_fire_full.png | 728x960 | 潘夜火魔 | 新画（取代原复用图） | 据描述：黄甲、偃月刀；火焰为新设计（牛形只画了牛角，存疑） |
+| m3_panye_wind_full.png | 732x960 | 潘夜风魔 | 新画（取代原复用图） | 据描述：黑甲、长柄斧；风旋为新设计（牛形只画了牛角，存疑） |
+| m3_panye_ice_full.png | 726x960 | 潘夜冰魔 | 新画（取代原复用图） | 据描述：蓝甲、双刃斧×2（牛形只画了牛角，存疑） |
+| m3_panye_cloud_full.png | 727x960 | 潘夜云魔 | 新画（取代原复用图） | 据描述：绿甲、双锤（牛形只画了角，存疑） |
+| m3_panye_warrior_full.png | 753x960 | 潘夜战士 | 新画（取代原复用图） | 据描述：牛形战士；狼牙棒、圆盾为推测 |
+| m3_panye_left_full.png | 629x960 | 潘夜左护卫 | 新画（取代原复用图） | 部分推测：黑太阳灵气、施法；法袍体型为推测 |
+| m3_panye_right_full.png | 551x960 | 潘夜右护卫 | 新画（取代原复用图） | 部分推测：黑月亮灵气、施法；冰雾、体型为推测 |
+| m3_panye_ghost_full.png | 724x960 | 潘夜鬼将 | 新画（取代原复用图） | 据描述：与潘夜战士相似的牛形；亡灵化、长刃为推测 |
+
+
+## art/maps-sq-mir3 重画·第7组（9 张，取消复用）
+
+用户要求不再复用小怪素材，以下 id 的复制图都换成了各自的新立绘，外形和配色都与原图明显不同。路径：`public/assets/portraits/<id>_full.png`。预览：`docs/art-gap-preview/sq_mir3_redo7.jpg`。
+
+| 文件 | 尺寸 | 名称 | 状态 | 依据 |
+|---|---|---|---|---|
+| hj_guard_full.png | 488x960 | 家园守卫 | 新画（取代原复用图） | 未查到/推测：外形无资料，画成持矛提灯的人类守卫 |
+| wolong_guard_full.png | 507x960 | 卧龙护卫 | 新画（取代原复用图） | 未查到/推测：外形无资料，按“卧龙山庄”画成龙纹札甲护院+偃月刀 |
+| fire_dragon_guard_full.png | 724x960 | 火龙守卫 | 新画（取代原复用图） | 未查到/推测：外形无资料，按“火龙神殿”画成赤鳞龙人+火焰戟 |
+| leiyan_spider_full.png | 960x729 | 雷炎蜘蛛 | 新画（取代原复用图） | 部分推测：按名称画成熔岩甲壳+雷电蜘蛛 |
+| cave_skel_warrior_full.png | 727x960 | 骷髅战士 | 新画（取代原复用图） | 部分推测：天然洞穴骷髅战士，持刀盾；苔藓铁锅盔为新设计 |
+| cave_skel_general_full.png | 466x960 | 骷髅战将 | 新画（取代原复用图） | 部分推测：青铜角盔+双手大剑；锈绿配色为新设计 |
+| axe_skeleton_full.png | 526x960 | 掷斧骷髅 | 新画（取代原复用图） | 据名称：投掷手斧；红头巾为新设计（胸前斧袋画得像子弹带，存疑） |
+| cave_bat_full.png | 960x562 | 山洞蝙蝠 | 新画（取代原复用图） | 据名称：洞穴蝙蝠；棕毛、白瞳为推测 |
+| cave_maggot_full.png | 794x960 | 洞蛆 | 新画（取代原复用图） | 据名称：蛆虫；圆口利齿为推测 |
+
+
+## art/maps-sq-mir3 重画·第8组（1 张，取消复用）
+
+用户要求不再复用小怪素材，以下 id 的复制图都换成了各自的新立绘，外形和配色都与原图明显不同。路径：`public/assets/portraits/<id>_full.png`。预览：`docs/art-gap-preview/sq_mir3_redo8.jpg`。
+
+| 文件 | 尺寸 | 名称 | 状态 | 依据 |
+|---|---|---|---|---|
+| boss_evil_pincer_full.png | 960x759 | 邪恶钳虫 | 新画（取代原复用图） | 部分推测：原图与 pincer_bug 同构图仅换色，重画为直立巨钳虫后；外形细节为推测（毒液绿边可能被抠，存疑） |
+
+## 说明：旧「复用」记录作废
+
+上文 art/maps-sq-mir3 第2–7批中标为「复用」的行，已由「重画·第1–8组」各章取代。所有 sq_/m3_ 小怪、9 个借用他怪 art 的单位，以及 boss_evil_pincer（原图与 pincer_bug 同构图、只换了颜色），现在都是独立新画。src 里的 `art` 字段仍指向旧图，本分支不改 src，需要开发把它们改成各自的 id。
+
+需改 `art` 的单位：hj_guard、wolong_guard、fire_dragon_guard、leiyan_spider、cave_skel_warrior、cave_skel_general、axe_skeleton、cave_bat、cave_maggot，以及 dark_warrior、dung_beetle、fire_woma、giant_worm、horn_fly、mine_zombie、pincer_bug、wedge_moth、woma_brave、woma_general。SQMIR3_BOSS 元组的第 4/5 字段也引用了其他 BOSS 的图（例如蚂蚁将军→boss_evil_pincer），但这些 BOSS 都已有自己的 `<id>_full.png`，建议一并改为自身 id。
+
+## 替换魔兽头像图标（art/replace-wow-heads，2026-10-31）
+
+原创重画 public/assets/portraits/ 下全部 13 个魔兽来源图标，卡通粗描边，同名覆盖，尺寸与原图一致：64x64 RGBA PNG，代码零改动。对比图：docs/wow-heads-preview/wow_heads_old_vs_new.jpg
+
+| 文件（旧→新同名） | 尺寸 | 新内容 | 用途 |
+|---|---|---|---|
+| portraits/INV_Misc_Head_Human_01.png | 64x64 | 人类战士头像 | 主菜单 menu_0（assets-manifest.ts:46） |
+| portraits/INV_Misc_Head_Scourge_01.png | 64x64 | 亡灵骷髅头（兜帽+鬼火） | 未引用 |
+| portraits/INV_Misc_Head_Human_02.png | 64x64 | 女商人头像 | 商人 merchant（assets-manifest.ts:29） |
+| portraits/INV_Misc_Bone_HumanSkull_01.png | 64x64 | 枯骨头骨 | 未引用 |
+| portraits/INV_Misc_Head_Dragon_Black.png | 64x64 | 黑龙头 | 未引用 |
+| portraits/INV_Misc_Head_Gnoll_01.png | 64x64 | 鬣狗兽人头像 | 未引用 |
+| portraits/INV_Misc_Head_Kobold_01.png | 64x64 | 矿工鼠人（蜡烛盔） | 未引用 |
+| portraits/INV_Misc_Head_Murloc_01.png | 64x64 | 鱼人头像 | 未引用 |
+| portraits/INV_Misc_Head_Undead_01.png | 64x64 | 亡灵男子头像 | 未引用 |
+| portraits/INV_Misc_Head_Undead_02.png | 64x64 | 亡灵女术士头像 | 未引用 |
+| portraits/Ability_Hunter_Pet_Wolf.png | 64x64 | 灰狼头 | 未引用 |
+| portraits/INV_Misc_MonsterHead_01.png | 64x64 | 独眼黄蜥怪头 | 未引用 |
+| portraits/Ability_Druid_TravelForm.png | 64x64 | 风灵雄鹿 | 未引用 |
+
+注：Scourge_01 原图其实是带血的人头，这里按要求画成了亡灵骷髅。
+
+### 仓库里剩下的魔兽素材（只列出，本次没替换）
+
+共 81 个：
+- items：25 个
+- potions：20 个
+- skills：22 个
+- ui：14 个
+
+完整路径：
+
+```
+public/assets/items/INV_Chest_Plate01.png
+public/assets/items/INV_Chest_Plate02.png
+public/assets/items/INV_Chest_Plate03.png
+public/assets/items/INV_Helmet_01.png
+public/assets/items/INV_Helmet_02.png
+public/assets/items/INV_Helmet_03.png
+public/assets/items/INV_Helmet_04.png
+public/assets/items/INV_Helmet_05.png
+public/assets/items/INV_Jewelry_Ring_01.png
+public/assets/items/INV_Jewelry_Ring_02.png
+public/assets/items/INV_Jewelry_Ring_03.png
+public/assets/items/INV_Jewelry_Ring_04.png
+public/assets/items/INV_Jewelry_Ring_05.png
+public/assets/items/INV_Misc_Bag_08.png
+public/assets/items/INV_Misc_Bone_01.png
+public/assets/items/INV_Misc_Book_09.png
+public/assets/items/INV_Misc_Coin_01.png
+public/assets/items/INV_Misc_Food_14.png
+public/assets/items/INV_Misc_Food_15.png
+public/assets/items/INV_Misc_Gem_Pearl_01.png
+public/assets/items/INV_Sword_01.png
+public/assets/items/INV_Sword_02.png
+public/assets/items/INV_Sword_03.png
+public/assets/items/INV_Sword_04.png
+public/assets/items/INV_Sword_05.png
+public/assets/potions/INV_Potion_50.png
+public/assets/potions/INV_Potion_51.png
+public/assets/potions/INV_Potion_52.png
+public/assets/potions/INV_Potion_53.png
+public/assets/potions/INV_Potion_54.png
+public/assets/potions/INV_Potion_55.png
+public/assets/potions/INV_Potion_56.png
+public/assets/potions/INV_Potion_57.png
+public/assets/potions/INV_Potion_58.png
+public/assets/potions/INV_Potion_59.png
+public/assets/potions/INV_Potion_70.png
+public/assets/potions/INV_Potion_71.png
+public/assets/potions/INV_Potion_72.png
+public/assets/potions/INV_Potion_73.png
+public/assets/potions/INV_Potion_74.png
+public/assets/potions/INV_Potion_75.png
+public/assets/potions/INV_Potion_76.png
+public/assets/potions/INV_Potion_77.png
+public/assets/potions/INV_Potion_78.png
+public/assets/potions/INV_Potion_79.png
+public/assets/skills/Ability_Warrior_BattleShout.png
+public/assets/skills/Ability_Warrior_Charge.png
+public/assets/skills/Ability_Warrior_Cleave.png
+public/assets/skills/Ability_Warrior_DefensiveStance.png
+public/assets/skills/Ability_Warrior_Revenge.png
+public/assets/skills/Ability_Warrior_SavageBlow.png
+public/assets/skills/Ability_Warrior_ShieldWall.png
+public/assets/skills/Ability_Warrior_Sunder.png
+public/assets/skills/Ability_Warrior_WarCry.png
+public/assets/skills/Ability_Whirlwind.png
+public/assets/skills/Spell_Fire_Fireball.png
+public/assets/skills/Spell_Fire_FlameBolt.png
+public/assets/skills/Spell_Frost_FrostNova.png
+public/assets/skills/Spell_Holy_FlashHeal.png
+public/assets/skills/Spell_Holy_Heal.png
+public/assets/skills/Spell_Holy_HolyBolt.png
+public/assets/skills/Spell_Holy_Renew.png
+public/assets/skills/Spell_Nature_Lightning.png
+public/assets/skills/Spell_Nature_ThunderClap.png
+public/assets/skills/Spell_Shadow_AnimateDead.png
+public/assets/skills/Spell_Shadow_RaiseDead.png
+public/assets/skills/Spell_Shadow_ShadowBolt.png
+public/assets/ui/LoadScreenCave.png
+public/assets/ui/UI-Backpack-EmptySlot.png
+public/assets/ui/UI-DialogBox-Background.png
+public/assets/ui/UI-DialogBox-Border-9slice.png
+public/assets/ui/UI-DialogBox-Border.png
+public/assets/ui/UI-DialogBox-Gold-Border-9slice.png
+public/assets/ui/UI-DialogBox-Gold-Border.png
+public/assets/ui/UI-DialogBox-Header.png
+public/assets/ui/UI-EmptySlot.png
+public/assets/ui/UI-Panel-Button-Up.png
+public/assets/ui/UI-Quickslot2.png
+public/assets/ui/UI-Tooltip-Background.png
+public/assets/ui/UI-Tooltip-Border-9slice.png
+public/assets/ui/UI-Tooltip-Border.png
+```
+
+另外 src/assets-manifest.ts 第 2 行还留着魔兽来源的版权注释，以后全部替换完再删。音效有没有魔兽来源：未查到/推测，本次没核查。
+## 新手地图传奇原有怪物立绘（art/novice-monsters，2026-10-31）
+
+先对照 src/data/units.ts 和 docs/monsters-official.md：鹿（deer）、僵尸（zombie）、半兽人（orc）已经有立绘，这次跳过。下面 6 只是新画的，每只单独一张，没有复用已有图。都是透明底 PNG，最长边 960，卡通半身、粗描边，放在 public/assets/portraits/。数值和刷新地点来自 21cq（1.76 版资料站）。外观是 21cq 上查不到的，按名字自己设计，标「推测」。
+
+| id | 中文名 | 来源 | 原版等级/HP/攻击/经验 | 原版刷新 | 建议层位 | 文件 | 尺寸 | 外观 |
+|---|---|---|---|---|---|---|---|---|
+| hen | 鸡 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=14) | 5 / 5 / 1-1 / 5 | 比奇省 | 第1层 幽暗森林（和鹿同档） | hen_full.png | 883x960 | 推测 |
+| scarecrow | 稻草人 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=21) | 10 / 15 / 1-2 / 12，不死系 | 比奇省 | 第1层 | scarecrow_full.png | 960x955 | 推测 |
+| hook_cat | 多钩猫 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=24) | 13 / 22 / 2-4 / 17 | 比奇省 | 第1层 | hook_cat_full.png | 960x940 | 推测 |
+| rake_cat | 钉耙猫 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=26) | 13 / 23 / 2-4 / 18 | 比奇省 | 第1层 | rake_cat_full.png | 900x960 | 推测 |
+| forest_yeti | 森林雪人 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=28) | 16 / 36 / 7-10 / 30 | 比奇省 | 第1层末到第2层 | forest_yeti_full.png | 925x960 | 推测 |
+| man_eater_flower | 食人花 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=30) | 20 / 28 / 6-9 / 28 | 比奇省 | 第2层 | man_eater_flower_full.png | 928x960 | 推测 |
+
+- 羊：21cq 怪物 ID 1–40 里没有，未查到，所以没画。
+- 本作数值曲线和原版不同，表里的"建议层位"是推测；这次只加了立绘，units.ts 没改。
+- 预览拼图：docs/art-gap-preview/novice_monsters.jpg
+
+## 传送门（替换地图「回城小房子」入口，art/portal，2026-10-31）
+
+原创 Legend of Mir 风格的蓝紫发光椭圆光圈漩涡，没有用 WoW 素材。先在纯黑底上生成一张基础图，再按亮度换算透明度（发光边缘自然淡出，不会留下抠底色边），漩涡内部保留约 85% 不透明。4 帧由脚本 docs/art-gap-preview/portal_gen.py 生成：内部漩涡转 0°/+6°/0°/-6°，整体缩放 0.97→1.0、亮度 1.0→1.13 脉动，首尾衔接可循环，外圈位置不动、不抖。
+
+| 文件 | 尺寸 | 帧数 | 说明 |
+|---|---|---|---|
+| public/assets/portal_exit.png | 256x384，透明底 | 1 | 静态图（第 1 帧） |
+| public/assets/portal_exit_sheet.png | 1024x384，透明底 | 4，横向排列，每帧 256x384 | 循环动画精灵表 |
+
+- 帧率建议 8fps，循环播放。
+- 锚点建议底部中心 (0.5, 1)。光圈下沿离底边约 4px，需要贴地时可以把 y 往下偏一点。
+- 用途：替换地图里的回城/出口入口「小房子」。只加了素材，src 没改，接入要另外改代码。
+- 预览：docs/art-gap-preview/portal_preview.jpg（上排深色底，下排棋盘格底，用来检查边缘）
+
+## L-P1. 盟重土城街景（art/towns 分支交付）
+
+规格来源：feat/balance-sys 分支 docs/art-requests.md 第 L 章，以及 docs/towns-plan.md 的盟重排序。所有素材都是原创生成，没有用、也没有描摹任何 WoW 或传奇原作素材。画风对齐 art/town 分支的比奇街道。
+
+### 文件
+
+| 文件 | 尺寸 | 用途 |
+|---|---|---|
+| public/assets/town/bg_town_mengzhong.jpg | 7680×1080（4 屏）| 盟重长街背景：沙黄土街，下部地面留空；西端是城门，留出传送门位置；东端远处是沙巴克城门 |
+| public/assets/town/shop_mz_weapon.png | 540×720 透明 | 武器店/铁匠 |
+| public/assets/town/shop_mz_pharmacy.png | 540×720 透明 | 药店 |
+| public/assets/town/shop_mz_book.png | 540×720 透明 | 书店 |
+| public/assets/town/shop_mz_storage.png | 540×720 透明 | 仓库（王家） |
+| public/assets/town/shop_mz_clothes.png | 540×720 透明 | 服装店 |
+| public/assets/town/shop_mz_jewelry.png | 540×720 透明 | 首饰店 |
+| public/assets/town/shop_mz_grocer.png | 540×720 透明 | 杂货（罗家铺子） |
+| public/assets/town/shop_mz_inn.png | 540×720 透明 | 客栈（悦来客栈） |
+| public/assets/town/shop_mz_butcher.png | 540×720 透明 | 肉店（黄家肉店） |
+| public/assets/town/shop_mz_alchemist.png | 540×720 透明 | 炼金师（外观为推测） |
+| public/assets/town/npc_mz_veteran.png | 768×960 透明 | 盟重老兵 |
+| public/assets/town/npc_mz_book.png | 768×960 透明 | 书店老板 |
+| public/assets/town/npc_mz_pharmacy.png | 768×960 透明 | 药店老板 |
+| public/assets/town/npc_mz_weapon.png | 768×960 透明 | 武器店老板 |
+| public/assets/town/npc_mz_storage.png | 768×960 透明 | 仓库保管员 |
+| docs/town-preview/mengzhong_preview.jpg | 3840×540 | 摆位预览（半尺寸，白线是屏分隔） |
+
+说明：
+- 门面按第 L 章做成 3:4（540×720）。这和第 K 章比奇门面的 640×720 不一致，如果需要统一，可以在加载时缩放，或者让美术重新留边。
+- 门面底边贴画布底，水平居中。门头上方都有空白木招牌，店名由游戏绘制，图上没有任何文字。
+- 文件名 shop_mz_* / npc_mz_* 是本分支自己定的（第 L 章没有给出具体文件名），id 可以按代码需要再改。
+- NPC 外观在资料里未查到，均为推测。炼金师的原版坐标也未查到。
+
+### 摆位表（背景坐标，x 为中心点）
+
+门面底边 y=760（和比奇台阶线一致），origin (0.5, 1)。NPC 脚底 y=1040，origin (0.5, 1)，预览里按 0.35 倍显示（约 269×336）。
+
+| 屏 | x 范围 | 内容 | x 中心 |
+|---|---|---|---|
+| 1 | 0–1920 | 城门 / 传送门位 | 约 300（背景自带城门）|
+| 1 | | npc_mz_veteran | 520 |
+| 1 | | shop_mz_grocer | 1000 |
+| 1 | | shop_mz_storage + npc_mz_storage | 1650 / 1880 |
+| 2 | 1920–3840 | shop_mz_inn | 2250 |
+| 2 | | shop_mz_weapon + npc_mz_weapon | 2950 / 3200 |
+| 2 | | shop_mz_clothes | 3550 |
+| 3 | 3840–5760 | shop_mz_jewelry | 4150 |
+| 3 | | shop_mz_alchemist | 4850 |
+| 3 | | shop_mz_butcher | 5450 |
+| 4 | 5760–7680 | shop_mz_pharmacy + npc_mz_pharmacy | 6050 / 6290 |
+| 4 | | shop_mz_book + npc_mz_book | 6700 / 6940 |
+| 4 | | 远景沙巴克城门（背景自带） | 约 7300 |
+
+顺序依据 towns-plan（由西向东）：城门·老兵 → 杂货 → 仓库·客栈 → 武器·服装·首饰 → 炼金·肉店·药店 → 书店。每屏最多 3 间店。屏 1 的仓库中心在 1650，右半跨到 1920 附近，接入时可按需微调。
+
+## L-P2. 白日门街景（art/towns 分支交付）
+
+规格来源：feat/balance-sys 分支 docs/art-requests.md 第 L 章（P2 行），排序依据 towns-plan（标了 [适配]）。素材全部原创生成，没有用、也没有描摹任何 WoW 或传奇原作素材，图里也没有文字。白日门的建筑外观在资料里未查到，做成了山谷边寨风格（灰石墙、深色木构、坡顶瓦），属于推测。门面画风和盟重、比奇一致，只是建筑形制不同。
+
+### 文件
+
+| 文件 | 尺寸 | 用途 |
+|---|---|---|
+| public/assets/town/bg_town_bairimen.jpg | 5760×1080（3 屏）| 白日门长街：西端城门（传送门位），中段石墙木栅加松林群山，东端远景是山崖上的龙形古祠（给龙人做背景呼应）|
+| public/assets/town/shop_brm_weapon.png | 540×720 透明 | 武器店 |
+| public/assets/town/shop_brm_pharmacy.png | 540×720 透明 | 药店 |
+| public/assets/town/shop_brm_storage.png | 540×720 透明 | 仓库 |
+| public/assets/town/shop_brm_jewelry.png | 540×720 透明 | 首饰店 |
+| public/assets/town/shop_brm_clothes.png | 540×720 透明 | 服装店 |
+| public/assets/town/shop_brm_mystic_book.png | 540×720 透明 | 神秘书商（外观推测）|
+| public/assets/town/shop_brm_mystic_smith.png | 540×720 透明 | 神秘铁匠（外观推测）|
+| public/assets/town/npc_brm_guide.png | 768×960 透明 | 向导（外观推测）|
+| public/assets/town/npc_brm_mystic_book.png | 768×960 透明 | 神秘书商（外观推测）|
+| public/assets/town/npc_brm_mystic_smith.png | 768×960 透明 | 神秘铁匠（外观推测）|
+| public/assets/town/npc_brm_dragon.png | 768×960 透明 | 龙人 brm_dragon（外观推测）|
+| docs/town-preview/bairimen_preview.jpg | 2880×540 | 摆位预览（半尺寸；白线是屏分隔，龙人已画在 x=5300）|
+
+说明：
+- 门面同 L-P1，采用 3:4（540×720），底边贴画布底，水平居中，门头上方有空白木招牌，店名由游戏绘制。
+- 文件名 shop_brm_* / npc_brm_* 是本分支自定的，第 L 章没有给出具体文件名。
+- 龙人：brm_dragon 原来只是 src/data/towns.ts 里的 NPC id，没有对应的图。现已出图：public/assets/town/npc_brm_dragon.png（768×960 透明，与 npc_brm_* 同风格；龙首人身、红金长袍、持珠杖，外观推测）。预览中已放在 x=5300。
+
+### 摆位表（背景坐标，x 为中心点）
+
+门面底边 y=760，NPC 脚底 y=1040，origin 都是 (0.5, 1)。NPC 在预览里按 0.35 倍显示。
+
+| 屏 | x 范围 | 内容 | x 中心 |
+|---|---|---|---|
+| 1 | 0–1920 | 城门 / 传送门位（背景自带）| 约 560 |
+| 1 | | npc_brm_guide | 820 |
+| 1 | | shop_brm_mystic_book + npc_brm_mystic_book | 1150 / 1400 |
+| 1 | | shop_brm_weapon | 1750 |
+| 2 | 1920–3840 | shop_brm_storage | 2350 |
+| 2 | | shop_brm_pharmacy | 2950 |
+| 2 | | shop_brm_jewelry | 3550 |
+| 3 | 3840–5760 | shop_brm_clothes | 4150 |
+| 3 | | shop_brm_mystic_smith + npc_brm_mystic_smith | 4800 / 5050 |
+| 3 | | npc_brm_dragon（龙人）| 5300 |
+| 3 | | 远景龙形古祠（背景自带）| 约 5400 |
+
+顺序依据 towns-plan：城门·向导 → 神秘书商·武器 → 仓库·药店 → 首饰·服装 → 神秘铁匠·龙人。原计划是两两一组，这里按 3 屏重新分配，每屏最多 3 间店。
+
+## L-P3. 封魔谷 / 苍月岛街景：通用换色方案（art/towns 分支交付）
+
+两座城都是 2 屏（3840×1080），门面都是 basic 通用门面换色（见 src/data/towns.ts 的 basic('fm') / basic('cy')）。做法：先画一套**低饱和、偏灰白的中性底图和门面**，再按城换色。
+
+### 换色方式
+
+- 原理：乘色（multiply）。Phaser 的 `setTint(0xRRGGBB)` 本身就是乘色，所以底图必须是浅色、中性的，换色才明显；深色或高饱和的部分基本不变色。
+- 方案 A（运行时）：直接用 shop_basic_* 和 bg_town_basic_*，代码里 `sprite.setTint(色值)`。CSS 也可以用 `mix-blend-mode: multiply` 叠一层纯色做到同样的效果。
+- 方案 B（预出色版，已交付）：脚本把原图和乘色结果按比例混合，生成 shop_fm_* / shop_cy_* 和 bg_town_fengmo / bg_town_cangyue。直接加载就行，不用写 tint 代码。
+
+| 用途 | 色值 | 混合比例（方案 B） |
+|---|---|---|
+| 封魔谷底图（冷蓝紫） | #8C90D0 | 0.85 |
+| 封魔谷门面 | #C0C0EC | 0.90 |
+| 封魔谷老兵 | #B4B8F0 | 0.80 |
+| 苍月岛底图（海青） | #80C8C0 | 0.85 |
+| 苍月岛门面 | #B8E4DC | 0.90 |
+
+方案 A 用 Phaser 时，对应的色值直接写成 0x8C90D0 这种形式即可。setTint 是 100% 乘色，会比方案 B 暗一点，可以把色值调亮一些。
+
+### 文件（public/assets/town/）
+
+| 文件 | 尺寸 | 说明 |
+|---|---|---|
+| bg_town_basic_gate.jpg | 3840×1080 | 中性底图：城门（左 1/3，留传送门/出口位）+ 城墙、望楼 |
+| bg_town_basic_dock.jpg | 3840×1080 | 中性底图：码头、帆船（左 1/3，当作苍月岛「城门」）+ 城墙 |
+| bg_town_fengmo.jpg | 3840×1080 | 封魔谷色版（gate 底图换色） |
+| bg_town_cangyue.jpg | 3840×1080 | 苍月岛色版（dock 底图换色） |
+| shop_basic_{potion,weapon,storage,general,clothes,jewelry,book}.png | 540×720 透明 | 中性通用门面；招牌板留空，可以叠字 |
+| shop_fm_{potion,weapon,storage,general}.png | 540×720 透明 | 封魔谷色版 |
+| shop_cy_{weapon,general,storage,clothes,potion,jewelry,book}.png | 540×720 透明 | 苍月岛色版 |
+| npc_fm_veteran.png | 768×960 透明 | 封魔谷老兵，用比奇 npc_veteran.png 换色复用 |
+| docs/town-preview/fengmo_preview.jpg、cangyue_preview.jpg | 1920×540 | 摆位预览（半尺寸，白线是屏分隔） |
+
+门面 id 和 towns.ts 的对应关系：potion→_potion（药店），general→_general（杂货铺），storage→_storage（仓库）。传送员 _tele 没有单独做门面，沿用比奇的 shop_teleporter.png，或者用城门处的传送门（推测，可按需要再补）。
+
+### 位置表（x 为中心点，单位像素，原点在左边）
+
+门面 origin (0.5,1)，底边 y=760；NPC origin (0.5,1)，脚底 y=1040，预览里缩到 269×336。
+
+封魔谷（bg_town_fengmo，门面 1.0 倍）：
+
+| 元素 | x |
+|---|---|
+| 城门（传送门位） | 约 300–760 |
+| npc_fm_veteran（老兵） | 900 |
+| shop_fm_potion | 1400 |
+| shop_fm_weapon | 2000 |
+| shop_fm_storage | 2650 |
+| shop_fm_general | 3250 |
+
+苍月岛（bg_town_cangyue，门面缩到 0.85 倍，也就是 459×612，7 家才放得下）：
+
+| 元素 | x |
+|---|---|
+| 码头（城门 / 传送门位） | 约 0–560 |
+| shop_cy_weapon | 860 |
+| shop_cy_general | 1310 |
+| shop_cy_storage | 1760 |
+| shop_cy_clothes | 2210 |
+| shop_cy_potion | 2660 |
+| shop_cy_jewelry | 3110 |
+| shop_cy_book | 3560 |
+
+### 注意
+
+- 两城的官方外观和坐标都**未查到**。配色（封魔谷冷蓝紫、苍月岛海青）是**推测**。商店顺序按 docs/towns-plan.md 排（苍月岛的顺序标的是 [适配]）。
+- 苍月岛只有 basic 店铺（药/杂/仓）有数据。武器、服装、首饰、书店是按 towns-plan 预先出的，代码里没有的话可以不用。
+- 苍月岛没有 NPC。封魔谷的老兵是比奇老兵换色，其余 NPC 未查到。
+- 全部是原创绘制，没有文字；招牌板是空白的。

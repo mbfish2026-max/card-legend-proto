@@ -39,6 +39,63 @@
 - 怪物面板按层目标等级公式生成（atk=0.6·DEF+k·HP，HP=PW×T，含模拟校准 [适配]），新手图豁免；BOSS 显示 L_f+5、面板按 L_f+2。
 - 旧档：等级/经验保留，经验夹到本级所需−1，不掉级不报错。
 - 测试：等级差衰减、锚点、官方经验、首清不跨级、任务封顶、旧档夹取；模拟按文档目标断言，未达标项打印 GAP（见报告）。scripts/sim-bands.ts 分段统计。
+
+## 传世后续（fix/chuanshi-followup）
+- 金甲骷髅按官方一次召唤 2 只：同时上限 2，再召唤补足/替换最旧；单只下调为骷髅 HP×1.1 攻×0.85 防×1.5（合计≈旧单只 1.1 倍，见 docs/skills-official.md）；自动施法：2 只健康时不重放。
+- 手机 HUD 技能弧翻页：主动技能 >10 时出现「翻页 n/m」键，每页内 4 外 6，所有已学技能（含传世、F12 之后）均可点击施放；e2e tests/e2e/mobile-skills-verify.mjs。
+- 商店「金币」标签上移缩小。
+- R54 书店：只卖学习等级 ≤25 的书（覆盖之前的「传世秘籍」页，该页取消），按等级升序；书名不被「购买」按钮遮挡；每本显示「需LvXX」/「已学会」，等级不够按钮置灰并显示「差 N 级」；书店 NPC 两列先填满左列再右列，按等级连续阅读。
+- R54 >25 级技能书（含传世）改为 BOSS 掉落：26–35 级只由尸王及以上 BOSS 掉、尸王掉率最高；>35 级由层等级≈书等级的 BOSS 掉。全表见 docs/skill-book-drops.md（数据 src/data/skillBookDrops.ts）。旧存档已学技能、背包里的书不受影响。
+- R54 技能面板：按学习等级升序 + [Fn] 标签，两行不重叠，状态颜色，未学显示「需 LvX」及获取途径，全设备翻页，手机字号 ≥12。
+- R54 动画不放大：攻击/受击/蓄力/待机呼吸关键帧 scale ≤1（src/ui/cardMotion.ts），主角、怪物、全部召唤物（骷髅/神兽/尸灵/金甲/替身，含升级变色骷髅）一致；e2e 实采 scale 全为 1.0。
+- R54 快捷栏点击即用：桌面药水格新增点击（技能格原已支持），与按键同走 BattleScene.onKey/World 处理（数量不足、冷却、满血判断一致）；格子 pointerdown 即 stopPropagation。手机 HUD tap 同时拦截 touchstart/touchend/mousedown/mouseup，修复城里点药水槽导致角色走动的穿透 bug。商店书行：已学会/差 N 级时不显示价格，避免压按钮；掉落说明改单行。e2e tests/e2e/hotbar-click-verify.mjs。
+- e2e 修正：mobile-skills-verify 诱惑之光目标改非免疫怪（骷髅在免疫表内）；chuanshi-verify 适配传世页取消（>25 级书模拟 BOSS 掉落入包后学习）并输出 ok/FAIL 判定。
+- R54 技能数字整数显示（仅显示，不改计算）：统一 src/ui/fmt.ts（fmtInt/fmtText，四舍五入）。
+
+## 传世技能（feat/chuanshi-skills）
+- 新增传世 16 技能（战士 雷霆剑/破击剑法/破盾斩/金刚护体/突斩；法师 冰箭术/冰龙破/玄冰刃/五雷轰/冰旋风；道士 赶尸/替身法符/灵魂墙/道心清明/神光术/解毒术）+ 金甲骷髅。学习等级取 DB 官方表，耗魔 DB×3，未查到项标 [适配]，详见 docs/skills-official.md。
+- 书店新增「传世秘籍」页签（书店 NPC 第二栏），不进掉落池；旧存档不自动学会。
+- 召唤：尸灵、金甲骷髅沿用骷髅规则（等级=技能等级、击杀升级变色、仇恨、自动重召）；替身法符转移仇恨；灵魂墙定身；破击/破盾几率破增益并破防。
+- 快捷栏超过 10 个主动技能时改 3 行×6；F12 可用，更多技能点击施放。
+- 测试：tests/chuanshi.test.ts；模拟新增 CS=1（购买传世秘籍）与 LEARNLOG=1。
+
+## PWA 主屏幕全屏（feat/pwa-fullscreen）
+- 修复 iPhone「添加到主屏幕」后画面偏小、四周黑边：
+  - 手机上忽略旧的手动缩放（画布 transform）；
+  - 视口改以 innerWidth/innerHeight 为准（独立模式下 visualViewport 可能停在旧值）；
+  - pageshow、visibilitychange、旋转时多次重排。
+- 元数据：manifest 改为 fullscreen，standalone 作回退，横屏，start_url/scope 为 /card-legend-proto/；新增 apple-touch-icon 180 和 icon-512（由 favicon 放大生成，见 art-requests）；theme 和背景改为黑色；html/body 用 dvh/svh/fill-available，position:fixed。
+- e2e：tests/e2e/pwa-fullscreen-verify.mjs；文档：docs/mobile-ui.md「PWA」。
+
+## 手机入口全覆盖（feat/mobile-fill）
+- 右下大键按位置显示「进入/封印/上一层/回城/出城/对话」，入口在范围内高亮；左端回城与返回上一层可直接点大键。
+- 手机端可直接点传送门本体进入；顶栏地图图标改名「传送」。
+- 新增 e2e `tests/e2e/mobile-entrance-verify.mjs`：出口(键/本体)、BOSS 门、上一层、回城口、城门、传送员、地图传送、侧线出口全部触屏验证。
+- 回城卷轴未实现，预留 `entranceHere/mobileAct` 扩展点。电脑端不变。
+
+## 手机画面铺满（feat/mobile-fill）
+- 手机模式下画布铺满整个可视区，iPhone 横屏两侧不再有黑边。逻辑高度固定 720，逻辑宽度按可视区宽高比扩展，范围 1280–2016（2.8:1），等比不变形。尺寸取自 visualViewport，地址栏收起或展开、旋转、resize 时实时重算（Phaser setGameSize + FIT）。
+- 战斗相机加宽后能看到更多场景；World 坐标、碰撞、怪物位置不变。相机夹紧沿用 setBounds，按新相机宽度自动计算。
+- 标题、城镇、面板：1280 内容居中，两侧显示延伸的背景（标题背景按最宽比例铺满并裁切，面板遮罩加宽）。
+- sf0 屏幕固定物体统一用 fixedShiftX 补偿，宽度变化时增量修正。暗角贴真实屏幕边缘。
+- Panel 拖动/滚轮坐标改用 toLogicX，已扣除居中偏移。
+- 手机模式下 #game 不再加 safe-area padding，避开刘海由 DOM HUD 的 env(safe-area-inset-*) 处理。
+- 电脑端逻辑宽保持 1280，代码路径不变；与 main 对比的截图差异为 0.03%。
+- 测试：
+  - 新增 tests/e2e/mobile-fill-verify.mjs，覆盖 7 种视口，包括地址栏展开和收起、CDP 模拟刘海。
+  - mobile-ui-verify 和 lib 的坐标换算改为按相机 worldView 计算。
+
+## 手机网页版界面（feat/mobile-ui）
+- 新增 src/ui/MobileHud.ts：手机专用 DOM HUD，按 safe-area 布局，支持多点触控。
+  - 左下浮动摇杆；右下技能弧（原图标、冷却、自动开关）、「进入/对话」键、4 个药水格、合击（有伙伴时）。
+  - 左上细条 HP/MP/EXP（带数字）和可折叠日志（默认 3 行）。
+  - 右上图标：角色/技能/悬赏/地图/回城/设置，每个只出现一次。商人与传送合并到「进入/对话」。
+- 手机模式下隐藏 Phaser 版 HUD，旧的映射虚拟键（VirtualPad）不再创建。面板整体放大 1.2–1.28 倍，字号下限 18/20（src/ui/mtext.ts），关闭键 ≥44px。
+- 场景提示去掉键位：「回xx城」「点「进入」」。
+- 电脑端不变（IS_MOBILE 为假时代码路径与 main 相同）；?mobile=1/0、竖屏提示保留。
+- 文档：docs/mobile-ui.md（桌面功能 → 手机入口对照表）。
+- 测试：tests/e2e/mobile-ui-verify.mjs（四种横屏 + 面板 + 竖屏 + 桌面与 main 对比）。tests/e2e/lib.mjs 的 startPreview 新增可选 root 参数。
+
 ## 合击持续特效（feat/hj-fx-loop）
 - 噬魂沼泽：起手段播完后，fx_combo_shihun 帧 8–11 往返循环作毒沼尾段，跟随主目标（主目标死后跟随仍中毒的目标），中毒 10s 结束 / 中毒目标全死即销毁。
 - 末日审判：fx_combo_mori 帧 8–11 法阵循环跟随目标，持续掉血 8s 结束或目标死亡即销毁。

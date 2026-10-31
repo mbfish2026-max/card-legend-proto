@@ -42,7 +42,7 @@ export class Hud {
   setExp(lv: number, cur: number, next: number) { this.expFill.width = 480 * Math.max(0, Math.min(1, cur / Math.max(1, next))); this.expT.setText(`Lv${lv}  经验 ${fmtExp(cur)}/${fmtExp(next)}`); } info: Phaser.GameObjects.Text;
   bagPos = { x: 0, y: 0 }; plaque!: Phaser.GameObjects.Text; dotObjs: Phaser.GameObjects.GameObject[] = [];
   setFloor(name: string, icons: string[]) {
-    this.plaque?.setText(name); this.dotObjs.forEach(o => o.destroy()); this.dotObjs = []; this.dots = [];
+    this.plaque?.setText(name); this.floorName = name; this.dotObjs.forEach(o => o.destroy()); this.dotObjs = []; this.dots = [];
     const n = icons.length, sp = Math.min(34, 260 / Math.max(1, n));
     icons.forEach((id, i) => {
       const x = 1130 + (i - (n - 1) / 2) * sp, y = 84;
@@ -52,15 +52,19 @@ export class Hud {
       const c = this.s.add.text(x, y, '✕', { fontFamily: FONT, fontSize: '20px', color: '#ff3333', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5).setDepth(22).setVisible(false);
       this.dotObjs.push(c); (r as any).cross = c;
     });
+    if (this.mobile) this.dotObjs.forEach(o => (o as any).setVisible?.(false));
   }
   static SK = 60; gold = 0;
+  /** 手机：Phaser 版 HUD 全部隐藏，由 DOM 版 MobileHud 显示（读 lines/dead/floorName） */
+  mobile = false; floorName = ''; dead: boolean[] = [];
   constructor(public s: Phaser.Scene, levelName: string, waveIcons: string[], public skills: SkillDef[], onMenu: (i: number) => void, mobile = false, onSkill?: (key: string) => void) {
+    const n0 = s.children.list.length; this.mobile = mobile; this.floorName = levelName;
     // 右上角牌匾（层名）+ 本层怪物进度小图标
     s.add.rectangle(1130, 36, 270, 46, 0x8a1010).setStrokeStyle(3, 0xd4a64a).setDepth(20);
     s.add.rectangle(1130, 36, 258, 34).setStrokeStyle(1, 0xffe8a0, 0.6).setDepth(20);
     this.plaque = txt(s, 1130, 36, levelName, 22, '#ffe8a0', { fontStyle: 'bold' }).setOrigin(0.5).setDepth(21);
     this.setFloor(levelName, waveIcons);
-    if (!mobile) txt(s, 640, 574, '移动 A/D ←→ 按住走  纵深 ↑↓  W/空格 传送门  S 回上层  技能 F1-F11  药水 1-4  背包 B/C  悬赏 Q  商人 T  地图 M  设置 Esc  静音 N', 13, '#cccccc', { strokeThickness: 2 }).setOrigin(0.5).setDepth(30);
+    if (!mobile) txt(s, 640, 574, '移动 A/D ←→ 按住走  纵深 ↑↓  W/空格 传送门  S 回上层  技能 F1-F12(更多点击)  药水 1-4  背包 B/C  悬赏 Q  商人 T  地图 M  设置 Esc  静音 N', 13, '#cccccc', { strokeThickness: 2 }).setOrigin(0.5).setDepth(30);
     // 底部栏
     // Diablo 式紧凑底栏：红球 | 技能+药水 | 蓝球，中间上方经验条
     s.add.rectangle(640, 664, 760, 112, 0x140f0a, 0.92).setStrokeStyle(2, 0x6a5030).setDepth(19);
@@ -70,18 +74,18 @@ export class Hud {
     this.expFill = s.add.rectangle(400, 601, 0, 8, 0xc8a020).setOrigin(0, 0.5).setDepth(21);
     this.expT = txt(s, 640, 601, '', 10, '#fff', { strokeThickness: 2 }).setOrigin(0.5).setDepth(22);
     // #11 法师最多 10 技能：>5 时两行各 5 格，缩小格子不挤占药水栏
-    const two = skills.length > 5;
-    const SK = two ? 40 : skills.length > 4 ? 52 : Hud.SK;
-    const gap = two ? 44 : skills.length > 4 ? SK + 4 : SK + 8;
-    const x0 = two ? 410 : skills.length > 4 ? 400 : 420;
+    const two = skills.length > 5, three = skills.length > 10; // 传世秘籍后主动技能可达 17 个：>10 时 3 行×6
+    const SK = three ? 34 : two ? 40 : skills.length > 4 ? 52 : Hud.SK;
+    const gap = three ? 38 : two ? 44 : skills.length > 4 ? SK + 4 : SK + 8;
+    const x0 = three ? 420 : two ? 410 : skills.length > 4 ? 400 : 420;
     skills.forEach((k, i) => {
-      const x = x0 + (two ? i % 5 : i) * gap, y = two ? (i < 5 ? 628 : 673) : 646; this.skillPos.push({ x, y });
+      const x = three ? x0 + (i % 6) * gap : x0 + (two ? i % 5 : i) * gap, y = three ? 604 + Math.floor(i / 6) * 38 : two ? (i < 5 ? 628 : 673) : 646; this.skillPos.push({ x, y });
       s.add.rectangle(x, y, SK, SK, 0x1a1a1a).setStrokeStyle(2, 0xbbaa77).setDepth(20);
       if (s.textures.exists('sk_' + k.id)) s.add.image(x, y, 'sk_' + k.id).setDisplaySize(SK - 4, SK - 4).setDepth(20);
       else if (k.name) txt(s, x, y, k.name, 12).setOrigin(0.5).setDepth(20);
       txt(s, x - SK / 2 + 2, y - SK / 2 + 1, k.key, 11, '#ffff66').setDepth(24);
       // 鼠标/触屏点击释放：与 F 键同走 onKey（公共间隔/耗魔/被动/魔不足提示一致）；stopPropagation 防止穿透到战斗场景的点地行走
-      if (onSkill) s.add.rectangle(x, y, SK, SK, 0, 0.001).setDepth(25).setInteractive({ useHandCursor: true })
+      if (onSkill) s.add.rectangle(x, y, SK, SK, 0, 0.001).setDepth(25).setName('skSlot' + i).setInteractive({ useHandCursor: true })
         .on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); onSkill(k.key); });
     });
     this.radar = s.add.graphics().setDepth(23);
@@ -94,6 +98,9 @@ export class Hud {
       if (s.textures.exists('potion_' + i)) s.add.image(x, y, 'potion_' + i).setDisplaySize(38, 38).setDepth(20);
       txt(s, x - 18, y - 21, p.key, 11, '#ffff66').setDepth(22);
       this.potT.push(txt(s, x + 19, y + 20, '', 12).setOrigin(1, 1).setDepth(22));
+      // R54：药水格鼠标/触屏点击 = 按数字键（同走 onKey→World.usePotion：数量不足/间隔判断一致）；按下即拦截，不穿透到地图点地行走
+      if (onSkill) s.add.rectangle(x, y, 44, 44, 0, 0.001).setDepth(25).setName('potSlot' + i).setInteractive({ useHandCursor: true })
+        .on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); onSkill(p.key); });
     });
     // 右侧 5 个圆形菜单按钮
     if (!mobile) MENU_LABELS.forEach((label, i) => {
@@ -112,6 +119,7 @@ export class Hud {
     if (!mobile) this.logBg = s.add.rectangle(0, 596, 252, 124, 0x000000, 0.35).setOrigin(0, 0).setDepth(29);
     for (let i = 0; i < 6; i++) this.logT.push(txt(s, 8, ly + i * lh, '', mobile ? 14 : 12, '#fff', { strokeThickness: 2, ...(mobile ? {} : { fixedWidth: 244 }) }).setDepth(30));
     this.info = txt(s, 12, 10, '', 14, '#ffe8a0').setDepth(30);
+    if (mobile) s.children.list.slice(n0).forEach(o => (o as any).setVisible?.(false));
   }
   /** 日志：白字系统提示、绿字拾取/经验 */
   log(t: string, green = false) {
@@ -129,7 +137,8 @@ export class Hud {
       const sk = (this as any)._skSize ?? Hud.SK;
       g.slice(p.x, p.y, sk, start, Math.PI * 1.5, false); g.fillPath();
     });
-    this.dots.forEach((d, i) => { d.setStrokeStyle(2, dead[i] ? 0x444444 : 0xffd24a); (d as any).cross?.setVisible(!!dead[i]); });
+    this.dead = dead;
+    this.dots.forEach((d, i) => { d.setStrokeStyle(2, dead[i] ? 0x444444 : 0xffd24a); (d as any).cross?.setVisible(!!dead[i] && !this.mobile); });
     POTIONS.forEach((p, i) => this.potT[i].setText(p.item ? String(pots[i]) : ''));
     this.info.setText(info);
     const now = this.s.time.now; let any = 0;

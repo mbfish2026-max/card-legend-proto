@@ -135,5 +135,11 @@ export const SUMMON: UnitDef = { id: 'summon_skeleton', art: 'skeleton', name: '
 /** 召唤神兽（官方 C：1/2/3 级神兽）；占位立绘用狼，美术见 art-requests */
 export const SUMMON_BEAST: UnitDef = { id: 'summon_beast', art: 'summon_beast', name: '神兽', level: 1, hp: 360, atk: 22, def: 10, atkInterval: 1.15, range: 8, speed: 0, width: 140, height: 180, tier: 'player',
   card: card({ w: 150, h: 190, figureScale: 1.2, bg: 0x5a4010 }) };
+/** 传世赶尸「尸灵」：占位立绘用僵尸（[适配] 属性 = 骷髅 ×1.25，见 World CS_SUMMON） */
+export const SUMMON_CORPSE: UnitDef = { ...SUMMON, id: 'summon_corpse', art: 'zombie', name: '尸灵', card: card({ w: 120, h: 160, figureScale: 1.15, bg: 0x4a5a20 }) };
+/** 传世强化骷髅术「金甲骷髅」：复用骷髅立绘 + 金色着色（美术见 docs/fx-requests.md） */
+export const SUMMON_GOLDEN: UnitDef = { ...SUMMON, id: 'summon_golden_skeleton', name: '金甲骷髅', width: 130, height: 180, card: card({ w: 130, h: 175, figureScale: 1.25, bg: 0x8a6a10, tint: 0xffd040 }) };
+/** 传世替身法符「替身」：复用骷髅立绘 + 纸符色着色占位 */
+export const DECOY: UnitDef = { ...SUMMON, id: 'decoy_talisman', name: '替身', atkInterval: 99, card: card({ w: 110, h: 150, figureScale: 1.05, bg: 0x5a4a30, tint: 0xe8d8a0 }) };
 /** R22：经验曲线移至 expCurve.ts（官方形状 ÷ 常数）；怪物 exp 字段为旧曲线基准值，按层由 scaledExp 同步缩放 */
 export { EXP_PER_LEVEL } from './expCurve';

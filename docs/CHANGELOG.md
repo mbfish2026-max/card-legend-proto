@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 合击持续段专用素材接入（feat/hj-fx-assets）
+- 噬魂沼泽/末日审判：状态期间播 fx_combo_shihun_loop / fx_combo_mori_loop（不再取起手图集帧 8–11 往返），状态结束（到期或目标死亡）播 *_end 一次后自毁；场景关闭不播收尾。
+- 劈星斩：每次麻痹播 fx_combo_pixing_stun 一次（动画 cs_once_fx_combo_pixing_stun，1×），头顶「⚡麻痹」文字换成 icon_status_stun 图标（32×32），保留到麻痹结束。
+- 动画 key 冲突：旧回退动画名 fx_combo_<id>_loop 与新素材 key 重名 → 改为 cs_fallback_<id>；专用素材复用 FxPlayer.ensureAnim（导出）。
+- 降级：缺专用素材 → 回退起手帧往返 + 文字标记；再缺 → Graphics，0 报错（e2e fallback 模式验证）。
+- 纯表现，World/数值未改，9 种子战/法/道死亡与 main 逐种子一致。测试：tests/combo-status.test.ts 新增素材方案/key 冲突用例；e2e tests/e2e/hj-fx-assets-verify.mjs [目录] [fallback]。
+
+## 修复：看不到的怪在攻击我（fix/invisible-attackers）
+- 根因：练级图（farm，第一张图幽暗森林等）小怪死后由 World.farmTick→spawnFoe 原地刷新，不发 summon 事件；BattleScene 只在进层/summon 事件时建卡牌（补建逻辑只写在 ?demo 截图路径里），刷新怪没有 CardView → 逻辑上照常仇恨/追击/攻击，屏幕上看不到。与手机铺满/相机宽度无关（电脑 1280 同样复现），手机 2016 宽视野只是让更多刷新点落在屏内、更容易察觉。
+- 修复：新增 src/ui/foeViews.ts foesWithoutView，BattleScene.ensureFoeViews 每帧对账，存活怪缺卡即补建（淡入）；demo 路径改用同一函数。纯表现，World/战斗数值未改，9 种子模拟与 main 逐种子一致。
+- 测试：tests/invisible-attackers.test.ts（逻辑宽 1280/1561/2016，打完屏内怪→刷新怪仇恨，修复前 2 只无卡，对账后 0，且都在相机范围内）；e2e tests/e2e/invisible-attackers-verify.mjs（手机 932×430、1120×400=2016 逻辑宽）。
+
 ## M4 新怪 8 种（feat/m4-monsters）
 - 新增 雪人王/黄泉教主/双头金刚/双头血魔（BOSS）与 钉耙猫王/半兽统领/恶灵尸王/鹰卫（普通精英），立绘指向 art/sq-mir3 新图；原版数值/来源/[适配]/未实装见 docs/monsters-official.md「M4 新怪」（npm run gen:monsters 生成）。
 - 新侧线层（同魔龙血域，不进 FLOOR_ORDER，清层回城）：80 白日门·雪域、81 骨魔洞五层（苍月岛区域）、82 恶魔祭坛（白日门·赤月区域）；经验锚点 M4_FLOOR_ANCHORS 53→56 追加在 sq-mir3 之后 [适配]（合并 main maps-batch2/batch3/sq-mir3 后由 24–26 顺延为 80–82，bg 键 bg_floor81–83 避开 main 已占用的 bg_floor25–80），前面各层倍率不变。

@@ -1,6 +1,8 @@
 import { COMPANION_MODE_NAME } from '../data/companion';
+import { fmtInt, fmtText, bookEntry } from './fmt';
+import { SKILL_BOOK_DROPS } from '../data/skillBookDrops';
 import { COMPANION_UNLOCK_LEVEL, comboFor, BOOK_PAGE, BRM_BOOK, GOLD_BAR, PAGES_PER_BOOK, COMBO_LEVEL, heartFeedValue, RAGE_MAX, HEART_STORE_MAX, RECRUIT_DIALOG } from '../data/companion';
-import { toLogic } from '../render';
+import { toLogic, toLogicX, MAX_LW } from '../render';
 import { compareLines } from './equipCompare';
 import { RING_MIN_LEVEL, IDENT_PRICE, IDENT_MIN_LEVEL } from '../data/r14b';
 import { fmtExp, scaledExp } from '../data/expCurve';
@@ -14,7 +16,8 @@ import { WORLD } from '../data/world';
 import { CLASSES, CLASS_IDS } from '../data/classes';
 export const BAG_PAGE = 30;
 import { renderSettingsView } from './SettingsView';
-import { txt, button, sfx } from '../scenes/TitleScene';
+import { sfx } from '../scenes/TitleScene';
+import { txt, button } from './mtext';
 import { IS_MOBILE } from '../mobile';
 import { FxQuality } from './Fx';
 import { REGIONS, floorBoss, regionOf, clampView, zoomAt, WORLD_W, WORLD_H, View } from '../data/map';
@@ -57,7 +60,7 @@ export class Panel {
     if (this.mode === 'town') this.npc = null;
     this.clearMapInput(); this.sel = null; this.ironIdx = null; this.mode = null; this.root?.destroy(true); this.root = undefined; this.hideTip(); }
   /** #11 修复：面板打开时升级/得经验不刷新。render 时记录快照，UIScene.update 每帧比对 */
-  private snap = '';
+  private snap = ''; mscale = 1; skPage = 0; bookCs = false;
   statSnap() { const w = this.world(); return `${w.level}:${w.exp}:${JSON.stringify(w.skillTrain)}:${w.learned.size}`; }
   /** 角色/技能面板数据变了就重绘；返回是否重绘（供测试） */
   refreshIfStale(): boolean {
@@ -70,13 +73,16 @@ export class Panel {
     this.root?.destroy(true); this.hideTip(); this.clearMapInput();
     if (!this.mode) return;
     const s = this.s, R = this.root = s.add.container(0, 0).setDepth(200);
-    R.add(s.add.rectangle(640, 360, 1280, 720, 0x000000, 0.45).setInteractive());
+    R.add(s.add.rectangle(640, 360, MAX_LW, 720, 0x000000, 0.45).setInteractive());
     const W = this.mode === 'settings' ? 640 : 1000, H = this.mode === 'settings' ? 580 : 500, top = Math.max(40, 360 - H / 2);
     // 边框与内容对齐：非设置面板内容从 top 起排到 top+478，边框覆盖 top-20 ~ top+480
     R.add(s.add.rectangle(640, this.mode === 'settings' ? 300 : top + H / 2 - 20, W, H, 0x15100b, 0.97).setStrokeStyle(3, 0xd4a64a));
     const titles = { bag: '角色 / 背包', shop: '商人 · 杂货铺', skills: '技能', settings: '设置', map: '世界地图', quests: '悬赏 / 成就', town: `${TOWNS[this.world().town ?? 'bichi']?.name ?? '城镇'} · 安全区` };
     R.add(txt(s, 640, top + 22, titles[this.mode], 24, '#ffd24a', { fontStyle: 'bold' }).setOrigin(0.5));
-    R.add([...button(s, 640 + W / 2 - 26, top + 22, 36, 32, '✕', () => this.close(), 18)]);
+    // 手机：面板整体放大到接近全屏（地图面板自带拖动/缩放坐标换算，不放大）；关闭键加大到 ≥44px
+    if (IS_MOBILE && this.mode !== 'map') { const k = Math.min(1280 / W, 700 / H); this.mscale = k; const cy = this.mode === 'settings' ? 300 : top + H / 2 - 20; R.setScale(k).setPosition(640 * (1 - k), cy * (1 - k) + (360 - cy)); } else this.mscale = 1;
+    if (IS_MOBILE) { const cw = this.mscale > 1 ? 84 : 90, ch = this.mscale > 1 ? 76 : 84; R.add([...button(s, 640 + W / 2 - cw / 2 - 4, top + 14 + (ch - 64) / 2, cw, ch, '✕', () => this.close(), 30)]); }
+    else R.add([...button(s, 640 + W / 2 - 26, top + 22, 36, 32, '✕', () => this.close(), 18)]);
     if (this.mode === 'settings') return this.renderSettings(R, top);
     if (this.mode === 'skills') return this.renderSkills(R, top);
     if (this.mode === 'map') return this.renderMap(R, top);
@@ -98,7 +104,7 @@ export class Panel {
     const setId = it && key.startsWith('eq_') ? ITEMS[it.item]?.set : undefined;
     if (setId && SETS[setId] && (this.world().setCounts()[setId] ?? 0) >= Math.min(...SETS[setId].bonus.map(b => b.n)) && s.textures.exists('set_badge'))
       R.add(s.add.image(x + size / 2 - 10, y - size / 2 + 10, 'set_badge').setDisplaySize(22, 22));
-    if (selected) { r.setStrokeStyle(4, 0xffe080); s.time.delayedCall(0, () => it && this.root && this.showTip(it, x + size / 2 + 6, y - size / 2, true)); }
+    if (selected) { r.setStrokeStyle(4, 0xffe080); s.time.delayedCall(0, () => it && this.root && this.showTip(it, this.root.x + (x + size / 2 + 6) * this.mscale, this.root.y + (y - size / 2) * this.mscale, true)); }
     r.setInteractive({ useHandCursor: !!it });
     if (!IS_MOBILE) r.on('pointerover', () => { r.setFillStyle(0x2a2016); if (it) this.showTip(it, x + size / 2 + 6, y - size / 2); });
     if (!IS_MOBILE) r.on('pointerout', () => { r.setFillStyle(0x0a0806); this.hideTip(); });
@@ -136,11 +142,11 @@ export class Panel {
     const sc = w.setCounts(), setLine = Object.values(SETS).filter(st => sc[st.id]).map(st => `${st.name}${sc[st.id]}/${st.pieces.length}`).join('  ');
     if (setLine) lines.push(`套装 ${setLine}`);
     R.add(txt(s, 175, top + 345, lines.join('\n'), 15, '#ffe8a0', { lineSpacing: setLine ? 2 : 6, strokeThickness: 2 }));
-    R.add(txt(s, cx + 130, top + 270, IS_MOBILE ? '点两下\n装备栏=卸下' : '点击装备栏\n= 卸下', 12, '#999', { align: 'center' }).setOrigin(0.5, 0));
+    if (!IS_MOBILE) R.add(txt(s, cx + 130, top + 270, IS_MOBILE ? '点两下\n装备栏=卸下' : '点击装备栏\n= 卸下', 12, '#999', { align: 'center' }).setOrigin(0.5, 0));
   }
   private renderShop(R: Phaser.GameObjects.Container, top: number) {
     const s = this.s, w = this.world();
-    R.add(txt(s, 175, top + 60, `金币：${w.gold}`, 20, '#ffd24a'));
+    R.add(txt(s, 175, top + 50, `金币：${w.gold}`, 18, '#ffd24a')); // 上移缩小：避开书店「普通书店/传世秘籍」页签
     (['goods', 'books'] as const).forEach((t, i) => R.add([...button(s, 395 + i * 84, top + 72, 76, 32, `${this.shopTab === t ? '▶' : ''}${t === 'goods' ? '杂货' : '书店'}`, () => { this.shopTab = t; this.render(); }, 15)]));
     if (this.shopTab === 'books') return this.renderBooks(R, top);
     POTIONS.forEach((p, i) => {
@@ -168,18 +174,22 @@ export class Panel {
   }
   /** 书店：本职业有售的技能书（原版比奇书店；掉落书不卖） */
   private renderBooks(R: Phaser.GameObjects.Container, top: number) {
-    const s = this.s, w = this.world();
-    w.shopBooks().forEach((b, i) => {
-      const y = top + 130 + i * 62, sk = w.skillPool.find(x => x.id === b.skill)!, id = 'book_' + b.skill, learned = w.learned.has(b.skill), need = w.needLevel(sk);
-      R.add(s.add.rectangle(330, y, 320, 56, 0x0a0806).setStrokeStyle(1, 0x6a5a28));
-      if (s.textures.exists('item_' + id)) R.add(s.add.image(200, y, 'item_' + id).setDisplaySize(46, 46));
-      R.add(txt(s, 232, y - 20, ITEMS[id].name, 15, learned ? '#888' : '#ffd24a'));
-      R.add(txt(s, 232, y + 2, `${learned ? '已学会' : `需 Lv${need}`}   ${b.price} 金`, 13, w.level >= need ? '#ccc' : '#f99', { strokeThickness: 2 }));
-      R.add([...button(s, 448, y, 64, 34, '购买', () => { const e = w.buyBook(b.skill); if (!e) sfx(s, 'coin'); this.onChange(e ?? `购买 ${ITEMS[id].name}（背包中点击学习）`, !e); this.render(); }, 15, !learned && w.gold >= b.price)]);
+    const s = this.s, w = this.world(), cs = false, list = cs ? w.csBooks() : w.shopBooks(), rh = list.length > 7 ? 38 : cs || list.length > 5 ? 44 : 62;
+    // R54：传世秘籍页取消——>25 级（含传世）书改为 BOSS 掉落（docs/skill-book-drops.md）
+    list.forEach((b, i) => {
+      const y = top + (rh < 62 ? 128 : 130) + i * rh, sk = w.skillPool.find(x => x.id === b.skill)!, id = 'book_' + b.skill, learned = w.learned.has(b.skill), need = w.needLevel(sk), be = bookEntry(ITEMS[id].name, need, w.level, learned, b.price);
+      R.add(s.add.rectangle(330, y, 320, rh - 6, 0x0a0806).setStrokeStyle(1, cs ? 0x8a6a20 : 0x6a5a28));
+      const ic = s.textures.exists('sk_' + b.skill) && cs ? 'sk_' + b.skill : 'item_' + id;
+      if (s.textures.exists(ic)) R.add(s.add.image(200, y, ic).setDisplaySize(rh - 16, rh - 16));
+      // 行高 38（>7 本）时单行显示「书名 需LvX 价格」，避免手机放大字号后两行重叠
+      if (rh < 44) R.add(txt(s, 222, y, `${be.nm} 需Lv${need} ${learned ? '已学会' : be.gap > 0 ? `差${be.gap}级` : `${b.price}金`}`, 13, learned ? '#888' : w.level >= need ? '#ffd24a' : '#f99', { strokeThickness: 2 }).setOrigin(0, 0.5));
+      else { R.add(txt(s, 232, y - (rh < 62 ? 17 : 20), be.nm, be.fs, learned ? '#888' : '#ffd24a'));
+      R.add(txt(s, 232, y + (rh < 62 ? 0 : 2), be.sub, 13, w.level >= need ? '#ccc' : '#f99', { strokeThickness: 2 })); }
+      R.add([...button(s, rh < 44 ? 458 : 448, y, rh < 44 ? 56 : 64, rh < 62 ? rh - 12 : 34, '购买', () => { const e = w.buyBook(b.skill); if (!e) sfx(s, 'coin'); this.onChange(e ?? `购买 ${ITEMS[id].name}（背包中点击学习）`, !e); this.render(); }, 15, be.buyable && w.gold >= b.price)]);
     });
-    const drops = Object.values(BOOKS).filter(b => b.cls === w.cls && !b.shop).map(b => w.skillPool.find(x => x.id === b.skill)!.name);
-    R.add(txt(s, 175, top + 130 + w.shopBooks().length * 62 - 10, `打怪掉落（书店不卖）：${drops.join('、')}`, 13, '#c9a'));
-    R.add(txt(s, 175, top + 430, '买书后在背包里点击技能书学习（需达到等级）', 14, '#9fd'));
+    const drops = Object.values(BOOKS).filter(b => b.cls === w.cls && !list.includes(b)).map(b => w.skillPool.find(x => x.id === b.skill)!.name);
+    if (!cs && drops.length) R.add(txt(s, 175, top + (rh < 62 ? 128 : 130) + list.length * rh - rh / 2 + 4, `Lv>25 书店不卖：其余 ${drops.length} 本由 BOSS 掉落（尸王等，见技能面板来源）`, 13, '#c9a', { strokeThickness: 2 }));
+    R.add(txt(s, 175, top + 448, '买书后在背包里点击技能书学习（需达到等级）', 13, '#9fd'));
   }
   private renderBag(R: Phaser.GameObjects.Container, top: number) {
     const s = this.s, w = this.world(), cols = 6, size = 56, x0 = 600, y0 = top + 100;
@@ -223,43 +233,47 @@ export class Panel {
   private renderSkills(R: Phaser.GameObjects.Container, top: number) {
     const s = this.s, w = this.world();
     const bar = w.skills, barIdx = new Map(bar.map((k, i) => [k.id, i]));
-    const list = [...bar, ...w.skillPool.filter(k => !barIdx.has(k.id))];
+    // R54：按学习等级升序（不再把快捷栏技能置顶，改用 [F n] 标签）；列表=本职业技能池（按职业筛选）。电脑/手机均分页（◀ ▶），每行两行文字不重叠
+    const full = w.skillsByLevel();
+    const PER = IS_MOBILE ? 6 : 7, pages = Math.max(1, Math.ceil(full.length / PER)); this.skPage = Math.max(0, Math.min(pages - 1, this.skPage));
+    const list = full.slice(this.skPage * PER, this.skPage * PER + PER);
+    if (pages > 1) {
+      const bw = IS_MOBILE ? 64 : 44, bh = IS_MOBILE ? 56 : 30, by = top + 22;
+      R.add([...button(s, 380, by, bw, bh, '◀', () => { this.skPage--; this.render(); }, IS_MOBILE ? 22 : 16, this.skPage > 0)]); R.add(txt(s, 440, by, `${this.skPage + 1}/${pages}`, IS_MOBILE ? 18 : 15, '#ffe8a0').setOrigin(0.5)); R.add([...button(s, 500, by, bw, bh, '▶', () => { this.skPage++; this.render(); }, IS_MOBILE ? 22 : 16, this.skPage < pages - 1)]);
+      R.add(txt(s, 700, by, `共 ${full.length} 个技能 · 按学习等级排序`, IS_MOBILE ? 16 : 13, '#9fd').setOrigin(0, 0.5));
+    }
     const autoList = Settings.skillsFor(w.cls), autoable = new Set(DEFAULT_AUTO_SKILLS[w.cls]);
-    const rowH = Math.min(70, Math.floor(400 / Math.max(1, list.length))), y0 = top + 48 + rowH / 2, fs = rowH < 56 ? 12 : 13;
+    const rowH = IS_MOBILE ? 66 : 55, y0 = top + 48 + rowH / 2, fs = IS_MOBILE ? 16 : 13;
+    const shopIds = new Set(w.shopBooks().map(b => b.skill)), dropSrc = Object.fromEntries(SKILL_BOOK_DROPS.map(d => [d.skill, d.src.map(x => x.floorName).join('/')]));
     list.forEach((k, i) => {
       const y = y0 + i * rowH, inBar = barIdx.has(k.id);
       const need = w.needLevel(k), lv = w.skillLevel(k), locked = lv < 0, pts = w.skillTrain[k.id] ?? 0, learned = w.learned.has(k.id), bk = BOOKS[k.id];
-      R.add(s.add.rectangle(560, y, 820, rowH - 4, 0x0a0806, 0.9).setStrokeStyle(1, 0x3a2a18));
-      if (s.textures.exists('sk_' + k.id)) R.add(s.add.image(178, y, 'sk_' + k.id).setDisplaySize(rowH - 14, rowH - 14));
-      const fk = inBar ? `F${barIdx.get(k.id)! + 1}` : k.passive ? '被动' : '未上栏';
-      R.add(txt(s, 212, y - rowH / 2 + 4, `[${fk}] ${k.name}${!learned ? `（未学：${bk?.shop ? '书店购买' : bk?.drops.length ? '打怪掉落' : '暂未开放获取'}技能书 · 需 Lv${need}）` : locked ? `（需人物 Lv${need}）` : `  ${lv} 级`}`, fs + 2, locked ? '#888' : '#ffe8a0', { strokeThickness: 2 }));
-      const lvVals = k.lvMult ? k.lvMult.map(m => Math.round(m * 100) + '%') : k.lvBonus ? k.lvBonus.map(b => '+' + b) : k.accBonus ? k.accBonus.map(b => '准确+' + b) : [0, 1, 2, 3].map(l => `+${l * 10}%`);
-      // #11：10 技能时行高 40，压成两行（简述 + 耗魔/冷却/修炼），避免与下一行重叠、挤到右侧按钮
-      const compact = rowH < 50;
-      if (!compact) R.add(txt(s, 212, y - rowH / 2 + 4 + fs + 5, `${k.desc}  各级：${lvVals.map((v, l) => `${l}级${v}`).join(' ')}`.slice(0, 64), fs, locked ? '#777' : '#ddd', { strokeThickness: 2 }));
-      const up = lv >= 0 && lv < 3 && k.learn && k.train ? `升级：人物Lv${k.learn[lv + 1]} + 修炼点${k.train[lv]}` : lv === 3 ? '已满级' : '';
-      if (compact) R.add(txt(s, 212, y - rowH / 2 + 4 + fs + 5, `${k.passive ? '无需施放' : `耗魔${k.mana} 冷却${k.cooldown}s`} 修炼${pts}${k.train ? '/' + k.train[2] : ''} ${up}  ${k.desc}`.slice(0, 46), fs, locked ? '#777' : '#9fd', { strokeThickness: 2 }));
-      else R.add(txt(s, 212, y - rowH / 2 + 4 + (fs + 5) * 2, `${k.passive ? '无需施放' : `耗魔 ${k.mana}  冷却 ${k.cooldown}s`}  修炼点 ${pts}${k.train ? '/' + k.train[2] : ''}  ${up}`, fs, locked ? '#666' : '#9fd', { strokeThickness: 2 }));
-      // 修炼进度条（官方：修炼点达到下一级要求 + 人物等级达到即自动升级）
-      if (k.train && lv >= 0 && lv < 3) { const p = Math.min(1, pts / k.train[lv]); R.add(s.add.rectangle(212, y + rowH / 2 - 6, 220, 4, 0x333333).setOrigin(0, 0.5)); R.add(s.add.rectangle(212, y + rowH / 2 - 6, 220 * p, 4, 0x55cc77).setOrigin(0, 0.5)); }
+      const st = learned ? (locked ? { t: '已学·等级不足', c: '#c96', bg: 0x1a1208 } : { t: '已学会', c: '#7f7', bg: 0x0c1a0c }) : w.level >= need ? { t: '可学习', c: '#ffd24a', bg: 0x1a1606 } : { t: '未学', c: '#aaa', bg: 0x0a0806 };
+      R.add(s.add.rectangle(560, y, 820, rowH - 4, st.bg, 0.92).setStrokeStyle(1, learned ? 0x3a6a3a : 0x3a2a18));
+      if (s.textures.exists('sk_' + k.id)) R.add(s.add.image(178, y, 'sk_' + k.id).setDisplaySize(rowH - 14, rowH - 14).setAlpha(learned ? 1 : 0.55));
+      const tag = inBar ? `[F${barIdx.get(k.id)! + 1}]` : k.passive ? '[被动]' : '';
+      // 第 1 行：名称 + 当前等级/需求等级 + 状态（颜色区分）+ 快捷栏标签
+      const l1 = txt(s, 212, y - rowH / 2 + 5, `${k.name}  ${learned && !locked ? `${lv}级` : '—'} / 需Lv${need}`, fs + 1, learned ? '#ffe8a0' : '#bbb', { strokeThickness: 2 }); R.add(l1);
+      const stx = txt(s, 212 + l1.width + 12, y - rowH / 2 + 6, `${st.t}${tag ? ' ' + tag : ''}`, fs, st.c, { strokeThickness: 2 }); R.add(stx);
+      // 第 2 行：已学→耗魔/冷却/修炼/升级；未学→需 LvX + 获取途径
+      const up = lv >= 0 && lv < 3 && k.learn && k.train ? `升级：Lv${k.learn[lv + 1]}+修炼${k.train[lv]}` : lv === 3 ? '已满级' : '';
+      const src = !bk ? '初始技能' : shopIds.has(k.id) ? `比奇书店有售 ${bk.price}金` : dropSrc[k.id] ? `BOSS 掉落：${dropSrc[k.id]}` : bk.drops.length ? '打怪掉落技能书' : '暂未开放获取';
+      const l2 = learned ? `${k.passive ? '无需施放' : `耗魔${fmtInt(k.mana)} 冷却${fmtInt(k.cooldown)}s`}  修炼${pts}${k.train ? '/' + k.train[2] : ''}  ${up}  ${k.desc}` : `需 Lv${need} · 获取：${src} · ${k.desc}`;
+      R.add(txt(s, 212, y - rowH / 2 + 5 + fs + 9, fmtText(l2).slice(0, IS_MOBILE ? 32 : 44), fs - 1, learned ? '#9fd' : '#ccc', { strokeThickness: 2 }));
+      if (k.train && lv >= 0 && lv < 3) { const p = Math.min(1, pts / k.train[lv]); R.add(s.add.rectangle(212, y + rowH / 2 - 6, 220, 3, 0x333333).setOrigin(0, 0.5)); R.add(s.add.rectangle(212, y + rowH / 2 - 6, 220 * p, 3, 0x55cc77).setOrigin(0, 0.5)); }
       if (inBar) {
         const bi = barIdx.get(k.id)!;
-        R.add([...button(s, 800, y, 36, rowH - 18, '▲', () => { w.moveSkill(k.id, bi - 1); this.render(); }, 14, bi > 0)]);
-        R.add([...button(s, 840, y, 36, rowH - 18, '▼', () => { w.moveSkill(k.id, bi + 1); this.render(); }, 14, bi < bar.length - 1)]);
-        // 拖放：按住 ≡ 上下拖到目标行松开
-        const hd = s.add.rectangle(890, y, 44, rowH - 12, 0x3a2a14).setStrokeStyle(1, 0xd4a64a).setInteractive({ draggable: true, useHandCursor: true });
-        const ht = txt(s, 890, y, '≡', 22, '#ffd24a').setOrigin(0.5); R.add([hd, ht]); s.input.setDraggable(hd);
-        hd.on('drag', (_p: Phaser.Input.Pointer, _x: number, dy: number) => { hd.y = dy; ht.y = dy; });
-        hd.on('dragend', () => { const to = Math.max(0, Math.min(bar.length - 1, Math.round((hd.y - y0) / rowH))); if (to !== bi) { w.moveSkill(k.id, to); this.onChange(`${k.name} 移到 F${to + 1}`, true); } this.render(); });
+        R.add([...button(s, IS_MOBILE ? 760 : 800, y, IS_MOBILE ? 60 : 36, rowH - 18, '▲', () => { w.moveSkill(k.id, bi - 1); this.render(); }, 14, bi > 0)]);
+        R.add([...button(s, IS_MOBILE ? 830 : 840, y, IS_MOBILE ? 60 : 36, rowH - 18, '▼', () => { w.moveSkill(k.id, bi + 1); this.render(); }, 14, bi < bar.length - 1)]);
         if (autoable.has(k.id)) {
           const on = autoList.includes(k.id), pr = autoList.indexOf(k.id);
-          R.add([...button(s, 975, y, 96, rowH - 18, `${on ? '☑' : '☐'} 自动${on ? ' #' + (pr + 1) : ''}`, () => { Settings.toggleAutoSkill(k.id, w.cls); this.render(); }, 13)]);
-          R.add([...button(s, 1045, y, 32, rowH - 18, '↑', () => { Settings.moveAutoSkill(k.id, -1, w.cls); this.render(); }, 13, on && pr > 0)]);
-          R.add([...button(s, 1081, y, 32, rowH - 18, '↓', () => { Settings.moveAutoSkill(k.id, 1, w.cls); this.render(); }, 13, on && pr < autoList.length - 1)]);
+          R.add([...button(s, IS_MOBILE ? 940 : 975, y, 96, rowH - 18, `${on ? '☑' : '☐'} 自动${on ? ' #' + (pr + 1) : ''}`, () => { Settings.toggleAutoSkill(k.id, w.cls); this.render(); }, 13)]);
+          R.add([...button(s, IS_MOBILE ? 1020 : 1045, y, IS_MOBILE ? 56 : 32, rowH - 18, '↑', () => { Settings.moveAutoSkill(k.id, -1, w.cls); this.render(); }, 13, on && pr > 0)]);
+          R.add([...button(s, IS_MOBILE ? 1082 : 1081, y, IS_MOBILE ? 56 : 32, rowH - 18, '↓', () => { Settings.moveAutoSkill(k.id, 1, w.cls); this.render(); }, 13, on && pr < autoList.length - 1)]);
         } else R.add(txt(s, 975, y, '手动', 12, '#888').setOrigin(0.5));
       }
     });
-    R.add(txt(s, 160, top + 452, `▲▼/拖动≡ 调整快捷栏；☑自动 与设置页同一份，#n 为自动优先级。学习等级/修炼点取自 1.76 官方，修炼满足后自动升级；耗魔×3；轻量冷却 1.5–6s + 公共施法间隔 0.8s（适配）。等级加成 ×${w.skillScale().toFixed(2)}`, 12, '#aaa', { wordWrap: { width: 960 } }));
+    if (IS_MOBILE) R.add(txt(s, 160, top + 450, '▲▼ 调整快捷栏顺序；☑自动 勾选后自动施放，↑↓ 调优先级', 18, '#9fd')); else R.add(txt(s, 160, top + 452, `▲▼/拖动≡ 调整快捷栏；☑自动 与设置页同一份，#n 为自动优先级。学习等级/修炼点取自 1.76 官方，修炼满足后自动升级；耗魔×3；轻量冷却 1.5–6s + 公共施法间隔 0.8s（适配）。等级加成 ×${w.skillScale().toFixed(2)}`, 12, '#aaa', { wordWrap: { width: 960 } }));
   }
   // ---------- R14 城镇 ----------
   private npcDef() { const t = TOWNS[this.world().town ?? '']; return t?.npcs.find(n => n.id === this.npc); }
@@ -277,11 +291,11 @@ export class Panel {
     const n = this.npcDef(), X = 340;
     if (!n) { R.add(txt(s, X, top + 90, `${t.name}\n选择左侧 NPC。\n来源：${t.src}`, 14, '#ddd', { wordWrap: { width: 600 } })); return; }
     R.add(txt(s, X - 180, top + 44, `${n.name}${n.pos ? `  原版坐标 ${n.pos}` : ''}${n.note ? `  ${n.note}` : ''}`, 13, '#ffe8a0', { wordWrap: { width: this.npcNeedsBag() ? 400 : 700 } }));
-    const row = (i: number, name: string, sub: string, label: string, fn: () => void, ok: boolean, icon?: string, X = 340) => {
+    const row = (i: number, name: string, sub: string, label: string, fn: () => void, ok: boolean, icon?: string, X = 340, nfs = 14) => {
       const y = top + 100 + i * 50;
       R.add(s.add.rectangle(X + 110, y, 230, 44, 0x0a0806).setStrokeStyle(1, 0x4a3a28));
       if (icon && s.textures.exists('item_' + icon)) R.add(s.add.image(X + 16, y, 'item_' + icon).setDisplaySize(36, 36));
-      R.add(txt(s, X + 40, y - 17, name, 14, '#fff')); R.add(txt(s, X + 40, y + 2, sub, 11, '#ccc', { strokeThickness: 2 }));
+      R.add(txt(s, X + 40, y - 17, name, nfs, '#fff')); R.add(txt(s, X + 40, y + 2, sub, 11, '#ccc', { strokeThickness: 2 }));
       R.add([...button(s, X + 196, y, 50, 30, label, fn, 13, ok)]);
     };
     const buy = (e: string | null, nm: string) => { if (!e) sfx(s, 'coin'); this.onChange(e ?? `购买 ${nm}`, !e); this.render(); };
@@ -293,8 +307,11 @@ export class Panel {
       R.add(txt(s, X, top + 160, '修理：本作装备无持久度 [适配]，无需修理。\n强化：背包点黑铁矿石，再点装备栏。', 13, '#9fd'));
       const sl = (Object.keys(w.equip) as (keyof typeof w.equip)[]).filter(k => w.equip[k]).slice(0, 8); // R14 #17 鉴定（S12：35 级，1–3 条）
       sl.forEach((k, i) => { const it = w.equip[k]!; row(i, it.name, it.ided ? `已鉴定 ${it.ided} 条` : `鉴定 ${IDENT_PRICE} 金 · ${IDENT_MIN_LEVEL} 级`, '鉴定', () => { const e = w.identify(k); this.onChange(e ?? `鉴定 ${it.name}`, !e); this.render(); }, !it.ided && w.level >= IDENT_MIN_LEVEL && w.gold >= IDENT_PRICE, it.item, X + 250); }); }
-    if (n.kind === 'book') { R.add(txt(s, X, top + 74, '书店：本职业有售技能书', 13, '#9fd')); w.shopBooks().forEach((b, i) => { const id = 'book_' + b.skill, learned = w.learned.has(b.skill);
-      row(i, ITEMS[id].name, `${b.price} 金 ${learned ? '已学会' : ''}`, '购买', () => buy(w.buyBook(b.skill), ITEMS[id].name), !learned && w.gold >= b.price, id); }); }
+    if (n.kind === 'book') { // R54：书店只卖 ≤25 级，按学习等级升序；先填满左列（7 行）再右列
+      const all = [...w.shopBooks(), ...w.csBooks()].sort((x, y) => w.bookLv(x) - w.bookLv(y)), PERC = 7;
+      R.add(txt(s, X, top + 74, '技能书（按学习等级排序：先左列后右列）', 13, '#9fd'));
+      all.forEach((b, i) => { const id = 'book_' + b.skill, e = bookEntry(ITEMS[id].name, w.bookLv(b), w.level, w.learned.has(b.skill), b.price, !!b.cs);
+        row(i % PERC, e.nm, e.sub, '购买', () => buy(w.buyBook(b.skill), ITEMS[id].name), e.buyable && w.gold >= b.price, id, X + Math.floor(i / PERC) * 250, e.fs); }); }
     if (n.kind === 'jewelry') R.add(txt(s, X, top + 90, '首饰店存货：未查到（原版只能买到别人卖的）。\n点击右侧背包物品出售。', 13, '#9fd'));
     if (n.kind === 'dragon') { R.add(txt(s, X, top + 66, '龙人：英雄 43 级，带 2 本白日门技能书和 2 根金条来，我教你们合击。', 13, '#9fd'));
       const c = w.companion, cb = c ? comboFor(w.cls, c.cls) : undefined;
@@ -361,10 +378,10 @@ export class Panel {
       });
       apply();
       // 拖动 / 双指缩放 / 滚轮缩放（桌面与手机通用）
-      const inV = (p: Phaser.Input.Pointer) => toLogic(p.x) >= VX && toLogic(p.x) <= VX + VW && toLogic(p.y) >= VY && toLogic(p.y) <= VY + VH;
+      const inV = (p: Phaser.Input.Pointer) => toLogicX(p.x) >= VX && toLogicX(p.x) <= VX + VW && toLogic(p.y) >= VY && toLogic(p.y) <= VY + VH;
       s.input.addPointer(1);
       let pinch = 0;
-      const onDown = (p: Phaser.Input.Pointer) => { if (inV(p)) { downAt = { x: toLogic(p.x), y: toLogic(p.y) }; moved = 0; } };
+      const onDown = (p: Phaser.Input.Pointer) => { if (inV(p)) { downAt = { x: toLogicX(p.x), y: toLogic(p.y) }; moved = 0; } };
       const onMove = (p: Phaser.Input.Pointer) => {
         const p1 = s.input.pointer1, p2 = s.input.pointer2;
         if (p1?.isDown && p2?.isDown) {
@@ -374,11 +391,11 @@ export class Panel {
         }
         pinch = 0;
         if (!downAt || !p.isDown) return;
-        const dx = toLogic(p.x) - toLogic(p.prevPosition.x), dy = toLogic(p.y) - toLogic(p.prevPosition.y); moved += Math.abs(dx) + Math.abs(dy);
+        const dx = toLogicX(p.x) - toLogicX(p.prevPosition.x), dy = toLogic(p.y) - toLogic(p.prevPosition.y); moved += Math.abs(dx) + Math.abs(dy);
         this.view = clampView({ ...this.view!, x: this.view!.x + dx, y: this.view!.y + dy }, VW, VH); apply();
       };
       const onUp = () => { downAt = null; pinch = 0; s.time.delayedCall(0, () => { moved = 0; }); };
-      const onWheel = (p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => { if (!inV(p)) return; this.view = zoomAt(this.view!, toLogic(p.x) - VX, toLogic(p.y) - VY, dy > 0 ? 0.9 : 1.1, VW, VH); apply(); };
+      const onWheel = (p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => { if (!inV(p)) return; this.view = zoomAt(this.view!, toLogicX(p.x) - VX, toLogic(p.y) - VY, dy > 0 ? 0.9 : 1.1, VW, VH); apply(); };
       s.input.on('pointerdown', onDown); s.input.on('pointermove', onMove); s.input.on('pointerup', onUp); s.input.on('wheel', onWheel);
       this.mapOff.push(() => { s.input.off('pointerdown', onDown); s.input.off('pointermove', onMove); s.input.off('pointerup', onUp); s.input.off('wheel', onWheel); mk.destroy(); });
       const zb = (f: number) => { this.view = zoomAt(this.view!, VW / 2, VH / 2, f, VW, VH); apply(); };
@@ -437,8 +454,8 @@ export class Panel {
     ACHIEVES.forEach((a, i) => {
       const y = top + 95 + i * 48, got = w.achieves.has(a.id);
       R.add(s.add.rectangle(980, y, 360, 44, 0x0a0806).setStrokeStyle(1, got ? 0x3a6a3a : 0x333));
-      R.add(txt(s, 820, y - 10, `${got ? '【' + a.title + '】' : a.name}`, 14, got ? '#ffd24a' : '#888'));
-      R.add(txt(s, 820, y + 8, a.desc + (got ? '  ✓' : ''), 12, got ? '#9f9' : '#666', { strokeThickness: 2 }));
+      R.add(txt(s, 820, y - (IS_MOBILE ? 21 : 10), `${got ? '【' + a.title + '】' : a.name}`, 14, got ? '#ffd24a' : '#888'));
+      R.add(txt(s, 820, y + (IS_MOBILE ? 1 : 8), a.desc + (got ? '  ✓' : ''), 12, got ? '#9f9' : '#666', { strokeThickness: 2 }));
     });
     R.add(txt(s, 640, top + 455, '悬赏按层击杀目标怪；成就永久加属性。按 Q 关闭', 13, '#9fd').setOrigin(0.5));
   }

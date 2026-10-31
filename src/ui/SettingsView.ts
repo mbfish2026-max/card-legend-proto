@@ -1,7 +1,9 @@
 import Phaser from 'phaser';
 import { Settings, ZOOM_STEP } from '../settings';
 import { CLASSES, ClassId } from '../data/classes';
-import { txt, button } from '../scenes/TitleScene';
+import { txtMin, buttonMin } from './mtext';
+// 设置面板只放大 1.2 倍 → 手机字号下限取 20
+const txt = txtMin(20), button = buttonMin(20);
 import { IS_MOBILE } from '../mobile';
 import { FxQuality } from './Fx';
 import { Render, RES_OPTIONS, type ResId } from '../render';
@@ -27,18 +29,15 @@ export function renderSettingsView(s: Phaser.Scene, R: Phaser.GameObjects.Contai
   R.add([...button(s, 780, top + 70, 50, 36, '＋', () => { Settings.volume = Math.min(1, +(Settings.volume + 0.1).toFixed(1)); refresh(); })]);
   R.add([...button(s, 560, top + 118, 160, 36, '静音 (N)', () => { Settings.muted = !Settings.muted; refresh(); }, 16)]);
   R.add([...button(s, 740, top + 118, 160, 36, `低特效：${Settings.lowFx ? '开' : '关'}`, () => { Settings.lowFx = !Settings.lowFx; FxQuality.low = !!Settings.lowFx; Settings.save(); o.rerender(); }, 15)]);
-  if (IS_MOBILE) {
-    const on = Settings.wantPad(true);
-    R.add([...button(s, 468, top + 162, 150, 36, `虚拟按键：${on ? '开' : '关'}`, () => {
-      Settings.showPadMobile = !Settings.wantPad(true); Settings.save(); o.rerender();
-    }, 15)]);
+  // 手机版改用专用 DOM HUD（摇杆常驻），旧「虚拟按键」开关在手机上已无意义，不再显示
+  if (IS_MOBILE) { /* no-op */
   } else {
     R.add(txt(s, 468, top + 162, '虚拟按键：电脑默认关', 12, '#888').setOrigin(0.5));
   }
   R.add([...button(s, 640, top + 210, 280, 38, `自动攻击：${Settings.autoAttack ? '开' : '关'}`, () => {
     Settings.autoAttack = !Settings.autoAttack; Settings.save(); o.rerender();
   }, 17)]);
-  R.add(txt(s, 640, top + 248, '开启后贴脸自动普攻（不追怪）；勾选技能按优先级/冷却自动放；手动按键优先', 12, '#9ab').setOrigin(0.5));
+  R.add(txt(s, 640, top + 248, '开启后贴脸自动普攻（不追怪）；勾选技能按优先级/冷却自动放；手动按键优先', 12, '#9ab', IS_MOBILE ? { align: 'center', wordWrap: { width: 560, useAdvancedWrap: true } } : undefined).setOrigin(0.5, IS_MOBILE ? 0 : 0.5));
   // 自动技能勾选（标题界面可切职业；游戏内为当前职业）
   if (o.onPickClass) (Object.keys(CLASSES) as ClassId[]).forEach((c, i) => {
     R.add([...button(s, 770 + i * 64, top + 22, 60, 30, `${c === cls ? '▶' : ''}${CLASSES[c].name}`, () => o.onPickClass!(c), 13)]);

@@ -8,7 +8,7 @@ import { WOMA_S9_BOOKS } from './drops-s9';
  * shop：比奇书店/商人出售；drops：掉落该书的怪物 id（映射原版掉落怪，见文档）。
  * 价格：原版仅查到火球术 500 金（其余 未查到），[适配] 价格 = max(100, 学习等级 × 30)。
  */
-export interface BookDef { skill: string; cls: ClassId; shop: boolean; drops: string[]; price: number }
+export interface BookDef { skill: string; cls: ClassId; shop: boolean; drops: string[]; price: number; /** 传世秘籍：只在书店「传世秘籍」页购买，不进默认书店/掉落池（不扰动平衡模拟） */ cs?: boolean }
 /** 初始技能（原版三职业第一个技能，7 级学；[适配] 新角色开局即会、1 级可用） */
 export const STARTER: Record<ClassId, string> = { warrior: 'basic_sword', mage: 'fireball', taoist: 'heal' };
 const LICH = 'boss_lich', WOMA = ['woma_warrior', 'woma_guard', 'boss_woma'], ZUMA = ['zuma_statue', 'zuma_guard', 'boss_zuma'];
@@ -44,6 +44,24 @@ export const BOOKS: Record<string, BookDef> = {
   ghost_shield: { skill: 'ghost_shield', cls: 'taoist', shop: true, drops: ['skeleton_lord', LICH, 'woma_guard'], price: P(22) },
   holy_armor: { skill: 'holy_armor', cls: 'taoist', shop: true, drops: [LICH, 'woma_guard'], price: P(25) },
   mass_heal: { skill: 'mass_heal', cls: 'taoist', shop: false, drops: [LICH, 'boss_woma', 'boss_white_boar', 'hongmo_pig'], price: P(33) },
+  // 传世秘籍（docs/skills-official.md#传世）：官方为传世 NPC 书店/怪物掉落，具体出处 未查到 → [适配] 书店「传世秘籍」页按学习等级定价，无掉落
+  thunder_sword: { skill: 'thunder_sword', cls: 'warrior', shop: false, cs: true, drops: [], price: P(34) },
+  break_strike: { skill: 'break_strike', cls: 'warrior', shop: false, cs: true, drops: [], price: P(36) },
+  dash_slash: { skill: 'dash_slash', cls: 'warrior', shop: false, cs: true, drops: [], price: P(37) },
+  shield_break: { skill: 'shield_break', cls: 'warrior', shop: false, cs: true, drops: [], price: P(39) },
+  vajra_body: { skill: 'vajra_body', cls: 'warrior', shop: false, cs: true, drops: [], price: P(41) },
+  ice_arrow: { skill: 'ice_arrow', cls: 'mage', shop: false, cs: true, drops: [], price: P(17) },
+  ice_dragon: { skill: 'ice_dragon', cls: 'mage', shop: false, cs: true, drops: [], price: P(26) },
+  frost_blade: { skill: 'frost_blade', cls: 'mage', shop: false, cs: true, drops: [], price: P(26) },
+  five_thunder: { skill: 'five_thunder', cls: 'mage', shop: false, cs: true, drops: [], price: P(34) },
+  ice_whirl: { skill: 'ice_whirl', cls: 'mage', shop: false, cs: true, drops: [], price: P(37) },
+  drive_corpse: { skill: 'drive_corpse', cls: 'taoist', shop: false, cs: true, drops: [], price: P(19) },
+  decoy_talisman: { skill: 'decoy_talisman', cls: 'taoist', shop: false, cs: true, drops: [], price: P(20) },
+  soul_wall: { skill: 'soul_wall', cls: 'taoist', shop: false, cs: true, drops: [], price: P(28) },
+  clear_mind: { skill: 'clear_mind', cls: 'taoist', shop: false, cs: true, drops: [], price: P(30) },
+  holy_light: { skill: 'holy_light', cls: 'taoist', shop: false, cs: true, drops: [], price: P(36) },
+  cleanse: { skill: 'cleanse', cls: 'taoist', shop: false, cs: true, drops: [], price: P(38) },
+  summon_golden_skeleton: { skill: 'summon_golden_skeleton', cls: 'taoist', shop: false, cs: true, drops: [], price: P(42) },
 };
 /** [适配] 掉落率（原版未查到）：首领 25%，普通怪 2%；只掉本职业、尚未学会的书 */
 export const BOOK_DROP = { boss: 0.25, normal: 0.02 };

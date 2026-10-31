@@ -12,6 +12,9 @@ import { fxLoadOrder, fxUrl } from './ui/FxPlayer';
 /** 生产构建：大图（立绘/背景/地图）在构建期压成 webp（vite.config 插件），原 PNG/JPG 仍保留在 public/ */
 const OPT = typeof import.meta !== 'undefined' && !!(import.meta as any).env?.PROD;
 /** 物品图标：画质 >720p（Render.k>1）且存在 @2x 文件时用 @2x（显示尺寸由 setDisplaySize 固定，不影响布局）；加载失败 → 纹理不存在 → 各处原有色块/无图回退 */
+/** 技能图标：传世技能图标带 @2x（public/assets/skills/skill_<id>@2x.png），高画质时使用 */
+export function skillIconUrl(p: string) { const m = /^assets\/skills\/(skill_[a-z_]+)\.png$/.exec(p); return Render.k > 1 && m && SKILL_ICON_2X.has(m[1]) ? `assets/skills/${m[1]}@2x.png` : p; }
+const SKILL_ICON_2X = new Set(['thunder_sword', 'break_strike', 'shield_break', 'vajra_body', 'dash_slash', 'ice_arrow', 'ice_dragon', 'frost_blade', 'five_thunder', 'ice_whirl', 'drive_corpse', 'decoy_talisman', 'soul_wall', 'clear_mind', 'holy_light', 'cleanse'].map(id => 'skill_' + id));
 export function itemIconUrl(p: string) { const m = /^assets\/items\/(.+)\.png$/.exec(p); return Render.k > 1 && m && ITEM_ICON_2X.has(m[1]) ? `assets/items/${m[1]}@2x.png` : p; }
 export function assetUrl(p: string) { return OPT && /^assets\/(portraits|bg|map)\//.test(p) || OPT && p === 'assets/ui/bg_dungeon.jpg' ? p.replace(/\.(png|jpe?g)$/i, '.webp') : p; }
 
@@ -45,7 +48,7 @@ export function queueImages(load: Phaser.Loader.LoaderPlugin, tex: Phaser.Textur
 const FX_MAX_TRIES = 3; const fxTries = new Map<string, number>();
 export function queueCritical(s: Phaser.Scene) {
   queueImages(s.load, s.textures, criticalImageKeys());
-  for (const c of Object.values(CLASSES)) for (const sk of c.skills) if (!s.textures.exists('sk_' + sk.id)) s.load.image('sk_' + sk.id, sk.icon);
+  for (const c of Object.values(CLASSES)) for (const sk of c.skills) if (!s.textures.exists('sk_' + sk.id)) s.load.image('sk_' + sk.id, skillIconUrl(sk.icon));
   for (const it of Object.values(ITEMS)) if (!s.textures.exists('item_' + it.id)) s.load.image('item_' + it.id, itemIconUrl(it.icon));
   for (const [id, p] of Object.entries(SFX)) if (p && !s.cache.audio.exists('sfx_' + id)) s.load.audio('sfx_' + id, p);
 }

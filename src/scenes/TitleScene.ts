@@ -1,3 +1,4 @@
+import { Render, MAX_LW } from '../render';
 import Phaser from 'phaser';
 import { ASSETS, SFX } from '../assets-manifest';
 import { ITEMS } from '../data/items';
@@ -47,8 +48,8 @@ export class TitleScene extends Phaser.Scene {
     // 调试/截图参数：?class=mage&floor=3 直接进入战斗；?title=class 直接显示职业选择
     if (qs.has('class') || qs.has('floor')) { this.startBattle({ cls: (qs.get('class') as ClassId) || 'warrior' }); return; }
     playMusic(this, 'title');
-    if (this.textures.exists('bg_floor1')) this.add.image(640, 360, 'bg_floor1').setDisplaySize(1280, 720).setTint(0x777777);
-    this.add.rectangle(640, 360, 1280, 720, 0x000000, 0.35);
+    if (this.textures.exists('bg_floor1')) this.add.image(640, 360, 'bg_floor1').setDisplaySize(Render.lw > 1280 ? MAX_LW : 1280, Render.lw > 1280 ? 720 * MAX_LW / 1280 : 720).setTint(0x777777); // 手机铺满：按最宽比例 cover，电脑只露中间 1280（裁切）
+    this.add.rectangle(640, 360, Render.lw > 1280 ? MAX_LW : 1280, 720, 0x000000, 0.35);
     txt(this, 640, 120, '卡 牌 传 奇', 72, '#ffd24a', { fontStyle: 'bold', strokeThickness: 8 }).setOrigin(0.5);
     txt(this, 640, 190, IS_MOBILE ? '横版卡牌动作 · 原型（触屏：屏幕虚拟按键操作）' : '横版卡牌动作 · 原型', 20, '#e8d8b0').setOrigin(0.5);
     if (!IS_MOBILE) txt(this, 640, 218, 'A/D 移动（可后退） · W/空格 传送门 · S 回上层 · F1-F5 技能 · 1-4 药水 · B 背包 · T 商人', 15, '#bfb39a').setOrigin(0.5);
