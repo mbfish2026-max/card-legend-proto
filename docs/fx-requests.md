@@ -198,3 +198,19 @@
 | fx_twinhead_petrify | 双头金刚麻痹/石化（机制未实装，需先有怪物控制主角机制） | 无 | 256×256，8 帧 |
 | fx_twinhead_blood_bolt | 双头血魔闪电（血红色） | 复用沃玛教主 spark | 256×256，8 帧，ADD |
 | map_node_gumo / map_node_altar | 区域小地图入口图标 | 复用现有节点图标 | 与 map_node_* 同规格 |
+
+## 传世技能特效（feat/chuanshi-skills）
+当前全部用现有图集回退 + Graphics 占位（无报错）。需求：
+| key | 内容 | 当前回退 | 规格 |
+|---|---|---|---|
+| fx_thunder_sword | 剑落一道蓝白落雷 | 烈火剑法 + 雷电 | 256×256，8 帧，ADD |
+| fx_break_strike / fx_shield_break | 甲片/盾形碎裂金色火花 | 刺杀剑术命中 | 256×256，8 帧 |
+| fx_vajra_body | 全身金色菱纹护体光（持续） | 神圣战甲光 | 256×256，循环 |
+| fx_dash_slash | 紫色刀光拖尾残影 | 野蛮冲撞 | 256×256，6 帧 |
+| fx_ice_arrow / fx_ice_dragon / fx_frost_blade / fx_ice_whirl | 冰箭、直线冰龙、旋转冰刃、冰晶龙卷 | 冰咆哮/疾光电影 + 青色着色 | 256×256，8 帧，ADD |
+| fx_five_thunder | 五道金色雷柱 | 地狱雷光 | 256×256，8 帧 |
+| fx_decoy | 稻草人贴黄符 立绘 | 卡牌 tint 0xe8d8a0 | 与怪物卡同规格 |
+| fx_soul_wall | 紫色灵气墙竖起 | 困魔咒/毒雾 | 256×256 |
+| fx_holy_light / fx_cleanse | 金色光柱 / 毒滴化清水 | 治愈术 | 256×256 |
+| summon_golden_skeleton / summon_corpse 立绘 | 金甲重甲骷髅 / 尸灵 | 骷髅 tint 0xffd040 / zombie 立绘 | 与 summon_skeleton 同规格 |
+| skill_summon_golden_skeleton 图标 | 金甲骷髅图标 | 复用 skill_summon_skeleton.png | 64 + @2x 128 |

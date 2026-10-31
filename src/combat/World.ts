@@ -7,7 +7,7 @@ import { BattleEvent, EquipSlot, GroundItem, InvItem, Rarity, Slot, Stats, Team,
 import { POTIONS } from '../data/skills';
 import { CLASSES, ClassId, SkillDef, CAST_GAP } from '../data/classes';
 import { ITEMS, SLOTS, SETS, equipSlotsFor, EQUIP_VERSION, ENHANCE_SLOTS, ENHANCE_MAX, ENHANCE_STAT, IRON_PRICE, IRON_MAX_PURITY, enhanceChance, shatterChance } from '../data/items';
-import { HERO, ENEMIES, SUMMON, SUMMON_BEAST } from '../data/units';
+import { HERO, ENEMIES, SUMMON, SUMMON_BEAST, SUMMON_CORPSE, SUMMON_GOLDEN, DECOY } from '../data/units';
 import { EXP_PER_LEVEL, EXP_VERSION, migrateExp, scaledExp, fmtExp } from '../data/expCurve';
 import { WORLD, FLOORS, Floor, FARM_RESPAWN, FARM_SAFE_DIST, nextFloorOf, SIDE_FLOORS, DEPTH_STEP, prevLayerOf, prevFloorOf } from '../data/world';
 import { TOWNS, townFloors, townOfFloor, returnTownOf, STORAGE_SIZE, TOWN_W, TOWN_GATE_X, GATE_RANGE, TOWN_SPAWN_X, DOOR_RANGE, streetDoors } from '../data/towns';
@@ -49,7 +49,14 @@ export const FLOOR_MIGRATE_V3 = [0, 1, 2, 4, 5, 8, 9, 12];
 export const OIL_PRICE = 400;
 export { IRON_PRICE } from '../data/items';
 /** 新书接入（#11/#12 书）：无 learned 字段的旧档迁移时不白送这些技能（保持接入前行为） */
-const LATE_BOOKS: Record<string, true> = { big_fireball: true, burst_fire: true, hell_fire: true, lightning_flash: true, hell_thunder: true, ghost_shield: true, holy_armor: true, mass_heal: true };
+const LATE_BOOKS: Record<string, true> = { big_fireball: true, burst_fire: true, hell_fire: true, lightning_flash: true, hell_thunder: true, ghost_shield: true, holy_armor: true, mass_heal: true, ...Object.fromEntries(Object.values(BOOKS).filter(b => b.cs).map(b => [b.skill, true])) as Record<string, true> };
+/** 传世：不死系判定（[适配] 按怪物 id：骷髅/僵尸/尸王/尸霸类） */
+export const isUndead = (u: { id: string; team?: string }) => u.team !== 'ally' && /skel|zombie|lich|ghoul|bone_general/.test(u.id);
+/** 传世召唤：基础单位与相对骷髅的属性倍率 [适配] */
+const CS_SUMMON: Record<string, { base: UnitDef; hp: number; atk: number; def: number }> = {
+  drive_corpse: { base: SUMMON_CORPSE, hp: 1.25, atk: 1.25, def: 1.2 },
+  summon_golden_skeleton: { base: SUMMON_GOLDEN, hp: 2, atk: 1.6, def: 1.5 },
+};
 export type CastResult = { ok: true; targets: number[]; skill: string; kind: string } | { ok: false; reason: string };
 /** R13 官方 BOSS 机制（来源见 docs/combat-official.md）：沃玛教主/祖玛教主/赤月恶魔由 bossStep 接管攻击 */
 /**
@@ -197,6 +204,7 @@ export class World {
   get hero() { return this.units.find(u => u.isHero && u.alive); }
   /** 道士骷髅/神兽（不含诱惑之光宠物） */
   get summon() { return this.units.find(u => u.summon && !u.pet && u.alive); }
+  get decoy() { return this.units.find(u => u.decoy && u.alive); }
   /** 自动施放门槛 [适配]：射程内最近目标可驯服且成功率 ≥50% 才放（免疫/等级过高/满宠不浪费魔法） */
   charmAutoOk() {
     const s = this.skillPool.find(x => x.id === 'charm'), side = s ? this.rangedSide(s.range ?? 520) : null;
@@ -216,6 +224,7 @@ export class World {
   summonAggro(u: Unit): Unit | undefined {
     if (u.aggroUid === undefined || BOSS_MECH.has(u.id)) return undefined;
     const h = this.hero, sm = this.units.find(x => x.uid === u.aggroUid && x.alive);
+    if (sm?.decoy) return sm; // 替身法符：仇恨完全转移
     if (!sm || !h || Math.abs(u.x - h.x) <= WORLD.summonAggroNear) return undefined;
     return sm;
   }
@@ -578,8 +587,16 @@ export class World {
       });
       this.ground.push(...items); this.events.push({ type: 'drop', uid: u.uid, x: u.x, y: u.y, items });
     }
-    this.gainExp(scaledExp(u.exp ?? 10, this.floorIndex));
+    this.gainExp(scaledExp(u.exp ?? 10, this.floorIndex) * this.clearMindMult());
     if (!this.alive('enemy').length && !this.cleared && !this.womaPending) { this.cleared = true; this.events.push({ type: 'cleared' }); }
+  }
+  /** 道心清明（被动）：击杀几率双倍经验；未学 = 1（不消耗随机数） */
+  clearMindMult() {
+    const sl = this.skillPool.find(x => x.doubleExp); if (!sl) return 1;
+    const lv = this.skillLevel(sl); if (lv < 0) return 1;
+    this.addTrain(sl, 10);
+    if (this.lootRng() >= sl.doubleExp![Math.min(3, lv)]) return 1;
+    this.events.push({ type: 'log', text: `${sl.name}：双倍经验`, color: 'green' }); return 2;
   }
   gainExp(n: number) {
     if (this.companion?.out && companionGainExp(this.companion, n, this.level)) this.events.push({ type: 'log', text: `英雄 ${this.companion.name} 升到 ${this.companion.level} 级`, color: 'green' });
@@ -641,8 +658,10 @@ export class World {
   }
   /** R11 书店：本职业 shop 书 */
   shopBooks(): BookDef[] { return Object.values(BOOKS).filter(b => b.cls === this.cls && b.shop); }
+  /** 传世秘籍页（书店第二页）：本职业传世技能书 */
+  csBooks(): BookDef[] { return Object.values(BOOKS).filter(b => b.cls === this.cls && b.cs).sort((a, b) => a.price - b.price); }
   buyBook(skill: string): string | null {
-    const b = BOOKS[skill]; if (!b || !b.shop || b.cls !== this.cls) return '书店没有这本书';
+    const b = BOOKS[skill]; if (!b || !(b.shop || b.cs) || b.cls !== this.cls) return '书店没有这本书';
     if (this.gold < b.price) return `金币不足（需 ${b.price}）`;
     if (this.bag.length >= WORLD.bagSize) return '背包已满';
     this.gold -= b.price; this.bag.push(this.makeItem(bookItemId(skill))); this.events.push({ type: 'inventory' }); return null;
@@ -787,6 +806,14 @@ export class World {
       const ex = this.summon;
       if (ex && ex.hp >= ex.maxHp * AUTO_RESUMMON_HP) return { ok: false, reason: `${ex.name}已存在` };
     }
+    if (s.buffBoth && ((h.defUpUntil ?? 0) > this.time || (h.mdefUpUntil ?? 0) > this.time)) return { ok: false, reason: `${s.name}持续中（持续期间重复开启无效）` };
+    if (s.kind === 'decoy') {
+      if (this.units.some(u => u.decoy && u.alive)) return { ok: false, reason: `${s.name}已存在` };
+      const near = this.alive('enemy').filter(e => e.ai === 'chase' && Math.abs(e.x - h.x) <= 600);
+      if (!near.length) return { ok: false, reason: '附近没有追击你的怪物' };
+      if (opts.auto && h.hp >= h.maxHp * 0.7) return { ok: false, reason: '生命充足，暂不放替身' };
+    }
+    if (s.cleanse && s.kind === 'buff' && opts.auto && h.hp >= h.maxHp * 0.6 && !this.debuffed().length) return { ok: false, reason: '没有需要解除的状态' };
     let targets: Unit[] = [];
     if (s.kind === 'melee' || s.kind === 'pierce') {
       const side = this.meleeSide(); if (side === null) return { ok: false, reason: '没有可攻击的目标' };
@@ -815,6 +842,7 @@ export class World {
       targets = [t0, ...this.alive('enemy').filter(e => e !== t0 && Math.abs(e.x - t0.x) <= (s.splash ?? 170))];
     } else if (s.kind === 'aoe') {
       targets = this.alive('enemy').filter(e => Math.max(0, this.gap(h, e)) <= (s.range ?? 400));
+      if (s.maxTargets) targets = targets.sort((a, b) => this.gap(h, a) - this.gap(h, b)).slice(0, s.maxTargets);
       if (!targets.length) return { ok: false, reason: '范围内没有目标' };
     } else if (s.kind === 'rush') {
       // 冲撞：射程内选边，撞开等级低于自己的目标（官方）；[适配] 伤害
@@ -823,6 +851,13 @@ export class World {
       h.facing = side as 1 | -1;
       targets = this.queue(side).filter(e => e.level < this.level && this.gap(h, e) <= reach).slice(0, 3);
       if (!targets.length) return { ok: false, reason: '附近没有等级低于自己的目标' };
+    } else if (s.kind === 'wall') {
+      // 灵魂墙：以射程内前排为中心，area 内非 BOSS 怪定身
+      const side = this.rangedSide(s.range ?? 520); if (side === null) return { ok: false, reason: '射程内没有目标' };
+      h.facing = side as 1 | -1; const t0 = this.queue(side)[0];
+      targets = this.alive('enemy').filter(e => e.tier !== 'boss' && Math.abs(e.x - t0.x) <= (s.area ?? 160));
+      if (!targets.length) return { ok: false, reason: 'BOSS 不受灵魂墙影响' };
+      if (opts.auto && targets.every(e => (e.stunUntil ?? 0) > this.time)) return { ok: false, reason: '目标已被困住' };
     }
     if (s.kind === 'buff' && s.reduce && (h.armorUntil ?? 0) > this.time) return { ok: false, reason: `${s.name}持续中（官方：持续期间重复开启无效）` };
     if (s.buffStat && ((s.buffStat === 'def' ? h.defUpUntil : h.mdefUpUntil) ?? 0) > this.time) return { ok: false, reason: `${s.name}持续中（沿用魔法盾：持续期间重复开启无效）` };
@@ -835,7 +870,7 @@ export class World {
         targets = [sm];
       }
     }
-    if (s.area) targets = [h, ...this.units.filter(u => u.summon && u.alive && Math.abs(u.x - h.x) <= s.area!)];
+    if (s.area && s.kind === 'buff') targets = [h, ...this.units.filter(u => u.summon && u.alive && Math.abs(u.x - h.x) <= s.area!)];
     h.mp = (h.mp ?? 0) - s.mana; for (let j = 0; j < cds.length; j++) cds[j] = Math.max(cds[j], CAST_GAP); cds[i] = Math.max(cds[i], s.cooldown); // 公共施法间隔 0.8s + 本技能轻量冷却（手动/自动共用）
     this.events.push({ type: 'attack', source: h.uid, target: targets[0]?.uid ?? h.uid, skill: s.id });
     this.addTrain(s, 100);
@@ -852,10 +887,17 @@ export class World {
         if (s.buffStat === 'def') { h.defUpUntil = this.time + d; h.defUp = v; } else { h.mdefUpUntil = this.time + d; h.mdefUp = v; }
         this.events.push({ type: 'log', text: `${s.name}：${s.buffStat === 'def' ? '防御' : '魔御'} +${v}，持续 ${d} 秒` });
       }
+      if (s.buffBoth) {
+        // 金刚护体：官方「大幅度提高防御和魔御」数值 未查到 → [适配] 防御/魔御各 +2×神圣战甲术增益值
+        const v = 2 * taoBuffValue(this.level), d = this.buffDuration(s);
+        h.defUpUntil = h.mdefUpUntil = this.time + d; h.defUp = h.mdefUp = v;
+        this.events.push({ type: 'log', text: `${s.name}：防御/魔御 +${v}，持续 ${d} 秒` });
+      }
+      if (s.cleanse) this.cleanseAllies(s, slv, targets);
       if (s.heal) { if (s.area) for (const t of targets) this.heal(t, pw * s.heal); else this.heal(targets[0], pw * s.heal); }
     } else if (s.kind === 'summon') {
-      const beast = s.id === 'summon_beast';
-      const base = beast ? SUMMON_BEAST : SUMMON;
+      const beast = s.id === 'summon_beast', cs = CS_SUMMON[s.id];
+      const base = beast ? SUMMON_BEAST : cs?.base ?? SUMMON;
       const ex = this.summon;
       if (ex && ex.id === base.id) {
         this.heal(ex, ex.maxHp); this.events.push({ type: 'log', text: `${base.name}已存在：恢复其生命` });
@@ -868,7 +910,8 @@ export class World {
         const def0 = beast ? 7 + this.level * 1.0 : 3 + this.level * 0.8;
         // [适配] 加强骷髅：按官方成长比例（相对 0 级）放大，HP ×1/1.4/2/2.8、攻击 ×(官方攻击上限/25)；基础攻击 8+道术×0.9 → 10+道术×1.0（10=官方下限）；神兽仍 ×(1+0.1×等级)
         const L = Math.min(3, slv), hpF = beast ? lvF : SKELETON_OFFICIAL.hp[L] / SKELETON_OFFICIAL.hp[0], atkF = beast ? lvF : SKELETON_OFFICIAL.atkMax[L] / SKELETON_OFFICIAL.atkMax[0];
-        const def: UnitDef = { ...base, level: this.level + (beast ? slv : 0), hp: Math.round(hp0 * hpF), atk: Math.round(atk0 * atkF), def: Math.round(def0) };
+        const k = cs ?? { hp: 1, atk: 1, def: 1 }; // 传世：赶尸/金甲骷髅 = 骷髅公式 × 倍率 [适配]
+        const def: UnitDef = { ...base, level: this.level + (beast ? slv : 0), hp: Math.round(hp0 * hpF * k.hp), atk: Math.round(atk0 * atkF * k.atk), def: Math.round(def0 * k.def) };
         const u = this.spawn(def, 'ally', h.x - h.facing * 110, WORLD.summonLane); u.summon = true; u.facing = h.facing; u.ai = 'chase';
         // 召唤物等级：初始 = 技能等级（最高 3）；「重启」= 重新召唤从技能等级对应初始等级开始，不继承上一只已升等级
         u.sLv = L; u.sKills = 0; u.sBase = { hp: def.hp, atk: def.atk, start: L, name: base.name }; this.applySummonLv(u);
@@ -900,22 +943,56 @@ export class World {
       this.zones.push({ x: t0.x, until: this.time + dur, dps, radius: 160, tick: this.time + 0.5, skill: s.id });
       this.damage(t0, dps * 0.6, h, false, false, false, 1); // 落点瞬时轻伤（魔法）
       this.events.push({ type: 'log', text: `${s.name}：燃烧 ${dur} 秒` });
+    } else if (s.kind === 'decoy') {
+      // 替身法符：替身站在主角面前，周围追击中的怪仇恨转移到替身（官方）；[适配] HP 随道术与技能等级
+      const near = this.alive('enemy').filter(e => e.ai === 'chase' && Math.abs(e.x - h.x) <= 600);
+      const side = Math.sign((near[0]?.x ?? h.x + h.facing) - h.x) || h.facing;
+      const def: UnitDef = { ...DECOY, level: this.level, hp: Math.round((120 + (h.tao ?? 0) * 4) * lvF), atk: 0, def: Math.round(3 + this.level * 0.8) };
+      const u = this.spawn(def, 'ally', h.x + side * 120, WORLD.summonLane); u.decoy = true; u.decoyUntil = this.time + dur; u.facing = side as 1 | -1;
+      for (const e of near) if (!BOSS_MECH.has(e.id)) e.aggroUid = u.uid;
+      this.events.push({ type: 'summon', uid: u.uid }, { type: 'log', text: `${s.name}：${near.length} 个怪物转而攻击替身（${dur} 秒）` });
+    } else if (s.kind === 'wall') {
+      const d = this.buffDuration(s);
+      for (const t of targets) { t.stunUntil = this.time + d; if (t.ai !== 'chase') { t.ai = 'chase'; this.events.push({ type: 'aggro', uid: t.uid }); } }
+      this.events.push({ type: 'log', text: `${s.name}：困住 ${targets.length} 个怪物 ${d} 秒` });
     } else if (s.kind === 'rush') {
       for (const t of targets) {
-        t.x += h.facing * 150;
+        t.x += h.facing * (s.pushCells ? s.pushCells[Math.min(3, slv)] * 85 : 150);
         t.x = Math.max(t.width / 2, Math.min(WORLD.mapWidth - t.width / 2, t.x));
-        this.damage(t, pw * (s.mult ?? 0.5) * this.roll(0.95, 0.1), h, true, false, false, s.stat === 'atk' ? 0 : 1);
+        this.damage(t, pw * (s.lvMult ? s.lvMult[slv] : s.mult ?? 0.5) * this.roll(0.95, 0.1), h, true, false, false, s.stat === 'atk' ? 0 : 1);
       }
       this.events.push({ type: 'log', text: `${s.name}：撞开 ${targets.length} 个低等级目标` });
     } else {
       targets.forEach((t, j) => {
         // 战士剑法：官方各级倍率（刺杀/半月：主目标 100%，其余按倍率；烈火：主目标倍率）
         const m = s.lvMult ? (s.kind === 'pierce' ? (j === 0 ? 1 : s.lvMult[slv]) : s.lvMult[slv]) : (s.mult ?? 1);
-        this.damage(t, pw * m * this.roll(0.95, 0.1), h, true, false, false, s.stat === 'atk' ? 0 : 1); // 魔法/道术技能 = 魔法伤害
+        const ub = s.undeadBonus && isUndead(t) ? 1 + s.undeadBonus : 1, flat = s.flatBonus?.[slv] ?? 0;
+        if (s.dispel) this.dispelTarget(t, s, slv); // 先破盾再结算本次伤害
+        this.damage(t, (pw * m * ub + flat) * this.roll(0.95, 0.1), h, true, false, false, s.stat === 'atk' ? 0 : 1); // 魔法/道术技能 = 魔法伤害
         if (s.slow && t.alive) t.slowUntil = this.time + (s.duration ?? 3);
       });
+      if (s.pull && targets[0]) { const c = targets[0]; targets.forEach((t, j) => { if (j && t.alive && t.level < this.level && t.tier !== 'boss') t.x = c.x + Math.sign(t.x - c.x || 1) * 40; }); }
+      if (s.cleanse) this.cleanseAllies(s, slv);
     }
     return { ok: true, targets: targets.map(t => t.uid), skill: s.id, kind: s.kind };
+  }
+  /** 己方负面状态（主角/召唤物）：中毒、红毒、减速、定身 */
+  debuffed(): Unit[] { const t = this.time; return this.units.filter(u => u.alive && u.team === 'ally' && ((u.poisonUntil ?? 0) > t || (u.redUntil ?? 0) > t || (u.slowUntil ?? 0) > t || (u.stunUntil ?? 0) > t)); }
+  /** 解毒术/神光术：按技能等级几率解除 area 内己方负面状态（lootRng，不扰动主随机序列） */
+  cleanseAllies(s: SkillDef, slv: number, _t?: Unit[]) {
+    const h = this.hero; if (!h || !s.cleanse) return;
+    const p = s.cleanse[Math.min(3, slv)]; let n = 0;
+    for (const u of this.debuffed()) if (Math.abs(u.x - h.x) <= (s.area ?? 170) && this.lootRng() < p) { u.poisonUntil = u.redUntil = u.slowUntil = u.stunUntil = 0; n++; }
+    if (n) this.events.push({ type: 'log', text: `${s.name}：解除 ${n} 个单位的负面状态`, color: 'green' });
+  }
+  /** 破击/破盾：几率解除目标增益（神圣战甲/幽灵盾/魔法盾类）；[适配] 并使其 def/mdef −30% 4 秒 */
+  dispelTarget(t: Unit, s: SkillDef, slv: number) {
+    if (!s.dispel || this.lootRng() >= s.dispel[Math.min(3, slv)]) return;
+    const had = (t.armorUntil ?? 0) > this.time || (t.defUp ?? 0) > 0 && (t.defUpUntil ?? 0) > this.time || (t.mdefUp ?? 0) > 0 && (t.mdefUpUntil ?? 0) > this.time;
+    t.armorUntil = 0;
+    const until = this.time + 4;
+    if (s.breakStat === 'def') { t.defUpUntil = until; t.defUp = -Math.round((t.def ?? 0) * 0.3); } else { t.mdefUpUntil = until; t.mdefUp = -Math.round((t.mdef ?? t.def ?? 0) * 0.3); }
+    this.events.push({ type: 'proc', skill: s.id, target: t.uid }, { type: 'log', text: `${s.name}：${had ? '破除增益并' : ''}${s.breakStat === 'def' ? '破防' : '破魔御'} 4 秒` });
   }
   usePotion(i: number): string | null {
     const p = POTIONS[i], h = this.hero;
@@ -1331,6 +1408,7 @@ export class World {
         this.damage(tgt, f.atk * (0.9 + this.rng() * 0.2), f);
       }
     }
+    for (const d of this.units) if (d.decoy && d.alive && (d.decoyUntil ?? 0) <= this.time) { d.alive = false; this.events.push({ type: 'death', uid: d.uid }, { type: 'log', text: `${d.name}消散` }); }
     this.units = this.units.filter(u => u.alive);
     const hh = this.hero; if (!hh) return;
     for (const g of [...this.ground]) if (g.landAt <= this.time && Math.hypot(g.x - hh.x, (g.y - hh.y) * 0.5) <= WORLD.pickupRadius) this.pickup(g);

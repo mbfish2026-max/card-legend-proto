@@ -58,7 +58,7 @@ export class Panel {
     if (this.mode === 'town') this.npc = null;
     this.clearMapInput(); this.sel = null; this.ironIdx = null; this.mode = null; this.root?.destroy(true); this.root = undefined; this.hideTip(); }
   /** #11 修复：面板打开时升级/得经验不刷新。render 时记录快照，UIScene.update 每帧比对 */
-  private snap = ''; mscale = 1; skPage = 0;
+  private snap = ''; mscale = 1; skPage = 0; bookCs = false;
   statSnap() { const w = this.world(); return `${w.level}:${w.exp}:${JSON.stringify(w.skillTrain)}:${w.learned.size}`; }
   /** 角色/技能面板数据变了就重绘；返回是否重绘（供测试） */
   refreshIfStale(): boolean {
@@ -172,17 +172,21 @@ export class Panel {
   }
   /** 书店：本职业有售的技能书（原版比奇书店；掉落书不卖） */
   private renderBooks(R: Phaser.GameObjects.Container, top: number) {
-    const s = this.s, w = this.world();
-    w.shopBooks().forEach((b, i) => {
-      const y = top + 130 + i * 62, sk = w.skillPool.find(x => x.id === b.skill)!, id = 'book_' + b.skill, learned = w.learned.has(b.skill), need = w.needLevel(sk);
-      R.add(s.add.rectangle(330, y, 320, 56, 0x0a0806).setStrokeStyle(1, 0x6a5a28));
-      if (s.textures.exists('item_' + id)) R.add(s.add.image(200, y, 'item_' + id).setDisplaySize(46, 46));
-      R.add(txt(s, 232, y - 20, ITEMS[id].name, 15, learned ? '#888' : '#ffd24a'));
-      R.add(txt(s, 232, y + 2, `${learned ? '已学会' : `需 Lv${need}`}   ${b.price} 金`, 13, w.level >= need ? '#ccc' : '#f99', { strokeThickness: 2 }));
-      R.add([...button(s, 448, y, 64, 34, '购买', () => { const e = w.buyBook(b.skill); if (!e) sfx(s, 'coin'); this.onChange(e ?? `购买 ${ITEMS[id].name}（背包中点击学习）`, !e); this.render(); }, 15, !learned && w.gold >= b.price)]);
+    const s = this.s, w = this.world(), cs = this.bookCs, list = cs ? w.csBooks() : w.shopBooks(), rh = cs ? 44 : 62;
+    // 传世秘籍页（docs/skills-official.md#传世）：书店第二页
+    R.add([...button(s, 250, top + 92, 120, 30, '普通书店', () => { this.bookCs = false; this.render(); }, 14, cs)]);
+    R.add([...button(s, 400, top + 92, 120, 30, '传世秘籍', () => { this.bookCs = true; this.render(); }, 14, !cs)]);
+    list.forEach((b, i) => {
+      const y = top + (cs ? 128 : 130) + i * rh, sk = w.skillPool.find(x => x.id === b.skill)!, id = 'book_' + b.skill, learned = w.learned.has(b.skill), need = w.needLevel(sk);
+      R.add(s.add.rectangle(330, y, 320, rh - 6, 0x0a0806).setStrokeStyle(1, cs ? 0x8a6a20 : 0x6a5a28));
+      const ic = s.textures.exists('sk_' + b.skill) && cs ? 'sk_' + b.skill : 'item_' + id;
+      if (s.textures.exists(ic)) R.add(s.add.image(200, y, ic).setDisplaySize(rh - 16, rh - 16));
+      R.add(txt(s, 232, y - (cs ? 17 : 20), ITEMS[id].name, cs ? 14 : 15, learned ? '#888' : '#ffd24a'));
+      R.add(txt(s, 232, y + (cs ? 1 : 2), `${learned ? '已学会' : `需 Lv${need}`}   ${b.price} 金`, 13, w.level >= need ? '#ccc' : '#f99', { strokeThickness: 2 }));
+      R.add([...button(s, 448, y, 64, cs ? 30 : 34, '购买', () => { const e = w.buyBook(b.skill); if (!e) sfx(s, 'coin'); this.onChange(e ?? `购买 ${ITEMS[id].name}（背包中点击学习）`, !e); this.render(); }, 15, !learned && w.gold >= b.price)]);
     });
-    const drops = Object.values(BOOKS).filter(b => b.cls === w.cls && !b.shop).map(b => w.skillPool.find(x => x.id === b.skill)!.name);
-    R.add(txt(s, 175, top + 130 + w.shopBooks().length * 62 - 10, `打怪掉落（书店不卖）：${drops.join('、')}`, 13, '#c9a'));
+    const drops = Object.values(BOOKS).filter(b => b.cls === w.cls && !b.shop && !b.cs).map(b => w.skillPool.find(x => x.id === b.skill)!.name);
+    if (!cs) R.add(txt(s, 175, top + 130 + list.length * 62 - 10, `打怪掉落（书店不卖）：${drops.join('、')}`, 13, '#c9a'));
     R.add(txt(s, 175, top + 430, '买书后在背包里点击技能书学习（需达到等级）', 14, '#9fd'));
   }
   private renderBag(R: Phaser.GameObjects.Container, top: number) {
@@ -302,7 +306,10 @@ export class Panel {
       const sl = (Object.keys(w.equip) as (keyof typeof w.equip)[]).filter(k => w.equip[k]).slice(0, 8); // R14 #17 鉴定（S12：35 级，1–3 条）
       sl.forEach((k, i) => { const it = w.equip[k]!; row(i, it.name, it.ided ? `已鉴定 ${it.ided} 条` : `鉴定 ${IDENT_PRICE} 金 · ${IDENT_MIN_LEVEL} 级`, '鉴定', () => { const e = w.identify(k); this.onChange(e ?? `鉴定 ${it.name}`, !e); this.render(); }, !it.ided && w.level >= IDENT_MIN_LEVEL && w.gold >= IDENT_PRICE, it.item, X + 250); }); }
     if (n.kind === 'book') { R.add(txt(s, X, top + 74, '书店：本职业有售技能书', 13, '#9fd')); w.shopBooks().forEach((b, i) => { const id = 'book_' + b.skill, learned = w.learned.has(b.skill);
-      row(i, ITEMS[id].name, `${b.price} 金 ${learned ? '已学会' : ''}`, '购买', () => buy(w.buyBook(b.skill), ITEMS[id].name), !learned && w.gold >= b.price, id); }); }
+      row(i, ITEMS[id].name, `${b.price} 金 ${learned ? '已学会' : ''}`, '购买', () => buy(w.buyBook(b.skill), ITEMS[id].name), !learned && w.gold >= b.price, id); });
+      R.add(txt(s, X + 250, top + 74, '传世秘籍', 13, '#ffd060'));
+      w.csBooks().forEach((b, i) => { const id = 'book_' + b.skill, learned = w.learned.has(b.skill), sk = w.skillPool.find(x => x.id === b.skill)!;
+        row(i, ITEMS[id].name, `${b.price} 金 · 需Lv${w.needLevel(sk)}${learned ? ' 已学会' : ''}`, '购买', () => buy(w.buyBook(b.skill), ITEMS[id].name), !learned && w.gold >= b.price, id, X + 250); }); }
     if (n.kind === 'jewelry') R.add(txt(s, X, top + 90, '首饰店存货：未查到（原版只能买到别人卖的）。\n点击右侧背包物品出售。', 13, '#9fd'));
     if (n.kind === 'dragon') { R.add(txt(s, X, top + 66, '龙人：英雄 43 级，带 2 本白日门技能书和 2 根金条来，我教你们合击。', 13, '#9fd'));
       const c = w.companion, cb = c ? comboFor(w.cls, c.cls) : undefined;
