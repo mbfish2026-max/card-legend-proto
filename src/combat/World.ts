@@ -55,6 +55,9 @@ export type CastResult = { ok: true; targets: number[]; skill: string; kind: str
  */
 export const taoBuffValue = (level: number) => Math.round(1.5 * (2 + Math.floor(level / 7)));
 export const taoBuffDur = (slv: number, tao: number) => 30 + 10 * Math.max(0, slv) + 5 * Math.floor(tao / 10);
+/** 热血传奇 1.76 变异骷髅（召唤骷髅）官方成长，按技能等级 0–3：HP=(L×0.1+0.3)×60×L+60；攻击上限=(L×0.1+0.3)×3×L+25，下限 10。
+ *  来源 https://www.21cq.com/chuanqi/325.html 、https://www.cqtieba.com/thread-19128-1-1.html ；防御 未查到 */
+export const SKELETON_OFFICIAL = { hp: [60, 84, 120, 168], atkMin: 10, atkMax: [25, 26, 28, 30.4] };
 export const BOSS_MECH = new Set(['boss_woma', 'boss_zuma', 'boss_redmoon']);
 /** R13 官方参数 */
 export const OFFICIAL = {
@@ -749,9 +752,11 @@ export class World {
         const tao = h.tao ?? 0;
         // 骷髅 / 神兽：随道术与技能等级成长（C：神兽 1/2/3 级）
         const hp0 = beast ? 250 + tao * 7 : 140 + tao * 5;
-        const atk0 = beast ? 14 + tao * 1.15 : 8 + tao * 0.9;
+        const atk0 = beast ? 14 + tao * 1.15 : SKELETON_OFFICIAL.atkMin + tao * 1.0;
         const def0 = beast ? 7 + this.level * 1.0 : 3 + this.level * 0.8;
-        const def: UnitDef = { ...base, level: this.level + (beast ? slv : 0), hp: Math.round(hp0 * lvF), atk: Math.round(atk0 * lvF), def: Math.round(def0) };
+        // [适配] 加强骷髅：按官方成长比例（相对 0 级）放大，HP ×1/1.4/2/2.8、攻击 ×(官方攻击上限/25)；基础攻击 8+道术×0.9 → 10+道术×1.0（10=官方下限）；神兽仍 ×(1+0.1×等级)
+        const L = Math.min(3, slv), hpF = beast ? lvF : SKELETON_OFFICIAL.hp[L] / SKELETON_OFFICIAL.hp[0], atkF = beast ? lvF : SKELETON_OFFICIAL.atkMax[L] / SKELETON_OFFICIAL.atkMax[0];
+        const def: UnitDef = { ...base, level: this.level + (beast ? slv : 0), hp: Math.round(hp0 * hpF), atk: Math.round(atk0 * atkF), def: Math.round(def0) };
         const u = this.spawn(def, 'ally', h.x - h.facing * 110, WORLD.summonLane); u.summon = true; u.facing = h.facing; u.ai = 'chase';
         this.events.push({ type: 'summon', uid: u.uid });
       }
