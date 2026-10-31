@@ -21,9 +21,14 @@ export interface Unit extends UnitDef {
   alive: boolean; isHero?: boolean; summon?: boolean;
   armorUntil?: number; armorReduce?: number;
   leapUntil?: number; leapReady?: number; slowUntil?: number; poisonUntil?: number; poisonDps?: number; poisonTick?: number;
+  /** R13 红毒：受到伤害 +20% 截止时间 */
+  redUntil?: number;
+  /** R13 官方 BOSS 机制状态（沃玛发呆/狂暴、瞬移计时；祖玛召唤；赤月地刺） */
+  boss?: BossState;
   mag?: number; tao?: number;
   homeX: number; homeY: number; ai: AIState; alertT: number; facing: 1 | -1; moving: boolean;
 }
+export interface BossState { stage: number; dazeUntil: number; crazyUntil: number; crazyOn: boolean; flyT: number; summonT: number; spikeT: number; spikeX?: number; spikeAt?: number; minions: number[] }
 export type Rarity = 'common' | 'magic' | 'rare';
 export interface ItemDef { id: string; name: string; icon: string; potion?: number; slot?: Slot; equip?: Partial<Stats>; req?: number; price?: number; set?: string; /** 技能书：对应技能 id */ book?: string }
 /** 背包/装备栏里的一件物品 */
@@ -48,4 +53,5 @@ export type BattleEvent =
   | { type: 'summon'; uid: number }
   | { type: 'respawn' }
   | { type: 'inventory' }
+  | { type: 'bossfx'; uid: number; kind: 'spark' | 'fireball' | 'spike_warn' | 'spike' | 'daze' | 'crazy' | 'fly' | 'call'; x: number; target?: number }
   | { type: 'log'; text: string; color?: 'white' | 'green' };
