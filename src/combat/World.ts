@@ -162,6 +162,13 @@ export class World {
   get exitX() { return WORLD.mapWidth - WORLD.exitMargin; }
   get hero() { return this.units.find(u => u.isHero && u.alive); }
   get summon() { return this.units.find(u => u.summon && u.alive); }
+  /** [适配] 召唤物仇恨：怪被召唤物打过（aggroUid）且主角离怪 > summonAggroNear 时，返回该召唤物；否则 undefined（走原主角/50% 规则） */
+  summonAggro(u: Unit): Unit | undefined {
+    if (u.aggroUid === undefined || BOSS_MECH.has(u.id)) return undefined;
+    const h = this.hero, sm = this.units.find(x => x.uid === u.aggroUid && x.alive);
+    if (!sm || !h || Math.abs(u.x - h.x) <= WORLD.summonAggroNear) return undefined;
+    return sm;
+  }
 
   // ---------- 属性 ----------
   baseStats(lv = this.level): Stats {
@@ -401,6 +408,7 @@ export class World {
     if (target.armorUntil && target.armorUntil > this.time) amount *= 1 - (target.armorReduce ?? 0.5);
     amount = Math.max(1, Math.round(amount));
     target.hp -= amount;
+    if (target.team === 'enemy' && source?.summon && source.alive) target.aggroUid = source.uid; // 召唤物打一下即记仇
     if (target.team === 'enemy' && target.ai !== 'chase') { target.ai = 'chase'; this.events.push({ type: 'aggro', uid: target.uid }); }
     this.events.push({ type: 'damage', source: source?.uid, target: target.uid, amount, x: target.x, crit, dot });
     if (target.hp <= 0) this.kill(target);
@@ -925,6 +933,12 @@ export class World {
         const stop = prev ? prevDist + prev.width * WORLD.queueSpacing : (h.width + u.width) / 2 + u.range;
         const dist = Math.abs(u.x - h.x);
         if (u.ai === 'chase') {
+          const ag = this.summonAggro(u);
+          if (ag) { // 仇恨在召唤物：走向召唤物贴身，不占主角排队位
+            const sd = Math.sign(u.x - ag.x) || 1; u.facing = -sd as 1 | -1;
+            if (u.id !== 'boss_redmoon' && !this.inMelee(u, ag)) this.toward(u, ag.x + sd * ((u.width + ag.width) / 2 + u.range), h.y, chase * (u.slowUntil && u.slowUntil > this.time ? 0.5 : 1), dt);
+            continue;
+          }
           u.facing = -side as 1 | -1;
           if (u.id === 'boss_redmoon') { prevDist = Math.abs(u.x - h.x); prev = u; continue; } // R13 赤月恶魔：速度 0，不移动
           const sp = chase * (u.slowUntil && u.slowUntil > this.time ? 0.5 : 1);
@@ -954,7 +968,7 @@ export class World {
     // 召唤骷髅：跟随主角；有交战中的敌人则冲上去近战
     const sm = this.summon;
     if (sm && h) {
-      const tg = this.alive('enemy').filter(e => e.ai === 'chase' && Math.abs(e.x - h.x) < 700).sort((a, b) => Math.abs(a.x - sm.x) - Math.abs(b.x - sm.x))[0];
+      const tg = this.alive('enemy').filter(e => e.ai === 'chase' && Math.abs(e.x - h.x) < (e.aggroUid === sm.uid ? WORLD.leashRange : 700)).sort((a, b) => Math.abs(a.x - sm.x) - Math.abs(b.x - sm.x))[0];
       if (tg) {
         const side = Math.sign(tg.x - sm.x) || 1; sm.facing = side as 1 | -1;
         if (!this.inMelee(sm, tg)) this.toward(sm, tg.x - side * ((sm.width + tg.width) / 2), WORLD.summonLane, WORLD.baseSpeed * 1.1, dt);
@@ -983,8 +997,16 @@ export class World {
         }
         this.damage(f, dmg, h);
       }
+      // 召唤物仇恨：锁定召唤物的怪只打召唤物（主角走开时）
+      for (const f of this.alive('enemy')) {
+        const ag = f.ai === 'chase' && f.cd <= 0 ? this.summonAggro(f) : undefined;
+        if (!ag || !this.inMelee(ag, f)) continue;
+        f.cd = f.atkInterval * (f.slowUntil && f.slowUntil > this.time ? 1.5 : 1);
+        this.events.push({ type: 'attack', source: f.uid, target: ag.uid });
+        this.damage(ag, f.atk * (0.9 + this.rng() * 0.2), f);
+      }
       for (const s of [1, -1]) {
-        const f = this.queue(s)[0];
+        const f = this.queue(s).find(u => !this.summonAggro(u));
         if (!f || f.ai !== 'chase' || f.cd > 0 || !h.alive || BOSS_MECH.has(f.id)) continue;
         const s2 = this.summon, hitSummon = s2 && this.inMelee(s2, f) && this.rng() < 0.5;
         if (!hitSummon && !this.inMelee(h, f)) continue;

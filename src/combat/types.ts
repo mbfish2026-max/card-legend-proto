@@ -23,6 +23,8 @@ export type AIState = 'idle' | 'alert' | 'chase' | 'return';
 export interface Unit extends UnitDef {
   uid: number; team: Team; x: number; y: number; maxHp: number; maxMp: number; cd: number;
   alive: boolean; isHero?: boolean; summon?: boolean;
+  /** 召唤物仇恨：被召唤物打过一次后记录其 uid；主角离怪 > WORLD.summonAggroNear 时只追打该召唤物（召唤物死亡自动失效） */
+  aggroUid?: number;
   armorUntil?: number; armorReduce?: number;
   /** #12 幽灵盾（魔御）/神圣战甲术（防御）增益，不存档 */
   mdefUpUntil?: number; mdefUp?: number; defUpUntil?: number; defUp?: number;

@@ -259,6 +259,22 @@ const free = (w: World) => w.skills.map(() => 0);
   for (let i = 0; i < 80; i++) { wr.step(0.05); for (const e of wr.drainEvents()) if (e.type === 'damage' && e.target === rh.uid) hit++; }
   ok(hit >= 1, '站在地刺上会受伤');
 }
+{ // 召唤物仇恨 [适配]：召唤物打一下即记仇；主角走开（> summonAggroNear）只打召唤物；主角贴身不强制转移；召唤物死后回到主角；脱战仍按主角/出生点
+  const setup = () => { const w = mk([{ id: 'orc', x: 1200 }], [], 'taoist', 30); tough(w); const h = w.hero!; h.hp = h.maxHp = 1e9; h.x = 900;
+    w.cast(idx(w, 'summon_skeleton'), free(w)); const sm = w.summon!; sm.hp = sm.maxHp = 1e9; sm.x = 1080; const o = w.alive('enemy')[0]; o.ai = 'chase'; o.cd = 99; return { w, h, sm, o }; };
+  const hits = (w: World, sec: number, uid: number) => { let n = 0; for (let t = 0; t < sec; t += 0.05) { w.step(0.05, { dx: 0, dy: 0 }); for (const e of w.drainEvents()) if (e.type === 'damage' && e.target === uid && e.source !== undefined && w.units.find(u => u.uid === e.source)?.team === 'enemy') n++; } return n; };
+  { const { w, h, sm, o } = setup(); run(w, 2); ok(o.aggroUid === sm.uid, '召唤物攻击一次后怪物记仇（aggroUid=召唤物）');
+    h.x = o.x - 600; o.cd = 0; const hh = hits(w, 8, h.uid);
+    const w2 = setup(); run(w2.w, 2); w2.h.x = w2.o.x - 600; w2.o.cd = 0; const s2 = hits(w2.w, 8, w2.sm.uid);
+    ok(hh === 0 && s2 >= 3 && Math.abs(w2.o.x - w2.h.x) > WORLD.summonAggroNear, `主角走开（>${WORLD.summonAggroNear}px）：怪只打召唤物（主角 ${hh} 次，召唤物 ${s2} 次）`);
+    ok(o.ai === 'chase', '主角走开 600px（< 脱战 6 卡）怪仍在战斗');
+    w.kill(sm); let hit = 0; for (let t = 0; t < 10; t += 0.05) { w.step(0.05, { dx: 0, dy: 0 }); for (const e of w.drainEvents()) if (e.type === 'damage' && e.target === h.uid) hit++; }
+    ok(hit > 0 && !w.summonAggro(o), `召唤物死亡后仇恨回到主角（主角被打 ${hit} 次）`); }
+  { const { w, h, sm, o } = setup(); run(w, 2); h.x = o.x - 150; o.cd = 0; let hh = 0, hs = 0;
+    for (let t = 0; t < 20; t += 0.05) { h.x = o.x - 150; w.step(0.05, { dx: 0, dy: 0 }); for (const e of w.drainEvents()) if (e.type === 'damage' && e.source === o.uid) { if (e.target === h.uid) hh++; else if (e.target === sm.uid) hs++; } }
+    ok(!w.summonAggro(o) && hh > 0, `主角贴身（≤${WORLD.summonAggroNear}px）不强制转移：主角仍会被打（主角 ${hh} / 召唤物 ${hs}）`); }
+  { const { w, h, o } = setup(); run(w, 2); h.x = o.x - WORLD.leashRange - 200; w.step(0.05, { dx: 0, dy: 0 }); ok(o.ai === 'return', '脱战仍按主角距离判定（> 6 卡宽回位）'); }
+}
 { // 平衡：多种子自动脚本（单种子对随机序列太敏感，任何改动 RNG 消耗顺序的提交都会让结果漂移）
   const SEEDS = [3, 7, 11, 19, 23, 42, 57, 88, 101];
   const NEW_BOOKS = ['big_fireball', 'burst_fire', 'hell_fire', 'lightning_flash', 'hell_thunder', 'ghost_shield', 'holy_armor', 'mass_heal'];

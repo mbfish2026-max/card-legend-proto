@@ -16,6 +16,7 @@ export const WORLD = {
   chaseSpeedRatio: 0.85,
   returnSpeedRatio: 1.3,
   leashRange: 6 * CARD,        // 脱战距离恢复为 6 卡宽（1020px），离家上限 ×1.5=1530；用户反馈 10 卡宽太长跑不掉
+  summonAggroNear: 1.5 * CARD, // [适配] 召唤物仇恨：主角离怪中心 > 1.5 卡宽（255px，约贴身距离 ~165px + 半卡余量）时，被召唤物打过的怪只追打召唤物；≤ 该距离不强制转移
   leashRegen: 0.01,            // [适配] 脱战返回/待机时每秒回最大血量 1%（中毒时不回，追击中不回）；回位不再回满
   queueSpacing: 0.8,           // 逻辑排队间距（卡宽比例，<1 重叠）；渲染层另做视觉错开，不影响战斗
   leapGap: 120, leapSec: 0.35, leapSpeed: 3.2, leapCd: 2.5, // 近战怪跳跃补位
