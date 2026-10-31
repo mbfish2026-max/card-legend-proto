@@ -144,7 +144,7 @@ export class Panel {
   }
   private renderShop(R: Phaser.GameObjects.Container, top: number) {
     const s = this.s, w = this.world();
-    R.add(txt(s, 175, top + 60, `金币：${w.gold}`, 20, '#ffd24a'));
+    R.add(txt(s, 175, top + 50, `金币：${w.gold}`, 18, '#ffd24a')); // 上移缩小：避开书店「普通书店/传世秘籍」页签
     (['goods', 'books'] as const).forEach((t, i) => R.add([...button(s, 395 + i * 84, top + 72, 76, 32, `${this.shopTab === t ? '▶' : ''}${t === 'goods' ? '杂货' : '书店'}`, () => { this.shopTab = t; this.render(); }, 15)]));
     if (this.shopTab === 'books') return this.renderBooks(R, top);
     POTIONS.forEach((p, i) => {
@@ -174,8 +174,8 @@ export class Panel {
   private renderBooks(R: Phaser.GameObjects.Container, top: number) {
     const s = this.s, w = this.world(), cs = this.bookCs, list = cs ? w.csBooks() : w.shopBooks(), rh = cs ? 44 : 62;
     // 传世秘籍页（docs/skills-official.md#传世）：书店第二页
-    R.add([...button(s, 250, top + 92, 120, 30, '普通书店', () => { this.bookCs = false; this.render(); }, 14, cs)]);
-    R.add([...button(s, 400, top + 92, 120, 30, '传世秘籍', () => { this.bookCs = true; this.render(); }, 14, !cs)]);
+    R.add([...button(s, 250, top + 90, 120, 24, '普通书店', () => { this.bookCs = false; this.render(); }, 14, cs)]);
+    R.add([...button(s, 400, top + 90, 120, 24, '传世秘籍', () => { this.bookCs = true; this.render(); }, 14, !cs)]);
     list.forEach((b, i) => {
       const y = top + (cs ? 128 : 130) + i * rh, sk = w.skillPool.find(x => x.id === b.skill)!, id = 'book_' + b.skill, learned = w.learned.has(b.skill), need = w.needLevel(sk);
       R.add(s.add.rectangle(330, y, 320, rh - 6, 0x0a0806).setStrokeStyle(1, cs ? 0x8a6a20 : 0x6a5a28));
