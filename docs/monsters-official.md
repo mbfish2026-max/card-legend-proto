@@ -21,8 +21,8 @@
 | zuma_statue | 祖玛雕像 | normal | 10.祖玛阁 | 祖玛雕像 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=153) |
 | zuma_guard | 祖玛卫士 | normal | 10.祖玛阁 | 祖玛卫士 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=156) |
 | boss_zuma | 祖玛教主 | boss | 10.祖玛阁 | 祖玛教主 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=160) |
-| blood_zombie | 血僵尸 | normal | 13.赤月魔穴 37.恶魔祭坛 | 未查到 | 未查到 |
-| redmoon_spider | 赤月蜘蛛 | normal | 13.赤月魔穴 20.保卫家园 37.恶魔祭坛 | 未查到 | 未查到 |
+| blood_zombie | 血僵尸 | normal | 13.赤月魔穴 59.恶魔祭坛 | 未查到 | 未查到 |
+| redmoon_spider | 赤月蜘蛛 | normal | 13.赤月魔穴 20.保卫家园 59.恶魔祭坛 | 未查到 | 未查到 |
 | boss_redmoon | 赤月恶魔 | boss | 13.赤月魔穴 | 赤月恶魔 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=180) |
 | hj_guard | 家园守卫 | normal | 20.保卫家园 21.卧龙山庄 24.魔龙血域 | 未查到 | 未查到 |
 | boss_hj_home | 魔龙守将 | boss | 20.保卫家园 | 未查到 | 未查到 |
@@ -33,26 +33,26 @@
 | fire_dragon_guard | 火龙守卫 | normal | 23.火龙神殿 24.魔龙血域 | 未查到 | 未查到 |
 | boss_fire_dragon | 火龙 | boss | 23.火龙神殿 | 未查到 | 未查到 |
 | boss_molong | 魔龙教主 | boss | 24.魔龙血域 | 未查到 | 未查到 |
-| rake_cat_king | 钉耙猫王 | normal | 35.白日门·雪域 | 未查到 | 未查到 |
-| orc_commander | 半兽统领 | normal | 35.白日门·雪域 | 未查到 | 未查到 |
-| evil_lich | 恶灵尸王 | normal | 36.骨魔洞五层 | 未查到 | 未查到 |
-| hawk_guard | 鹰卫 | normal | 35.白日门·雪域 | 未查到 | 未查到 |
-| boss_yeti_king | 雪人王 | boss | 35.白日门·雪域 | 未查到 | 未查到 |
-| boss_huangquan | 黄泉教主 | boss | 36.骨魔洞五层 | 未查到 | 未查到 |
-| boss_twinhead_kong | 双头金刚 | boss | 37.恶魔祭坛 | 未查到 | 未查到 |
-| boss_twinhead_blood | 双头血魔 | boss | 37.恶魔祭坛 | 未查到 | 未查到 |
+| rake_cat_king | 钉耙猫王 | normal | 57.白日门·雪域 | 未查到 | 未查到 |
+| orc_commander | 半兽统领 | normal | 57.白日门·雪域 | 未查到 | 未查到 |
+| evil_lich | 恶灵尸王 | normal | 58.骨魔洞五层 | 未查到 | 未查到 |
+| hawk_guard | 鹰卫 | normal | 57.白日门·雪域 | 未查到 | 未查到 |
+| boss_yeti_king | 雪人王 | boss | 57.白日门·雪域 | 未查到 | 未查到 |
+| boss_huangquan | 黄泉教主 | boss | 58.骨魔洞五层 | 未查到 | 未查到 |
+| boss_twinhead_kong | 双头金刚 | boss | 59.恶魔祭坛 | 未查到 | 未查到 |
+| boss_twinhead_blood | 双头血魔 | boss | 59.恶魔祭坛 | 未查到 | 未查到 |
 | red_snake | 红蛇 | normal | 4.毒蛇山谷 | 红蛇 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=92) |
 | tiger_snake | 虎蛇 | normal | 4.毒蛇山谷 | 虎蛇 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=94) |
 | scorpion | 蝎子 | normal | 4.毒蛇山谷 16.骷髅洞·洞穴一层 17.骷髅洞·洞穴二层 | 蝎子 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=45) |
 | tree_demon | 万年树妖 | boss | 4.毒蛇山谷 | 千年树妖 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=195) |
-| centipede | 蜈蚣 | normal | 7.蜈蚣洞 | 蜈蚣 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=110) |
-| jump_bee | 跳跳蜂 | normal | 7.蜈蚣洞 | 跳跳蜂 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=114) |
-| black_maggot | 黑色恶蛆 | normal | 7.蜈蚣洞 | 未查到 | 未查到 |
+| centipede | 蜈蚣 | normal | 7.蜈蚣洞 35.蜈蚣洞·地牢一层东 36.蜈蚣洞·地牢一层西 37.蜈蚣洞·地牢一层北 38.蜈蚣洞·地牢一层西二 39.蜈蚣洞·地牢一层北二 40.蜈蚣洞·一线天 41.蜈蚣洞·生死之间 42.蜈蚣洞·黑暗地带 43.蜈蚣洞·传奇部落 44.蜈蚣洞·邪恶势力 45.蜈蚣洞·幽名圣域 46.蜈蚣洞·恐怖空间 | 蜈蚣 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=110) |
+| jump_bee | 跳跳蜂 | normal | 7.蜈蚣洞 35.蜈蚣洞·地牢一层东 38.蜈蚣洞·地牢一层西二 40.蜈蚣洞·一线天 41.蜈蚣洞·生死之间 42.蜈蚣洞·黑暗地带 43.蜈蚣洞·传奇部落 44.蜈蚣洞·邪恶势力 45.蜈蚣洞·幽名圣域 46.蜈蚣洞·恐怖空间 | 跳跳蜂 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=114) |
+| black_maggot | 黑色恶蛆 | normal | 7.蜈蚣洞 35.蜈蚣洞·地牢一层东 36.蜈蚣洞·地牢一层西 37.蜈蚣洞·地牢一层北 38.蜈蚣洞·地牢一层西二 39.蜈蚣洞·地牢一层北二 40.蜈蚣洞·一线天 41.蜈蚣洞·生死之间 42.蜈蚣洞·黑暗地带 43.蜈蚣洞·传奇部落 44.蜈蚣洞·邪恶势力 45.蜈蚣洞·幽名圣域 46.蜈蚣洞·恐怖空间 47.石墓一层 48.石墓二层 49.石墓三层 50.石墓四层 51.石墓阵 52.石墓六层 53.石墓七层 56.香石墓穴·三 | 未查到 | 未查到 |
 | boss_chulong | 触龙神 | boss | 7.蜈蚣洞 | 触龙神 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=124) |
-| red_boar | 红野猪 | normal | 8.石墓·猪洞 | 红野猪 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=129) |
-| black_boar | 黑野猪 | normal | 8.石墓·猪洞 | 黑野猪 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=132) |
-| scorpion_snake | 蝎蛇 | normal | 8.石墓·猪洞 | 蝎蛇 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=138) |
-| boss_white_boar | 白野猪 | boss | 8.石墓·猪洞 | 白野猪 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=135) |
+| red_boar | 红野猪 | normal | 8.石墓·猪洞 47.石墓一层 48.石墓二层 49.石墓三层 50.石墓四层 51.石墓阵 52.石墓六层 55.香石墓穴·二 56.香石墓穴·三 | 红野猪 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=129) |
+| black_boar | 黑野猪 | normal | 8.石墓·猪洞 47.石墓一层 48.石墓二层 49.石墓三层 50.石墓四层 51.石墓阵 52.石墓六层 55.香石墓穴·二 56.香石墓穴·三 | 黑野猪 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=132) |
+| scorpion_snake | 蝎蛇 | normal | 8.石墓·猪洞 49.石墓三层 50.石墓四层 51.石墓阵 52.石墓六层 56.香石墓穴·三 | 蝎蛇 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=138) |
+| boss_white_boar | 白野猪 | boss | 8.石墓·猪洞 50.石墓四层 | 白野猪 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=135) |
 | bull_warrior | 牛魔战士 | normal | 11.牛魔寺庙 | 牛魔战士 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=212) |
 | bull_mage | 牛魔法师 | normal | 11.牛魔寺庙 | 牛魔法师 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=220) |
 | bull_guard | 牛魔侍卫 | normal | 11.牛魔寺庙 | 牛魔侍卫 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=216) |
@@ -70,7 +70,14 @@
 | woma_general | 沃玛战将 | normal | 26.沃玛寺庙一层 27.沃玛寺庙二层 | 未查到 | 未查到 |
 | fire_woma | 火焰沃玛 | normal | 26.沃玛寺庙一层 27.沃玛寺庙二层 | 未查到 | 未查到 |
 | dark_warrior | 暗黑战士 | normal | 27.沃玛寺庙二层 | 未查到 | 未查到 |
-| mine_zombie | 僵尸 | normal | 28.废矿入口 29.废矿区东部 30.矿区一层 31.矿区·桥 32.矿区B二层 33.山谷矿区·一 34.山谷矿区·二 | 未查到 | 未查到 |
+| mine_zombie | 僵尸 | normal | 28.废矿入口 29.废矿区东部 30.矿区一层 31.矿区·桥 32.矿区B二层 33.山谷矿区·一 34.山谷矿区·二 54.香石墓穴·一 55.香石墓穴·二 | 未查到 | 未查到 |
+| pincer_bug | 钳虫 | normal | 36.蜈蚣洞·地牢一层西 37.蜈蚣洞·地牢一层北 38.蜈蚣洞·地牢一层西二 39.蜈蚣洞·地牢一层北二 40.蜈蚣洞·一线天 41.蜈蚣洞·生死之间 42.蜈蚣洞·黑暗地带 43.蜈蚣洞·传奇部落 44.蜈蚣洞·邪恶势力 45.蜈蚣洞·幽名圣域 46.蜈蚣洞·恐怖空间 | 未查到 | 未查到 |
+| giant_worm | 巨型蠕虫 | normal | 35.蜈蚣洞·地牢一层东 39.蜈蚣洞·地牢一层北二 40.蜈蚣洞·一线天 41.蜈蚣洞·生死之间 42.蜈蚣洞·黑暗地带 43.蜈蚣洞·传奇部落 44.蜈蚣洞·邪恶势力 45.蜈蚣洞·幽名圣域 46.蜈蚣洞·恐怖空间 | 未查到 | 未查到 |
+| wedge_moth | 楔蛾 | normal | 47.石墓一层 48.石墓二层 49.石墓三层 50.石墓四层 51.石墓阵 52.石墓六层 53.石墓七层 55.香石墓穴·二 56.香石墓穴·三 | 未查到 | 未查到 |
+| horn_fly | 角蝇 | normal | 49.石墓三层 50.石墓四层 51.石墓阵 52.石墓六层 53.石墓七层 56.香石墓穴·三 | 未查到 | 未查到 |
+| boss_evil_pincer | 邪恶钳虫 | boss | 37.蜈蚣洞·地牢一层北 38.蜈蚣洞·地牢一层西二 39.蜈蚣洞·地牢一层北二 42.蜈蚣洞·黑暗地带 | 未查到 | 未查到 |
+| boss_evil_snake | 邪恶毒蛇 | boss | 53.石墓七层 | 未查到 | 未查到 |
+| boss_shimu_lich | 石墓尸王 | boss | 53.石墓七层 | 未查到 | 未查到 |
 
 ## M4 新怪（feat/m4-monsters）
 
@@ -100,7 +107,7 @@
 | boss_twinhead_kong | 本作 39 级 / HP 17000 / 攻 110 / 防 22 / 魔御 40（原版低防高魔御）；祝福油由 BOSS 必掉覆盖；行为复用魔龙教主机制（近战 + 被贴身 30 秒瞬移）；麻痹/石化本作无怪物对主角控制机制 → 未实装 | 麻痹/石化、神水、太阳水、强效药水、技能书（以书页代）、祈祷套、首饰、竹笛、道士头盔、死神手套、法神套 |
 | boss_twinhead_blood | 本作 40 级 / HP 17000 / 攻 112 / 防 32 / 魔御 10（原版高防低魔御）；祝福油由 BOSS 必掉覆盖；行为复用沃玛教主机制（发呆→狂暴、30 秒瞬移、半物理半魔法闪电） | 同双头金刚（圣战套代替法神套） |
 
-放置：新增侧线层 34 白日门·雪域（雪人王/钉耙猫王/半兽统领/鹰卫）、35 骨魔洞五层（恶灵尸王/黄泉教主）、36 恶魔祭坛（双头金刚/双头血魔 + 赤月小怪）。均在 SIDE_FLOORS、不在 FLOOR_ORDER，主线 9 种子模拟不受影响。
+放置：新增侧线层 56 白日门·雪域（雪人王/钉耙猫王/半兽统领/鹰卫）、57 骨魔洞五层（恶灵尸王/黄泉教主）、58 恶魔祭坛（双头金刚/双头血魔 + 赤月小怪）。均在 SIDE_FLOORS、不在 FLOOR_ORDER，主线 9 种子模拟不受影响。
 
 ### 美术注记
 

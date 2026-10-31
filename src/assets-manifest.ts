@@ -8,6 +8,8 @@ export const ASSETS: Record<string, string> = {
   deer: P + 'deer_full.png', wolf: P + 'wolf_full.png', bat: P + 'bat_full.png', spider: P + 'spider_full.png',
   skeleton: P + 'skeleton_full.png', zombie: P + 'zombie_full.png', orc: P + 'orc_full.png', darkmage: P + 'darkmage_full.png',
   boss_lich: P + 'boss_lich_full.png',
+  // feat/batch2-art：maps-batch2 新怪立绘
+  dung_beetle: P + 'dung_beetle_full.png', woma_brave: P + 'woma_brave_full.png', woma_general: P + 'woma_general_full.png', fire_woma: P + 'fire_woma_full.png', dark_warrior: P + 'dark_warrior_full.png', mine_zombie: P + 'mine_zombie_full.png',
   boss_wolf_king: P + 'boss_wolf_king_full.png', boss_spider_queen: P + 'boss_spider_queen_full.png', boss_skeleton_lord: P + 'boss_skeleton_lord_full.png', boss_orc_chief: P + 'boss_orc_chief_full.png',
   // R3 新怪/Boss：同名占位副本，美术交付后直接覆盖
   woma_guard: P + 'woma_guard_full.png', boss_woma: P + 'boss_woma_full.png', zuma_statue: P + 'zuma_statue_full.png',
@@ -20,7 +22,7 @@ export const ASSETS: Record<string, string> = {
   yeti_king: P + 'yeti_king_full.png', rake_cat_king: P + 'rake_cat_king_full.png', orc_commander: P + 'orc_commander_full.png', evil_lich: P + 'evil_lich_full.png',
   huangquan_master: P + 'huangquan_master_full.png', hawk_guard: P + 'hawk_guard_full.png', twinhead_kong: P + 'twinhead_kong_full.png', twinhead_blood: P + 'twinhead_blood_full.png',
   // M4 侧线层背景占位 [适配]：复用现有背景文件（独立 key，fx-requests 已提需求）
-  bg_floor35: 'assets/bg/bg_floor5.jpg', bg_floor36: 'assets/bg/bg_floor4.jpg', bg_floor37: 'assets/bg/bg_floor8.jpg',
+  bg_floor57: 'assets/bg/bg_floor5.jpg', bg_floor58: 'assets/bg/bg_floor4.jpg', bg_floor59: 'assets/bg/bg_floor8.jpg',
   // 召唤物姿态单帧（art-requests L.2）
   summon_skeleton_atk: 'assets/fx/summon_skeleton_atk.png', summon_skeleton_hurt: 'assets/fx/summon_skeleton_hurt.png', summon_beast_atk: 'assets/fx/summon_beast_atk.png', summon_beast_hurt: 'assets/fx/summon_beast_hurt.png',
   merchant: P + 'INV_Misc_Head_Human_02.png',
@@ -33,7 +35,8 @@ export const ASSETS: Record<string, string> = {
   // R13 新地图背景占位：复用现有背景文件（独立 key，美术到位后替换路径即可，见 art-requests §R13）
   bg_floor9: 'assets/bg/bg_floor2.jpg', bg_floor10: 'assets/bg/bg_floor3.jpg', bg_floor11: 'assets/bg/bg_floor4.jpg', bg_floor12: 'assets/bg/bg_floor6.jpg', bg_floor13: 'assets/bg/bg_floor7.jpg',
   // feat/maps-more 占位（见 art-requests）
-  bg_floor25: 'assets/bg/bg_floor6.jpg', bg_floor26: 'assets/bg/bg_floor6.jpg', bg_floor27: 'assets/bg/bg_floor6.jpg', bg_floor28: 'assets/bg/bg_floor5.jpg', bg_floor29: 'assets/bg/bg_floor5.jpg', bg_floor30: 'assets/bg/bg_floor5.jpg', bg_floor31: 'assets/bg/bg_floor5.jpg', bg_floor32: 'assets/bg/bg_floor5.jpg', bg_floor33: 'assets/bg/bg_floor5.jpg', bg_floor34: 'assets/bg/bg_floor5.jpg', // [适配] 占位：maps-batch2 背景待美术
+  bg_floor25: 'assets/bg/bg_floor25.jpg', bg_floor26: 'assets/bg/bg_floor25.jpg', bg_floor27: 'assets/bg/bg_floor25.jpg', bg_floor28: 'assets/bg/bg_floor28.jpg', bg_floor29: 'assets/bg/bg_floor28.jpg', bg_floor30: 'assets/bg/bg_floor28.jpg', bg_floor31: 'assets/bg/bg_floor28.jpg', bg_floor32: 'assets/bg/bg_floor28.jpg', bg_floor33: 'assets/bg/bg_floor33.jpg', bg_floor34: 'assets/bg/bg_floor33.jpg', // feat/batch2-art：沃玛寺庙 3 层用 bg_floor25、比奇矿区 5 层用 bg_floor28、山谷矿区 2 层用 bg_floor33
+  bg_floor35: 'assets/bg/bg_floor3.jpg', bg_floor36: 'assets/bg/bg_floor3.jpg', bg_floor37: 'assets/bg/bg_floor3.jpg', bg_floor38: 'assets/bg/bg_floor3.jpg', bg_floor39: 'assets/bg/bg_floor3.jpg', bg_floor40: 'assets/bg/bg_floor3.jpg', bg_floor41: 'assets/bg/bg_floor3.jpg', bg_floor42: 'assets/bg/bg_floor3.jpg', bg_floor43: 'assets/bg/bg_floor3.jpg', bg_floor44: 'assets/bg/bg_floor3.jpg', bg_floor45: 'assets/bg/bg_floor3.jpg', bg_floor46: 'assets/bg/bg_floor3.jpg', bg_floor47: 'assets/bg/bg_floor4.jpg', bg_floor48: 'assets/bg/bg_floor4.jpg', bg_floor49: 'assets/bg/bg_floor4.jpg', bg_floor50: 'assets/bg/bg_floor4.jpg', bg_floor51: 'assets/bg/bg_floor4.jpg', bg_floor52: 'assets/bg/bg_floor4.jpg', bg_floor53: 'assets/bg/bg_floor4.jpg', bg_floor54: 'assets/bg/bg_floor5.jpg', bg_floor55: 'assets/bg/bg_floor5.jpg', bg_floor56: 'assets/bg/bg_floor5.jpg', 
   bg_floor14: 'assets/bg/bg_floor3.jpg', bg_floor15: 'assets/bg/bg_floor3.jpg', bg_floor16: 'assets/bg/bg_floor3.jpg', bg_floor17: 'assets/bg/bg_floor3.jpg', bg_floor18: 'assets/bg/bg_floor2.jpg', bg_floor19: 'assets/bg/bg_floor2.jpg', // [适配] 占位：古墓/天然洞穴/自然洞穴背景待美术（docs/art-requests.md）
   potion_0: 'assets/items/hp_small.png', potion_1: 'assets/items/hp_mid.png',
   potion_2: 'assets/items/mp_small.png', potion_3: 'assets/items/mp_mid.png',
