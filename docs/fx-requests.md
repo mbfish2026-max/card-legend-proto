@@ -43,3 +43,13 @@
 - common_hitspark 放大后在卡上仍偏细，属点状星芒风格。
 - 「参考不足」项：fireball_fly、fire_wall、ice_roar、rush、passive_glint、heal_pillar、poison_fly、soul_fire_fly、summon_beast_circle。
 - magic_shield r=112 正好包卡；ice_roar 按目标逐个播放。
+
+## #11 法师新技能特效需求（2026-10-31，当前复用旧图集 + Graphics 兜底，素材到位后在 FX_DEFS 注册即可）
+| 文件名 | 技能id | 阶段 | 帧数 | 帧尺寸 | 帧率 | 循环 | 锚点类型 | pivot px | 混合模式 | 时长ms | 说明 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| fx_big_fireball_fly.png | big_fireball | projectile | 6 | 192×96 | 20 | 是 | screen-line | 144,48 | ADD | 300（循环周期） | 大火球弹道，比火球大约 1.6 倍、拖尾更长，朝右；触发：施法后 150ms 从法杖前端飞出；命中点：目标卡中心（cx,cy）；现用 fx_fireball_fly |
+| fx_big_fireball_hit.png | big_fireball | hit | 8 | 256×256 | 20 | 否 | target | 128,128 | ADD | 400 | 单体大爆炸（橙红火团+火星）；触发：弹道到达；命中点：目标卡中心；现用 fx_fireball_hit ×1.4 |
+| fx_burst_fire_blast.png | burst_fire | hit | 10 | 512×256 | 20 | 否 | target | 256,200 | ADD | 500 | 爆裂火焰：首个目标为中心的地面爆炸，横向覆盖约 3 张卡（±170px）；触发：施法前摇结束；命中点：首目标脚下；范围内其余目标叠 hitspark；现用 fx_common_explosion ×1.6 |
+| fx_hell_fire_line.png | hell_fire | hit | 10 | 512×192 | 20 | 否 | caster | 0,160 | ADD | 500 | 地狱火：从施法者前沿向前喷出的地面火浪，长约 425px（5 格≈2.5 卡），可 flipX；触发：前摇结束；命中点：沿途每个目标脚下（逐个延迟 60ms）；现用 fx_fire_wall_loop 500ms |
+| fx_lightning_flash_beam.png | lightning_flash | hit | 8 | 768×128 | 24 | 否 | caster | 0,64 | ADD | 333 | 疾光电影：水平白蓝闪电光束，长约 680px（4 卡）贯穿前方，可 flipX、scaleX 适配；触发：前摇结束；命中点：光束经过的全部目标中心；现用每目标 fx_thunder_strike |
+| fx_hell_thunder_burst.png | hell_thunder | hit | 10 | 1024×384 | 20 | 否 | caster | 512,320 | ADD | 500 | 地狱雷光：以自身为中心 5×5（左右各约 425px）的蓝紫雷暴环+落雷；触发：前摇结束；命中点：范围内每个目标再叠 thunder_strike（逐个延迟 50ms）；现用每目标 fx_thunder_strike + Graphics 圆环 |

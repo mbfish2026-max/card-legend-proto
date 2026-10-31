@@ -38,7 +38,17 @@ export class Panel {
   get open() { return this.mode !== null; }
   toggle(m: PanelMode) { if (this.mode === m) this.close(); else { this.mode = m; this.sel = null; this.region = null; this.render(); } }
   close() { this.clearMapInput(); this.sel = null; this.ironIdx = null; this.mode = null; this.root?.destroy(true); this.root = undefined; this.hideTip(); }
+  /** #11 修复：面板打开时升级/得经验不刷新。render 时记录快照，UIScene.update 每帧比对 */
+  private snap = '';
+  statSnap() { const w = this.world(); return `${w.level}:${w.exp}:${JSON.stringify(w.skillTrain)}:${w.learned.size}`; }
+  /** 角色/技能面板数据变了就重绘；返回是否重绘（供测试） */
+  refreshIfStale(): boolean {
+    if (this.mode !== 'bag' && this.mode !== 'skills') return false;
+    if (this.statSnap() === this.snap) return false;
+    this.render(); return true;
+  }
   render() {
+    if (this.mode) this.snap = this.statSnap();
     this.root?.destroy(true); this.hideTip(); this.clearMapInput();
     if (!this.mode) return;
     const s = this.s, R = this.root = s.add.container(0, 0).setDepth(200);
@@ -185,20 +195,22 @@ export class Panel {
     // 面板展示全部技能（含被动）；快捷栏仅主动技能 F1..Fn
     const bar = new Map(w.skills.map(k => [k.id, k.key]));
     const list = w.skillPool;
-    const gap = list.length > 5 ? 62 : 78;
+    // #11 法师 10 技能：>6 时两列各 5 行，避免溢出 500px 面板
+    const cols = list.length > 6 ? 2 : 1, rows = Math.ceil(list.length / cols);
+    const gap = cols > 1 ? 80 : list.length > 5 ? 62 : 78;
     list.forEach((k, i) => {
-      const y = top + 70 + i * gap;
+      const y = top + 70 + (i % rows) * gap, dx = cols > 1 ? Math.floor(i / rows) * 480 - 40 : 0;
       const fk = bar.get(k.id) ?? (k.passive ? '被动' : '');
-      if (s.textures.exists('sk_' + k.id)) R.add(s.add.image(200, y, 'sk_' + k.id).setDisplaySize(list.length > 5 ? 48 : 56, list.length > 5 ? 48 : 56));
+      if (s.textures.exists('sk_' + k.id)) R.add(s.add.image(200 + dx, y, 'sk_' + k.id).setDisplaySize(list.length > 5 ? 48 : 56, list.length > 5 ? 48 : 56));
       const need = w.needLevel(k), lv = w.skillLevel(k), locked = lv < 0, pts = w.skillTrain[k.id] ?? 0, learned = w.learned.has(k.id), bk = BOOKS[k.id];
       const nextNeed = lv >= 0 && lv < 3 && k.learn && k.train ? `  下一级：人物 Lv${k.learn[lv + 1]} + 修炼点 ${k.train[lv]}` : lv === 3 ? '  已满级' : '';
-      R.add(txt(s, 245, y - 26, `[${fk}] ${k.name}${!learned ? `（未学：${bk?.shop ? '书店购买' : '打怪掉落'}技能书 · 需 Lv${need}）` : locked ? `（需人物 Lv${need}）` : `  ${lv} 级`}${k.passive ? '  被动' : ''}`, list.length > 5 ? 17 : 19, locked ? '#888' : '#ffd24a', { fontStyle: 'bold' }));
+      R.add(txt(s, 245 + dx, y - 26, `[${fk}] ${k.name}${!learned ? `（未学：${bk?.shop ? '书店购买' : bk?.drops.length ? '打怪掉落' : '暂未开放获取'}技能书 · 需 Lv${need}）` : locked ? `（需人物 Lv${need}）` : `  ${lv} 级`}${k.passive ? '  被动' : ''}`, cols > 1 ? 15 : list.length > 5 ? 17 : 19, locked ? '#888' : '#ffd24a', { fontStyle: 'bold' }));
       const eff = k.lvMult ? `  本级倍率 ${Math.round(k.lvMult[Math.max(0, lv)] * 100)}%`
         : k.lvBonus ? `  本级 +${k.lvBonus[Math.max(0, lv)]} 伤害 / 几率 1/${Math.round(1 / k.lvChance![Math.max(0, lv)])}`
         : k.accBonus ? `  准确 +${k.accBonus[Math.max(0, lv)]}（[适配]暴击+${k.accBonus[Math.max(0, lv)]}%）`
         : `  等级加成 +${Math.max(0, lv) * 10}%`;
-      R.add(txt(s, 245, y - 4, `${k.desc}${eff}`, 13, locked ? '#777' : '#ddd', { strokeThickness: 2 }));
-      R.add(txt(s, 245, y + 16, `${k.passive ? '无需施放' : `消耗 ${k.mana} 魔法  冷却 ${k.cooldown}s`}   修炼点 ${pts}${k.train ? '/' + k.train[2] : ''}${nextNeed}`, 12, locked ? '#666' : '#9fd', { strokeThickness: 2 }));
+      R.add(txt(s, 245 + dx, y - 4, cols > 1 ? `${k.desc.slice(0, 26)}${eff}` : `${k.desc}${eff}`, cols > 1 ? 12 : 13, locked ? '#777' : '#ddd', { strokeThickness: 2 }));
+      R.add(txt(s, 245 + dx, y + 16, `${k.passive ? '无需施放' : `消耗 ${k.mana} 魔法  冷却 ${k.cooldown}s`}   修炼点 ${pts}${k.train ? '/' + k.train[2] : ''}${nextNeed}`, 12, locked ? '#666' : '#9fd', { strokeThickness: 2 }));
     });
     R.add(txt(s, 180, top + 430, `学习等级/修炼点/战士倍率取自 1.76 官方；耗魔×3、冷却、火墙灼烧、野蛮伤害、准确→暴击为卡牌适配。人物等级加成 ×${w.skillScale().toFixed(2)}`, 12, '#aaa'));
   }
