@@ -37,6 +37,10 @@ export const BOOKS: Record<string, BookDef> = {
   soul_fire: { skill: 'soul_fire', cls: 'taoist', shop: true, drops: [LICH, ...WOMA], price: P(18) },
   summon_skeleton: { skill: 'summon_skeleton', cls: 'taoist', shop: true, drops: [], price: 100 },
   summon_beast: { skill: 'summon_beast', cls: 'taoist', shop: false, drops: [LICH, ...ZUMA, 'boss_redmoon'], price: P(35) },
+  // #12 新道士书：学习等级按官方；价格 未查到 → [适配] P(学习等级)；shop:false、drops:[] = 暂未接入（含 S9 沃玛教主群疗爆率，World 掉落池暂排除）
+  ghost_shield: { skill: 'ghost_shield', cls: 'taoist', shop: false, drops: [], price: P(22) },
+  holy_armor: { skill: 'holy_armor', cls: 'taoist', shop: false, drops: [], price: P(25) },
+  mass_heal: { skill: 'mass_heal', cls: 'taoist', shop: false, drops: [], price: P(33) },
 };
 /** [适配] 掉落率（原版未查到）：首领 25%，普通怪 2%；只掉本职业、尚未学会的书 */
 export const BOOK_DROP = { boss: 0.25, normal: 0.02 };

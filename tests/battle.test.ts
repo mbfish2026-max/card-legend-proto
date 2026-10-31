@@ -1,5 +1,5 @@
 declare const process: { env: Record<string, string | undefined> };
-import { World, SaveData, OIL_PRICE, IRON_PRICE, OFFICIAL, mitigate } from '../src/combat/World';
+import { World, SaveData, OIL_PRICE, IRON_PRICE, OFFICIAL, mitigate, taoBuffValue, taoBuffDur, PENDING_BOOKS } from '../src/combat/World';
 import { ITEMS, SETS, ENHANCE_MAX, enhanceChance, shatterChance } from '../src/data/items';
 import { WORLD, CARD, Floor, FLOORS } from '../src/data/world';
 import { CLASSES, ClassId } from '../src/data/classes';
@@ -476,7 +476,7 @@ const free = (w: World) => w.skills.map(() => 0);
     const bt = Settings.autoTouched; Settings.autoSkills = null; Settings.autoTouched = null;
     Settings.toggleAutoSkill('thrust', 'warrior');
     ok(!Settings.skillsFor('warrior').includes('thrust'), '战士取消刺杀生效');
-    ok(Settings.skillsFor('mage').length === 10 && Settings.skillsFor('taoist').length === 5, '法师/道士仍为推荐默认');
+    ok(Settings.skillsFor('mage').length === 10 && Settings.skillsFor('taoist').length === 8, '法师/道士仍为推荐默认（#12 道士 +3）');
     Settings.toggleAutoSkill('fireball', 'mage');
     ok(!Settings.skillsFor('mage').includes('fireball') && !Settings.skillsFor('warrior').includes('thrust'), '两职业改动互不覆盖');
     Settings.autoTouched = bt;
@@ -866,5 +866,48 @@ const free = (w: World) => w.skills.map(() => 0);
   ok(NEW.every(([id]) => !BOOKS[id].shop && BOOKS[id].drops.length === 0), '新书暂不进书店/掉落（待系统接入）');
   const old = new World(seeded(1), 40, FLOORS, 'mage', JSON.parse(JSON.stringify({ ...new World(seeded(1), 40, FLOORS, 'mage').toSave(), learned: undefined })));
   ok(NEW.every(([id]) => !old.learned.has(id)) && old.learned.has('thunder'), '旧档（无 learned）不会白送新技能');
+}
+{ // #12 道士 3 技能：幽灵盾 / 神圣战甲术 / 群体治愈术
+  const NEW: [string, number, number[], number][] = [['ghost_shield', 22, [5000, 10000, 15000], 45], ['holy_armor', 25, [5000, 10000, 15000], 45], ['mass_heal', 33, [4000, 8000, 12000], 36]];
+  ok(CLASSES.taoist.skills.filter(s => !s.passive).length === 8 && CLASSES.taoist.skills.every(s => !s.key || +s.key.slice(1) <= 10), '道士 8 主动，快捷栏不超过 F10');
+  for (const [id, lv, tr, mana] of NEW) {
+    const d = CLASSES.taoist.skills.find(s => s.id === id)!;
+    ok(d.learn![0] === lv && JSON.stringify(d.train) === JSON.stringify(tr) && d.mana === mana && d.stat === 'tao', `${d.name}：官方学习 Lv${lv}、修炼点 ${tr.join('/')}，耗魔 ${mana}`);
+    const lo = mk([{ id: 'orc', x: 900 }], [], 'taoist', lv - 1); ok(!lo.cast(idx(lo, id), free(lo)).ok, `${d.name} ${lv - 1} 级不可用`);
+    const w = mk([{ id: 'orc', x: 3000 }], [], 'taoist', lv); tough(w); ok(w.skillLevel(pool(w, id)) === 0, `${d.name} ${lv} 级解锁为 0 级`);
+    w.skillTrain[id] = tr[0]; w.level = Math.max(lv, d.learn![1]); ok(w.skillLevel(pool(w, id)) === 1, `${d.name} 修炼点 ${tr[0]} + Lv${d.learn![1]} → 1 级`);
+    const mp0 = w.hero!.mp!, cds = free(w); ok(w.cast(idx(w, id), cds).ok && w.hero!.mp === mp0 - mana && cds[idx(w, id)] === d.cooldown, `${d.name} 扣魔 ${mana}，冷却 ${d.cooldown}s`);
+  }
+  // 数值与时长（按道术）
+  ok(taoBuffValue(22) === 8 && taoBuffValue(35) === 11 && taoBuffValue(48) === 12, '增益 = round(1.5×(2+⌊等级/7⌋))（官方上限区间中值×3）');
+  ok(taoBuffDur(0, 100) === 80 && taoBuffDur(3, 100) === 110 && taoBuffDur(1, 150) === 115, '持续 = 30+10×技能等级+5×⌊道术/10⌋');
+  for (const [id, f, u] of [['ghost_shield', 'mdefUp', 'mdefUpUntil'], ['holy_armor', 'defUp', 'defUpUntil']] as const) {
+    const w = mk([{ id: 'orc', x: 3000 }], [], 'taoist', 30); tough(w); const h = w.hero!; h.tao = 100;
+    const cds = free(w); ok(w.cast(idx(w, id), cds).ok && h[f] === taoBuffValue(30) && Math.abs(h[u]! - w.time - taoBuffDur(w.skillLevel(pool(w, id)), 100)) < 1e-6, `${id} 增益 ${h[f]}、持续 ${h[u]! - w.time}s（按道术）`);
+    ok(w.units.filter(x => x.summon).every(x => !x[f]), `${id} 不作用于召唤物`);
+    const mp = h.mp!; const again = w.cast(idx(w, id), free(w)); ok(!again.ok && h.mp === mp, `${id} 持续中重复开启无效且不扣魔`);
+    w.time = h[u]! + 0.01; ok(w.cast(idx(w, id), free(w)).ok, `${id} 结束后可再开`);
+  }
+  // 减伤：防御 / 魔御 加成在结算中生效
+  const hit = (id: string | null, magic: boolean) => { const w = mk([{ id: 'orc', x: 3000 }], [], 'taoist', 40); tough(w); const h = w.hero!; if (id) w.cast(idx(w, id), free(w)); const hp = h.hp; w.rng = () => 0.5; w.damage(h, 60, w.alive('enemy')[0], false, false, false, magic ? 1 : 0); return hp - h.hp; };
+  ok(hit('holy_armor', false) < hit(null, false) && hit('ghost_shield', true) < hit(null, true), '神甲减物伤，幽灵盾减魔伤');
+  // 群疗范围与回复量
+  { const w = mk([{ id: 'orc', x: 3000 }], [], 'taoist', 40); tough(w); const h = w.hero!; h.x = 600;
+    w.cast(idx(w, 'summon_skeleton'), free(w)); const sm = w.units.filter(u => u.summon && u.alive);
+    ok(sm.length > 0, '有召唤物'); sm[0].x = 600 + CARD; const far = { ...sm[0] };
+    h.hp = 1; sm[0].hp = 1; const r = w.cast(idx(w, 'mass_heal'), free(w)) as any;
+    ok(r.ok && r.targets.includes(h.uid) && r.targets.includes(sm[0].uid) && h.hp > 1 && sm[0].hp > 1, '群疗：主角与 1 卡（170px）内召唤物都回血');
+    const w2 = mk([{ id: 'orc', x: 3000 }], [], 'taoist', 40); tough(w2); w2.hero!.x = 600; w2.cast(idx(w2, 'summon_skeleton'), free(w2)); const s2 = w2.units.find(u => u.summon && u.alive)!; s2.x = 600 + CARD + 50; s2.hp = 1;
+    ok(!(w2.cast(idx(w2, 'mass_heal'), free(w2)) as any).targets.includes(s2.uid) && s2.hp === 1, '群疗：超出 170px 的召唤物不回血');
+    const w3 = mk([{ id: 'orc', x: 3000 }], [], 'taoist', 40); tough(w3); w3.rng = () => 0.5; w3.hero!.hp = 1; w3.cast(idx(w3, 'heal'), free(w3)); const a = w3.hero!.hp;
+    const w4 = mk([{ id: 'orc', x: 3000 }], [], 'taoist', 40); tough(w4); w4.rng = () => 0.5; w4.hero!.hp = 1; w4.cast(idx(w4, 'mass_heal'), free(w4)); ok(w4.hero!.hp === a && a > 1, `群疗单体回复量 = 治愈术（${a - 1}，按道术）`); void far; }
+  // 技能书
+  const m = new World(seeded(3), 24, FLOORS, 'taoist');
+  for (const [id] of NEW) ok(!!ITEMS[bookItemId(id)]?.book && !BOOKS[id].shop && BOOKS[id].drops.length === 0 && PENDING_BOOKS[id], `${id} 有技能书、暂不进书店/掉落`);
+  m.bag.push({ item: bookItemId('holy_armor') } as any); ok(m.learnBook(m.bag.length - 1).includes('需等级 25'), '神甲书 24 级不能学');
+  m.bag.push({ item: bookItemId('ghost_shield') } as any); ok(m.learnBook(m.bag.length - 1) === '学会了 幽灵盾' && m.skills.some(s => s.id === 'ghost_shield'), '幽灵盾书 22+ 级可学并上快捷栏');
+  const old = new World(seeded(1), 40, FLOORS, 'taoist', JSON.parse(JSON.stringify({ ...new World(seeded(1), 40, FLOORS, 'taoist').toSave(), learned: undefined })));
+  ok(NEW.every(([id]) => !old.learned.has(id)) && old.learned.has('heal'), '旧档（无 learned）不会白送新技能');
+  ok(!JSON.stringify(new World(seeded(1), 40, FLOORS, 'taoist').toSave()).includes('UpUntil'), 'buff 状态不存档');
 }
 console.log(`全部通过 ${pass} 项`);

@@ -9,7 +9,7 @@ const ls = () => { try { return globalThis.localStorage; } catch { return undefi
 export const DEFAULT_AUTO_SKILLS: Record<ClassId, string[]> = {
   warrior: ['fire_sword', 'half_moon', 'rush', 'thrust'],
   mage: ['magic_shield', 'hell_thunder', 'ice_roar', 'lightning_flash', 'burst_fire', 'fire_wall', 'hell_fire', 'thunder', 'big_fireball', 'fireball'],
-  taoist: ['summon_beast', 'summon_skeleton', 'heal', 'poison', 'soul_fire'],
+  taoist: ['summon_beast', 'summon_skeleton', 'holy_armor', 'ghost_shield', 'mass_heal', 'heal', 'poison', 'soul_fire'],
 };
 export const ZOOM_MIN = 0.8, ZOOM_MAX = 1.2, ZOOM_STEP = 0.05;
 

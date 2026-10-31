@@ -24,6 +24,8 @@ export interface Unit extends UnitDef {
   uid: number; team: Team; x: number; y: number; maxHp: number; maxMp: number; cd: number;
   alive: boolean; isHero?: boolean; summon?: boolean;
   armorUntil?: number; armorReduce?: number;
+  /** #12 幽灵盾（魔御）/神圣战甲术（防御）增益，不存档 */
+  mdefUpUntil?: number; mdefUp?: number; defUpUntil?: number; defUp?: number;
   leapUntil?: number; leapReady?: number; slowUntil?: number; poisonUntil?: number; poisonDps?: number; poisonTick?: number;
   /** R13 红毒：受到伤害 +20% 截止时间 */
   redUntil?: number;
