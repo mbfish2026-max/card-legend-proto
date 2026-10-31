@@ -46,16 +46,21 @@ export const BATCH2_MULT_NEIGHBORS: readonly [number, number][] = [[7, 8], [7, 8
 export const BATCH3_MULT_NEIGHBORS: readonly [number, number][] = [[5, 6], [5, 6], [5, 6], [5, 6], [5, 6], [6, 7], [6, 7], [6, 7], [6, 7], [6, 7], [6, 7], [6, 7], [6, 7], [6, 7], [6, 7], [6, 7], [6, 7], [6, 7], [6, 7], [6, 7], [6, 7], [6, 7]];
 /** [适配] feat/maps-sq-mir3 下标 56–79：取相邻原层几何平均 ×衰减 */
 export const SQMIR3_MULT_NEIGHBORS: readonly [number, number][] = [[2, 3], [2, 3], [4, 5], [4, 5], [5, 6], [6, 7], [6, 7], [6, 7], [6, 7], [6, 7], [6, 7], [8, 9], [10, 11], [10, 11], [10, 11], [10, 11], [10, 11], [11, 12], [11, 12], [11, 12], [11, 12], [11, 12], [11, 12], [11, 12]];
-export const FLOOR_EXP_MULT: number[] = [...BASE_MULT, ...NEW_FLOOR_MULT_NEIGHBORS.map(([a, b]) => NEW_FLOOR_EXP_DAMP * Math.sqrt(BASE_MULT[a] * BASE_MULT[b])), ...floorExpMult(HJ_FLOOR_ANCHORS), ...BATCH2_MULT_NEIGHBORS.map(([a, b]) => NEW_FLOOR_EXP_DAMP * Math.sqrt(BASE_MULT[a] * BASE_MULT[b])), ...BATCH3_MULT_NEIGHBORS.map(([a, b]) => NEW_FLOOR_EXP_DAMP * Math.sqrt(BASE_MULT[a] * BASE_MULT[b])), ...SQMIR3_MULT_NEIGHBORS.map(([a, b]) => NEW_FLOOR_EXP_DAMP * Math.sqrt(BASE_MULT[a] * BASE_MULT[b]))];
+/** M4 [适配]：侧线层 80–82（雪域/骨魔洞五层/恶魔祭坛）锚点 53→54→55→56，追加在 sq-mir3 之后（前面各层倍率不变） */
+export const M4_FLOOR_ANCHORS: readonly number[] = [53, 54, 55, 56];
+export const FLOOR_EXP_MULT: number[] = [...BASE_MULT, ...NEW_FLOOR_MULT_NEIGHBORS.map(([a, b]) => NEW_FLOOR_EXP_DAMP * Math.sqrt(BASE_MULT[a] * BASE_MULT[b])), ...floorExpMult(HJ_FLOOR_ANCHORS), ...BATCH2_MULT_NEIGHBORS.map(([a, b]) => NEW_FLOOR_EXP_DAMP * Math.sqrt(BASE_MULT[a] * BASE_MULT[b])), ...BATCH3_MULT_NEIGHBORS.map(([a, b]) => NEW_FLOOR_EXP_DAMP * Math.sqrt(BASE_MULT[a] * BASE_MULT[b])), ...SQMIR3_MULT_NEIGHBORS.map(([a, b]) => NEW_FLOOR_EXP_DAMP * Math.sqrt(BASE_MULT[a] * BASE_MULT[b])), ...floorExpMult(M4_FLOOR_ANCHORS)];
+/** feat/balance-sys：每层悬赏/环任务经验上限（balance.ts 加载时填入；空 = 不限） */
+export const FLOOR_EXP_CAP: number[] = [];
 /** 第 floor 层获得的经验（怪物 def.exp / 悬赏 exp 为旧曲线下的基准值） */
 export const scaledExp = (base: number, floor: number): number => {
   if (base <= 0) return 0;
-  const m = FLOOR_EXP_MULT[Math.max(0, Math.min(FLOOR_EXP_MULT.length - 1, floor))];
-  return Math.max(1, Math.round(base * m));
+  const f = Math.max(0, Math.min(FLOOR_EXP_MULT.length - 1, floor)), m = FLOOR_EXP_MULT[f];
+  return Math.max(1, Math.min(FLOOR_EXP_CAP[f] ?? Infinity, Math.round(base * m)));
 };
 /** 旧存档迁移：等级不变，当前经验按本级进度比例换算到新曲线 */
 export const migrateExp = (level: number, exp: number, expV?: number): number => {
-  if ((expV ?? 1) >= EXP_VERSION) return exp;
+  // feat/balance-sys：升级表本身不变（仍是官方 ÷10），只把怪物经验改成官方值；旧档等级原样保留，经验夹到 [0, 本级所需−1]（不掉级、不越级、坏数据不报错）
+  if ((expV ?? 1) >= EXP_VERSION) return Math.max(0, Math.min(EXP_PER_LEVEL(level) - 1, Math.floor(Number.isFinite(exp) ? exp : 0)));
   const oldNeed = EXP_PER_LEVEL_V1(level), need = EXP_PER_LEVEL(level);
   const ratio = Math.max(0, Math.min(1, (exp || 0) / oldNeed));
   return Math.min(need - 1, Math.floor(ratio * need));

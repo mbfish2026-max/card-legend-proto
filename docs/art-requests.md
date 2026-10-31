@@ -572,6 +572,23 @@ thunder_sword 雷霆剑、break_strike 破击剑法、shield_break 破盾斩、v
 
 存疑：钳虫/邪恶钳虫腿数画成约 8 条（原作描述六足）；楔蛾、角蝇、邪恶毒蛇、石墓尸王外观均为推测。
 
+## art/maps-sq-mir3 交付·第 1 批（9 BOSS）
+
+原创绘制，透明底 PNG 最长边 960。预览：docs/art-gap-preview/sq_mir3_batch1.jpg。外观依据：传奇3 资料取自中华网《传奇3》怪物介绍（game.china.com/zh_cn/hotspot/mir3/monster/10.html、11.html），传奇世界 BOSS 外观官方描述未查到。
+
+| 文件 | 尺寸 | 外观依据 |
+|---|---|---|
+| boss_sq_shiba_full.png 尸霸 | 901×960 | 未查到/推测（尸卫首领：腐尸巨汉+角盔巨剑） |
+| boss_m3_ant_general_full.png 蚂蚁将军 | 818×960 | 未查到/推测（人立巨蚁持弯刃，六肢） |
+| boss_sq_jiguan_full.png 机关巨兽 | 960×930 | 未查到/推测（青铜机关狮兽） |
+| boss_sq_snake_king_full.png 三头蛇王 | 960×941 | 名称即三头；配色推测（白绿，呼应白蛇妖） |
+| boss_m3_skel_master_full.png 骷髅教主 | 936×960 | 中华网：控制潘夜洞的魔王，魔杖由含冤骷髅聚成；其余推测 |
+| boss_m3_great_pharaoh_full.png 大法老 | 942×960 | 未查到/推测（沙漠木乃伊法老） |
+| boss_sq_nimo_full.png 逆魔 | 929×960 | 未查到/推测（红肤双角魔将） |
+| boss_sq_jindi_full.png 禁地魔王 | 801×960 | 未查到/推测（灰蓝四角魔王，青玉晶体呼应青玉宫） |
+| boss_m3_panye_bull_full.png 潘夜牛魔王 | 960×958 | 中华网/百度百科：牛面牛身的畜界魔王；装备推测 |
+
+存疑：机关巨兽腿甲有类似「2/9」的螺旋装饰纹（非文字，第一版有类字母刻纹已重做）；机关巨兽蒸汽、禁地魔王雾气边缘略带粉色残边；逆魔武器为斧而非扇；骷髅教主首版偏紫已改绿底重做。
 
 ## feat/maps-sq-mir3
 
@@ -673,3 +690,127 @@ thunder_sword 雷霆剑、break_strike 破击剑法、shield_break 破盾斩、v
 | bg_floor78 | 异界裂隙·禁地·尸上行 | `public/assets/bg/bg_floor78.jpg`（1920×1080 JPG，下 40% 空地面） | 借用相邻原层背景 | [来源](https://woool.52pk.com/data/101222.shtml) |
 | bg_floor79 | 异界裂隙·禁地·魔穴 | `public/assets/bg/bg_floor79.jpg`（1920×1080 JPG，下 40% 空地面） | 借用相邻原层背景 | [来源](https://woool.17173.com/content/2014-11-30/20141130225158263.shtml) |
 | bg_floor80 | 异界裂隙·潘夜神殿 | `public/assets/bg/bg_floor80.jpg`（1920×1080 JPG，下 40% 空地面） | 借用相邻原层背景 | [来源](https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml) |
+
+
+## art/maps-sq-mir3 交付·第 2 批（尸卫+蚂蚁，9 张）
+
+路径：`public/assets/portraits/<id>_full.png`，透明 PNG，最长边 960。预览：`docs/art-gap-preview/sq_mir3_batch2.jpg`。
+
+| 文件 | 尺寸 | 名称 | 来源 |
+|---|---|---|---|
+| sq_shiwei_full.png | 720x960 | 尸卫 | 复用 art/sq-mir3 的 shiwei_full.png |
+| sq_shiwei_yong_full.png | 706x960 | 尸卫勇士 | 复用 art/sq-mir3 的 shiwei_brave_full.png |
+| sq_shiwei_qiang_full.png | 759x960 | 枪尸卫 | 复用 art/sq-mir3 的 shiwei_spear_full.png |
+| sq_shiwei_zhan_full.png | 739x960 | 尸卫战将 | 复用 art/sq-mir3 的 shiwei_general_full.png |
+| sq_bat_full.png | 960x707 | 蝙蝠 | 新画（原创，据常见蝙蝠外形，具体外观未查到/推测） |
+| m3_ant_warrior_full.png | 882x960 | 蚂蚁战士 | 复用 art/sq-mir3 的 ant_warrior_full.png |
+| m3_ant_armor_full.png | 960x673 | 盔甲蚂蚁 | 复用 art/sq-mir3 的 ant_armored_full.png |
+| m3_ant_bomb_full.png | 960x490 | 爆毒蚂蚁 | 复用 art/sq-mir3 的 ant_poison_full.png |
+| m3_ant_tao_full.png | 783x960 | 蚂蚁道士 | 复用 art/sq-mir3 的 ant_taoist_full.png |
+
+
+## art/maps-sq-mir3 交付·第 3 批（机关+潘夜石窟骷髅，11 张）
+
+路径：`public/assets/portraits/<id>_full.png`，透明 PNG，最长边 960。预览：`docs/art-gap-preview/sq_mir3_batch3.jpg`。
+
+| 文件 | 尺寸 | 名称 | 来源 |
+|---|---|---|---|
+| sq_stone_man_full.png | 795x960 | 石人 | 复用 art/sq-mir3 的 stone_man_full.png |
+| sq_bronze_man_full.png | 699x960 | 铜人 | 复用 art/sq-mir3 的 bronze_man_full.png |
+| sq_bronze_beast_full.png | 960x720 | 铜兽 | 复用 art/sq-mir3 的 bronze_beast_full.png |
+| sq_blade_man_full.png | 790x960 | 滚刀手 | 复用 art/sq-mir3 的 blade_roller_full.png |
+| sq_hammer_man_full.png | 721x960 | 锤手 | 复用 art/sq-mir3 的 hammer_man_full.png |
+| sq_jingang_full.png | 702x960 | 金刚人 | 复用 art/sq-mir3 的 vajra_man_full.png |
+| m3_skel_wushi_full.png | 698x960 | 骷髅武士 | 复用 art/sq-mir3 的 skel_samurai_full.png |
+| m3_skel_wujiang_full.png | 717x960 | 骷髅武将 | 复用 art/sq-mir3 的 skel_general_full.png |
+| m3_skel_soldier_full.png | 755x960 | 骷髅士兵 | 复用 art/sq-mir3 的 skel_soldier_full.png |
+| m3_skel_archer_full.png | 674x960 | 骷髅弓箭手 | 复用 art/sq-mir3 的 skel_archer_full.png |
+| m3_bone_general_full.png | 721x960 | 骨鬼将 | 复用 art/sq-mir3 的 bone_ghost_general_full.png |
+
+
+## art/maps-sq-mir3 交付·第 4 批（蛇谷/百虫+逆魔古刹，12 张）
+
+路径：`public/assets/portraits/<id>_full.png`，透明 PNG，最长边 960。预览：`docs/art-gap-preview/sq_mir3_batch4.jpg`。
+
+| 文件 | 尺寸 | 名称 | 来源 |
+|---|---|---|---|
+| sq_red_snake_yao_full.png | 720x960 | 红蛇妖 | 复用 art/sq-mir3 的 red_snake_yao_full.png |
+| sq_black_snake_yao_full.png | 708x960 | 黑蛇妖 | 复用 art/sq-mir3 的 black_snake_yao_full.png |
+| sq_scarab_full.png | 960x722 | 圣甲虫 | 复用 art/sq-mir3 的 scarab_full.png |
+| sq_magic_beetle_full.png | 960x888 | 魔甲虫 | 复用 art/sq-mir3 的 magic_beetle_full.png |
+| sq_termite_full.png | 960x701 | 白蚁 | 复用 art/sq-mir3 的 termite_full.png |
+| sq_three_snake_full.png | 859x960 | 三头蛇 | 复用 art/sq-mir3 的 three_head_snake_full.png |
+| sq_white_snake_yao_full.png | 716x960 | 白蛇妖 | 复用 art/sq-mir3 的 boss_white_snake_full.png |
+| sq_imp_full.png | 933x960 | 地下小鬼 | 复用 art/sq-mir3 的 underground_imp_full.png |
+| sq_nimo_archer_full.png | 695x960 | 逆魔弓箭手 | 复用 art/sq-mir3 的 nimo_archer_full.png |
+| sq_nimo_guard_full.png | 728x960 | 逆魔卫士 | 复用 art/sq-mir3 的 nimo_guard_full.png |
+| sq_nimo_shiwei_full.png | 731x960 | 逆魔侍卫 | 复用 art/sq-mir3 的 nimo_attendant_full.png |
+| sq_nimo_statue_full.png | 708x960 | 逆魔雕像 | 复用 art/sq-mir3 的 nimo_statue_full.png |
+
+
+## art/maps-sq-mir3 交付·第 5 批（沙漠，6 张）
+
+路径：`public/assets/portraits/<id>_full.png`，透明 PNG，最长边 960。预览：`docs/art-gap-preview/sq_mir3_batch5.jpg`。
+
+| 文件 | 尺寸 | 名称 | 来源 |
+|---|---|---|---|
+| m3_noma_full.png | 754x960 | 诺玛 | 复用 art/sq-mir3 的 noma_full.png |
+| m3_noma_pharaoh_full.png | 699x960 | 诺玛法老 | 复用 art/sq-mir3 的 noma_pharaoh_full.png |
+| m3_desert_fish_full.png | 721x960 | 沙漠鱼 | 复用 art/sq-mir3 的 desert_fish_full.png |
+| m3_desert_wind_full.png | 704x960 | 沙漠风魔 | 复用 art/sq-mir3 的 desert_wind_full.png |
+| m3_desert_tree_full.png | 724x960 | 沙漠树魔 | 复用 art/sq-mir3 的 desert_tree_full.png |
+| m3_desert_stone_full.png | 761x960 | 沙漠石人 | 复用 art/sq-mir3 的 desert_golem_full.png |
+
+
+## art/maps-sq-mir3 交付·第 6 批（禁地，8 张）
+
+路径：`public/assets/portraits/<id>_full.png`，透明 PNG，最长边 960。预览：`docs/art-gap-preview/sq_mir3_batch6.jpg`。
+
+| 文件 | 尺寸 | 名称 | 来源 |
+|---|---|---|---|
+| sq_cimo_full.png | 709x960 | 刺魔 | 复用 art/sq-mir3 的 thorn_demon_full.png |
+| sq_lizhua_full.png | 723x960 | 利爪 | 复用 art/sq-mir3 的 claw_demon_full.png |
+| sq_shanling_full.png | 715x960 | 闪灵 | 复用 art/sq-mir3 的 flash_demon_full.png |
+| sq_tengyao_full.png | 722x960 | 藤妖 | 复用 art/sq-mir3 的 vine_demon_full.png |
+| sq_xueyao_full.png | 722x960 | 血妖 | 复用 art/sq-mir3 的 blood_demon_full.png |
+| sq_tieyi_full.png | 960x702 | 铁翼 | 复用 art/sq-mir3 的 iron_wing_full.png |
+| sq_yaolishi_full.png | 720x960 | 妖力士 | 复用 art/sq-mir3 的 yao_lishi_full.png |
+| sq_youling_bug_full.png | 960x830 | 幽灵虫 | 复用 art/sq-mir3 的 ghost_bug_full.png |
+
+
+## art/maps-sq-mir3 交付·第 7 批（潘夜神殿，8 张）
+
+路径：`public/assets/portraits/<id>_full.png`，透明 PNG，最长边 960。预览：`docs/art-gap-preview/sq_mir3_batch7.jpg`。
+
+| 文件 | 尺寸 | 名称 | 来源 |
+|---|---|---|---|
+| m3_panye_fire_full.png | 709x960 | 潘夜火魔 | 复用 art/sq-mir3 的 panye_fire_full.png |
+| m3_panye_wind_full.png | 803x960 | 潘夜风魔 | 复用 art/sq-mir3 的 panye_wind_full.png |
+| m3_panye_ice_full.png | 782x960 | 潘夜冰魔 | 复用 art/sq-mir3 的 panye_ice_full.png |
+| m3_panye_cloud_full.png | 769x960 | 潘夜云魔 | 复用 art/sq-mir3 的 panye_cloud_full.png |
+| m3_panye_warrior_full.png | 701x960 | 潘夜战士 | 复用 art/sq-mir3 的 panye_warrior_full.png |
+| m3_panye_left_full.png | 712x960 | 潘夜左护卫 | 复用 art/sq-mir3 的 panye_left_guard_full.png |
+| m3_panye_right_full.png | 722x960 | 潘夜右护卫 | 复用 art/sq-mir3 的 panye_right_guard_full.png |
+| m3_panye_ghost_full.png | 708x960 | 潘夜鬼将 | 复用 art/sq-mir3 的 panye_ghost_general_full.png |
+
+
+## art/maps-sq-mir3 交付·第 8 批（背景 10 张，全部新画）
+
+路径：`public/assets/bg/<id>.jpg`，1920x1080，JPG 质量 90，底部约 40% 留空地面。预览：`docs/art-gap-preview/sq_mir3_batch8_bg.jpg`。
+
+**合层方案**（每组同一张图，文件以首层命名；需要分层时，代码可直接用首层图，或者 copy 出 bg_floorNN.jpg）：
+
+| 文件 | 覆盖楼层 | 场景 |
+|---|---|---|
+| bg_floor57.jpg | 57–58 | 将军坟东一/二层：石棺、武将石像、火盆 |
+| bg_floor59.jpg | 59 | 蚂蚁洞穴：土洞、琥珀、蚁卵 |
+| bg_floor60.jpg | 60–61 | 机关道一、中枢大殿：青铜齿轮、锁链、青色晶石 |
+| bg_floor62.jpg | 62–66 | 蛇魔谷、地穴入口、环道、百虫穴、五蛇殿：缠蛇石柱、绿色毒雾 |
+| bg_floor67.jpg | 67 | 潘夜石窟：骨堆、残旗、蓝火 |
+| bg_floor68.jpg | 68 | 沙漠：沙丘、残垣、枯树 |
+| bg_floor69.jpg | 69–73 | 逆魔古刹一~四层、逆魔大殿：朱漆残柱、倒塌石像、红烛 |
+| bg_floor74.jpg | 74–75 | 禁地之门、冰石之地：巨石门、冰晶 |
+| bg_floor76.jpg | 76–79 | 青玉宫、生死门、尸上行、魔穴：青玉残殿、血红裂纹 |
+| bg_floor80.jpg | 80 | 潘夜神殿：牛角石柱、牛魔石像王座、熔岩裂缝 |
+
+存疑：场景细节由地图名推测（未查到/推测）。沙漠图比其他图亮。潘夜神殿石柱上的牛头浮雕为原创图形。

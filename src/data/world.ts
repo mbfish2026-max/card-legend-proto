@@ -217,9 +217,25 @@ export const FLOORS: Floor[] = [
   { name: '异界裂隙·禁地·尸上行', bg: 'bg_floor78', boss: false, farm: true, group: 'sq_jindi', sub: '禁地·尸上行', depth: 5, zone: '传世·禁地（W-OFF-MAP https://woool.web.sdo.com/knowledge/map.html；W-52-JINDI https://woool.52pk.com/data/101222.shtml；W-17-BOSS https://woool.17173.com/content/2014-11-30/20141130225158263.shtml 官方走法：禁地之门→冰石之地→青玉宫→生死门→尸上行→魔穴；逐图怪物未查到，按 8 种禁地妖兽分配 [适配]；推荐 30–40 级 C 级源）；异界裂隙入口挂在相邻地图旁 [适配]；层内设回城入口、无商人', src: 'https://woool.52pk.com/data/101222.shtml', spawns: [{ id: 'sq_xueyao', x: 800 }, { id: 'sq_tieyi', x: 900, y: 20 }, { id: 'sq_youling_bug', x: 1500 }, { id: 'sq_yaolishi', x: 1600, y: -15 }, { id: 'sq_tieyi', x: 1700 }, { id: 'sq_xueyao', x: 2300 }, { id: 'sq_yaolishi', x: 2400, y: 15 }, { id: 'sq_youling_bug', x: 2500 }] },
   { name: '异界裂隙·禁地·魔穴', bg: 'bg_floor79', boss: true, farm: true, group: 'sq_jindi', sub: '禁地·魔穴', depth: 6, zone: '传世·禁地（W-OFF-MAP https://woool.web.sdo.com/knowledge/map.html；W-52-JINDI https://woool.52pk.com/data/101222.shtml；W-17-BOSS https://woool.17173.com/content/2014-11-30/20141130225158263.shtml 官方走法：禁地之门→冰石之地→青玉宫→生死门→尸上行→魔穴；逐图怪物未查到，按 8 种禁地妖兽分配 [适配]；推荐 30–40 级 C 级源）；BOSS 禁地魔王官方 6 小时且不会移动→本作首杀必掉/官方刷新÷10=36 分钟（机制本作未实现；本作 BOSS 移动行为未改）；异界裂隙入口挂在相邻地图旁 [适配]；层内设回城入口、无商人', src: 'https://woool.17173.com/content/2014-11-30/20141130225158263.shtml', spawns: [{ id: 'sq_tieyi', x: 800 }, { id: 'sq_yaolishi', x: 900, y: 20 }, { id: 'sq_youling_bug', x: 1500 }, { id: 'sq_tieyi', x: 1600, y: -15 }, { id: 'sq_yaolishi', x: 1700 }, { id: 'sq_xueyao', x: 2300 }, { id: 'sq_tieyi', x: 2400, y: 15 }, { id: 'sq_yaolishi', x: 2500 }, { id: 'boss_sq_jindi', x: 3350 }] },
   { name: '异界裂隙·潘夜神殿', bg: 'bg_floor80', boss: true, farm: true, group: 'm3_panye_temple', sub: '潘夜神殿', depth: 1, zone: '传奇3·沙巴克·潘夜神殿（M-17-LV https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml：怪物等级 45/适合 40，单张图；BOSS 潘夜牛魔王；刷新/数值/连线未查到）；异界裂隙入口挂在相邻地图旁 [适配]；层内设回城入口、无商人；BOSS 首杀必掉/官方刷新÷10 机制本作未实现，刷新时间未查到', src: 'https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml', spawns: [{ id: 'm3_panye_fire', x: 800 }, { id: 'm3_panye_wind', x: 900, y: 20 }, { id: 'm3_panye_warrior', x: 1500 }, { id: 'm3_panye_ice', x: 1600, y: -15 }, { id: 'm3_panye_cloud', x: 1700 }, { id: 'm3_panye_left', x: 2300 }, { id: 'm3_panye_right', x: 2400, y: 15 }, { id: 'm3_panye_ghost', x: 2500 }, { id: 'boss_m3_panye_bull', x: 3350 }] },
+  // M4 下标 80–82（排在 main batch2/batch3/sq-mir3 的 24–79 之后） 侧线层（同魔龙血域：不进 FLOOR_ORDER，清层回城，主线模拟不受影响）
+  { name: '白日门·雪域', bg: 'bg_floor81', boss: true, zone: '白日门（雪人王 348,132 / 钉耙猫王 380,270 / 半兽统领 多点；鹰卫原版在丛林迷宫 [适配] 并入）', src: 'https://www.21cq.com/mir/Mob.aspx?id=33', spawns: [
+    { id: 'orc_commander', x: 800 }, { id: 'hawk_guard', x: 910, y: 20 },
+    { id: 'rake_cat_king', x: 1550 }, { id: 'orc_commander', x: 1650, y: -15 },
+    { id: 'hawk_guard', x: 2300 }, { id: 'rake_cat_king', x: 2400, y: 15 },
+    { id: 'boss_yeti_king', x: 3380 } ] },
+  { name: '骨魔洞五层', bg: 'bg_floor82', boss: true, zone: '骨魔洞五层（黄泉教主 195,240，180 分钟；恶灵尸王原版在尸魔洞1–3层/骨魔洞一层）', src: 'https://www.21cq.com/mir/Mob.Aspx?ID=208', spawns: [
+    { id: 'evil_lich', x: 800 }, { id: 'evil_lich', x: 910, y: 20 },
+    { id: 'evil_lich', x: 1550 }, { id: 'evil_lich', x: 1650, y: -15 },
+    { id: 'evil_lich', x: 2300 }, { id: 'evil_lich', x: 2400, y: 15 },
+    { id: 'boss_huangquan', x: 3380 } ] },
+  { name: '恶魔祭坛', bg: 'bg_floor83', boss: true, zone: '赤月峡谷·恶魔祭坛（双头金刚 15,18 / 双头血魔，360 分钟）', src: 'https://www.21cq.com/mir/Mob.Aspx?ID=163', spawns: [
+    { id: 'blood_zombie', x: 800 }, { id: 'redmoon_spider', x: 910, y: 20 },
+    { id: 'blood_zombie', x: 1550 }, { id: 'redmoon_spider', x: 1650, y: -15 },
+    { id: 'boss_twinhead_kong', x: 2700 },
+    { id: 'boss_twinhead_blood', x: 3380 } ] }
 ];
 /** 侧线层（不在通关顺序里，清完回城） */
-export const SIDE_FLOORS: readonly number[] = [23, 24, 32, 33, 39, 40, 41, 42, 43, 44, 45, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79];
+export const SIDE_FLOORS: readonly number[] = [23, 24, 32, 33, 39, 40, 41, 42, 43, 44, 45, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82];
 /** 通关顺序：兽人古墓一层(白骨墓穴)→二层→三层→洞穴一层→二层→沃玛自然洞穴一→二→尸王殿…（按 21cq 进出表连通） */
 export const FLOOR_ORDER = [0, 1, 2, 3, 4, 13, 14, 15, 16, 17, 18, 27, 28, 29, 30, 31, 5, 34, 35, 36, 37, 38, 6, 46, 47, 48, 49, 7, 25, 26, 8, 9, 10, 11, 12, 19, 20, 21, 22];
 /** 图群：白骨墓穴（下标 4）作为兽人古墓一层 */

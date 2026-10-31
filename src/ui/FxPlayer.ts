@@ -55,13 +55,19 @@ export const FX_DEFS: Record<string, FxDef> = {
   fx_holy_armor_cast: D(20, 'ADD', 56, ['holy_armor']),
   fx_holy_armor_loop: D(11, 'ADD', 11, ['holy_armor'], { loop: true }),
   fx_mass_heal_burst: D(20, 'ADD', 55, ['mass_heal']),
-  // 合击（阶段 B）：目标卡中心播放，第 6 帧（0.3s）为命中/最亮帧；shihun/mori 末 4 帧可循环作持续尾段（本次仅播一次）
+  // 合击（阶段 B）：目标卡中心播放，第 6 帧（0.3s）为命中/最亮帧；shihun/mori 帧 8–11、pixing 帧 6–9 由 ui/comboStatus.ts + BattleScene 作状态持续循环段
   fx_combo_pohun: D(20, 'ADD', 60, ['combo']),
   fx_combo_huolong: D(20, 'ADD', 60, ['combo']),
   fx_combo_shihun: D(20, 'ADD', 30, ['combo']),
   fx_combo_leiting: D(20, 'ADD', 60, ['combo']),
   fx_combo_mori: D(20, 'ADD', 60, ['combo']),
   fx_combo_pixing: D(20, 'ADD', 60, ['combo']),
+  // 合击持续段（规格见 feat/hj-fx-loop docs）：循环段首尾无缝，播放/销毁由战斗侧 comboStatus 负责
+  fx_combo_shihun_loop: D(12, 'ADD', 30, ['combo'], { loop: true }),
+  fx_combo_shihun_end: D(12, 'ADD', 30, ['combo']),
+  fx_combo_mori_loop: D(12, 'ADD', 56, ['combo'], { loop: true }),
+  fx_combo_mori_end: D(12, 'ADD', 56, ['combo']),
+  fx_combo_pixing_stun: D(12, 'ADD', 57, ['combo'], { loop: true }),
 };
 /** 普攻挥砍按职业着色 */
 export const SLASH_TINT: Record<string, number> = { warrior: 0xffb060, mage: 0xa08cff, taoist: 0xc0f070 };

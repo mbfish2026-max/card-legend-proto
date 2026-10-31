@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## 平衡系统 阶段1+2（feat/balance-sys）
+- 经验：怪物经验改为 21cq 官方值 ÷10（src/data/monsterExp.ts，55 只匹配，余者对数回归拟合，标 未查到[适配]）；层倍率按 plan-60h 段时长反推每级击杀数；叠加等级差衰减 高3/6/10 级 ×0.7/0.4/0.1；任务/环经验封顶 0.3×本层所需。升级表不变。
+- 主线锚点 1→50（src/data/balance.ts MAIN_ANCHORS），支线取官方怪等级最近的主线锚点。
+- 怪物面板按层目标等级公式生成（atk=0.6·DEF+k·HP，HP=PW×T，含模拟校准 [适配]），新手图豁免；BOSS 显示 L_f+5、面板按 L_f+2。
+- 旧档：等级/经验保留，经验夹到本级所需−1，不掉级不报错。
+- 测试：等级差衰减、锚点、官方经验、首清不跨级、任务封顶、旧档夹取；模拟按文档目标断言，未达标项打印 GAP（见报告）。scripts/sim-bands.ts 分段统计。
+## 合击持续特效（feat/hj-fx-loop）
+- 噬魂沼泽：起手段播完后，fx_combo_shihun 帧 8–11 往返循环作毒沼尾段，跟随主目标（主目标死后跟随仍中毒的目标），中毒 10s 结束 / 中毒目标全死即销毁。
+- 末日审判：fx_combo_mori 帧 8–11 法阵循环跟随目标，持续掉血 8s 结束或目标死亡即销毁。
+- 劈星斩：被麻痹目标头顶「⚡麻痹」闪烁标记 + fx_combo_pixing 帧 6–9 电弧循环（0.5×），3s 结束清除；BOSS 免疫麻痹不显示。
+- 实现：src/ui/comboStatus.ts（ComboStatusTracker，无 Phaser 可单测）+ BattleScene 每帧按 world.time 与 Unit 状态同步；场景关闭全部清理。combo 事件新增表现字段 affected/statusUntil，战斗数值不变（9 种子死亡数与 main 一致）。
+- 测试：tests/combo-status.test.ts（并入 npm test）；浏览器 tests/e2e/hj-fx-loop-verify.mjs。
+
 ## 传世/传奇3 地图（feat/maps-sq-mir3）
 - 新层追加下标 56–79（旧档不变）：传世将军坟东一/二层、机关道一/中枢大殿、蛇魔谷/地穴入口/环道/百虫穴/五蛇殿、逆魔古刹一~四层/逆魔大殿、禁地 6 层（禁地之门→魔穴）；传奇3 蚂蚁洞穴、潘夜石窟、沙漠、潘夜神殿。全部「异界裂隙」侧线 [适配]，见 docs/maps-sq-mir3.md。
 - 新怪 54 + BOSS 9（官方名；等级按相邻图递增、数值克隆同段怪 [适配]；官方数值未查到）；立绘/背景借用，缺图见 art-requests「feat/maps-sq-mir3」。

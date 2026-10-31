@@ -9,6 +9,7 @@ import { CLASSES, ClassId, SkillDef, CAST_GAP } from '../data/classes';
 import { ITEMS, SLOTS, SETS, equipSlotsFor, EQUIP_VERSION, ENHANCE_SLOTS, ENHANCE_MAX, ENHANCE_STAT, IRON_PRICE, IRON_MAX_PURITY, enhanceChance, shatterChance } from '../data/items';
 import { HERO, ENEMIES, SUMMON, SUMMON_BEAST } from '../data/units';
 import { EXP_PER_LEVEL, EXP_VERSION, migrateExp, scaledExp, fmtExp } from '../data/expCurve';
+import { killExp, foeStatsAt } from '../data/balance';
 import { WORLD, FLOORS, Floor, FARM_RESPAWN, FARM_SAFE_DIST, nextFloorOf, SIDE_FLOORS, DEPTH_STEP, prevLayerOf, prevFloorOf } from '../data/world';
 import { TOWNS, townFloors, townOfFloor, returnTownOf, STORAGE_SIZE, TOWN_W, TOWN_GATE_X, GATE_RANGE, TOWN_SPAWN_X, DOOR_RANGE, streetDoors } from '../data/towns';
 import { CONSUMABLE } from '../data/items-town';
@@ -73,7 +74,11 @@ export const SUMMON_NAME_COLORS = ['#ffffff', '#a8d8ff', '#7cc0ff', '#4fa3ff', '
 export const HEAL_SUMMON_RANGE = 170;
 /** [适配] 自动施放召唤技能：已有召唤物且血量 ≥ 该比例时跳过（不耗魔、不占公共间隔）；低于则自动重召（= 回满血/替换）。手动不受限 */
 export const AUTO_RESUMMON_HP = 0.5;
-export const BOSS_MECH = new Set(['boss_woma', 'boss_zuma', 'boss_redmoon', 'boss_molong']);
+export const BOSS_MECH = new Set(['boss_woma', 'boss_zuma', 'boss_redmoon', 'boss_molong', 'boss_huangquan', 'boss_twinhead_kong', 'boss_twinhead_blood']);
+/** M4：新 BOSS 复用已有机制（不新增机制）。黄泉教主=祖玛式火球+召唤（召唤骷髅系）；双头金刚=魔龙式近战+瞬移；双头血魔=沃玛式发呆/狂暴/瞬移/闪电 */
+export const MECH_ALIAS: Record<string, string> = { boss_huangquan: 'boss_zuma', boss_twinhead_kong: 'boss_molong', boss_twinhead_blood: 'boss_woma' };
+/** 召唤型 BOSS 的小怪池（按已召唤数轮换）；黄泉教主原版召唤骷髅弓箭手/长枪兵/刀斧手（本作未实装）→ [适配] 用已有骷髅系 */
+export const MECH_MINIONS: Record<string, string[]> = { boss_zuma: ['zuma_statue', 'zuma_guard'], boss_huangquan: ['axe_skeleton', 'cave_skel_warrior'] };
 /**
  * 诱惑之光（docs/skills-official.md「诱惑之光」）
  * 官方 C：可驯服等级 ≤ 法师等级+2 的生物系怪物；A：对高智商对手无效。资料站（17173）：宠物上限 Lv0..3 = 2/3/4/5。
@@ -422,15 +427,18 @@ export class World {
   }
   /** feat/maps-more：刷怪并按子层深度加成（官方第 d 层 攻/血 ×(1+DEPTH_STEP×(d−1))，原有层 depth 缺省=1 不变） */
   spawnFoe(id: string, x: number, y: number) { const u = this.spawn(ENEMIES[id], 'enemy', x, y), d = this.floor.depth ?? 1;
-    if (d > 1) { const k = 1 + DEPTH_STEP * (d - 1); u.hp = u.maxHp = Math.round(u.hp * k); u.atk = Math.round(u.atk * k); }
-    // feat/balance-battle：BOSS 攻击 = 同层普通怪均值 ×1.6（取 max，不削弱已更强的 BOSS）、血 = 均值 ×4（取 min）[适配]；攻击间隔 1.5→1.2s。首图豁免
+    const bs = this.floors === FLOORS ? foeStatsAt(id, this.floorIndex) : null; // balance-sys：按层目标等级生成面板（新手图豁免）
+    if (bs) { u.level = bs.level; u.hp = u.maxHp = bs.hp; u.atk = bs.atk; u.def = bs.def; }
+    else if (d > 1) { const k = 1 + DEPTH_STEP * (d - 1); u.hp = u.maxHp = Math.round(u.hp * k); u.atk = Math.round(u.atk * k); }
+    // feat/balance-battle：BOSS 攻击 = 同层普通怪均值 ×bossAtkVsNormal（取 max）、血 = 均值 ×bossHpVsNormal（取 min）[适配]；攻击间隔 1.5→1.2s。首图豁免
+    // 普通怪均值：主线取 balance-sys 的 foeStatsAt 面板；自定义层取 ENEMIES×深度系数
     if (u.tier === 'boss' && !this.newbieFloor) {
       const kd = d > 1 ? 1 + DEPTH_STEP * (d - 1) : 1;
-      const ns = this.floor.spawns.map(s => ENEMIES[s.id]).filter(e => e && e.tier !== 'boss');
+      const ns = this.floor.spawns.map(s => s.id).filter(sid => ENEMIES[sid] && ENEMIES[sid].tier !== 'boss')
+        .map(sid => (this.floors === FLOORS ? foeStatsAt(sid, this.floorIndex) : null) ?? { hp: ENEMIES[sid].hp * kd, atk: ENEMIES[sid].atk * kd });
       if (ns.length) {
-        u.atk = Math.max(u.atk, Math.round(WORLD.bossAtkVsNormal * kd * ns.reduce((a, e) => a + e.atk, 0) / ns.length));
-        // 血 = 同层普通怪均值 ×4（plan I：现约 ×5；只下调不上调）
-        u.hp = u.maxHp = Math.min(u.maxHp, Math.round(WORLD.bossHpVsNormal * kd * ns.reduce((a, e) => a + e.hp, 0) / ns.length));
+        u.atk = Math.max(u.atk, Math.round(WORLD.bossAtkVsNormal * ns.reduce((a, x) => a + x.atk, 0) / ns.length));
+        u.hp = u.maxHp = Math.min(u.maxHp, Math.round(WORLD.bossHpVsNormal * ns.reduce((a, x) => a + x.hp, 0) / ns.length));
       }
       u.atkInterval = Math.min(u.atkInterval, WORLD.bossAtkInterval);
     }
@@ -596,7 +604,7 @@ export class World {
       });
       this.ground.push(...items); this.events.push({ type: 'drop', uid: u.uid, x: u.x, y: u.y, items });
     }
-    this.gainExp(scaledExp(u.exp ?? 10, this.floorIndex));
+    this.gainExp(killExp(u.id, this.floorIndex, this.level, u.level ?? 1)); // balance-sys：官方经验 × 层倍率 × 等级差衰减
     if (!this.alive('enemy').length && !this.cleared && !this.womaPending) { this.cleared = true; this.events.push({ type: 'cleared' }); }
   }
   gainExp(n: number) {
@@ -1112,7 +1120,7 @@ export class World {
     const amt = (pw(this.classDef.autoStat as any, h) + pw(CLASSES[c.cls].autoStat as any, u)) * fx.mult;
     c.burst = false; c.rage = 0;
     const targets = fx.aoe > 0 ? this.alive('enemy').filter(e => e === t || Math.abs(e.x - t.x) <= fx.aoe) : [t];
-    let dealt = 0;
+    let dealt = 0; const affected: number[] = []; // 表现层用：本次被施加持续状态（毒/麻痹）的目标
     for (const e of targets) {
       const d = this.damage(e, amt, h, false, false, !!fx.ignoreDef, fx.magic); dealt += d;
       if (!e.alive) continue;
@@ -1120,9 +1128,11 @@ export class World {
       if (fx.stun && e.tier !== 'boss') { e.stunUntil = this.time + fx.stun; e.cd = Math.max(e.cd, fx.stun); }
       if (fx.slow) e.slowUntil = this.time + fx.slow;
       if (fx.vuln) { e.vulnUntil = this.time + fx.vuln.dur; e.vulnPhys = fx.vuln.phys ?? 0; e.vulnMag = fx.vuln.mag ?? 0; }
+      if (fx.poison || (fx.stun && e.tier !== 'boss')) affected.push(e.uid);
     }
+    const statusUntil = fx.poison ? this.time + fx.poison.dur : fx.stun ? this.time + fx.stun : undefined;
     if (fx.lifesteal && h.alive) this.heal(h, Math.round(dealt * fx.lifesteal));
-    this.events.push({ type: 'combo', id: cb?.id ?? 'placeholder', name: cb?.name ?? '合击', source: h.uid, partner: u.uid, target: t.uid, amount: dealt, hits: targets.length }, { type: 'log', text: `合击「${cb?.name ?? '合击'}」造成 ${dealt} 伤害`, color: 'green' });
+    this.events.push({ type: 'combo', id: cb?.id ?? 'placeholder', name: cb?.name ?? '合击', source: h.uid, partner: u.uid, target: t.uid, amount: dealt, hits: targets.length, affected, statusUntil }, { type: 'log', text: `合击「${cb?.name ?? '合击'}」造成 ${dealt} 伤害`, color: 'green' });
   }
   toSave(): SaveData {
     return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, town: this.town, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], ringQ: this.ringQ, ringDone: this.ringDone, eqV: EQUIP_VERSION, expV: EXP_VERSION, companion: this.companion ? JSON.parse(JSON.stringify(this.companion)) : null  };
@@ -1418,7 +1428,8 @@ export class World {
       const m = b.boss ??= { stage: 0, dazeUntil: 0, crazyUntil: 0, crazyOn: false, flyT: 0, summonT: 0, spikeT: OFFICIAL.spikeEvery, minions: [] };
       const sm = this.summon, slow = b.slowUntil && b.slowUntil > this.time ? 1.5 : 1;
       const pick = () => (sm && this.inMelee(sm, b) && this.rng() < 0.5 ? sm : h);
-      if (b.id === 'boss_woma') {
+      const mid = MECH_ALIAS[b.id] ?? b.id;
+      if (mid === 'boss_woma') {
         // 血量跌破 5/7…1/7：先发呆 8 秒（不攻击）再狂暴 8 秒（每秒攻击 2 次）
         const st = OFFICIAL.womaStages.filter(k => b.hp <= b.maxHp * k / 7).length;
         if (st > m.stage) {
@@ -1440,7 +1451,7 @@ export class World {
         b.cd = crazy ? OFFICIAL.womaCrazyInterval : b.atkInterval * slow;
         this.events.push({ type: 'attack', source: b.uid, target: t.uid, skill: 'boss' }, { type: 'bossfx', uid: b.uid, kind: 'spark', x: t.x, target: t.uid });
         this.damage(t, b.atk * (0.9 + this.rng() * 0.2), b, true, false, false, OFFICIAL.womaMagic); // 官方 50% 物理 + 50% 魔法
-      } else if (b.id === 'boss_molong') {
+      } else if (mid === 'boss_molong') {
         // 阶段 B 魔龙教主：国服只用翅膀近战 + 保留瞬移（21cq）。瞬移复用沃玛教主 fly 计时（30 秒 + 被贴身）[适配]：瞬移到主角身后
         m.flyT += dt;
         if (m.flyT >= OFFICIAL.womaFlySec && this.inMelee(h, b)) {
@@ -1453,7 +1464,7 @@ export class World {
         b.cd = b.atkInterval * slow;
         this.events.push({ type: 'attack', source: b.uid, target: t.uid, skill: 'boss' }, { type: 'bossfx', uid: b.uid, kind: 'spark', x: t.x, target: t.uid });
         this.damage(t, b.atk * (0.9 + this.rng() * 0.2), b);
-      } else if (b.id === 'boss_zuma') {
+      } else if (mid === 'boss_zuma') {
         // 丢火球远程攻击，边攻击边召唤祖玛雕像/卫士
         if (b.cd > 0 || Math.abs(b.x - h.x) > OFFICIAL.zumaRange) continue;
         const t = pick(); b.cd = b.atkInterval * slow; b.facing = (Math.sign(t.x - b.x) || 1) as 1 | -1;
@@ -1462,7 +1473,7 @@ export class World {
         m.minions = m.minions.filter(id => this.units.some(u => u.uid === id && u.alive));
         if (this.time >= m.summonT && m.minions.length < OFFICIAL.zumaCallMax) {
           m.summonT = this.time + OFFICIAL.zumaCallSec;
-          const base = ENEMIES[m.minions.length % 2 ? 'zuma_guard' : 'zuma_statue'];
+          const pool = MECH_MINIONS[b.id] ?? MECH_MINIONS.boss_zuma, base = ENEMIES[pool[m.minions.length % pool.length]];
           // [适配] 召唤物不给经验/掉落，防止刷怪
           const u = this.spawn({ ...base, exp: 0, drops: [], setDrop: undefined, oilChance: 0 }, 'enemy', b.x + b.facing * 90, b.y);
           u.ai = 'chase'; m.minions.push(u.uid);

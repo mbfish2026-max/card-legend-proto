@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## M4 新怪 8 种（feat/m4-monsters）
+- 新增 雪人王/黄泉教主/双头金刚/双头血魔（BOSS）与 钉耙猫王/半兽统领/恶灵尸王/鹰卫（普通精英），立绘指向 art/sq-mir3 新图；原版数值/来源/[适配]/未实装见 docs/monsters-official.md「M4 新怪」（npm run gen:monsters 生成）。
+- 新侧线层（同魔龙血域，不进 FLOOR_ORDER，清层回城）：80 白日门·雪域、81 骨魔洞五层（苍月岛区域）、82 恶魔祭坛（白日门·赤月区域）；经验锚点 M4_FLOOR_ANCHORS 53→56 追加在 sq-mir3 之后 [适配]（合并 main maps-batch2/batch3/sq-mir3 后由 24–26 顺延为 80–82，bg 键 bg_floor81–83 避开 main 已占用的 bg_floor25–80），前面各层倍率不变。
+- BOSS 行为只复用已有机制（MECH_ALIAS）：黄泉教主=祖玛式火球+召唤（召唤掷斧骷髅/洞穴骷髅战士代替原版骷髅弓箭手等）；双头金刚=魔龙式近战+瞬移（麻痹/石化未实装）；双头血魔=沃玛式发呆/狂暴/瞬移/闪电；雪人王与 4 种普通怪走通用近战。
+- 掉落只用本作已有物品、按 21cq 原版爆率；神水/太阳水/强效药/祈祷/魔血/虹魔/法神/圣战等未实装。背包/商店/存档结构不变。
+- 主线 9 种子模拟逐种子与 main 完全一致（合并 maps-batch2 后：战 2 / 法 3 / 道 1 中位死亡，全通关）。
+
+## 魔龙立绘接入（feat/m4-monsters）
+- 美术 boss_molong_full.png 接入 assets-manifest（key boss_molong）；魔龙守将 boss_hj_home 美术 key boss_woma → boss_molong；魔龙教主 boss_molong 同步改用专属立绘并移除紫色着色占位（fx-requests.md 状态同步）。纯表现，不改数值。
+
 ## 召唤物攻击与受伤动作（feat/summon-anim）
 - 召唤骷髅/召唤神兽/诱惑之光宠物与主角、怪物共用同一套事件→动画分发（新 `src/ui/combatAnim.ts` playCombatAnim）：攻击 = 立绘前冲前倾 + 整卡突进 + 挥砍；受伤 = 闪白→偏红 + 后仰 + 后退震动 + 火花/飘字。
 - 动作结束强制恢复立绘位置/角度/缩放；alert/前摇清色后重新套用状态色，诱惑宠物粉色不会丢失；名字蓝色分级/等级显示不受影响。
