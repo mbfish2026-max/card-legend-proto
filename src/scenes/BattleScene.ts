@@ -366,7 +366,7 @@ export class BattleScene extends Phaser.Scene {
         all.forEach((v, i) => this.time.delayedCall(i * 80, () => { if (v.active && !playFx(this, 'fx_heal_pillar', v.cx, v.y)) fx.holyLight(this, v.cx, v.cy, v.h); }));
         fx.floatNumber(this, hv.cx, hv.cy - hv.h * 0.2, hv.h, '群体治愈术', '#80ff90', 0.7); return done();
       }
-      case 'heal': if (!playFx(this, 'fx_heal_pillar', hv.cx, hv.y)) fx.holyLight(this, hv.cx, hv.cy, hv.h); fx.floatNumber(this, hv.cx, hv.cy - hv.h * 0.2, hv.h, '治愈术', '#80ff90', 0.7); return done();
+      case 'heal': { const v = tv[0] ?? hv; /* 主角满血时目标为召唤物 */ if (!playFx(this, 'fx_heal_pillar', v.cx, v.y)) fx.holyLight(this, v.cx, v.cy, v.h); fx.floatNumber(this, v.cx, v.cy - v.h * 0.2, v.h, '治愈术', '#80ff90', 0.7); return done(); }
       default: return done();
     }
   }

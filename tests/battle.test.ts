@@ -275,6 +275,15 @@ const free = (w: World) => w.skills.map(() => 0);
     ok(!w.summonAggro(o) && hh > 0, `主角贴身（≤${WORLD.summonAggroNear}px）不强制转移：主角仍会被打（主角 ${hh} / 召唤物 ${hs}）`); }
   { const { w, h, o } = setup(); run(w, 2); h.x = o.x - WORLD.leashRange - 200; w.step(0.05, { dx: 0, dy: 0 }); ok(o.ai === 'return', '脱战仍按主角距离判定（> 6 卡宽回位）'); }
 }
+{ // 治愈术：主角未满血治主角；满血治 170px 内最残召唤物；都满不施放（不耗蓝、不占公共间隔）
+  const w = mk([{ id: 'orc', x: 3000 }], [], 'taoist', 30); const h = w.hero!; w.cast(idx(w, 'summon_skeleton'), free(w)); const sm = w.summon!; sm.x = h.x + 100;
+  const hi = idx(w, 'heal'); h.mp = h.maxMp = 9999;
+  h.hp = h.maxHp - 50; sm.hp = 10; let cds = free(w); ok(w.cast(hi, cds).ok, '主角未满血：治愈术可施放'); run(w, 3); ok(h.hp === h.maxHp && sm.hp === 10, '主角未满血优先治主角（召唤物不回血）');
+  h.hp = h.maxHp; sm.hp = 10; cds = free(w); const mp0 = h.mp; ok(w.cast(hi, cds).ok, '主角满血：治愈术施放到召唤物'); run(w, 3); ok(sm.hp > 10 && h.mp < mp0, `召唤物回血 10→${Math.round(sm.hp)}`);
+  h.hp = h.maxHp; sm.hp = 10; sm.x = h.x + 400; cds = free(w); const r0 = w.cast(hi, cds) as any; ok(!r0.ok, '召唤物超出 170px：不施放');
+  sm.x = h.x + 100; sm.hp = sm.maxHp; h.hp = h.maxHp; cds = free(w); const mp1 = h.mp; const r = w.cast(hi, cds) as any;
+  ok(!r.ok && r.reason === '主角与召唤物生命已满' && h.mp === mp1 && Math.max(...cds) === 0, '都满血：不施放、不耗蓝、不占公共间隔');
+}
 { // 平衡：多种子自动脚本（单种子对随机序列太敏感，任何改动 RNG 消耗顺序的提交都会让结果漂移）
   const SEEDS = [3, 7, 11, 19, 23, 42, 57, 88, 101];
   const NEW_BOOKS = ['big_fireball', 'burst_fire', 'hell_fire', 'lightning_flash', 'hell_thunder', 'ghost_shield', 'holy_armor', 'mass_heal'];

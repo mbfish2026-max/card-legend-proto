@@ -58,6 +58,8 @@ export const taoBuffDur = (slv: number, tao: number) => 30 + 10 * Math.max(0, sl
 /** 热血传奇 1.76 变异骷髅（召唤骷髅）官方成长，按技能等级 0–3：HP=(L×0.1+0.3)×60×L+60；攻击上限=(L×0.1+0.3)×3×L+25，下限 10。
  *  来源 https://www.21cq.com/chuanqi/325.html 、https://www.cqtieba.com/thread-19128-1-1.html ；防御 未查到 */
 export const SKELETON_OFFICIAL = { hp: [60, 84, 120, 168], atkMin: 10, atkMax: [25, 26, 28, 30.4] };
+/** [适配] 治愈术主角满血时治疗召唤物的范围：官方未查到，沿用群体治愈术 170px */
+export const HEAL_SUMMON_RANGE = 170;
 export const BOSS_MECH = new Set(['boss_woma', 'boss_zuma', 'boss_redmoon']);
 /** R13 官方参数 */
 export const OFFICIAL = {
@@ -723,6 +725,15 @@ export class World {
     }
     if (s.kind === 'buff' && s.reduce && (h.armorUntil ?? 0) > this.time) return { ok: false, reason: `${s.name}持续中（官方：持续期间重复开启无效）` };
     if (s.buffStat && ((s.buffStat === 'def' ? h.defUpUntil : h.mdefUpUntil) ?? 0) > this.time) return { ok: false, reason: `${s.name}持续中（沿用魔法盾：持续期间重复开启无效）` };
+    if (s.heal && !s.area) {
+      // 治愈术：主角未满血 → 主角；主角满血 → 范围内血量比例最低的召唤物（[适配] 范围同群疗 170px，官方未查到）；都满 → 不施放、不耗蓝、不触发公共间隔
+      if (h.hp < h.maxHp) targets = [h];
+      else {
+        const sm = this.units.filter(u => u.summon && u.alive && u.hp < u.maxHp && Math.abs(u.x - h.x) <= HEAL_SUMMON_RANGE).sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0];
+        if (!sm) return { ok: false, reason: '主角与召唤物生命已满' };
+        targets = [sm];
+      }
+    }
     if (s.area) targets = [h, ...this.units.filter(u => u.summon && u.alive && Math.abs(u.x - h.x) <= s.area!)];
     h.mp = (h.mp ?? 0) - s.mana; for (let j = 0; j < cds.length; j++) cds[j] = Math.max(cds[j], CAST_GAP); cds[i] = Math.max(cds[i], s.cooldown); // 公共施法间隔（取消冷却）
     this.events.push({ type: 'attack', source: h.uid, target: targets[0]?.uid ?? h.uid, skill: s.id });
@@ -740,7 +751,7 @@ export class World {
         if (s.buffStat === 'def') { h.defUpUntil = this.time + d; h.defUp = v; } else { h.mdefUpUntil = this.time + d; h.mdefUp = v; }
         this.events.push({ type: 'log', text: `${s.name}：${s.buffStat === 'def' ? '防御' : '魔御'} +${v}，持续 ${d} 秒` });
       }
-      if (s.heal) { if (s.area) for (const t of targets) this.heal(t, pw * s.heal); else this.heal(h, pw * s.heal); }
+      if (s.heal) { if (s.area) for (const t of targets) this.heal(t, pw * s.heal); else this.heal(targets[0], pw * s.heal); }
     } else if (s.kind === 'summon') {
       const beast = s.id === 'summon_beast';
       const base = beast ? SUMMON_BEAST : SUMMON;

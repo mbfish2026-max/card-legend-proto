@@ -97,7 +97,7 @@ export const CAST_GAP = 0.8;
 export const COOLDOWN_BEFORE: Record<string, number> = {};
 for (const c of Object.values(CLASSES)) for (const s of c.skills) { COOLDOWN_BEFORE[s.id] = s.cooldown; if (!s.passive) s.cooldown = CAST_GAP; }
 /** 取消冷却后的再平衡 [适配]：法/道 主动技能 耗魔×mana、倍率×mult（9 种子模拟调参；战士不动）。改前值见 MANA_BEFORE/MULT_BEFORE */
-export const REBALANCE = { mage: { mana: 1.5, mult: 0.56 }, taoist: { mana: 1.2, mult: 1 } } as const;
+export const REBALANCE = { mage: { mana: 1.5, mult: 0.56 }, taoist: { mana: 1.35, mult: 1 } } as const;
 export const MANA_BEFORE: Record<string, number> = {}, MULT_BEFORE: Record<string, number> = {};
 for (const c of ['mage', 'taoist'] as const) for (const s of CLASSES[c].skills) if (!s.passive) {
   MANA_BEFORE[s.id] = s.mana; if (s.mult) MULT_BEFORE[s.id] = s.mult;
