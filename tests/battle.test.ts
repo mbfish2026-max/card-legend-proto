@@ -14,6 +14,7 @@ const mk = (spawns: Floor['spawns'], extra: Floor[] = [], cls: ClassId = 'warrio
 const run = (w: World, sec: number, dx = 0, dy = 0) => { for (let t = 0; t < sec; t += 0.05) w.step(0.05, { dx, dy }); };
 const tough = (w: World) => w.alive('enemy').forEach(e => (e.hp = e.maxHp = 1e9));
 const idx = (w: World, id: string) => w.skills.findIndex(s => s.id === id);
+const pool = (w: World, id: string) => w.skillPool.find(s => s.id === id)!;
 const free = (w: World) => w.skills.map(() => 0);
 
 { // 移动与边界
@@ -49,7 +50,7 @@ const free = (w: World) => w.skills.map(() => 0);
 { // 职业属性与成长
   for (const c of ['warrior', 'mage', 'taoist'] as ClassId[]) {
     const w = mk([], [], c, 1), h = w.hero!;
-    ok(h.maxHp === CLASSES[c].base.hp && h.atk === CLASSES[c].base.atk && w.skills.length === 4, `${CLASSES[c].name} 1 级属性 + 4 技能`);
+    ok(h.maxHp === CLASSES[c].base.hp && h.atk === CLASSES[c].base.atk && w.skills.length >= 4 && w.skills.every(s => !s.passive), `${CLASSES[c].name} 1 级属性 + 快捷栏主动技能`);
     const hp1 = h.maxHp, m1 = h.mag ?? 0, t1 = h.tao ?? 0; h.hp = 5; w.gainExp(w.expNext);
     ok(w.level === 2 && h.maxHp > hp1 && h.hp === h.maxHp && (c !== 'mage' || h.mag! > m1) && (c !== 'taoist' || h.tao! > t1), `${CLASSES[c].name} 升级自动成长并回满`);
   }
@@ -61,12 +62,35 @@ const free = (w: World) => w.skills.map(() => 0);
   const r2 = w.cast(idx(w, 'fire_sword'), free(w)); ok(r2.ok && r2.targets[0] === w.queue(1)[0].uid, '烈火剑法打前排');
   const r3 = w.cast(idx(w, 'thrust'), free(w)); ok(r3.ok && r3.targets.length === 2, '刺杀剑术命中 2 格');
   ok(w.skills.every(k => k.mana === 0), '战士剑法不耗魔（官方）');
-  const p = w.cast(idx(w, 'slaying'), free(w)); ok(!p.ok && p.reason.includes('被动'), '攻杀剑术为被动');
+  const sly = pool(w, 'slaying'); ok(!!sly && sly.passive === true, '攻杀剑术为被动且在 skillPool'); ok(idx(w, 'slaying') < 0, '攻杀不占快捷栏');
   const cds = free(w); w.cast(idx(w, 'fire_sword'), cds); const r4 = w.cast(idx(w, 'fire_sword'), cds); ok(!r4.ok && r4.reason.includes('冷却'), '冷却中不可再放');
   const fs = w.skills[idx(w, 'fire_sword')]; ok(fs.lvMult!.join() === '1.4,1.8,2.2,2.6' && fs.learn![0] === 35, '烈火剑法 35 级学习，1.4~2.6 倍（官方）');
   const w34 = mk([{ id: 'zombie', x: 700 }], [], 'warrior', 34); w34.hero!.x = 600; run(w34, 1);
   const rr = w34.cast(idx(w34, 'fire_sword'), free(w34)); ok(!rr.ok && rr.reason.includes('35'), '34 级不能用烈火剑法');
 }
+
+{ // R7 技能扩充：野蛮冲撞 / 火墙 / 神兽 / 基本剑术（官方有据）
+  const wr = mk([{ id: 'deer', x: 700 }, { id: 'wolf', x: 820 }], [], 'warrior', 32);
+  wr.hero!.x = 520; wr.alive('enemy').forEach(e => { e.level = 10; });
+  const rush = wr.cast(idx(wr, 'rush'), free(wr));
+  ok(rush.ok && rush.targets.length >= 1, '野蛮冲撞撞开低等级目标');
+  const bs = pool(wr, 'basic_sword'); ok(!!bs.passive && bs.accBonus![0] === 3 && bs.learn![0] === 7, '基本剑术官方准确+3 起、7 级学');
+  const mg = mk([{ id: 'orc', x: 700 }], [], 'mage', 28);
+  const fw = mg.cast(idx(mg, 'fire_wall'), free(mg));
+  ok(fw.ok && mg.zones.length === 1, '火墙落地生成燃烧区');
+  mg.step(0.6, { dx: 0, dy: 0 });
+  ok(mg.zones[0] && mg.zones[0].until > mg.time, '火墙持续燃烧');
+  ok(mg.skills.some(s => s.id === 'fire_wall') && mg.skills.some(s => s.id === 'ice_roar'), '法师快捷栏含火墙与冰咆哮');
+  ok(CLASSES.mage.skills.find(s => s.id === 'fire_wall')!.mana === 60, '火墙耗魔 = D Spell20 ×3（适配）');
+  const td = mk([{ id: 'orc', x: 700 }], [], 'taoist', 35);
+  const sb = td.cast(idx(td, 'summon_beast'), free(td));
+  ok(!!(sb.ok && td.summon && td.summon.id === 'summon_beast'), '35 级召唤神兽');
+  const sk = td.cast(idx(td, 'summon_skeleton'), free(td));
+  ok(sk.ok && td.summon!.id === 'summon_skeleton', '再召骷髅替换神兽（互斥）');
+  const sf = pool(td, 'spirit_force'); ok(!!sf.passive && sf.accBonus![2] === 8, '精神力战法准确+8（Lv3 官方）');
+  ok(idx(td, 'spirit_force') < 0, '精神力战法不占快捷栏');
+}
+
 { // 技能修炼：等级 + 修炼点（官方门槛），存档保留
   const w = mk([{ id: 'orc', x: 700 }], [], 'warrior', 30); const k = w.skills[idx(w, 'thrust')];
   ok(w.skillLevel(k) === 0, '刚学会 0 级');
@@ -151,7 +175,7 @@ const free = (w: World) => w.skills.map(() => 0);
       if (!h) { w.respawn(); continue; }
       if (h.hp < h.maxHp * 0.4 && w.usePotion(w.pots[1] > 0 ? 1 : 0)) potUsed++;
       if ((h.mp ?? 0) < 40) w.usePotion(w.pots[3] > 0 ? 3 : 2);
-      for (let i = 0; i < 4; i++) w.cast(i, cds);
+      for (let i = 0; i < w.skills.length; i++) w.cast(i, cds);
       for (let i = w.bag.length - 1; i >= 0; i--) { const it = w.bag[i]; if (it.slot && it.req <= w.level && !w.equip[it.slot]) w.equipItem(i); }
       // 黑铁：模拟脚本卖掉（避免碎装干扰难度基线；玩家可手动强化）
       for (let i = w.bag.length - 1; i >= 0; i--) if (w.bag[i]?.item === 'black_iron') w.sellItem(i);
@@ -202,9 +226,11 @@ const free = (w: World) => w.skills.map(() => 0);
   ok(h.facing === 1 && x0 - h.x > WORLD.heroSpeed * 0.25 * 0.9, `后退时仍面向怪物（facing ${h.facing}，后退 ${Math.round(x0 - h.x)}px）`);
   const w2 = mk([]); const h2 = w2.hero!; w2.step(0.05, { dx: -1, dy: 0 }); ok(h2.facing === -1, '附近无怪时向左走会转身');
 }
-{ // 技能键 F1~F4，且不占用 W/A/S/D
-  const keys = (Object.keys(CLASSES) as ClassId[]).flatMap(c => CLASSES[c].skills.map(s => s.key));
-  ok(keys.every(k => /^F[1-4]$/.test(k)) && !keys.some(k => 'WASD'.includes(k)), `三职业技能键均为 F1~F4（${[...new Set(keys)].join(',')}）`);
+{ // 技能键：主动 F1~Fn，被动 P，且不占用 W/A/S/D
+  const actives = (Object.keys(CLASSES) as ClassId[]).flatMap(c => CLASSES[c].skills.filter(s => !s.passive));
+  const keys = actives.map(s => s.key);
+  ok(keys.every(k => /^F[1-5]$/.test(k)) && !keys.some(k => 'WASD'.includes(k)), `三职业主动技能键均为 F1~F5（${[...new Set(keys)].join(',')}）`);
+  ok(CLASSES.warrior.skills.filter(s => !s.passive).length === 4 && CLASSES.mage.skills.filter(s => !s.passive).length === 5, '战士 4 主动 / 法师 5 主动');
   ok(POTIONS.every(p => !keys.includes(p.key)), '药水 1-4 与技能键不冲突');
 }
 { // S 键：起点返回上一层

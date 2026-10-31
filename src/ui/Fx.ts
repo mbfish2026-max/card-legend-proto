@@ -183,3 +183,13 @@ export function holyLight(s: S, x: number, y: number, h: number) {
     s.tweens.add({ targets: d, y: y - h * 0.5, alpha: 0, duration: 700 + Math.random() * 400, onComplete: () => d.destroy() });
   }
 }
+
+/** 火墙：目标脚下橙红火柱简效 */
+export function fireWall(s: S, x: number, y: number) {
+  const g = s.add.graphics().setDepth(30).setBlendMode(Phaser.BlendModes.ADD);
+  g.fillStyle(0xff4400, 0.55); g.fillEllipse(x, y, 120, 36);
+  g.fillStyle(0xffaa22, 0.7); g.fillTriangle(x - 18, y, x + 18, y, x, y - 70);
+  g.fillStyle(0xffee88, 0.5); g.fillTriangle(x - 8, y - 10, x + 8, y - 10, x, y - 55);
+  s.tweens.add({ targets: g, alpha: 0, y: y - 20, duration: 900, onComplete: () => g.destroy() });
+  sparks(s, x, y - 20, 8, 0xff6622, 28, 500);
+}

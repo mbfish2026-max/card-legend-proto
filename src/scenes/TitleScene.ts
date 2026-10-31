@@ -47,7 +47,7 @@ export class TitleScene extends Phaser.Scene {
     this.add.rectangle(640, 360, 1280, 720, 0x000000, 0.35);
     txt(this, 640, 120, '卡 牌 传 奇', 72, '#ffd24a', { fontStyle: 'bold', strokeThickness: 8 }).setOrigin(0.5);
     txt(this, 640, 190, IS_MOBILE ? '横版卡牌动作 · 原型（触屏：屏幕虚拟按键操作）' : '横版卡牌动作 · 原型', 20, '#e8d8b0').setOrigin(0.5);
-    if (!IS_MOBILE) txt(this, 640, 218, 'A/D 移动（可后退） · W/空格 传送门 · S 回上层 · F1-F4 技能 · 1-4 药水 · B 背包 · T 商人', 15, '#bfb39a').setOrigin(0.5);
+    if (!IS_MOBILE) txt(this, 640, 218, 'A/D 移动（可后退） · W/空格 传送门 · S 回上层 · F1-F5 技能 · 1-4 药水 · B 背包 · T 商人', 15, '#bfb39a').setOrigin(0.5);
     if (qs.get('title') === 'class') this.classSelect(); else this.mainMenu();
   }
   clear() { this.layer?.destroy(true); this.layer = this.add.container(0, 0); return this.layer; }

@@ -76,3 +76,13 @@
 ## H. 悬赏 / 成就（R5 研究文档 / CHANGELOG R6）
 - 本轮无新立绘需求；悬赏与成就面板使用现有 UI 文字与菜单按钮。
 - 若后续要做「悬赏」菜单专用图标，可替换 menu 第 2 槽（当前复用占位）。
+
+## I. 技能扩充图标（R6 研究 / CHANGELOG R7，64×64 PNG，已放同名占位，直接覆盖）
+| 文件 | 技能 |
+|---|---|
+| skills/skill_basic_sword.png | 基本剑术（战士被动） |
+| skills/skill_rush.png | 野蛮冲撞（战士） |
+| skills/skill_fire_wall.png | 火墙（法师） |
+| skills/skill_spirit_force.png | 精神力战法（道士被动） |
+| skills/skill_summon_beast.png | 召唤神兽（道士） |
+| portraits 复用 | 神兽暂用狼立绘占位；若做专用神兽立绘请交 `portraits/summon_beast_full.png`（朝左，透明底） |

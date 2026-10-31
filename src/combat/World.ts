@@ -4,7 +4,7 @@ import { BattleEvent, GroundItem, InvItem, Rarity, Slot, Stats, Team, Unit, Unit
 import { POTIONS } from '../data/skills';
 import { CLASSES, ClassId, SkillDef } from '../data/classes';
 import { ITEMS, SLOTS, SETS, ENHANCE_SLOTS, ENHANCE_MAX, ENHANCE_STAT, IRON_PRICE, IRON_MAX_PURITY, enhanceChance, shatterChance } from '../data/items';
-import { HERO, ENEMIES, EXP_PER_LEVEL, SUMMON } from '../data/units';
+import { HERO, ENEMIES, EXP_PER_LEVEL, SUMMON, SUMMON_BEAST } from '../data/units';
 import { WORLD, FLOORS, Floor } from '../data/world';
 import { QUESTS, ACHIEVES, QuestDef, AchieveDef } from '../data/quests';
 
@@ -28,6 +28,8 @@ const ZERO: Stats = { hp: 0, mp: 0, atk: 0, mag: 0, tao: 0, def: 0 };
 
 export class World {
   units: Unit[] = []; events: BattleEvent[] = []; ground: GroundItem[] = [];
+  /** 火墙等地面持续区：[适配] 落点灼烧 */
+  zones: { x: number; until: number; dps: number; radius: number; tick: number; skill: string }[] = [];
   exp = 0; expNext: number; nextUid = 1; nextGid = 1; nextItem = 1; time = 0;
   pots = POTIONS.map(p => p.count); gold = 0;
   /** 背包（最多 WORLD.bagSize 格）与装备栏 */
@@ -74,7 +76,12 @@ export class World {
   /** 兼容旧接口：已拾取的装备（背包+身上） */
   get inventory() { return [...Object.values(this.equip), ...this.bag].filter((x): x is InvItem => !!x && !!x.slot); }
   get classDef() { return CLASSES[this.cls]; }
-  get skills(): SkillDef[] { return this.classDef.skills; }
+  /** 职业全部技能（含被动） */
+  get skillPool(): SkillDef[] { return this.classDef.skills; }
+  /** 快捷栏主动技能：去掉被动后按顺序重标 F1..Fn */
+  get skills(): SkillDef[] {
+    return this.skillPool.filter(s => !s.passive).map((s, i) => ({ ...s, key: `F${i + 1}` }));
+  }
   get floor() { return this.floors[this.floorIndex]; }
   get exitX() { return WORLD.mapWidth - WORLD.exitMargin; }
   get hero() { return this.units.find(u => u.isHero && u.alive); }
@@ -255,7 +262,7 @@ export class World {
     this.units.push(u); return u;
   }
   loadFloor(i: number) { this.stepTarget = null; this.stepQueued = 0;
-    this.floorIndex = i; this.cleared = false; this.ground = []; this.reached.add(i); this.checkAchieves();
+    this.floorIndex = i; this.cleared = false; this.ground = []; this.zones = []; this.reached.add(i); this.checkAchieves();
     this.units = this.units.filter(u => u.isHero || u.summon);
     const h = this.hero; if (h) { h.x = WORLD.heroStartX; h.y = 0; h.facing = 1; }
     const s = this.summon; if (s) { s.x = WORLD.heroStartX - 110; s.y = WORLD.summonLane; }
@@ -295,7 +302,7 @@ export class World {
 
   damage(target: Unit, amount: number, source?: Unit, canCrit = true, dot = false) {
     if (!target.alive) return 0;
-    const crit = canCrit && this.rng() < CRIT_CHANCE;
+    const crit = canCrit && this.rng() < (source?.isHero ? this.critChance() : CRIT_CHANCE);
     if (crit) amount *= CRIT_MULT;
     amount = Math.max(amount * 0.2, amount - (target.def ?? 0) * WORLD.defFactor);
     if (target.armorUntil && target.armorUntil > this.time) amount *= 1 - (target.armorReduce ?? 0.5);
@@ -478,12 +485,19 @@ export class World {
       const side = this.meleeSide(); if (side === null) return { ok: false, reason: '没有可攻击的目标' };
       const q = this.queue(side); h.facing = side as 1 | -1;
       targets = s.kind === 'pierce' ? q.slice(0, s.pierce ?? 3) : [q[0]];
-    } else if (s.kind === 'ranged' || s.kind === 'dot') {
+    } else if (s.kind === 'ranged' || s.kind === 'dot' || s.kind === 'zone') {
       const side = this.rangedSide(s.range ?? 500); if (side === null) return { ok: false, reason: '射程内没有目标' };
       h.facing = side as 1 | -1; targets = [this.queue(side)[0]];
     } else if (s.kind === 'aoe') {
       targets = this.alive('enemy').filter(e => Math.max(0, this.gap(h, e)) <= (s.range ?? 400));
       if (!targets.length) return { ok: false, reason: '范围内没有目标' };
+    } else if (s.kind === 'rush') {
+      // 冲撞：射程内选边，撞开等级低于自己的目标（官方）；[适配] 伤害
+      const reach = s.range ?? 220;
+      const side = this.rangedSide(reach); if (side === null) return { ok: false, reason: '没有可冲撞的目标' };
+      h.facing = side as 1 | -1;
+      targets = this.queue(side).filter(e => e.level < this.level && this.gap(h, e) <= reach).slice(0, 3);
+      if (!targets.length) return { ok: false, reason: '附近没有等级低于自己的目标' };
     }
     h.mp = (h.mp ?? 0) - s.mana; cds[i] = s.cooldown;
     this.events.push({ type: 'attack', source: h.uid, target: targets[0]?.uid ?? h.uid, skill: s.id });
@@ -497,17 +511,38 @@ export class World {
       }
       if (s.heal) this.heal(h, pw * s.heal);
     } else if (s.kind === 'summon') {
+      const beast = s.id === 'summon_beast';
+      const base = beast ? SUMMON_BEAST : SUMMON;
       const ex = this.summon;
-      if (ex) { this.heal(ex, ex.maxHp); this.events.push({ type: 'log', text: '骷髅已存在：恢复其生命' }); }
-      else {
+      if (ex && ex.id === base.id) {
+        this.heal(ex, ex.maxHp); this.events.push({ type: 'log', text: `${base.name}已存在：恢复其生命` });
+      } else {
+        if (ex) { ex.alive = false; this.events.push({ type: 'death', uid: ex.uid }); this.events.push({ type: 'log', text: `解散 ${ex.name}，召唤 ${base.name}` }); }
         const tao = h.tao ?? 0;
-        // 随等级/道术成长：1 级较弱，高等级更强（base + tao 缩放）
-        const def: UnitDef = { ...SUMMON, level: this.level, hp: Math.round((140 + tao * 5) * lvF), atk: Math.round((8 + tao * 0.9) * lvF), def: Math.round(3 + this.level * 0.8) };
+        // 骷髅 / 神兽：随道术与技能等级成长（C：神兽 1/2/3 级）
+        const hp0 = beast ? 250 + tao * 7 : 140 + tao * 5;
+        const atk0 = beast ? 14 + tao * 1.15 : 8 + tao * 0.9;
+        const def0 = beast ? 7 + this.level * 1.0 : 3 + this.level * 0.8;
+        const def: UnitDef = { ...base, level: this.level + (beast ? slv : 0), hp: Math.round(hp0 * lvF), atk: Math.round(atk0 * lvF), def: Math.round(def0) };
         const u = this.spawn(def, 'ally', h.x - h.facing * 110, WORLD.summonLane); u.summon = true; u.facing = h.facing; u.ai = 'chase';
         this.events.push({ type: 'summon', uid: u.uid });
       }
     } else if (s.kind === 'dot') {
       for (const t of targets) { t.poisonUntil = this.time + dur; t.poisonDps = pw * (s.mult ?? 0.5); t.poisonTick = this.time + 1; this.damage(t, pw * (s.mult ?? 0.5), h, false); }
+    } else if (s.kind === 'zone') {
+      // 火墙：官方 2×2、等级延长燃烧时间；[适配] 落在目标脚下，半径约一格，每秒灼烧
+      const t0 = targets[0];
+      const dps = pw * (s.mult ?? 0.8);
+      this.zones.push({ x: t0.x, until: this.time + dur, dps, radius: 160, tick: this.time + 0.5, skill: s.id });
+      this.damage(t0, dps * 0.6, h, false); // 落点瞬时轻伤
+      this.events.push({ type: 'log', text: `${s.name}：燃烧 ${dur} 秒` });
+    } else if (s.kind === 'rush') {
+      for (const t of targets) {
+        t.x += h.facing * 150;
+        t.x = Math.max(t.width / 2, Math.min(WORLD.mapWidth - t.width / 2, t.x));
+        this.damage(t, pw * (s.mult ?? 0.5) * this.roll(0.95, 0.1), h);
+      }
+      this.events.push({ type: 'log', text: `${s.name}：撞开 ${targets.length} 个低等级目标` });
     } else {
       targets.forEach((t, j) => {
         // 战士剑法：官方各级倍率（刺杀/半月：主目标 100%，其余按倍率；烈火：主目标倍率）
@@ -566,6 +601,17 @@ export class World {
     if (d <= speed * dt) { u.x = tx; u.y = ty; return true; }
     u.x += (tx - u.x) / d * speed * dt; u.y += (ty - u.y) / d * speed * dt; return false;
   }
+  /** [适配] 基本剑术/精神力战法准确 → 暴击率加成（官方准确数值 / 100） */
+  critChance() {
+    let c = CRIT_CHANCE;
+    for (const s of this.skillPool) {
+      if (!s.passive || !s.accBonus) continue;
+      const lv = this.skillLevel(s); if (lv < 0) continue;
+      c += (s.accBonus[lv] ?? 0) / 100;
+      this.addTrain(s, 1); // 被动微弱修炼；[适配] 原版获得量未查到
+    }
+    return c;
+  }
   private autoDamage(h: Unit) { const c = this.classDef; return h.atk + (c.autoStat === 'atk' ? 0 : this.power(c.autoStat) * 0.6); }
 
   step(dt: number, inp: Input = { dx: 0, dy: 0 }) {
@@ -617,6 +663,17 @@ export class World {
         prevDist = Math.abs(u.x - h.x); prev = u;
       }
     }
+
+      // 火墙等地面区：每 0.5 秒灼烧范围内敌人
+      if (this.zones.length) {
+        this.zones = this.zones.filter(z => z.until > this.time);
+        for (const z of this.zones) {
+          if (this.time < z.tick) continue;
+          z.tick += 0.5;
+          for (const e of this.alive('enemy')) if (Math.abs(e.x - z.x) <= z.radius) this.damage(e, z.dps * 0.5, h, false, true);
+        }
+      }
+
     for (const u of this.units) if (u.alive) u.cd = Math.max(0, u.cd - dt);
     // 召唤骷髅：跟随主角；有交战中的敌人则冲上去近战
     const sm = this.summon;
@@ -638,9 +695,15 @@ export class World {
         const f = this.queue(side)[0]; h.cd = h.atkInterval; if (!h.moving) h.facing = side as 1 | -1;
         this.events.push({ type: 'attack', source: h.uid, target: f.uid });
         let dmg = this.autoDamage(h) * this.roll(0.9, 0.2);
-        // 攻杀剑术（被动，官方：附加伤害与几率按等级）；用 lootRng 不扰动主随机序列
-        const sl = this.skills.find(k => k.passive && k.lvBonus);
-        if (sl) { const lv = this.skillLevel(sl); if (lv >= 0) { this.addTrain(sl, 10); if (this.lootRng() < sl.lvChance![lv]) { dmg += sl.lvBonus![lv]; this.events.push({ type: 'log', text: `攻杀剑术 +${sl.lvBonus![lv]}` }); } } }
+        // 被动：攻杀剑术（官方附加伤害/几率）+ 准确系（修炼）；用 lootRng 不扰动主随机序列
+        for (const sl of this.skillPool) {
+          if (!sl.passive) continue;
+          const lv = this.skillLevel(sl); if (lv < 0) continue;
+          if (sl.lvBonus && sl.lvChance) {
+            this.addTrain(sl, 10);
+            if (this.lootRng() < sl.lvChance[lv]) { dmg += sl.lvBonus[lv]; this.events.push({ type: 'log', text: `${sl.name} +${sl.lvBonus[lv]}` }); }
+          } else if (sl.accBonus) this.addTrain(sl, 10);
+        }
         this.damage(f, dmg, h);
       }
       for (const s of [1, -1]) {

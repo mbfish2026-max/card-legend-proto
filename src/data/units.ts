@@ -8,7 +8,7 @@ export const HERO: UnitDef = {
 const card = (o: Partial<NonNullable<UnitDef['card']>> = {}) => ({ w: 140, h: 190, figureScale: 1.15, anchorX: 0.55, maxWidthRatio: 1.7, artFacing: -1 as const, ...o });
 const bossCard = (o: Partial<NonNullable<UnitDef['card']>> = {}) => card({ w: 200, h: 260, figureScale: 1.2, maxWidthRatio: 1.6, bg: 0x3a0606, ...o });
 /** 难度曲线（v0.2 上调：原版偏简单）。普通怪/首领的生命与攻击倍率 */
-export const DIFF = { hp: 1.6, atk: 2.7, bossHp: 1.6, bossAtk: 2.0 };
+export const DIFF = { hp: 1.6, atk: 2.81, bossHp: 1.6, bossAtk: 2.08 };
 const n = (id: string, name: string, level: number, hp: number, atk: number, def: number, exp: number, drops: DropEntry[], extra: Partial<UnitDef> = {}): UnitDef =>
   ({ id, name, level, hp: Math.round(hp * DIFF.hp), atk: Math.round(atk * 1.4 * DIFF.atk), def, exp, drops, atkInterval: 1.3, range: 6, speed: 110, width: 130, height: 180, tier: 'normal', card: card(), ...extra });
 const b = (id: string, art: string, name: string, level: number, hp: number, atk: number, def: number, exp: number, drops: DropEntry[], extra: Partial<UnitDef> = {}): UnitDef =>
@@ -49,4 +49,7 @@ export const ENEMIES: Record<string, UnitDef> = {
 /** 道士召唤骷髅（金色卡底，友方） */
 export const SUMMON: UnitDef = { id: 'summon_skeleton', art: 'skeleton', name: '骷髅', level: 1, hp: 200, atk: 10, def: 4, atkInterval: 1.3, range: 6, speed: 0, width: 120, height: 170, tier: 'player',
   card: card({ w: 120, h: 160, figureScale: 1.15, bg: 0x7a5c14 }) };
+/** 召唤神兽（官方 C：1/2/3 级神兽）；占位立绘用狼，美术见 art-requests */
+export const SUMMON_BEAST: UnitDef = { id: 'summon_beast', art: 'wolf', name: '神兽', level: 1, hp: 360, atk: 22, def: 10, atkInterval: 1.15, range: 8, speed: 0, width: 140, height: 180, tier: 'player',
+  card: card({ w: 150, h: 190, figureScale: 1.2, bg: 0x5a4010 }) };
 export const EXP_PER_LEVEL = (lv: number) => 80 + lv * 45;

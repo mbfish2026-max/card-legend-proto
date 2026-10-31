@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { FONT } from '../data/fx';
 import { POTIONS, SkillDef } from '../data/skills';
-/** 半透明虚拟手柄（仅手机）：左下四向键，右下技能 F1-F4，右上药水 1-4，上方 背包/商人/设置/静音。
+/** 半透明虚拟手柄（仅手机）：左下四向键，右下技能 F1-Fn，右上药水 1-4，上方 背包/商人/设置/静音。
  *  按键直接调用与键盘相同的 onKey；方向键通过 dir 状态并入每帧移动输入。支持多点触控。 */
 export class VirtualPad {
   root: Phaser.GameObjects.Container; dir = { left: false, right: false, up: false, down: false };
@@ -30,9 +30,10 @@ export class VirtualPad {
     dirBtn('left', cx - d, cy, '◀'); dirBtn('right', cx + d, cy, '▶'); dirBtn('up', cx, cy - d, '▲'); dirBtn('down', cx, cy + d * 0.95, '▼');
     // 右下：技能扇形
     const ox = 1252, oy = 600, rad = 170;
+    const n = Math.max(1, skills.length);
     skills.forEach((k, i) => {
-      const a = Math.PI + (i * Math.PI / 2) / 3, x = ox + Math.cos(a) * rad, y = oy + Math.sin(a) * rad;
-      btn(x, y, 52, k.key, 'sk_' + k.id, () => onKey(k.key)); this.skillBtns.push({ x, y, r: 52 });
+      const a = Math.PI + (i / Math.max(1, n - 1)) * (Math.PI * 0.55), x = ox + Math.cos(a) * rad, y = oy + Math.sin(a) * rad * 0.85;
+      btn(x, y, n > 4 ? 46 : 52, k.key, 'sk_' + k.id, () => onKey(k.key)); this.skillBtns.push({ x, y, r: n > 4 ? 46 : 52 });
     });
     // 右上：药水
     POTIONS.forEach((p, i) => btn(935 + i * 96, 160, 45, p.key, 'potion_' + i, () => onKey(p.key)));

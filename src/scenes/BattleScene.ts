@@ -79,8 +79,8 @@ export class BattleScene extends Phaser.Scene {
     this.events.once('shutdown', () => window.removeEventListener('keydown', onWinKey, true));
     // 其它键（F1~F4 技能等）：阻止 F1 帮助等默认行为；不占用 F5 等其它功能键
     this.input.keyboard!.on('keydown', (e: KeyboardEvent) => {
-      if (stepDir(e)) return; if (/^F[1-4]$/.test(e.key)) e.preventDefault(); this.onKey(e.key.toUpperCase()); });
-    this.input.keyboard!.addCapture('F1,F2,F3,F4');
+      if (stepDir(e)) return; if (/^F[1-5]$/.test(e.key)) e.preventDefault(); this.onKey(e.key.toUpperCase()); });
+    this.input.keyboard!.addCapture('F1,F2,F3,F4,F5');
     // 失焦/切后台时清空按键状态，避免 keyup 丢失导致方向键"卡住"或失灵
     const reset = () => { hold.reset(); this.input.keyboard?.resetKeys(); this.ui?.pad?.reset?.(); };
     window.addEventListener('blur', reset); document.addEventListener('visibilitychange', reset); this.game.events.on('blur', reset);
@@ -195,6 +195,9 @@ export class BattleScene extends Phaser.Scene {
         tv.forEach(v => fx.bloodBlade(this, v.cx, v.cy, v.h * 0.7, FX.halfMoonColor));
       } return done();
       case 'thrust': hv.lunge(dir, 34); if (tv[0]) fx.shadowSlash(this, tv[0].cx, tv[0].cy, tv[0].h); return done();
+      case 'fire_wall': if (tv[0]) { fx.fireWall(this, tv[0].cx, tv[0].cy + 40); tv.forEach(v => fx.hitSpark(this, v.cx, v.cy)); } return done();
+      case 'rush': hv.lunge(dir, 50); tv.forEach(v => fx.shadowSlash(this, v.cx, v.cy, v.h)); return done();
+      case 'summon_beast': fx.summonCircle(this, hv.cx - dir * 80, hv.cy); return done();
       case 'fireball': case 'soul_fire': if (tv[0]) {
         const t = tv[0];
         return fx.projectile(this, hv.cx + dir * hv.w * 0.4, hv.cy - 20, t.cx, t.cy, skill === 'fireball' ? 'fire' : 'talisman', () => {

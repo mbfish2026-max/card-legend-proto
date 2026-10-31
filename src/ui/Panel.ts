@@ -155,17 +155,25 @@ export class Panel {
   }
   private renderSkills(R: Phaser.GameObjects.Container, top: number) {
     const s = this.s, w = this.world();
-    w.skills.forEach((k, i) => {
-      const y = top + 82 + i * 86;
-      if (s.textures.exists('sk_' + k.id)) R.add(s.add.image(200, y, 'sk_' + k.id).setDisplaySize(60, 60));
+    // 面板展示全部技能（含被动）；快捷栏仅主动技能 F1..Fn
+    const bar = new Map(w.skills.map(k => [k.id, k.key]));
+    const list = w.skillPool;
+    const gap = list.length > 5 ? 62 : 78;
+    list.forEach((k, i) => {
+      const y = top + 70 + i * gap;
+      const fk = bar.get(k.id) ?? (k.passive ? '被动' : '');
+      if (s.textures.exists('sk_' + k.id)) R.add(s.add.image(200, y, 'sk_' + k.id).setDisplaySize(list.length > 5 ? 48 : 56, list.length > 5 ? 48 : 56));
       const need = k.unlock ?? k.learn?.[0] ?? 1, lv = w.skillLevel(k), locked = lv < 0, pts = w.skillTrain[k.id] ?? 0;
       const nextNeed = lv >= 0 && lv < 3 && k.learn && k.train ? `  下一级：人物 Lv${k.learn[lv + 1]} + 修炼点 ${k.train[lv]}` : lv === 3 ? '  已满级' : '';
-      R.add(txt(s, 245, y - 34, `[${k.key}] ${k.name}${locked ? `（需人物 Lv${need}）` : `  ${lv} 级`}${k.passive ? '  被动' : ''}`, 20, locked ? '#888' : '#ffd24a', { fontStyle: 'bold' }));
-      const eff = k.lvMult ? `  本级倍率 ${Math.round(k.lvMult[Math.max(0, lv)] * 100)}%` : k.lvBonus ? `  本级 +${k.lvBonus[Math.max(0, lv)]} 伤害 / 几率 1/${Math.round(1 / k.lvChance![Math.max(0, lv)])}` : `  等级加成 +${Math.max(0, lv) * 10}%`;
-      R.add(txt(s, 245, y - 8, `${k.desc}${eff}`, 14, locked ? '#777' : '#ddd', { strokeThickness: 2 }));
-      R.add(txt(s, 245, y + 14, `${k.passive ? '无需施放' : `消耗 ${k.mana} 魔法  冷却 ${k.cooldown}s`}   修炼点 ${pts}${k.train ? '/' + k.train[2] : ''}${nextNeed}`, 13, locked ? '#666' : '#9fd', { strokeThickness: 2 }));
+      R.add(txt(s, 245, y - 26, `[${fk}] ${k.name}${locked ? `（需人物 Lv${need}）` : `  ${lv} 级`}${k.passive ? '  被动' : ''}`, list.length > 5 ? 17 : 19, locked ? '#888' : '#ffd24a', { fontStyle: 'bold' }));
+      const eff = k.lvMult ? `  本级倍率 ${Math.round(k.lvMult[Math.max(0, lv)] * 100)}%`
+        : k.lvBonus ? `  本级 +${k.lvBonus[Math.max(0, lv)]} 伤害 / 几率 1/${Math.round(1 / k.lvChance![Math.max(0, lv)])}`
+        : k.accBonus ? `  准确 +${k.accBonus[Math.max(0, lv)]}（[适配]暴击+${k.accBonus[Math.max(0, lv)]}%）`
+        : `  等级加成 +${Math.max(0, lv) * 10}%`;
+      R.add(txt(s, 245, y - 4, `${k.desc}${eff}`, 13, locked ? '#777' : '#ddd', { strokeThickness: 2 }));
+      R.add(txt(s, 245, y + 16, `${k.passive ? '无需施放' : `消耗 ${k.mana} 魔法  冷却 ${k.cooldown}s`}   修炼点 ${pts}${k.train ? '/' + k.train[2] : ''}${nextNeed}`, 12, locked ? '#666' : '#9fd', { strokeThickness: 2 }));
     });
-    R.add(txt(s, 180, top + 412, `学习等级/修炼点/战士倍率取自 1.76 官方资料；耗魔×3、冷却、修炼点获得(施放+100/被动+10)为卡牌适配。人物等级加成 ×${w.skillScale().toFixed(2)}`, 12, '#aaa'));
+    R.add(txt(s, 180, top + 430, `学习等级/修炼点/战士倍率取自 1.76 官方；耗魔×3、冷却、火墙灼烧、野蛮伤害、准确→暴击为卡牌适配。人物等级加成 ×${w.skillScale().toFixed(2)}`, 12, '#aaa'));
   }
   private renderMap(R: Phaser.GameObjects.Container, top: number) {
     const s = this.s, w = this.world(), cur = regionOf(w.floorIndex);
@@ -257,7 +265,7 @@ export class Panel {
     const selected = new Set(Settings.skillsFor(cls));
     w.skills.forEach((sk, i) => {
       const on = selected.has(sk.id);
-      const x = 280 + (i % 4) * 180, y = top + 288;
+      const x = 280 + (i % 4) * 180, y = top + 288 + Math.floor(i / 4) * 40;
       R.add([...button(s, x, y, 168, 34, `${on ? '✓' : '○'} ${sk.key} ${sk.name}`, () => {
         Settings.toggleAutoSkill(sk.id, cls); this.render();
       }, 13)]);
