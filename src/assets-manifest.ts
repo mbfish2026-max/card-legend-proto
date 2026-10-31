@@ -70,3 +70,11 @@ export const SFX: Record<string, string> = {
 /** 大城长街美术（feat/towns，进城时按需加载；摆位见 src/data/towns.ts TOWN_LAYOUT）。jpg = 背景 */
 import { TOWN_LAYOUT, townArtKeys } from './data/towns';
 export const TOWN_ASSETS: Record<string, string> = Object.fromEntries(Object.keys(TOWN_LAYOUT).flatMap(townArtKeys).map(k => [k, `assets/town/${k}.${k.startsWith('bg_') ? 'jpg' : 'png'}`]));
+/** 世界大地图美术（art/world-map 分批交付）：只登记已交付的文件（2026-11-01 三批已全部到齐）；未登记/加载失败的 key 由 WorldMapView 程序绘制占位。打开地图时按需加载（不进首屏）。
+ * 换图只改这里，例如：world_map_0_0: 'assets/worldmap/world_map_0_0.jpg'。占位清单见 docs/art-requests.md W 章「占位状态」 */
+export const WM_ASSETS: Record<string, string> = Object.fromEntries([
+  ...[0, 1, 2, 3].flatMap(c => [0, 1].map(r => `world_map_${c}_${r}`)).map(k => [k, `assets/worldmap/${k}.jpg`]),
+  ...['bichi', 'woma', 'dushe', 'zuma', 'cangyue', 'fengmo', 'chiyue', 'hejiban'].map(id => [`world_region_${id}`, `assets/worldmap/world_region_${id}.jpg`]),
+  ...['town', 'cave', 'dungeon', 'boss', 'portal', 'rift', 'player', 'locked'].map(k => [`icon_wm_${k}`, `assets/worldmap/icon_wm_${k}.png`]),
+  ['world_fog', 'assets/worldmap/world_fog.png'], ['wm_frame', 'assets/worldmap/wm_frame.png'],
+]);

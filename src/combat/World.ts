@@ -32,7 +32,7 @@ export interface SaveData {
   /** 技能修炼点（熟练度），按技能 id */
   skillTrain?: Record<string, number>;
   /** 地图：已到达的层（index）与已击杀的 BOSS（层 index） */
-  reached?: number[]; bossKilled?: number[];
+  reached?: number[]; bossKilled?: number[]; /** 世界地图：去过的城镇（可选；旧档缺省按区域点亮推） */ townsSeen?: string[];
   /** 悬赏进度 / 已完成悬赏 / 已解锁成就 */
   questProg?: Record<string, number>; questDone?: string[]; achieves?: string[];
   /** R11 已学技能 id；缺省 = 旧存档（按等级视为全部已学） */
@@ -166,7 +166,7 @@ export class World {
   ironBoughtCount = 0;
   /** 技能修炼点（官方等级要求/点数见 docs/skills-official.md） */
   skillTrain: Record<string, number> = {};
-  reached = new Set<number>(); bossKilled = new Set<number>();
+  reached = new Set<number>(); bossKilled = new Set<number>(); townsSeen = new Set<string>();
   /** 任务B：层 index → BOSS 可再刷新的游戏时间（this.time） */
   bossCdUntil: Record<number, number> = {};
   bossCdLeft(i = this.floorIndex) { return Math.max(0, Math.ceil((this.bossCdUntil[i] ?? 0) - this.time)); }
@@ -193,7 +193,7 @@ export class World {
     if (save) {
       this.cls = save.cls; this.level = save.level; this.exp = migrateExp(save.level, save.exp, save.expV); this.gold = save.gold; this.pots = [...save.pots];
       this.equip = migrateEquip(save); this.bag = [...save.bag]; this.kills = save.kills; this.nextItem = save.nextUid;
-      this.skillTrain = { ...(save.skillTrain ?? {}) }; this.reached = new Set(save.reached ?? []); this.bossKilled = new Set(save.bossKilled ?? []);
+      this.skillTrain = { ...(save.skillTrain ?? {}) }; this.reached = new Set(save.reached ?? []); this.bossKilled = new Set(save.bossKilled ?? []); this.townsSeen = new Set(Array.isArray(save.townsSeen) ? save.townsSeen.filter(x => typeof x === 'string') : []);
       for (const [k, v] of Object.entries(save.bossCd ?? {})) if (v > 0) this.bossCdUntil[+k] = Math.min(BOSS_RESPAWN, v);
       for (const [k, v] of Object.entries(save.mineCd ?? {})) if (v > 0) this.mineCdUntil[+k] = Math.min(MINE_RESPAWN, v);
       this.questProg = { ...(save.questProg ?? {}) }; this.questDone = new Set(save.questDone ?? []); this.achieves = new Set(save.achieves ?? []);
@@ -782,7 +782,7 @@ export class World {
     if (!TOWNS[t]) return '无此城镇';
     if (this.town === t) return null;
     if (!free && this.inCombat()) return '战斗中无法回城';
-    this.town = t; this.recall = null; this.mine = null; this.stepTarget = null; this.stepQueued = 0;
+    this.town = t; this.townsSeen.add(t); this.recall = null; this.mine = null; this.stepTarget = null; this.stepQueued = 0;
     const h = this.hero; if (h) { h.hp = h.maxHp; h.mp = h.maxMp; h.x = TOWN_SPAWN_X; h.y = WORLD.laneMin + (WORLD.laneMax - WORLD.laneMin) / 2; }
     // 横版长街：清掉野外怪物/地上物品（出城时重新刷层）
     this.units = this.units.filter(u => u.isHero || u.summon); this.ground = []; this.zones = [];
@@ -1294,7 +1294,7 @@ export class World {
     this.events.push({ type: 'combo', id: cb?.id ?? 'placeholder', name: cb?.name ?? '合击', source: h.uid, partner: u.uid, target: t.uid, amount: dealt, hits: targets.length, affected, statusUntil }, { type: 'log', text: `合击「${cb?.name ?? '合击'}」造成 ${dealt} 伤害`, color: 'green' });
   }
   toSave(): SaveData {
-    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, town: this.town, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], ringQ: this.ringQ, ringDone: this.ringDone, eqV: EQUIP_VERSION, expV: EXP_VERSION, bossCd: Object.fromEntries(Object.keys(this.bossCdUntil).map(k => [k, this.bossCdLeft(+k)]).filter(e => (e[1] as number) > 0)), mineCd: Object.fromEntries(Object.keys(this.mineCdUntil).map(k => [k, this.mineCdLeft(+k)]).filter(e => (e[1] as number) > 0)), companion: this.companion ? JSON.parse(JSON.stringify(this.companion)) : null  };
+    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, town: this.town, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, townsSeen: [...this.townsSeen], reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], ringQ: this.ringQ, ringDone: this.ringDone, eqV: EQUIP_VERSION, expV: EXP_VERSION, bossCd: Object.fromEntries(Object.keys(this.bossCdUntil).map(k => [k, this.bossCdLeft(+k)]).filter(e => (e[1] as number) > 0)), mineCd: Object.fromEntries(Object.keys(this.mineCdUntil).map(k => [k, this.mineCdLeft(+k)]).filter(e => (e[1] as number) > 0)), companion: this.companion ? JSON.parse(JSON.stringify(this.companion)) : null  };
   }
 
   /** 点按一格：滑行中的按键全部排队（同向最多 10 格，反向则替换队列），每次按键都会走一格 */

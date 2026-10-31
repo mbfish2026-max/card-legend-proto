@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## feat/world-map：两级世界大地图（W1–W4）
+- W1 数据层 src/data/worldmap.ts：8 区域（bichi/woma/dushe/zuma/cangyue/fengmo/chiyue/hejiban，魔龙=hejiban），83 层全覆盖；异界裂隙挂在各自区域用 icon_wm_rift；东北紫雾浮岛仅装饰；区域出口用 portal 图标。节点坐标按 docs/art-requests.md W-1/W-2/W-3 锚点回填，无锚点者标 [适配]。
+- 探索状态按存档位：沿用 reached，新增 townsSeen（旧存档无该字段 → 只点亮已到达层 + 当前城镇；坏值忽略）；Settings.wmZoom/wmArea 全局。
+- 迷雾：未探索区显示 ？？？ + 等级段；传送沿用 World.canTeleport（费用 (层序+1)×20、冷却 30 秒、战斗中不可），未到达层「到达该层后解锁传送」。
+- assets-manifest 登记 26 张世界地图美术（按需加载，加载失败回退占位）。
+- 单测 tests/worldmap.test.ts（36 项）。
+- W2 src/ui/WorldMapView.ts 接入 Panel 地图页：总图 ↔ 区域图、拖动/双指/滚轮/＋－缩放、群节点展开、确认卡传送/回城、Esc 逐级返回；手机 844×390 节点 82、字号 ≥24 逻辑像素，不与 HUD 重叠。e2e tests/e2e/worldmap-shots.mjs。
+
 ## 传世后续（fix/chuanshi-followup）
 - 金甲骷髅按官方一次召唤 2 只：同时上限 2，再召唤补足/替换最旧；单只下调为骷髅 HP×1.1 攻×0.85 防×1.5（合计≈旧单只 1.1 倍，见 docs/skills-official.md）；自动施法：2 只健康时不重放。
 - 手机 HUD 技能弧翻页：主动技能 >10 时出现「翻页 n/m」键，每页内 4 外 6，所有已学技能（含传世、F12 之后）均可点击施放；e2e tests/e2e/mobile-skills-verify.mjs。
