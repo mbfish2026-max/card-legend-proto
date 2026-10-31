@@ -1,7 +1,7 @@
 # CHANGELOG
 
 ## 美术接入 batch2（feat/batch2-art）
-- maps-batch2 6 个新怪（屎壳郎/沃玛勇士/沃玛战将/火焰沃玛/暗黑战士/僵尸·矿区）改用各自 `<id>_full.png` 立绘（新增 ASSETS key，art 指向），不再借用 zombie/woma_warrior。
+- maps-batch2 6 个新怪（粪虫/沃玛勇士/沃玛战将/火焰沃玛/暗黑战士/僵尸·矿区）改用各自 `<id>_full.png` 立绘（新增 ASSETS key，art 指向），不再借用 zombie/woma_warrior。
 - 背景：下标 24–26（沃玛寺庙入口/一/二层）→ bg_floor25.jpg，27–31（比奇矿区 5 层）→ bg_floor28.jpg，32–33（山谷矿区）→ bg_floor33.jpg，替换原 bg_floor6/5 占位。
 - 传世技能图标 16 张（docs/chuanshi-skills.md）与现有技能 id 均无对应，未接入（不硬凑）；仅改图片路径，数值/战斗/技能逻辑未动。
 
