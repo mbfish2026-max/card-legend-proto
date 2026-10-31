@@ -10,8 +10,8 @@ export const PRICE_K = 0.25;
 const T2 = 'https://www.tayewan.com/forum.php?mod=viewthread&tid=41925', T4 = (id: number) => `https://www.21cq.com/mir/View.aspx?ID=${id}`;
 const S14 = 'http://mir.17173.com/item/item.htm', T1 = 'http://cq.5pk.com/infobox/list/8xKJuEAOtt4.html', S7 = 'https://games.sina.com.cn/o/z/cq/2013-10-31/1843506458.shtml';
 const g = (item: string, official: number | null, src: string, price = Math.round((official ?? 0) * PRICE_K)): Goods => ({ item, official, price, src });
-export const WEAPON_GOODS = [g('wood_sword', 50, T2 + ' ' + T4(80)), g('bronze_sword', 900, T2 + ' ' + T4(83)), g('short_sword', 1000, T2 + ' ' + T4(84)), g('banyue', 4000, T2 + ' ' + T4(91))];
-export const ARMOR_GOODS = [g('cloth', 120, T4(116)), g('light_armor', 3000, T4(118))];
+export const WEAPON_GOODS = [g('wood_sword', 50, T2 + ' ' + T4(80)), g('bronze_sword', 900, T2 + ' ' + T4(83)), g('short_sword', 1000, T2 + ' ' + T4(84)), g('iron_sword', 1200, T4(85)), g('banyue', 4000, T2 + ' ' + T4(91))];
+export const ARMOR_GOODS = [g('cloth', 120, T4(116)), g('light_armor', 3000, T4(118)), g('medium_armor', 6000, T4(120)), g('helmet', 1000, T4(147) + ' [适配] 头盔放服装店')];
 export const GENERAL_GOODS = [g('dungeon_scroll', 110, S14), g('return_scroll', null, '未查到', 40)];
 const npc = (id: string, name: string, kind: NpcKind, pos?: string, extra: Partial<NpcDef> = {}): NpcDef => ({ id, name, kind, pos, ...extra });
 const basic = (p: string): NpcDef[] => [npc(p + '_potion', '药店', 'potion'), npc(p + '_general', '杂货铺', 'general', undefined, { goods: GENERAL_GOODS }), npc(p + '_storage', '仓库', 'storage'), npc(p + '_tele', '传送员', 'teleport', undefined, { note: '[适配] 原版位置未查到' })];
@@ -41,10 +41,17 @@ export function townOfFloor(f: number): string { const r = REGIONS.find(x => x.f
 export const STORAGE_SIZE = 40;
 
 /** R14 横版长街：街宽 = 3 屏；西端城门（出城），店铺门面沿街等距排开 */
-export const TOWN_W = 1280 * 3, TOWN_GATE_X = 150, TOWN_SPAWN_X = 330, DOOR_RANGE = 110;
-/** NPC 立绘文件 id（public/assets/town/npc_<id>.png） */
+/** 横版长街素材（docs/art-requests.md K 章）原尺寸 5760×1080，游戏内按 720/1080 = 2/3 缩放 → 3840×720 */
+export const STREET_ART_K = 2 / 3;
+export const TOWN_W = Math.round(5760 * STREET_ART_K), TOWN_GATE_X = 0, GATE_RANGE = 70, TOWN_SPAWN_X = 384;
+/** 门口触发半径：素材约定 |x−店铺中心| < 200（原尺寸）→ ×2/3 */
+export const DOOR_RANGE = Math.round(200 * STREET_ART_K) - 13;
+/** NPC 立绘/门面文件 id（public/assets/town/npc_<id>.png、shop_<id>.png） */
 export const NPC_ART: Record<NpcKind, string> = { potion: 'pharmacist', weapon: 'weapon', armor: 'clothes', jewelry: 'jewelry', book: 'book', general: 'grocer', smith: 'blacksmith', storage: 'storage', teleport: 'teleporter', veteran: 'veteran' };
-export function streetDoors(t: string): { npc: NpcDef; x: number }[] {
-  const ns = TOWNS[t]?.npcs ?? [], a = 560, b = TOWN_W - 260;
-  return ns.map((npc, i) => ({ npc, x: Math.round(ns.length > 1 ? a + i * (b - a) / (ns.length - 1) : (a + b) / 2) }));
+/** 街上店铺顺序（素材 street_near 中的固定排布，中心 x = 288 + 576×i 原尺寸） */
+export const STREET_ORDER = ['veteran', 'teleporter', 'pharmacist', 'weapon', 'clothes', 'jewelry', 'book', 'grocer', 'blacksmith', 'storage'];
+export const streetSlotX = (i: number) => Math.round((288 + 576 * i) * STREET_ART_K);
+/** 门面列表：按素材顺序放到对应店位；没有该类 NPC 的城镇只占用其已有的店位 */
+export function streetDoors(t: string): { npc: NpcDef; x: number; art: string }[] {
+  return (TOWNS[t]?.npcs ?? []).map(npc => ({ npc, art: NPC_ART[npc.kind], x: streetSlotX(STREET_ORDER.indexOf(NPC_ART[npc.kind])) })).sort((a, b) => a.x - b.x);
 }

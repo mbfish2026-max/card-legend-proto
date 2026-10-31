@@ -175,3 +175,7 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 通式：店铺间距 576，中心 x = 288 + 576×i；NPC（768×960 立绘）缩放 0.45（约 346×432），水平与店铺中心对齐，脚底 y = 门面底 + 280（站在门前路面上）。玩家走到 |player.x − 店铺中心 x| < 200 时触发该店 NPC。若单独使用 shop_<id>.png（1.0 倍），NPC 偏移为相对店铺中心 (0, +330)、缩放约 0.53。
 
 预览：`docs/town-preview/street_composite.jpg`（2880×540 缩略，远景+地面+近景+NPC 合成）、`shops_grid.jpg`（10 个门面暗底拼图）、`npcs_redraw.jpg`（两张重画 NPC）。
+
+### K 章接入备注（R14-A2）
+- 游戏画布 1280×720，素材整体按 2/3 缩放使用；已用 bg_far / ground_strip / street_near_1-3 / npc_<id>；shop_<id> 作为缺 street_near 时的后备。
+- 仍缺：其它城镇（银杏村/沃玛村等）长街素材、西端城门/出城牌美术（当前为文字「◀出城」占位）。

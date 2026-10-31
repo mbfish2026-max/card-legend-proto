@@ -7,7 +7,7 @@ import { CLASSES, ClassId, SkillDef } from '../data/classes';
 import { ITEMS, SLOTS, SETS, equipSlotsFor, EQUIP_VERSION, ENHANCE_SLOTS, ENHANCE_MAX, ENHANCE_STAT, IRON_PRICE, IRON_MAX_PURITY, enhanceChance, shatterChance } from '../data/items';
 import { HERO, ENEMIES, EXP_PER_LEVEL, SUMMON, SUMMON_BEAST } from '../data/units';
 import { WORLD, FLOORS, Floor } from '../data/world';
-import { TOWNS, townFloors, townOfFloor, STORAGE_SIZE, TOWN_W, TOWN_GATE_X, TOWN_SPAWN_X, DOOR_RANGE, streetDoors } from '../data/towns';
+import { TOWNS, townFloors, townOfFloor, STORAGE_SIZE, TOWN_W, TOWN_GATE_X, GATE_RANGE, TOWN_SPAWN_X, DOOR_RANGE, streetDoors } from '../data/towns';
 import { CONSUMABLE } from '../data/items-town';
 import { QUESTS, ACHIEVES, QuestDef, AchieveDef } from '../data/quests';
 
@@ -576,7 +576,7 @@ export class World {
   }
   /** 长街：当前站在哪家店门口（null=不在门口） */
   nearDoor() { const h = this.hero; if (!this.town || !h) return null; return streetDoors(this.town).find(d => Math.abs(d.x - h.x) <= DOOR_RANGE) ?? null; }
-  atTownGate() { const h = this.hero; return !!this.town && !!h && h.x <= TOWN_GATE_X + DOOR_RANGE; }
+  atTownGate() { const h = this.hero; return !!this.town && !!h && h.x <= TOWN_GATE_X + GATE_RANGE; }
   /** 出城：去指定层（需已到达或为 0 层），默认本城区域第一层 */
   leaveTown(f?: number): string | null {
     if (!this.town) return '不在城内';
@@ -787,7 +787,7 @@ export class World {
     this.time += dt;
     if (this.town) { // R14 安全区：城内只左右走，不结算战斗
       const h = this.hero; if (!h) return; const dx = Math.sign(inp.dx), dy = Math.sign(inp.dy); h.moving = !!(dx || dy);
-      if (dx) { h.facing = dx as 1 | -1; h.x = Math.max(h.width / 2, Math.min(TOWN_W - h.width / 2, h.x + dx * WORLD.heroSpeed * dt)); }
+      if (dx) { h.facing = dx as 1 | -1; h.x = Math.max(24, Math.min(TOWN_W - h.width / 2, h.x + dx * WORLD.heroSpeed * dt)); }
       if (dy) h.y = Math.max(WORLD.laneMin, Math.min(WORLD.laneMax, h.y + dy * WORLD.heroLaneSpeed * dt));
       return;
     }

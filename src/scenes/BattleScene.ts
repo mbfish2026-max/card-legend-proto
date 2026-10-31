@@ -12,7 +12,7 @@ import { ClassId, CLASSES } from '../data/classes';
 import { CardView } from '../ui/CardView';
 import { Hud } from '../ui/Hud';
 import { PanelMode } from '../ui/Panel';
-import { TOWNS, TOWN_W, TOWN_GATE_X, NPC_ART, streetDoors } from '../data/towns';
+import { TOWNS, TOWN_W, TOWN_GATE_X, NPC_ART, STREET_ART_K, streetDoors } from '../data/towns';
 import * as fx from '../ui/Fx';
 import { Settings, SaveStore } from '../settings';
 import type { UIScene } from './UIScene';
@@ -144,54 +144,55 @@ export class BattleScene extends Phaser.Scene {
     c.add([arch, core, swirl, ...rings, motes, t, this.portalHint]); this.portal = c;
   }
   // ===== R14 横版长街城镇 =====
-  street?: Phaser.GameObjects.Container; streetHint?: Phaser.GameObjects.Text; townTarget: { x: number; id: string } | null = null;
+  street?: Phaser.GameObjects.Container; streetFar?: Phaser.GameObjects.TileSprite; streetHint?: Phaser.GameObjects.Text; townTarget: { x: number; id: string } | null = null;
   /** 城镇长街：背景（占位：bg_town_street_<id> 远/中/近三层未到时用单屏 bg_bichi_town 拼接+色块），店铺门面 + NPC 立绘，西端城门 */
   buildStreet(id: string) {
     this.clearStreet(); const t = TOWNS[id]; if (!t) return;
     for (const [uid, v] of [...this.views]) if (!v.unit.isHero && !v.unit.summon) { v.destroy(); this.views.delete(uid); }
     this.groundObjs.forEach(os => os.forEach(o => o.destroy())); this.groundObjs.clear(); this.floorUids = [];
     this.bgImgs.forEach(b => b.setVisible(false)); this.portal.setVisible(false); this.merchant.setVisible(false);
-    const need = ['bg_bichi_town', ...Object.values(NPC_ART).map(a => 'npc_' + a)].filter(k => !this.textures.exists(k));
-    if (need.length) { need.forEach(k => this.load.image(k, `assets/town/${k}.${k.startsWith('bg') ? 'jpg' : 'png'}`)); this.load.once('complete', () => { if (this.world.town === id) this.buildStreet(id); }); this.load.start(); }
-    const C = this.street = this.add.container(0, 0).setDepth(3), W = TOWN_W;
-    // 远景：天空渐变 + 城墙（占位）；单屏背景图按屏拼接（交替镜像）当中景占位
-    const far = this.add.graphics().setScrollFactor(0.4); far.fillGradientStyle(0x2a3a5a, 0x2a3a5a, 0x7a6a50, 0x7a6a50, 1).fillRect(-200, 0, W, 720); C.add(far);
-    if (this.textures.exists('bg_bichi_town')) for (let x = 0; x < W; x += 1280) C.add(this.add.image(x + 640, 300, 'bg_bichi_town').setDisplaySize(1280, 720).setFlipX((x / 1280) % 2 === 1).setTint(0xb0b0b0).setScrollFactor(0.7));
-    const road = this.add.graphics(); road.fillStyle(0x5a5048, 1).fillRect(0, GROUND_Y - 40, W, 400); road.lineStyle(2, 0x3a342e, 0.6);
-    for (let x = 0; x < W; x += 90) road.strokeRect(x, GROUND_Y - 40, 90, 46); C.add(road);
-    // 西端城门（出城）
-    const gate = this.add.graphics(); gate.fillStyle(0x4a4e58).fillRect(TOWN_GATE_X - 90, GROUND_Y - 300, 40, 300).fillRect(TOWN_GATE_X + 50, GROUND_Y - 300, 40, 300).fillRect(TOWN_GATE_X - 100, GROUND_Y - 330, 200, 40);
-    gate.fillStyle(0x1a1410).fillRect(TOWN_GATE_X - 50, GROUND_Y - 290, 100, 290); C.add(gate);
-    C.add(this.add.text(TOWN_GATE_X, GROUND_Y - 352, '城门 · 出城', { fontFamily: FONT, fontSize: '20px', color: '#ffe8a0', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5));
-    gate.setInteractive(new Phaser.Geom.Rectangle(TOWN_GATE_X - 100, GROUND_Y - 330, 200, 330), Phaser.Geom.Rectangle.Contains).on('pointerdown', () => this.walkTo(TOWN_GATE_X, 'gate'));
-    // 店铺门面（占位：shop_<kind> 素材未到时画屋顶+门+招牌）
+    const K = STREET_ART_K, need = ['bg_far', 'ground_strip', 'street_near_1', 'street_near_2', 'street_near_3', ...Object.values(NPC_ART).flatMap(a => ['npc_' + a, 'shop_' + a])].filter(k => !this.textures.exists(k));
+    if (need.length) { need.forEach(k => this.load.image(k, `assets/town/${k}.${k === 'bg_far' || k === 'ground_strip' ? 'jpg' : 'png'}`)); this.load.once('complete', () => { if (this.world.town === id) this.buildStreet(id); }); this.load.start(); }
+    const C = this.street = this.add.container(0, 0).setDepth(3), W = TOWN_W, has = (k: string) => this.textures.exists(k);
+    // 远景（0.3x 视差，固定在屏幕上平铺滚动）
+    if (has('bg_far')) { const far = this.add.tileSprite(0, 0, 1280, 720, 'bg_far').setOrigin(0).setScrollFactor(0).setTileScale(K); this.streetFar = far; C.add(far); }
+    else { const far = this.add.graphics().setScrollFactor(0); far.fillGradientStyle(0x6ab0ff, 0x6ab0ff, 0xc8e8a0, 0xc8e8a0, 1).fillRect(0, 0, 1280, 720); C.add(far); }
+    // 地面（原 y=720~1080 → 480~720，平铺）
+    if (has('ground_strip')) C.add(this.add.tileSprite(0, 720 * K, W, 360 * K, 'ground_strip').setOrigin(0).setTileScale(K));
+    else C.add(this.add.rectangle(0, 720 * K, W, 360 * K, 0x9a8a70).setOrigin(0));
+    // 近景店铺带：三段拼成整街；缺图时用单个 shop_<id> 门面（0.85 倍，底边 y=760）
+    // 点街面任意处：走到那里（手机横屏左右走）
+    C.add(this.add.rectangle(0, 0, W, 720, 0, 0.001).setOrigin(0).setInteractive().on('pointerdown', (p: Phaser.Input.Pointer) => this.walkTo(p.worldX, 'walk')));
+    const near = [1, 2, 3].every(i => has('street_near_' + i));
+    if (near) [1, 2, 3].forEach(i => C.add(this.add.image(1920 * (i - 1) * K, 0, 'street_near_' + i).setOrigin(0).setScale(K)));
     for (const d of streetDoors(id)) {
-      const n = d.npc, f = this.add.container(d.x, GROUND_Y - 40), key = 'shop_' + n.kind, art = 'npc_' + NPC_ART[n.kind];
-      if (this.textures.exists(key)) f.add(this.add.image(0, 0, key).setOrigin(0.5, 1).setDisplaySize(300, 340));
-      else { const g = this.add.graphics(); g.fillStyle(0x6a4a2a).fillRect(-130, -260, 260, 260); g.fillStyle(0x8a2018).fillTriangle(-160, -260, 160, -260, 0, -330); g.fillStyle(0x2a1a10).fillRect(-45, -150, 90, 150); g.lineStyle(3, 0xd4a64a).strokeRect(-130, -260, 260, 260); f.add(g); }
-      f.add(this.add.rectangle(0, -230, 200, 36, 0x1a1008, 0.9).setStrokeStyle(2, 0xd4a64a));
-      f.add(this.add.text(0, -230, n.name.replace(/（.*）/, ''), { fontFamily: FONT, fontSize: '18px', color: '#ffe8a0' }).setOrigin(0.5));
-      if (this.textures.exists(art)) f.add(this.add.image(80, 0, art).setOrigin(0.5, 1).setDisplaySize(112, 140));
-      const hit = this.add.rectangle(0, -150, 280, 320, 0, 0.001).setInteractive({ useHandCursor: true }).on('pointerdown', () => this.walkTo(d.x, n.id));
-      f.add(hit); C.add(f);
+      const n = d.npc;
+      if (!near) { if (has('shop_' + d.art)) C.add(this.add.image(d.x, 760 * K, 'shop_' + d.art).setOrigin(0.5, 1).setScale(0.85 * K)); else C.add(this.add.rectangle(d.x, 760 * K, 544 * K, 612 * K, 0x6a4a2a).setOrigin(0.5, 1).setStrokeStyle(3, 0xd4a64a)); }
+      C.add(this.add.text(d.x, 120, n.name.replace(/（.*）/, ''), { fontFamily: FONT, fontSize: '17px', color: '#ffe8a0', stroke: '#1a1008', strokeThickness: 4 }).setOrigin(0.5));
+      if (has('npc_' + d.art)) C.add(this.add.image(d.x, 1040 * K, 'npc_' + d.art).setOrigin(0.5, 1).setScale(0.45 * K));
+      C.add(this.add.rectangle(d.x, 100, 300, 760 * K - 100, 0, 0.001).setOrigin(0.5, 0).setInteractive({ useHandCursor: true }).on('pointerdown', () => this.walkTo(d.x, n.id)));
     }
+    // 西端出城路牌
+    C.add(this.add.text(36, GROUND_Y - 150, '◀\n出城', { fontFamily: FONT, fontSize: '22px', color: '#ffe8a0', align: 'center', stroke: '#000', strokeThickness: 5 }).setOrigin(0.5)
+      .setInteractive({ useHandCursor: true }).on('pointerdown', () => this.walkTo(TOWN_GATE_X + 40, 'gate')));
     this.streetHint = this.add.text(0, GROUND_Y - 400, '', { fontFamily: FONT, fontSize: '20px', color: '#ffffff', fontStyle: 'bold', stroke: '#2a0a5a', strokeThickness: 5 }).setOrigin(0.5).setDepth(60);
     this.hud?.setFloor(t.name, []); const hv = this.world.hero && this.views.get(this.world.hero.uid); if (hv) hv.x = this.world.hero!.x;
     this.cameras.main.centerOn(this.world.hero?.x ?? 640, 360); this.cameras.main.fadeIn(500);
   }
   clearStreet() {
-    if (!this.street) return; this.street.destroy(true); this.street = undefined; this.streetHint?.destroy(); this.streetHint = undefined; this.townTarget = null;
+    if (!this.street) return; this.street.destroy(true); this.street = undefined; this.streetHint?.destroy(); this.streetHint = undefined; this.streetFar = undefined; this.townTarget = null;
     this.bgImgs.forEach(b => b.setVisible(true)); this.portal.setVisible(true); this.merchant.setVisible(true);
   }
   /** 点击门面/城门：走过去，到达后进店/出城 */
   walkTo(x: number, id: string) { if (this.paused || this.state !== 'play' || !this.world.town) return; const h = this.world.hero; if (h && Math.abs(h.x - x) < 100) this.townArrive(id); else this.townTarget = { x, id }; }
-  townArrive(id: string) { if (id === 'gate') this.leaveTownNow(); else { this.sfx('click'); this.ui.panel.openNpc(id); } }
+  townArrive(id: string) { if (id === 'walk') return; if (id === 'gate') this.leaveTownNow(); else { this.sfx('click'); this.ui.panel.openNpc(id); } }
   townUse() { const w = this.world; if (this.paused) return; if (w.atTownGate()) return this.leaveTownNow(); const d = w.nearDoor(); if (d) this.townArrive(d.npc.id); else this.log('走到店铺门口再进店；西端城门出城'); }
   leaveTownNow() { const e = this.world.leaveTown(); if (e) this.log(e); this.handle(this.world.drainEvents()); this.saveGame(); }
   updateStreet() {
     if (!this.street || !this.streetHint) return; const w = this.world, h = w.hero; if (!h) return;
+    if (this.streetFar) this.streetFar.tilePositionX = this.cameras.main.scrollX * 0.3 / STREET_ART_K;
     const d = w.nearDoor(), g = w.atTownGate(), act = IS_MOBILE ? '点门面' : 'W/空格';
-    this.streetHint.setVisible(!!d || g).setText(g ? `${act} 出城` : d ? `${act} 进入 ${d.npc.name.replace(/（.*）/, '')}` : '').setX(g ? TOWN_GATE_X : d?.x ?? 0);
+    this.streetHint.setVisible(!!d || g).setText(g ? `${act} 出城` : d ? `${act} 进入 ${d.npc.name.replace(/（.*）/, '')}` : '').setX(g ? TOWN_GATE_X + 90 : d?.x ?? 0);
   }
   /** 商人：本层起点的小摊（背景层，不参与战斗） */
   buildMerchant() {

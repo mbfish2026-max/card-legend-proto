@@ -702,12 +702,25 @@ const free = (w: World) => w.skills.map(() => 0);
   Settings.autoSkills = null;
 }
 
+{ // R14 官方装备表接入：商店低级装 / 新件进资料掉落 / 职业限制
+  const { officialDrops, NAME_TO_ITEM } = await import('../src/data/drops');
+  const { EQUIP_META } = await import('../src/data/equip-official');
+  const all = Object.values(ENEMIES).flatMap(e => officialDrops(e.id) ?? []).map(d => d.item);
+  const newIds = Object.keys(EQUIP_META).filter(id => EQUIP_META[id].official !== '自创');
+  ok(newIds.every(id => Object.values(NAME_TO_ITEM).includes(id)), '官方装备表每件（非自创）都有官方名映射');
+  ok(all.some(i => EQUIP_META[i]?.tier === 'woma' && !['magic_staff', 'tao_sword', 'lianyu', 'jingzhongyue', 'wujigun'].includes(i)), '新增沃玛级首饰/头盔进入资料掉落');
+  ok([...WEAPON_GOODS, ...ARMOR_GOODS].every(g => !EQUIP_META[g.item]?.tier || EQUIP_META[g.item].tier === 'base'), '商店装都不是沃玛/祖玛/赤月级');
+  ok(['iron_sword', 'medium_armor', 'helmet'].every(i => [...WEAPON_GOODS, ...ARMOR_GOODS].some(g => g.item === i)), '铁剑/中型盔甲/青铜头盔上架');
+  const m = new World(seeded(3), 40, FLOORS, 'mage'); m.bag.push(m.makeItem('shengzhan_helm')); ok(m.equipItem(m.bag.length - 1) === '职业不符', '法师穿圣战头盔 → 职业不符');
+}
+
 { // R14 横版长街：走到门口进店
   const w = new World(seeded(11), 20, FLOORS, 'warrior'); w.enterTown('bichi');
   const ds = streetDoors('bichi');
   ok(ds.length === 10 && ds.some(d => d.npc.kind === 'veteran'), '比奇长街 10 家门面（含比奇老兵）');
-  ok(ds.every((d, i) => d.x > TOWN_GATE_X + 200 && d.x < TOWN_W && (i === 0 || d.x - ds[i - 1].x > 220)), '门面在街内且不重叠');
-  ok(Object.values(NPC_ART).every(a => existsSync(`public/assets/town/npc_${a}.png`)) && existsSync('public/assets/town/bg_bichi_town.jpg'), 'NPC 立绘与城镇背景文件都在');
+  ok(ds.every((d, i) => d.x > TOWN_GATE_X + 100 && d.x < TOWN_W && (i === 0 || d.x - ds[i - 1].x > 2 * 120)), '门面在街内且不重叠');
+  ok(TOWN_W === 3840 && ds[0].art === 'veteran' && ds[0].x === 192 && ds[9].art === 'storage' && ds[9].x === Math.round(5472 * 2 / 3), '店位按素材 K 章：老兵…仓库，中心 x=(288+576i)×2/3');
+  ok(Object.values(NPC_ART).every(a => existsSync(`public/assets/town/npc_${a}.png`)) && ['bg_far.jpg', 'ground_strip.jpg', 'street_near_1.png', 'street_near_2.png', 'street_near_3.png', ...Object.values(NPC_ART).map(a => `shop_${a}.png`)].every(f => existsSync('public/assets/town/' + f)), 'NPC 立绘与城镇背景文件都在');
   ok(w.alive('enemy').length === 0 && w.ground.length === 0, '进城清掉野外怪/地上物品');
   const target = ds[3]; let n = 0; while (w.hero!.x < target.x - 50 && n++ < 400) w.step(0.05, { dx: 1, dy: 0 });
   ok(w.nearDoor()?.npc.id === target.npc.id, `向右走到 ${target.npc.name} 门口触发该 NPC`);
