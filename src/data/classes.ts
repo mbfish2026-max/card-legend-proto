@@ -30,7 +30,7 @@ export const CLASSES: Record<ClassId, ClassDef> = {
   warrior: {
     id: 'warrior', name: '战士', art: 'hero', bg: 0x2a2a2e, artFacing: 1, atkInterval: 1.1, autoStat: 'atk',
     // [适配] 改用官方学习等级后战士 19 级前无主动技能，提高基础/成长保持模拟死亡 1–4 次（R4 技能轮）
-    base: { hp: 800, mp: 120, atk: 70, mag: 0, tao: 0, def: 26 }, grow: { hp: 90, mp: 9, atk: 11, mag: 0, tao: 0, def: 4 },
+    base: { hp: 800, mp: 120, atk: 70, mag: 0, tao: 0, def: 26 }, grow: { hp: 110, mp: 9, atk: 11, mag: 0, tao: 0, def: 5.5 },
     desc: '近战肉盾，高血高防\n基本/攻杀被动 · 刺杀 · 半月 · 野蛮 · 烈火',
     skills: [
       // 被动不占 F 键；World.skills 只返回主动技能并重标 F1..
@@ -45,7 +45,7 @@ export const CLASSES: Record<ClassId, ClassDef> = {
   mage: {
     id: 'mage', name: '法师', art: 'mage', bg: 0x1c3a7a, artFacing: 1, atkInterval: 1.3, autoStat: 'mag',
     // [适配] 法师 7 级前无技能，同上提高基础/成长（R4 技能轮）
-    base: { hp: 480, mp: 240, atk: 10, mag: 90, tao: 0, def: 12 }, grow: { hp: 36, mp: 20, atk: 1, mag: 7.5, tao: 0, def: 1.4 },
+    base: { hp: 400, mp: 240, atk: 10, mag: 90, tao: 0, def: 10 }, grow: { hp: 33, mp: 20, atk: 1, mag: 7.5, tao: 0, def: 1.2 },
     desc: '远程法术，高爆发低血量\n火球·雷电·火墙·魔法盾·冰咆哮',
     skills: [
       { key: 'F1', id: 'fireball', name: '火球术', kind: 'ranged', stat: 'mag', mana: 12, cooldown: 1.6, mult: 2.2, range: 520, learn: [7, 7, 11, 16], train: [500, 1500, 3000], icon: S + 'skill_fireball.png', sfx: 'fireball_cast', desc: '远程火球，杀伤随修炼等级提升' },
@@ -58,7 +58,7 @@ export const CLASSES: Record<ClassId, ClassDef> = {
   taoist: {
     id: 'taoist', name: '道士', art: 'taoist', bg: 0x7a5c14, artFacing: 1, atkInterval: 1.2, autoStat: 'tao',
     // [适配] 技能扩充后保模拟死亡 1–4：基础 HP 278（官方无对应基础血量）
-    base: { hp: 278, mp: 190, atk: 16, mag: 0, tao: 28, def: 4 }, grow: { hp: 28, mp: 15, atk: 2, mag: 0, tao: 4.2, def: 1 },
+    base: { hp: 330, mp: 190, atk: 16, mag: 0, tao: 28, def: 6 }, grow: { hp: 28, mp: 15, atk: 2, mag: 0, tao: 4.2, def: 1 },
     desc: '召唤协战，施毒持续伤害\n精神力被动 · 治愈·施毒·火符·骷髅·神兽',
     skills: [
       { key: 'P', id: 'spirit_force', name: '精神力战法', kind: 'melee', stat: 'tao', mana: 0, cooldown: 0, passive: true, learn: [9, 9, 13, 19], train: [1000, 4000, 8000], accBonus: [3, 5, 8], icon: S + 'skill_spirit_force.png', sfx: 'heal', desc: '被动：准确 +3/+5/+8（官方）；[适配] 转为暴击率' },

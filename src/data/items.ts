@@ -1,11 +1,19 @@
-import { ItemDef, Slot } from '../combat/types';
+import { EquipSlot, ItemDef, Slot } from '../combat/types';
 import { CLASSES } from './classes';
 import { BOOKS, bookItemId } from './books';
 import { TOWN_ITEMS } from './items-town';
+import { NEW_EQUIP, EQUIP_META } from './equip-official';
 // 物品表：中文名 + 图标。equip=基础属性；req=需求等级；price=出售价（商人收购价）
 const I = 'assets/items/';
 export const SLOTS: Slot[] = ['weapon', 'helmet', 'armor', 'necklace', 'ring', 'bracelet', 'boots'];
 export const SLOT_NAMES: Record<Slot, string> = { weapon: '武器', helmet: '头盔', armor: '衣服', necklace: '项链', ring: '戒指', bracelet: '手镯', boots: '靴子' };
+/** 穿戴位：戒指×2、手镯×2（热血传奇官方穿戴位） */
+export const EQUIP_SLOTS: EquipSlot[] = ['weapon', 'helmet', 'armor', 'necklace', 'ring1', 'ring2', 'bracelet1', 'bracelet2', 'boots'];
+export const EQUIP_SLOT_NAMES: Record<EquipSlot, string> = { weapon: '武器', helmet: '头盔', armor: '衣服', necklace: '项链', ring1: '左戒指', ring2: '右戒指', bracelet1: '左手镯', bracelet2: '右手镯', boots: '靴子' };
+/** 物品部位 → 可放入的穿戴位（按优先顺序） */
+export function equipSlotsFor(k: Slot): EquipSlot[] { return k === 'ring' ? ['ring1', 'ring2'] : k === 'bracelet' ? ['bracelet1', 'bracelet2'] : [k]; }
+/** 存档装备结构版本：2 = 双戒双镯 */
+export const EQUIP_VERSION = 2;
 export const STAT_NAMES: Record<string, string> = { hp: '生命', mp: '魔法值', atk: '攻击', mag: '魔法', tao: '道术', def: '防御' };
 export const ITEMS: Record<string, ItemDef> = {
   hp_small: { id: 'hp_small', name: '金创药(小量)', icon: 'assets/potions/INV_Potion_51.png', potion: 0 },
@@ -69,7 +77,7 @@ export const ITEMS: Record<string, ItemDef> = {
   wujigun: { id: 'wujigun', name: '无极棍', icon: I + 'INV_Sword_04.png', slot: 'weapon', equip: { atk: 24, tao: 15 }, req: 30, price: 300 }, // id=104
   longwen: { id: 'longwen', name: '龙纹剑', icon: I + 'INV_Sword_04.png', slot: 'weapon', equip: { atk: 30, tao: 18 }, req: 35, price: 350 }, // id=107
   caijue: { id: 'caijue', name: '裁决之杖', icon: I + 'INV_Sword_05.png', slot: 'weapon', equip: { atk: 45 }, req: 30, price: 350 }, // id=105
-  guyu: { id: 'guyu', name: '骨玉权杖', icon: I + 'INV_Sword_03.png', slot: 'weapon', equip: { atk: 9, tao: 12 }, req: 26, price: 200 }, // id=106
+  guyu: { id: 'guyu', name: '骨玉权杖', icon: I + 'INV_Sword_03.png', slot: 'weapon', equip: { atk: 9, mag: 18 }, req: 26, price: 200 }, // id=106（v1：官方为魔法 2-6，原误写道术）
   light_armor: { id: 'light_armor', name: '轻型盔甲', icon: I + 'INV_Chest_Plate01.png', slot: 'armor', equip: { def: 7, hp: 56 }, req: 11, price: 30 }, // id=118
   soul_robe: { id: 'soul_robe', name: '灵魂战衣', icon: I + 'INV_Chest_Plate03.png', slot: 'armor', equip: { def: 14, hp: 112, tao: 6 }, req: 22, price: 100 }, // id=126
   magic_robe: { id: 'magic_robe', name: '魔法长袍', icon: I + 'INV_Chest_Plate03.png', slot: 'armor', equip: { def: 12, hp: 96, mag: 6 }, req: 22, price: 100 }, // id=124
@@ -78,8 +86,13 @@ export const ITEMS: Record<string, ItemDef> = {
   demon_robe: { id: 'demon_robe', name: '恶魔长袍', icon: I + 'INV_Chest_Plate03.png', slot: 'armor', equip: { def: 16, hp: 128, mag: 12 }, req: 30, price: 220 }, // id=130
   tao_helm: { id: 'tao_helm', name: '道士头盔', icon: I + 'INV_Helmet_03.png', slot: 'helmet', equip: { def: 5, hp: 40 }, req: 24, price: 50 }, // id=149
   magic_helm: { id: 'magic_helm', name: '魔法头盔', icon: I + 'INV_Helmet_01.png', slot: 'helmet', equip: { def: 2, hp: 16 }, req: 14, price: 20 }, // id=148
+  // 官方装备表 v1 新增（数据与来源见 equip-official.ts / docs/equip-table.md）
+  ...NEW_EQUIP,
 };
-/** 套装：集齐 n 件激活对应加成（卸下即失效） */
+// 存量装备挂官方职业限制（按官方需求类型推导）
+for (const [id, m] of Object.entries(EQUIP_META)) if (m.cls && ITEMS[id] && !ITEMS[id].cls) ITEMS[id].cls = m.cls;
+/** 套装：集齐 n 件激活对应加成（卸下即失效）；同名重复件只计 1 件（官方：相同款式不生效） */
+
 export interface SetDef { id: string; name: string; pieces: string[]; bonus: { n: number; stats: Partial<Record<'hp' | 'mp' | 'atk' | 'mag' | 'tao' | 'def', number>>; luck?: number; text: string }[] }
 export const SETS: Record<string, SetDef> = {
   woma: { id: 'woma', name: '沃玛', pieces: ['set_woma_helm', 'set_woma_necklace', 'set_woma_bracelet'], bonus: [
@@ -91,7 +104,7 @@ export const SETS: Record<string, SetDef> = {
 };
 
 /** 可黑铁强化的部位：手机版为武器/头盔/衣服/腰带/鞋；本作无腰带 → 适配四部位。首饰不可强化（官方）。 */
-export const ENHANCE_SLOTS: Slot[] = ['weapon', 'helmet', 'armor', 'boots'];
+export const ENHANCE_SLOTS: (Slot & EquipSlot)[] = ['weapon', 'helmet', 'armor', 'boots'];
 export const ENHANCE_MAX = 7;
 export const ENHANCE_STAT = 0.08; // 适配：每 +1 该件基础属性 +8%
 export const IRON_PRICE = 80; // 商店纯度 1 售价（适配）

@@ -123,8 +123,8 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 
 | id | 中文名（游戏内显示） | 店铺/功能 | 文件 | 外观特征 |
 |---|---|---|---|---|
-| pharmacist | 夏家店老板 | 药店 | npc_pharmacist.png | 中年男子，八字胡+山羊须，白色高帽，青灰长袍+白围裙，手持红色药葫芦与草药 |
-| weapon | 卫家店老板 | 武器店 | npc_weapon.png | 光头大胡子壮汉，棕色皮背心+深蓝内衫，皮护腕，肩扛长剑 |
+| pharmacist | 夏家店老板 | 药店 | npc_pharmacist.png | 中年男子，八字胡+山羊须，深蓝方巾（2026-10-31 重画：去掉原“厨师帽”观感），青绿长袍+深棕药铺围裙，手持红色药葫芦与草药 |
+| weapon | 卫家店老板 | 武器店 | npc_weapon.png | 光头大胡子壮汉，棕色皮背心+深蓝内衫，皮护腕，竖握长剑、一手叉腰（2026-10-31 重画：人物含剑高约 870px，与其他 NPC 对齐） |
 | clothes | 安家布衣 | 服装店 | npc_clothes.png | 年轻女子，盘发玉簪，粉色汉服，颈挂软尺，手捧蓝色布匹 |
 | jewelry | 首饰店老板 | 首饰店 | npc_jewelry.png | 富态中年商人，卷翘小胡子，黑色商人帽，紫色金边绸袍，满手金戒指，举放大镜鉴赏红宝石项链 |
 | book | 书香奇人 | 书店（技能书） | npc_book.png | 白须老学者，黑色高冠，圆框眼镜，靛蓝长袍白领，手捧发光技能书、夹卷轴（部分资料称“书店老板”） |
@@ -135,3 +135,43 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 | veteran | 比奇老兵 | 城门老兵/新手引导 | npc_veteran.png | 灰发老兵，独眼罩、脸颊刀疤，灰短须，铆钉鳞甲+褪色蓝衫，持长枪 |
 
 预览：`docs/town-preview/bg_bichi_town_preview.jpg`、`npcs_light.png`、`npcs_dark.png`（NPC 拼图）、`bg_with_npcs.jpg`（背景+NPC 合成示意）。
+
+> J 节补充（2026-10-31）：npc_pharmacist、npc_weapon 已重画并覆盖原文件（768×960，透明底，256 色量化），对照图 `docs/town-preview/npcs_redraw.jpg`。
+
+## K. 比奇城横版街道（art/town）——✅ 已交付（2026-10-31）
+需求：“城镇的贴图要做成横版的，走到不同店铺下不同的npc”。全部为原创卡通美术，白天明亮色调。街道总长 5760×1080，分三层：
+
+| 文件 | 尺寸 | 用途 | 层/视差 |
+|---|---|---|---|
+| public/assets/town/bg_far.jpg | 1920×1080 JPG | 远景：蓝天白云、远山、城墙箭楼、草地。左右边缘已交叉淡化，可水平无缝平铺（TileSprite） | 远景层，建议 0.3x |
+| public/assets/town/ground_strip.jpg | 1920×360 JPG | 地面石板路，左右可无缝平铺；放在 y=720~1080（下 1/3） | 与近景同速 1.0x |
+| public/assets/town/street_near_1/2/3.png | 各 1920×1080 PNG 透明 | 近景店铺带，三段依次放在 x=0/1920/3840 即无缝拼成 5760 宽；店铺底边（台阶）在 y=760 | 近景层 1.0x |
+| public/assets/town/shop_<id>.png | 640×720 PNG 透明 | 单个店铺门面（正面、招牌符号、屋檐、门前台阶），底边贴画布下沿，水平居中；可替代 street_near 自行排布 | 1.0x |
+
+地面说明：需求示例为 1920×300，为恰好覆盖下 1/3（360px）改为 1920×360，且因不透明改用 JPG（体积更小）。
+
+店铺 id：pharmacist(药店，葫芦招牌)、weapon(武器店，双剑)、clothes(服装店，衣架长袍)、jewelry(首饰店，宝石)、book(书店，翻开的书)、grocer(杂货铺，布袋)、blacksmith(铁匠铺，铁砧锤子，烟囱冒烟)、storage(仓库，宝箱+挂锁)、teleporter(传送阵摊位，石柱+蓝水晶+发光法阵，中间镂空)、veteran(卫兵岗/兵器架，盾牌+长枪+旗)。
+
+### 拼接/分层用法（Phaser）
+1. 远景：`tileSprite(0,0,1920,1080,'bg_far').setScrollFactor(0)`，每帧 `tilePositionX = camera.scrollX*0.3`。
+2. 地面：`tileSprite(0,720,5760,360,'ground_strip')`，scrollFactor 1。
+3. 近景：`image(0,0,'street_near_1')`、`(1920,0,'street_near_2')`、`(3840,0,'street_near_3')`，origin(0,0)。
+4. 相机 bounds 设为 (0,0,5760,1080)。
+
+### 店铺位置与 NPC 站位（street_near 中店铺按 0.85 倍缩放，即 544×612）
+| 顺序 | id | 店铺中心 x | 门面底 y | NPC 建议位置（origin 0.5,1） |
+|---|---|---|---|---|
+| 1 | veteran | 288 | 760 | x=288, y=1040 |
+| 2 | teleporter | 864 | 760 | x=864, y=1040 |
+| 3 | pharmacist | 1440 | 760 | x=1440, y=1040 |
+| 4 | weapon | 2016 | 760 | x=2016, y=1040 |
+| 5 | clothes | 2592 | 760 | x=2592, y=1040 |
+| 6 | jewelry | 3168 | 760 | x=3168, y=1040 |
+| 7 | book | 3744 | 760 | x=3744, y=1040 |
+| 8 | grocer | 4320 | 760 | x=4320, y=1040 |
+| 9 | blacksmith | 4896 | 760 | x=4896, y=1040 |
+| 10 | storage | 5472 | 760 | x=5472, y=1040 |
+
+通式：店铺间距 576，中心 x = 288 + 576×i；NPC（768×960 立绘）缩放 0.45（约 346×432），水平与店铺中心对齐，脚底 y = 门面底 + 280（站在门前路面上）。玩家走到 |player.x − 店铺中心 x| < 200 时触发该店 NPC。若单独使用 shop_<id>.png（1.0 倍），NPC 偏移为相对店铺中心 (0, +330)、缩放约 0.53。
+
+预览：`docs/town-preview/street_composite.jpg`（2880×540 缩略，远景+地面+近景+NPC 合成）、`shops_grid.jpg`（10 个门面暗底拼图）、`npcs_redraw.jpg`（两张重画 NPC）。

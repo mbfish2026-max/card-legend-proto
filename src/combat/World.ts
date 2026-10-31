@@ -1,10 +1,10 @@
 import { BOOKS, BookDef, BOOK_DROP, BOOK_RATES, STARTER, bookItemId } from '../data/books';
 // 纯逻辑世界模块（无 Phaser 依赖，可在 node 中单测）：职业/等级成长、分层横版地图、怪物 AI、
 // 自动战斗与技能、召唤物、掉落/背包/装备/商店、死亡复活、存档序列化。
-import { BattleEvent, GroundItem, InvItem, Rarity, Slot, Stats, Team, Unit, UnitDef } from './types';
+import { BattleEvent, EquipSlot, GroundItem, InvItem, Rarity, Slot, Stats, Team, Unit, UnitDef } from './types';
 import { POTIONS } from '../data/skills';
 import { CLASSES, ClassId, SkillDef } from '../data/classes';
-import { ITEMS, SLOTS, SETS, ENHANCE_SLOTS, ENHANCE_MAX, ENHANCE_STAT, IRON_PRICE, IRON_MAX_PURITY, enhanceChance, shatterChance } from '../data/items';
+import { ITEMS, SLOTS, SETS, equipSlotsFor, EQUIP_VERSION, ENHANCE_SLOTS, ENHANCE_MAX, ENHANCE_STAT, IRON_PRICE, IRON_MAX_PURITY, enhanceChance, shatterChance } from '../data/items';
 import { HERO, ENEMIES, EXP_PER_LEVEL, SUMMON, SUMMON_BEAST } from '../data/units';
 import { WORLD, FLOORS, Floor } from '../data/world';
 import { TOWNS, townFloors, townOfFloor, STORAGE_SIZE, TOWN_W, TOWN_GATE_X, TOWN_SPAWN_X, DOOR_RANGE, streetDoors } from '../data/towns';
@@ -15,7 +15,7 @@ export const CRIT_CHANCE = 0.15, CRIT_MULT = 1.8;
 export interface Input { dx: number; dy: number; use?: boolean; step?: number; /** false 时关闭自动普攻；缺省/true 保持原行为 */ autoAttack?: boolean }
 export interface SaveData {
   v: 1; cls: ClassId; level: number; exp: number; gold: number; pots: number[];
-  equip: Partial<Record<Slot, InvItem>>; bag: InvItem[]; floorIndex: number; kills: number; nextUid: number;
+  equip: Partial<Record<EquipSlot, InvItem>>; bag: InvItem[]; floorIndex: number; kills: number; nextUid: number;
   /** 技能修炼点（熟练度），按技能 id */
   skillTrain?: Record<string, number>;
   /** 地图：已到达的层（index）与已击杀的 BOSS（层 index） */
@@ -28,6 +28,8 @@ export interface SaveData {
   mapV?: 2 | 3;
   /** R14 仓库物品 / 快捷栏技能顺序 */
   storage?: InvItem[]; skillOrder?: string[];
+  /** 装备结构版本：缺省/1 = 单戒单镯旧档，2 = 双戒双镯 */
+  eqV?: number;
 }
 /** R11 旧层号 → 新层号（按原版递进重排：兽人要塞提前到第 2 层） */
 export const FLOOR_MIGRATE = [0, 2, 3, 1, 4, 5, 6, 7];
@@ -60,7 +62,7 @@ export class World {
   exp = 0; expNext: number; nextUid = 1; nextGid = 1; nextItem = 1; time = 0;
   pots = POTIONS.map(p => p.count); gold = 0;
   /** 背包（最多 WORLD.bagSize 格）与装备栏 */
-  bag: InvItem[] = []; equip: Partial<Record<Slot, InvItem>> = {};
+  bag: InvItem[] = []; equip: Partial<Record<EquipSlot, InvItem>> = {};
   /** true：到达传送点后需按空格（Input.use）才切层；模拟/测试默认自动 */
   requireUse = false; atExit = false; private exitHintT = -99;
   floorIndex = 0; cleared = false; done = false; private sealedLogT = -99; private bagFullLogT = -99;
@@ -97,7 +99,7 @@ export class World {
   constructor(public rng: () => number = Math.random, public level = 1, public floors: Floor[] = FLOORS, public cls: ClassId = 'warrior', save?: SaveData) {
     if (save) {
       this.cls = save.cls; this.level = save.level; this.exp = save.exp; this.gold = save.gold; this.pots = [...save.pots];
-      this.equip = { ...save.equip }; this.bag = [...save.bag]; this.kills = save.kills; this.nextItem = save.nextUid;
+      this.equip = migrateEquip(save); this.bag = [...save.bag]; this.kills = save.kills; this.nextItem = save.nextUid;
       this.skillTrain = { ...(save.skillTrain ?? {}) }; this.reached = new Set(save.reached ?? []); this.bossKilled = new Set(save.bossKilled ?? []);
       this.questProg = { ...(save.questProg ?? {}) }; this.questDone = new Set(save.questDone ?? []); this.achieves = new Set(save.achieves ?? []);
       if (save.mapV !== 2 && save.mapV !== 3 && this.floors === FLOORS) {
@@ -154,7 +156,9 @@ export class World {
   /** 各套装已穿件数 */
   setCounts(): Record<string, number> {
     const c: Record<string, number> = {};
-    for (const it of Object.values(this.equip)) { const s = it && ITEMS[it.item]?.set; if (s) c[s] = (c[s] ?? 0) + 1; }
+    // 官方规则：相同款式重复穿戴不重复计件（记忆套需不同款手镯/戒指）→ 按不同物品 id 计数
+    const seen = new Set<string>();
+    for (const it of Object.values(this.equip)) { const s = it && ITEMS[it.item]?.set; if (s && !seen.has(it!.item)) { seen.add(it!.item); c[s] = (c[s] ?? 0) + 1; } }
     return c;
   }
   /** 当前激活的套装加成 */
@@ -188,9 +192,9 @@ export class World {
     return '祝福油没有效果';
   }
   /** 黑铁强化：消耗背包中的一块矿石，强化已装备的指定部位。失败扣材料，高等可能破碎（适配）。 */
-  enhanceWithIron(bagIdx: number, slot: Slot): string {
+  enhanceWithIron(bagIdx: number, slot: EquipSlot): string {
     const ore = this.bag[bagIdx]; if (!ore || ore.item !== 'black_iron') return '需要黑铁矿石';
-    if (!ENHANCE_SLOTS.includes(slot)) return '该部位不能强化（首饰不可强化）';
+    if (!ENHANCE_SLOTS.includes(slot as any)) return '该部位不能强化（首饰不可强化）';
     const it = this.equip[slot]; if (!it) return '该栏位没有装备';
     const cur = it.enhance ?? 0;
     if (cur >= ENHANCE_MAX) return `已达强化上限 +${ENHANCE_MAX}`;
@@ -478,16 +482,24 @@ export class World {
   }
 
   // ---------- 背包 / 装备 / 商店 ----------
-  equipItem(bagIdx: number): string | null {
+  /** 物品应放入的穿戴位：指定 target 优先；否则同类空位优先，都满替换第一位 */
+  targetSlot(it: InvItem, target?: EquipSlot): EquipSlot | null {
+    if (!it.slot) return null; const c = equipSlotsFor(it.slot);
+    if (target) return c.includes(target) ? target : null;
+    return c.find(sl => !this.equip[sl]) ?? c[0];
+  }
+  equipItem(bagIdx: number, target?: EquipSlot): string | null {
     const it = this.bag[bagIdx]; if (!it) return '没有物品';
     if (!it.slot) return '该物品无法装备';
     if (this.level < it.req) return `需要等级 ${it.req}`;
+    const cl = ITEMS[it.item]?.cls; if (cl?.length && !cl.includes(this.cls)) return '职业不符';
+    const sl = this.targetSlot(it, target); if (!sl) return '部位不符';
     this.bag.splice(bagIdx, 1);
-    const old = this.equip[it.slot]; if (old) this.bag.splice(bagIdx, 0, old);
-    this.equip[it.slot] = it; this.recompute(); this.events.push({ type: 'inventory' });
+    const old = this.equip[sl]; if (old) this.bag.splice(bagIdx, 0, old);
+    this.equip[sl] = it; this.recompute(); this.events.push({ type: 'inventory' });
     return null;
   }
-  unequip(slot: Slot): string | null {
+  unequip(slot: EquipSlot): string | null {
     const it = this.equip[slot]; if (!it) return '该栏位为空';
     if (this.bag.length >= WORLD.bagSize) return '背包已满';
     delete this.equip[slot]; this.bag.push(it); this.recompute(); this.events.push({ type: 'inventory' });
@@ -721,7 +733,7 @@ export class World {
 
   // ---------- 存档 ----------
   toSave(): SaveData {
-    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder] };
+    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], eqV: EQUIP_VERSION };
   }
 
   /** 点按一格：滑行中的按键全部排队（同向最多 10 格，反向则替换队列），每次按键都会走一格 */
@@ -964,3 +976,12 @@ export class World {
   drainEvents() { const e = this.events; this.events = []; return e; }
 }
 export { SLOTS };
+/** 存档迁移：eqV<2 的旧档单戒指/单手镯 → ring1/bracelet1，ring2/bracelet2 为空 */
+export function migrateEquip(save: Pick<SaveData, 'equip' | 'eqV'>): Partial<Record<EquipSlot, InvItem>> {
+  const e: any = { ...save.equip };
+  if ((save.eqV ?? 1) < EQUIP_VERSION) {
+    if (e.ring && !e.ring1) e.ring1 = e.ring; if (e.bracelet && !e.bracelet1) e.bracelet1 = e.bracelet;
+    delete e.ring; delete e.bracelet;
+  }
+  return e;
+}

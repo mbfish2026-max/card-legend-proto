@@ -1,7 +1,7 @@
 // 装备上身分层渲染：配置 + 纯函数（无 Phaser 依赖，可单测）。
 // 规范以 docs/equip-layers.md 为准：1024×1024 透明 PNG，左上角 (0,0) 直接叠加，顺序 body→armor→weapon。
 // 只做衣服(armor)、武器(weapon)，不做头盔。美术追加法师/道士后只需改 EQUIP_CLASSES / 映射表。
-import type { InvItem, Slot } from '../combat/types';
+import type { EquipSlot, InvItem, Slot } from '../combat/types';
 
 export type LayerSlot = 'armor' | 'weapon';
 /** 叠加顺序（下→上），body 永远在最底 */
@@ -60,7 +60,7 @@ export function resolveSlot(cls: string, slot: LayerSlot, it: InvItem | undefine
  * 装备栏 → 有序层列表。没穿衣服也没拿武器（含旧存档/空装备栏）或职业无素材 → []，表示用原立绘。
  * 存档结构不变：只读 equip.armor / equip.weapon。
  */
-export function resolveLayers(cls: string, equip: Partial<Record<Slot, InvItem>> | undefined): ResolvedLayer[] {
+export function resolveLayers(cls: string, equip: Partial<Record<EquipSlot, InvItem>> | undefined): ResolvedLayer[] {
   const c = EQUIP_CLASSES[cls]; if (!c || !equip) return [];
   const ls = LAYER_ORDER.map(s => resolveSlot(cls, s, equip[s])).filter((x): x is ResolvedLayer => !!x);
   if (!ls.length) return [];

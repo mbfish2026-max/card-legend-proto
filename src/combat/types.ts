@@ -2,6 +2,8 @@ export type Team = 'ally' | 'enemy';
 export type Tier = 'player' | 'normal' | 'boss';
 export interface DropEntry { item: string; chance: number; rarity?: Rarity }
 export type Slot = 'weapon' | 'helmet' | 'armor' | 'necklace' | 'ring' | 'bracelet' | 'boots';
+/** 穿戴位（官方：左右戒指、左右手镯各两位）；Slot 是物品部位类别 */
+export type EquipSlot = 'weapon' | 'helmet' | 'armor' | 'necklace' | 'ring1' | 'ring2' | 'bracelet1' | 'bracelet2' | 'boots';
 export interface Stats { hp: number; mp: number; atk: number; mag: number; tao: number; def: number }
 export interface UnitDef {
   id: string; name: string; level: number; hp: number; mp?: number; atk: number;
@@ -30,7 +32,7 @@ export interface Unit extends UnitDef {
 }
 export interface BossState { stage: number; dazeUntil: number; crazyUntil: number; crazyOn: boolean; flyT: number; summonT: number; spikeT: number; spikeX?: number; spikeAt?: number; minions: number[] }
 export type Rarity = 'common' | 'magic' | 'rare';
-export interface ItemDef { id: string; name: string; icon: string; potion?: number; slot?: Slot; equip?: Partial<Stats>; req?: number; price?: number; set?: string; /** 技能书：对应技能 id */ book?: string }
+export interface ItemDef { id: string; name: string; icon: string; potion?: number; slot?: Slot; equip?: Partial<Stats>; req?: number; price?: number; set?: string; /** 技能书：对应技能 id */ book?: string; /** 职业限制（空 = 通用） */ cls?: ('warrior' | 'mage' | 'taoist')[] }
 /** 背包/装备栏里的一件物品 */
 export interface InvItem { uid: number; item: string; name: string; rarity: Rarity; slot?: Slot; stats: Partial<Stats>; req: number; price: number; luck?: number; /** 强化等级 0..7 */ enhance?: number; /** 黑铁矿石纯度 1..5 */ purity?: number; /** 堆叠数量（黑铁等） */ qty?: number }
 export interface GroundItem { gid: number; item: string; name: string; rarity: Rarity; x: number; y: number; landAt: number; atk: number; hp: number; amount: number; inv?: InvItem }
