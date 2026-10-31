@@ -53,26 +53,43 @@ const free = (w: World) => w.skills.map(() => 0);
     ok(w.level === 2 && h.maxHp > hp1 && h.hp === h.maxHp && (c !== 'mage' || h.mag! > m1) && (c !== 'taoist' || h.tao! > t1), `${CLASSES[c].name} 升级自动成长并回满`);
   }
 }
-{ // 战士：半月弯刀穿透 + 烈火剑法前排 + 金刚护体减伤
-  const w = mk([{ id: 'zombie', x: 800 }, { id: 'zombie', x: 860 }, { id: 'zombie', x: 920 }, { id: 'zombie', x: 980 }]); tough(w);
+{ // 战士（官方 1.76）：刺杀/半月/烈火 + 攻杀被动 + 学习等级
+  const w = mk([{ id: 'zombie', x: 800 }, { id: 'zombie', x: 860 }, { id: 'zombie', x: 920 }, { id: 'zombie', x: 980 }], [], 'warrior', 40); tough(w);
   const h = w.hero!; h.x = 500; h.hp = h.maxHp = 1e9; run(w, 6);
-  const r = w.cast(idx(w, 'half_moon'), free(w)); ok(r.ok && r.targets.length === 3, '半月弯刀穿透 3 个目标');
+  const r = w.cast(idx(w, 'half_moon'), free(w)); ok(r.ok && r.targets.length === 3, '半月弯刀命中 3 个目标');
   const r2 = w.cast(idx(w, 'fire_sword'), free(w)); ok(r2.ok && r2.targets[0] === w.queue(1)[0].uid, '烈火剑法打前排');
-  const r3 = w.cast(idx(w, 'battle_shout'), free(w)); ok(r3.ok && h.armorUntil! > w.time && h.armorReduce === 0.5, '金刚护体生效');
+  const r3 = w.cast(idx(w, 'thrust'), free(w)); ok(r3.ok && r3.targets.length === 2, '刺杀剑术命中 2 格');
+  ok(w.skills.every(k => k.mana === 0), '战士剑法不耗魔（官方）');
+  const p = w.cast(idx(w, 'slaying'), free(w)); ok(!p.ok && p.reason.includes('被动'), '攻杀剑术为被动');
   const cds = free(w); w.cast(idx(w, 'fire_sword'), cds); const r4 = w.cast(idx(w, 'fire_sword'), cds); ok(!r4.ok && r4.reason.includes('冷却'), '冷却中不可再放');
+  const fs = w.skills[idx(w, 'fire_sword')]; ok(fs.lvMult!.join() === '1.4,1.8,2.2,2.6' && fs.learn![0] === 35, '烈火剑法 35 级学习，1.4~2.6 倍（官方）');
+  const w34 = mk([{ id: 'zombie', x: 700 }], [], 'warrior', 34); w34.hero!.x = 600; run(w34, 1);
+  const rr = w34.cast(idx(w34, 'fire_sword'), free(w34)); ok(!rr.ok && rr.reason.includes('35'), '34 级不能用烈火剑法');
+}
+{ // 技能修炼：等级 + 修炼点（官方门槛），存档保留
+  const w = mk([{ id: 'orc', x: 700 }], [], 'warrior', 30); const k = w.skills[idx(w, 'thrust')];
+  ok(w.skillLevel(k) === 0, '刚学会 0 级');
+  w.skillTrain.thrust = 6000; ok(w.skillLevel(k) === 1, '6000 点 → 1 级');
+  w.skillTrain.thrust = 12000; ok(w.skillLevel(k) === 2, '12000 点 + 人物 30 ≥ 27 → 2 级');
+  const w2 = new World(seeded(1), 1, w.floors, 'warrior', { ...w.toSave(), level: 26 }); ok(w2.skillTrain.thrust === 12000 && w2.skillLevel(k) === 1, '存档保留修炼点；26 级卡在 1 级');
+  const w3 = new World(seeded(1), 1, w.floors, 'warrior', { ...w.toSave(), level: 30 }); ok(w3.skillLevel(k) === 2, '27 级以上 + 12000 → 2 级');
 }
 { // 法师：远程 + 冰咆哮群攻减速 + 技能随等级成长
   const w = mk([{ id: 'orc', x: 900 }, { id: 'orc', x: 1000 }, { id: 'orc', x: 3000 }], [], 'mage'); tough(w);
   const h = w.hero!; h.x = 600;
   const r = w.cast(idx(w, 'fireball'), free(w)); ok(r.ok && r.targets.length === 1, '火球术远程命中（不需贴身）');
   const evs = w.drainEvents(); const d1 = (evs.find(e => e.type === 'damage') as any).amount;
-  const ice = w.cast(idx(w, 'ice_roar'), free(w)); const ens = w.alive('enemy');
-  ok(ice.ok && ice.targets.length === 2 && ens[0].slowUntil! > w.time && !ens[2].slowUntil, '冰咆哮命中范围内全部敌人并减速');
+  const wi = mk([{ id: 'orc', x: 900 }, { id: 'orc', x: 1000 }, { id: 'orc', x: 3000 }], [], 'mage', 40); tough(wi); wi.hero!.x = 600;
+  const ice = wi.cast(idx(wi, 'ice_roar'), free(wi)); const ens = wi.alive('enemy');
+  ok(ice.ok && ice.targets.length === 2 && ens[0].slowUntil! > wi.time && !ens[2].slowUntil, '冰咆哮命中范围内全部敌人并减速');
   const w2 = mk([{ id: 'orc', x: 900 }], [], 'mage', 40); tough(w2); w2.hero!.x = 600; w2.rng = () => 0.5;
   w.rng = () => 0.5; w.cast(idx(w, 'fireball'), free(w)); const a20 = (w.drainEvents().find(e => e.type === 'damage') as any).amount;
   w2.cast(idx(w2, 'fireball'), free(w2)); const a40 = (w2.drainEvents().find(e => e.type === 'damage') as any).amount;
   ok(d1 > 0 && a40 > a20 * 1.5, `火球伤害随等级成长（20级 ${a20} → 40级 ${a40}）`);
-  const sh = w.cast(idx(w, 'magic_shield'), free(w)); ok(sh.ok && h.armorReduce === 0.4, '魔法盾减伤 40%');
+  const w4 = mk([{ id: 'orc', x: 900 }, { id: 'orc', x: 1000 }], [], 'mage', 40); tough(w4); w4.hero!.x = 600;
+  const sh = w4.cast(idx(w4, 'magic_shield'), free(w4)); ok(sh.ok && w4.hero!.armorReduce === 0.4, '魔法盾减伤 40%');
+  ok(!mk([{ id: 'orc', x: 900 }], [], 'mage', 30).cast(idx(w4, 'magic_shield'), free(w4)).ok, '魔法盾 31 级前不可用');
+  ok(w4.skills[idx(w4, 'fireball')].mana === 12, '火球耗魔 = 官方 4 × 3（适配）');
 }
 { // 道士：施毒持续掉血 + 召唤骷髅协同作战
   const w = mk([{ id: 'orc', x: 800 }], [], 'taoist'); const o = w.alive('enemy')[0]; o.hp = o.maxHp = 1e6;
@@ -143,7 +160,7 @@ const free = (w: World) => w.skills.map(() => 0);
     ok(w.deaths >= 1 && w.deaths <= 4, `${CLASSES[c].name} 难度适中：模拟通关死亡 1–4 次（实际 ${w.deaths}）`);
     console.log(`  ${CLASSES[c].name}: 通关=${w.done} 用时 ${Math.round(t)}s 等级 ${w.level} 死亡 ${w.deaths} 次 层 ${w.floorIndex + 1} 红药 ${potUsed} 瓶`);
     ok(potUsed >= 3, `${CLASSES[c].name} 通关需要吃药（${potUsed} 瓶，难度不再过于简单）`);
-    ok(w.done && w.deaths <= 6, `${CLASSES[c].name} 可通关 5 层（死亡 ${w.deaths} 次）`);
+    ok(w.done && w.deaths <= 6, `${CLASSES[c].name} 可通关 8 层（死亡 ${w.deaths} 次）`);
   }
 }
 { // 难度曲线：怪物强度倍率已上调
@@ -305,9 +322,9 @@ const free = (w: World) => w.skills.map(() => 0);
   ok(hits > 0, `开启自动普攻：贴脸有伤害（${hits}）`);
 }
 { // Settings：自动攻击 / 缩放持久化字段与推荐技能
-  ok(DEFAULT_AUTO_SKILLS.warrior[0] === 'fire_sword', '战士推荐 F1 烈火');
+  ok(DEFAULT_AUTO_SKILLS.warrior[0] === 'fire_sword', '战士推荐烈火优先');
   ok(DEFAULT_AUTO_SKILLS.mage.includes('thunder') && DEFAULT_AUTO_SKILLS.mage.includes('fireball'), '法师推荐雷电+火球');
-  ok(DEFAULT_AUTO_SKILLS.taoist.includes('summon_skeleton') && DEFAULT_AUTO_SKILLS.taoist.includes('holy_armor'), '道士推荐召唤+治疗');
+  ok(DEFAULT_AUTO_SKILLS.taoist.includes('summon_skeleton') && DEFAULT_AUTO_SKILLS.taoist.includes('heal'), '道士推荐召唤+治愈术');
   const bak = { aa: Settings.autoAttack, as: Settings.autoSkills, z: Settings.zoom };
   Settings.autoAttack = false; Settings.autoSkills = ['fire_sword']; Settings.setZoom(1.15);
   ok(Settings.zoom === 1.15, '缩放步进对齐 1.15');
@@ -318,6 +335,17 @@ const free = (w: World) => w.skills.map(() => 0);
   Settings.autoSkills = []; ok(Settings.skillsFor('mage').length === 0, '显式空列表 = 不自动放技能');
   Settings.autoSkills = null; ok(Settings.skillsFor('taoist').includes('summon_skeleton'), 'null → 职业推荐');
   Settings.autoSkills = bak.as; Settings.zoom = bak.z; Settings.autoAttack = bak.aa;
+}
+{ // 地图：到达记录 / BOSS 击杀 / 传送规则
+  const w = mk([{ id: 'deer', x: 3000 }], [{ name: '二层', spawns: [{ id: 'deer', x: 3000 }] }, { name: '三层', spawns: [] }], 'warrior', 10);
+  ok(w.reached.has(0) && !w.reached.has(1), '起始只到达第 1 层');
+  ok(w.canTeleport(2) === '尚未到达该层', '未到达的层不能传送');
+  w.loadFloor(1); w.gold = 0; ok(w.reached.has(1) && w.canTeleport(0)!.includes('金币'), '金币不足不能传送');
+  w.gold = 1000; const e = w.alive('enemy')[0]; e.ai = 'chase'; ok(w.canTeleport(0) === '战斗中无法传送', '战斗中不能传送'); e.ai = 'idle';
+  ok(w.teleport(0) === null && w.floorIndex === 0 && w.gold === 980, '传送回第 1 层扣 20 金');
+  ok(w.canTeleport(1)!.includes('冷却'), '传送有 30 秒冷却');
+  const sv = w.toSave(); ok(sv.reached!.includes(1), '存档记录到达层');
+  const wb = mk([{ id: 'wolf_king', x: 700 }]); wb.kill(wb.alive('enemy')[0]); ok(wb.bossKilled.has(0) && wb.toSave().bossKilled!.includes(0), '记录 BOSS 击杀');
 }
 { // 技能未达解锁等级不可放
   const w = mk([{ id: 'orc', x: 700 }], [], 'warrior', 1);

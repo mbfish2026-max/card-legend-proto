@@ -17,10 +17,11 @@ export const ASSETS: Record<string, string> = {
   bg: 'assets/ui/bg_dungeon.jpg',
   bg_floor1: 'assets/bg/bg_floor1.jpg', bg_floor2: 'assets/bg/bg_floor2.jpg', bg_floor3: 'assets/bg/bg_floor3.jpg',
   bg_floor4: 'assets/bg/bg_floor4.jpg', bg_floor5: 'assets/bg/bg_floor5.jpg',
+  map_world: 'assets/map/map_world.jpg', map_node_bichi: 'assets/map/map_node_bichi.png', map_node_mengzhong: 'assets/map/map_node_mengzhong.png', map_node_woma: 'assets/map/map_node_woma.png', map_node_zuma: 'assets/map/map_node_zuma.png', map_node_chiyue: 'assets/map/map_node_chiyue.png',
   bg_floor6: 'assets/bg/bg_floor6.jpg', bg_floor7: 'assets/bg/bg_floor7.jpg', bg_floor8: 'assets/bg/bg_floor8.jpg',
   potion_0: 'assets/potions/INV_Potion_51.png', potion_1: 'assets/potions/INV_Potion_54.png',
   potion_2: 'assets/potions/INV_Potion_72.png', potion_3: 'assets/potions/INV_Potion_75.png',
-  menu_0: 'assets/portraits/INV_Misc_Head_Human_01.png', menu_1: 'assets/items/INV_Misc_Bag_08.png',
+  set_badge: 'assets/ui/set_badge.png', menu_0: 'assets/portraits/INV_Misc_Head_Human_01.png', menu_1: 'assets/items/INV_Misc_Bag_08.png',
   menu_2: 'assets/items/INV_Misc_Book_09.png', menu_3: 'assets/items/INV_Misc_Coin_01.png', menu_4: 'assets/skills/Ability_Warrior_BattleShout.png',
   slot_bg: 'assets/ui/UI-Quickslot2.png', slot_empty: 'assets/ui/UI-Backpack-EmptySlot.png',
 };

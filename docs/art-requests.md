@@ -44,3 +44,31 @@
 | bg/bg_floor6.jpg | 沃玛寺庙 |
 | bg/bg_floor7.jpg | 祖玛阁 |
 | bg/bg_floor8.jpg | 赤月魔穴 |
+
+
+## 交付记录
+- **v1 已交付（2026-10-30，美术 Bot）并已接入**：portraits/ 6 张（woma_guard、boss_woma、zuma_statue、blood_zombie、boss_redmoon、boss_zuma，700–770×960 透明 PNG，按高度缩放、脚底锚点，宽度上限保护）、bg/bg_floor6–8.jpg、items/ 11 个（bless_oil、9 件套装、black_iron）、ui/set_badge.png。上方 A–E 节对应条目均为 ✅ 已交付。
+  - black_iron.png 已入库，但黑铁强化功能尚未实现，暂未在游戏中使用。
+  - set_badge.png 用于装备栏：已穿套装达到首档加成时显示在右上角。
+
+## F. 技能图标（R4，64×64 PNG，已放同名占位，直接覆盖）
+| 文件 | 技能 |
+|---|---|
+| skills/skill_slaying.png | 攻杀剑术（战士） |
+| skills/skill_thrust.png | 刺杀剑术（战士） |
+| skills/skill_half_moon.png | 半月弯刀（战士） |
+| skills/skill_fire_sword.png | 烈火剑法（战士） |
+| skills/skill_fireball.png | 火球术（法师） |
+| skills/skill_thunder.png | 雷电术（法师） |
+| skills/skill_magic_shield.png | 魔法盾（法师） |
+| skills/skill_ice_roar.png | 冰咆哮（法师） |
+| skills/skill_heal.png | 治愈术（道士） |
+| skills/skill_poison.png | 施毒术（道士） |
+| skills/skill_soul_fire.png | 灵魂火符（道士） |
+| skills/skill_summon_skeleton.png | 召唤骷髅（道士） |
+
+## G. 世界地图（R4，已放同名占位）
+| 文件 | 内容 |
+|---|---|
+| map/map_world.jpg 1920×840 | 世界地图底图：比奇→盟重→沃玛森林→祖玛寺庙→赤月峡谷，手绘羊皮卷风格 |
+| map/map_node_bichi.png / map_node_mengzhong.png / map_node_woma.png / map_node_zuma.png / map_node_chiyue.png 128×128 圆形 | 地图区域节点缩略图（透明底） |

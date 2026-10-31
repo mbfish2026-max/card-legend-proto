@@ -159,7 +159,8 @@ export class BattleScene extends Phaser.Scene {
   toTitle() { this.saveGame(); this.scene.stop('UI'); this.scene.start('Title'); }
 
   onKey(k: string) {
-    if (k === 'M') { Settings.muted = !Settings.muted; Settings.apply(this.sound); Settings.save(); this.log(Settings.muted ? '已静音' : '已取消静音'); return; }
+    if (k === 'M') return this.openPanel('map');
+    if (k === 'N') { Settings.muted = !Settings.muted; Settings.apply(this.sound); Settings.save(); this.log(Settings.muted ? '已静音' : '已取消静音'); return; }
     if (this.state === 'win') { if (k === ' ') { this.sfx('click'); this.toTitle(); } return; }
     if (k === 'ESCAPE') { if (this.paused) this.ui.panel.close(); else this.openPanel('settings'); return; }
     if (k === 'B' || k === 'C' || k === 'I') return this.openPanel('bag');
@@ -192,8 +193,7 @@ export class BattleScene extends Phaser.Scene {
         fx.halfMoon(this, hv.cx + dir * hv.w / 2, last.cx + dir * 40, tv[0].cy, Math.max(...tv.map(v => v.h)));
         tv.forEach(v => fx.bloodBlade(this, v.cx, v.cy, v.h * 0.7, FX.halfMoonColor));
       } return done();
-      case 'shadow_slash': hv.lunge(dir, 34); if (tv[0]) fx.shadowSlash(this, tv[0].cx, tv[0].cy, tv[0].h); return done();
-      case 'battle_shout': fx.shieldAura(this, hv.cx, hv.cy, hv.h); fx.floatNumber(this, hv.cx, hv.cy - hv.h * 0.2, hv.h, '金刚护体', FX.statusColor, 0.7); return done();
+      case 'thrust': hv.lunge(dir, 34); if (tv[0]) fx.shadowSlash(this, tv[0].cx, tv[0].cy, tv[0].h); return done();
       case 'fireball': case 'soul_fire': if (tv[0]) {
         const t = tv[0];
         return fx.projectile(this, hv.cx + dir * hv.w * 0.4, hv.cy - 20, t.cx, t.cy, skill === 'fireball' ? 'fire' : 'talisman', () => {
@@ -205,7 +205,7 @@ export class BattleScene extends Phaser.Scene {
       case 'magic_shield': fx.magicShield(this, hv, hv.cy, hv.h, (sk?.duration ?? 12) * 1000); fx.floatNumber(this, hv.cx, hv.cy - hv.h * 0.2, hv.h, '魔法盾', '#88ccff', 0.7); return done();
       case 'poison': if (tv[0]) { const t = tv[0]; return fx.projectile(this, hv.cx + dir * hv.w * 0.4, hv.cy - 20, t.cx, t.cy, 'poison', () => { fx.poisonCloud(this, t.cx, t.cy, t.h); done(); }); } return done();
       case 'summon_skeleton': { const x = hv.x - dir * 110; fx.summonCircle(this, x, GROUND_Y + WORLD.summonLane); return done(); }
-      case 'holy_armor': fx.holyLight(this, hv.cx, hv.cy, hv.h); fx.shieldAura(this, hv.cx, hv.cy, hv.h); fx.floatNumber(this, hv.cx, hv.cy - hv.h * 0.2, hv.h, '神圣战甲', '#ffe680', 0.7); return done();
+      case 'heal': fx.holyLight(this, hv.cx, hv.cy, hv.h); fx.floatNumber(this, hv.cx, hv.cy - hv.h * 0.2, hv.h, '治愈术', '#80ff90', 0.7); return done();
       default: return done();
     }
   }

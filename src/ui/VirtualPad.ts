@@ -37,7 +37,7 @@ export class VirtualPad {
     // 右上：药水
     POTIONS.forEach((p, i) => btn(935 + i * 96, 160, 45, p.key, 'potion_' + i, () => onKey(p.key)));
     // 顶部：功能键
-    [['背包', 'B'], ['商人', 'T'], ['传送', ' '], ['设置', 'ESCAPE'], ['静音', 'M']].forEach(([l, k], i) => btn(420 + i * 100, 52, 45, l, null, () => onKey(k), undefined, 19));
+    [['背包', 'B'], ['商人', 'T'], ['传送', ' '], ['设置', 'ESCAPE'], ['地图', 'M']].forEach(([l, k], i) => btn(420 + i * 100, 52, 45, l, null, () => onKey(k), undefined, 19));
     this.cdG = s.add.graphics(); R.add(this.cdG);
     R.setAlpha(1);
   }

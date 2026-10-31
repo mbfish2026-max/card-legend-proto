@@ -10,8 +10,10 @@ import { Settings, ZOOM_STEP } from '../settings';
 import { txt, button, sfx } from '../scenes/TitleScene';
 import { IS_MOBILE } from '../mobile';
 import { FxQuality } from './Fx';
+import { REGIONS, floorBoss, regionOf } from '../data/map';
+import { World as WorldCls } from '../combat/World';
 
-export type PanelMode = 'bag' | 'shop' | 'skills' | 'settings';
+export type PanelMode = 'bag' | 'shop' | 'skills' | 'settings' | 'map';
 export const RARITY_HEX: Record<string, string> = { common: '#ffffff', magic: '#5aa8ff', rare: '#ffb020' };
 const RARITY_NUM: Record<string, number> = { common: 0x8a8a8a, magic: 0x3a7aff, rare: 0xffa020 };
 const RARITY_CN: Record<string, string> = { common: '普通', magic: '精良', rare: '极品' };
@@ -19,9 +21,12 @@ const RARITY_CN: Record<string, string> = { common: '普通', magic: '精良', r
 /** 角色/背包/商店/技能/设置 面板（打开时战斗暂停） */
 export class Panel {
   root?: Phaser.GameObjects.Container; tip?: Phaser.GameObjects.Container; mode: PanelMode | null = null; sel: string | null = null;
+  /** 地图详情：选中的区域 id（null=世界总览） */
+  region: string | null = null;
+  onTeleport?: () => void;
   constructor(public s: Phaser.Scene, public world: () => World, public onChange: (msg?: string, green?: boolean) => void, public onTitle: () => void) {}
   get open() { return this.mode !== null; }
-  toggle(m: PanelMode) { if (this.mode === m) this.close(); else { this.mode = m; this.sel = null; this.render(); } }
+  toggle(m: PanelMode) { if (this.mode === m) this.close(); else { this.mode = m; this.sel = null; this.region = null; this.render(); } }
   close() { this.sel = null; this.mode = null; this.root?.destroy(true); this.root = undefined; this.hideTip(); }
   render() {
     this.root?.destroy(true); this.hideTip();
@@ -30,11 +35,12 @@ export class Panel {
     R.add(s.add.rectangle(640, 360, 1280, 720, 0x000000, 0.45).setInteractive());
     const W = this.mode === 'settings' ? 640 : 1000, H = this.mode === 'settings' ? 580 : 500, top = Math.max(40, 360 - H / 2);
     R.add(s.add.rectangle(640, 300, W, H, 0x15100b, 0.97).setStrokeStyle(3, 0xd4a64a));
-    const titles = { bag: '角色 / 背包', shop: '商人 · 杂货铺', skills: '技能', settings: '设置' };
+    const titles = { bag: '角色 / 背包', shop: '商人 · 杂货铺', skills: '技能', settings: '设置', map: '世界地图' };
     R.add(txt(s, 640, top + 22, titles[this.mode], 24, '#ffd24a', { fontStyle: 'bold' }).setOrigin(0.5));
     R.add([...button(s, 640 + W / 2 - 26, top + 22, 36, 32, '✕', () => this.close(), 18)]);
     if (this.mode === 'settings') return this.renderSettings(R, top);
     if (this.mode === 'skills') return this.renderSkills(R, top);
+    if (this.mode === 'map') return this.renderMap(R, top);
     if (this.mode === 'bag') this.renderEquip(R, top); else this.renderShop(R, top);
     this.renderBag(R, top);
   }
@@ -45,6 +51,10 @@ export class Panel {
     R.add(r);
     if (it && s.textures.exists('item_' + it.item)) R.add(s.add.image(x, y, 'item_' + it.item).setDisplaySize(size - 8, size - 8));
     else if (label) R.add(txt(s, x, y, label, 12, '#6a5a40', { strokeThickness: 0 }).setOrigin(0.5));
+    // 套装激活角标：已装备且该套装至少触发一档加成
+    const setId = it && key.startsWith('eq_') ? ITEMS[it.item]?.set : undefined;
+    if (setId && SETS[setId] && (this.world().setCounts()[setId] ?? 0) >= Math.min(...SETS[setId].bonus.map(b => b.n)) && s.textures.exists('set_badge'))
+      R.add(s.add.image(x + size / 2 - 10, y - size / 2 + 10, 'set_badge').setDisplaySize(22, 22));
     if (selected) { r.setStrokeStyle(4, 0xffe080); s.time.delayedCall(0, () => it && this.root && this.showTip(it, x + size / 2 + 6, y - size / 2, true)); }
     r.setInteractive({ useHandCursor: !!it });
     if (!IS_MOBILE) r.on('pointerover', () => { r.setFillStyle(0x2a2016); if (it) this.showTip(it, x + size / 2 + 6, y - size / 2); });
@@ -114,13 +124,56 @@ export class Panel {
   private renderSkills(R: Phaser.GameObjects.Container, top: number) {
     const s = this.s, w = this.world();
     w.skills.forEach((k, i) => {
-      const y = top + 100 + i * 90;
-      if (s.textures.exists('sk_' + k.id)) R.add(s.add.image(220, y, 'sk_' + k.id).setDisplaySize(60, 60));
-      const need = k.unlock ?? 1, locked = w.level < need;
-      R.add(txt(s, 270, y - 28, `[${k.key}] ${k.name}${locked ? `（需 Lv${need}）` : need <= 1 ? '' : ` · Lv${need}`}`, 20, locked ? '#888' : '#ffd24a', { fontStyle: 'bold' }));
-      R.add(txt(s, 270, y + 2, `${k.desc}    消耗 ${k.mana} 魔法  冷却 ${k.cooldown}s`, 15, locked ? '#777' : '#ddd', { strokeThickness: 2 }));
+      const y = top + 82 + i * 86;
+      if (s.textures.exists('sk_' + k.id)) R.add(s.add.image(200, y, 'sk_' + k.id).setDisplaySize(60, 60));
+      const need = k.unlock ?? k.learn?.[0] ?? 1, lv = w.skillLevel(k), locked = lv < 0, pts = w.skillTrain[k.id] ?? 0;
+      const nextNeed = lv >= 0 && lv < 3 && k.learn && k.train ? `  下一级：人物 Lv${k.learn[lv + 1]} + 修炼点 ${k.train[lv]}` : lv === 3 ? '  已满级' : '';
+      R.add(txt(s, 245, y - 34, `[${k.key}] ${k.name}${locked ? `（需人物 Lv${need}）` : `  ${lv} 级`}${k.passive ? '  被动' : ''}`, 20, locked ? '#888' : '#ffd24a', { fontStyle: 'bold' }));
+      const eff = k.lvMult ? `  本级倍率 ${Math.round(k.lvMult[Math.max(0, lv)] * 100)}%` : k.lvBonus ? `  本级 +${k.lvBonus[Math.max(0, lv)]} 伤害 / 几率 1/${Math.round(1 / k.lvChance![Math.max(0, lv)])}` : `  等级加成 +${Math.max(0, lv) * 10}%`;
+      R.add(txt(s, 245, y - 8, `${k.desc}${eff}`, 14, locked ? '#777' : '#ddd', { strokeThickness: 2 }));
+      R.add(txt(s, 245, y + 14, `${k.passive ? '无需施放' : `消耗 ${k.mana} 魔法  冷却 ${k.cooldown}s`}   修炼点 ${pts}${k.train ? '/' + k.train[2] : ''}${nextNeed}`, 13, locked ? '#666' : '#9fd', { strokeThickness: 2 }));
     });
-    R.add(txt(s, 220, top + 460, `技能伤害随等级提升：当前 ×${w.skillScale().toFixed(2)}（基于${{ atk: '攻击', mag: '魔法', tao: '道术' }[w.classDef.autoStat]}）`, 14, '#9fd'));
+    R.add(txt(s, 180, top + 412, `学习等级/修炼点/战士倍率取自 1.76 官方资料；耗魔×3、冷却、修炼点获得(施放+100/被动+10)为卡牌适配。人物等级加成 ×${w.skillScale().toFixed(2)}`, 12, '#aaa'));
+  }
+  private renderMap(R: Phaser.GameObjects.Container, top: number) {
+    const s = this.s, w = this.world(), cur = regionOf(w.floorIndex);
+    if (!this.region) {
+      if (s.textures.exists('map_world')) R.add(s.add.image(640, top + 215, 'map_world').setDisplaySize(960, 350).setAlpha(0.9));
+      else R.add(s.add.rectangle(640, top + 215, 960, 350, 0x1e2a18).setStrokeStyle(1, 0x4a5a30));
+      const g = s.add.graphics().lineStyle(4, 0x8a7040, 0.8); R.add(g);
+      REGIONS.forEach((r, i) => { if (i) g.lineBetween(REGIONS[i - 1].x, top + REGIONS[i - 1].y - 180, r.x, top + r.y - 180); });
+      REGIONS.forEach(r => {
+        const y = top + r.y - 180, open = r.floors.some(f => w.reached.has(f)), here = r === cur;
+        const c = s.add.circle(r.x, y, 38, open ? 0x3a2a10 : 0x222222).setStrokeStyle(here ? 5 : 2, here ? 0x66ff66 : open ? 0xd4a64a : 0x555555).setInteractive({ useHandCursor: true });
+        c.on('pointerdown', () => { sfx(s, 'click', 0.4); this.region = r.id; this.render(); }); R.add(c);
+        if (s.textures.exists(r.icon)) R.add(s.add.image(r.x, y, r.icon).setDisplaySize(60, 60).setAlpha(open ? 1 : 0.35));
+        R.add(txt(s, r.x, y + 50, r.name, 17, open ? '#ffe8a0' : '#777', { fontStyle: 'bold' }).setOrigin(0.5));
+        R.add(txt(s, r.x, y + 72, `第 ${r.floors.map(f => f + 1).join('/')} 层`, 13, '#bbb').setOrigin(0.5));
+        if (here) R.add(txt(s, r.x, y - 58, '▼ 你在这里', 14, '#66ff66', { fontStyle: 'bold' }).setOrigin(0.5));
+      });
+      R.add(txt(s, 640, top + 412, `当前：${cur.name} · 第 ${w.floorIndex + 1} 层 ${w.floor.name}    点击区域查看详情与传送（M 关闭）`, 15, '#9fd').setOrigin(0.5));
+      return;
+    }
+    const r = REGIONS.find(x => x.id === this.region)!;
+    R.add([...button(s, 200, top + 22, 110, 32, '◀ 世界', () => { this.region = null; this.render(); }, 15)]);
+    R.add(txt(s, 640, top + 62, `${r.name}${r === cur ? `（你在第 ${w.floorIndex + 1} 层 ${w.floor.name}）` : ''}`, 18, '#ffe8a0').setOrigin(0.5));
+    r.floors.forEach((f, j) => {
+      const y = top + 112 + j * 94, fl = w.floors[f], reached = w.reached.has(f), here = f === w.floorIndex, b = floorBoss(f);
+      R.add(s.add.rectangle(640, y, 880, 84, here ? 0x1c2a14 : 0x0a0806).setStrokeStyle(2, here ? 0x66ff66 : reached ? 0x6a5030 : 0x333333));
+      if (s.textures.exists(fl.bg ?? '')) R.add(s.add.image(250, y, fl.bg!).setDisplaySize(140, 76).setAlpha(reached ? 1 : 0.3));
+      R.add(txt(s, 340, y - 30, `第 ${f + 1} 层  ${fl.name}${here ? '  ← 当前位置' : ''}${reached ? '' : '  （未到达）'}`, 18, reached ? '#ffd24a' : '#777', { fontStyle: 'bold' }));
+      if (b) R.add(txt(s, 340, y + 2, `BOSS：${b.name}   建议等级 Lv${b.level}   ${w.bossKilled.has(f) ? '已击杀（重新进入该层会刷新）' : '未击杀'}`, 14, w.bossKilled.has(f) ? '#9f9' : '#f99', { strokeThickness: 2 }));
+      if (!here) {
+        const why = w.canTeleport(f);
+        R.add(txt(s, 340, y + 24, reached ? `传送费用 ${w.teleportCost(f)} 金${why ? '   ' + why : ''}` : '到达后解锁传送', 13, '#aaa', { strokeThickness: 2 }));
+        R.add([...button(s, 1010, y, 120, 40, '传送', () => {
+          const e = w.teleport(f);
+          if (e) { this.onChange(e); sfx(s, 'click', 0.3); this.render(); return; }
+          sfx(s, 'coin'); this.close(); this.onChange(`传送到第 ${f + 1} 层 ${fl.name}`, true); this.onTeleport?.();
+        }, 17, reached)]);
+      }
+    });
+    R.add(txt(s, 640, top + 418, `传送规则：只能去已到达的层；战斗中（有怪物追击）不可传送；冷却 ${WorldCls.TELEPORT_CD} 秒；费用 = 层号 × 20 金`, 13, '#9fd').setOrigin(0.5));
   }
   private renderSettings(R: Phaser.GameObjects.Container, top: number) {
     const s = this.s, w = this.world(), cls = w.cls;
@@ -128,7 +181,7 @@ export class Panel {
     const refresh = () => { vol.setText(`音量 ${Math.round(Settings.volume * 100)}%${Settings.muted ? '（静音）' : ''}`); Settings.apply(s.sound); Settings.save(); };
     R.add([...button(s, 500, top + 70, 50, 36, '－', () => { Settings.volume = Math.max(0, +(Settings.volume - 0.1).toFixed(1)); refresh(); })]);
     R.add([...button(s, 780, top + 70, 50, 36, '＋', () => { Settings.volume = Math.min(1, +(Settings.volume + 0.1).toFixed(1)); refresh(); })]);
-    R.add([...button(s, 560, top + 118, 160, 36, '静音 (M)', () => { Settings.muted = !Settings.muted; refresh(); }, 16)]);
+    R.add([...button(s, 560, top + 118, 160, 36, '静音 (N)', () => { Settings.muted = !Settings.muted; refresh(); }, 16)]);
     R.add([...button(s, 740, top + 118, 160, 36, `低特效：${Settings.lowFx ? '开' : '关'}`, () => { Settings.lowFx = !Settings.lowFx; FxQuality.low = !!Settings.lowFx; Settings.save(); this.render(); }, 15)]);
     if (IS_MOBILE) {
       const on = Settings.wantPad(true);

@@ -12,6 +12,10 @@ export interface Input { dx: number; dy: number; use?: boolean; step?: number; /
 export interface SaveData {
   v: 1; cls: ClassId; level: number; exp: number; gold: number; pots: number[];
   equip: Partial<Record<Slot, InvItem>>; bag: InvItem[]; floorIndex: number; kills: number; nextUid: number;
+  /** 技能修炼点（熟练度），按技能 id */
+  skillTrain?: Record<string, number>;
+  /** 地图：已到达的层（index）与已击杀的 BOSS（层 index） */
+  reached?: number[]; bossKilled?: number[];
 }
 /** 商店祝福油价格（较贵，每层限购 1） */
 export const OIL_PRICE = 400;
@@ -32,10 +36,27 @@ export class World {
   lootRng = (() => { let s = 0x2f6b1d; return () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296); })();
   /** 商店祝福油：每层限购 1 瓶 */
   oilBoughtFloor = -1;
+  /** 技能修炼点（官方等级要求/点数见 docs/skills-official.md） */
+  skillTrain: Record<string, number> = {};
+  reached = new Set<number>(); bossKilled = new Set<number>();
+  /** 技能等级 0..3：Lv k 需人物等级 ≥ learn[k] 且修炼点 ≥ train[k-1]（官方）；未学会返回 -1 */
+  skillLevel(s: SkillDef): number {
+    const learn = s.learn ?? [s.unlock ?? 1];
+    if (this.level < (s.unlock ?? learn[0])) return -1;
+    const pts = this.skillTrain[s.id] ?? 0; let lv = 0;
+    for (let k = 1; k <= 3 && s.train; k++) if (this.level >= (learn[k] ?? 999) && pts >= s.train[k - 1]) lv = k; else break;
+    return lv;
+  }
+  /** [适配] 修炼点获得：施放 +100，被动 +10（原版获得量未查到） */
+  addTrain(s: SkillDef, n: number) {
+    const before = this.skillLevel(s); this.skillTrain[s.id] = Math.min((this.skillTrain[s.id] ?? 0) + n, s.train?.[2] ?? 0);
+    const after = this.skillLevel(s); if (after > before) this.events.push({ type: 'log', text: `${s.name} 修炼到 ${after} 级` });
+  }
   constructor(public rng: () => number = Math.random, public level = 1, public floors: Floor[] = FLOORS, public cls: ClassId = 'warrior', save?: SaveData) {
     if (save) {
       this.cls = save.cls; this.level = save.level; this.exp = save.exp; this.gold = save.gold; this.pots = [...save.pots];
       this.equip = { ...save.equip }; this.bag = [...save.bag]; this.kills = save.kills; this.nextItem = save.nextUid;
+      this.skillTrain = { ...(save.skillTrain ?? {}) }; this.reached = new Set(save.reached ?? []); this.bossKilled = new Set(save.bossKilled ?? []);
     }
     this.expNext = EXP_PER_LEVEL(this.level);
     this.spawnHero();
@@ -115,7 +136,7 @@ export class World {
     this.units.push(u); return u;
   }
   loadFloor(i: number) { this.stepTarget = null; this.stepQueued = 0;
-    this.floorIndex = i; this.cleared = false; this.ground = [];
+    this.floorIndex = i; this.cleared = false; this.ground = []; this.reached.add(i);
     this.units = this.units.filter(u => u.isHero || u.summon);
     const h = this.hero; if (h) { h.x = WORLD.heroStartX; h.y = 0; h.facing = 1; }
     const s = this.summon; if (s) { s.x = WORLD.heroStartX - 110; s.y = WORLD.summonLane; }
@@ -205,6 +226,7 @@ export class World {
       this.events.push({ type: 'drop', uid: u.uid, x: u.x, y: u.y, items });
     }
     // 额外掉落：独立随机流 lootRng（不消耗主 rng，保持平衡模拟稳定）。Boss 必掉 1 瓶祝福油；setDrop 随机 1 件套装
+    if (u.tier === 'boss') this.bossKilled.add(this.floorIndex);
     const extra: string[] = [];
     if (u.tier === 'boss' || this.lootRng() < (u.oilChance ?? 0)) extra.push('bless_oil');
     if (u.setDrop?.length && this.lootRng() < (u.setChance ?? 1)) extra.push(u.setDrop[Math.floor(this.lootRng() * u.setDrop.length)]);
@@ -268,12 +290,35 @@ export class World {
     this.gold -= OIL_PRICE; this.oilBoughtFloor = this.floorIndex; this.bag.push(this.makeItem('bless_oil')); this.events.push({ type: 'inventory' }); return null;
   }
 
+  // ---------- 地图传送 ----------
+  /** 传送规则：只能去已到达的层；不能是当前层；有敌人正在追击（战斗中）禁止；冷却 30 秒；花费 层号×20 金币 */
+  teleportReadyAt = 0;
+  static TELEPORT_CD = 30;
+  teleportCost(i: number) { return (i + 1) * 20; }
+  inCombat() { const h = this.hero; return !!h && this.alive('enemy').some(e => e.ai === 'chase'); }
+  canTeleport(i: number): string | null {
+    if (i < 0 || i >= this.floors.length) return '无此层';
+    if (!this.reached.has(i)) return '尚未到达该层';
+    if (i === this.floorIndex) return '已在该层';
+    if (this.inCombat()) return '战斗中无法传送';
+    if (this.time < this.teleportReadyAt) return `传送冷却中（${Math.ceil(this.teleportReadyAt - this.time)} 秒）`;
+    if (this.gold < this.teleportCost(i)) return `金币不足（需 ${this.teleportCost(i)}）`;
+    return null;
+  }
+  teleport(i: number): string | null {
+    const r = this.canTeleport(i); if (r) return r;
+    this.gold -= this.teleportCost(i); this.teleportReadyAt = this.time + World.TELEPORT_CD;
+    this.loadFloor(i); this.events.push({ type: 'log', text: `传送到 ${this.floors[i].name}` }); return null;
+  }
+
   // ---------- 技能 ----------
   cast(i: number, cds: number[]): CastResult {
     const s = this.skills[i], h = this.hero;
     if (!s || !h) return { ok: false, reason: '' };
-    const need = s.unlock ?? 1;
+    const need = s.unlock ?? s.learn?.[0] ?? 1;
     if (this.level < need) return { ok: false, reason: `${s.name} 需等级 ${need}` };
+    if (s.passive) return { ok: false, reason: `${s.name} 为被动技能` };
+    const slv = Math.max(0, this.skillLevel(s)), lvF = 1 + 0.1 * slv;
     if (cds[i] > 0) return { ok: false, reason: `${s.name} 冷却中` };
     if ((h.mp ?? 0) < s.mana) return { ok: false, reason: '魔法值不足' };
     let targets: Unit[] = [];
@@ -290,10 +335,14 @@ export class World {
     }
     h.mp = (h.mp ?? 0) - s.mana; cds[i] = s.cooldown;
     this.events.push({ type: 'attack', source: h.uid, target: targets[0]?.uid ?? h.uid, skill: s.id });
-    const pw = this.power(s.stat) * this.skillScale();
+    this.addTrain(s, 100);
+    const pw = this.power(s.stat) * this.skillScale() * (s.lvMult ? 1 : lvF);
+    const dur = (s.duration ?? 8) + (s.durPerLv ?? 0) * slv;
     if (s.kind === 'buff') {
-      h.armorUntil = this.time + (s.duration ?? 8); h.armorReduce = s.reduce ?? 0.5;
-      this.events.push({ type: 'log', text: `${s.name}：受到伤害降低 ${Math.round((s.reduce ?? 0.5) * 100)}%，持续 ${s.duration} 秒` });
+      if (s.reduce) {
+        h.armorUntil = this.time + dur; h.armorReduce = s.reduce;
+        this.events.push({ type: 'log', text: `${s.name}：受到伤害降低 ${Math.round(s.reduce * 100)}%，持续 ${dur} 秒` });
+      }
       if (s.heal) this.heal(h, pw * s.heal);
     } else if (s.kind === 'summon') {
       const ex = this.summon;
@@ -301,17 +350,19 @@ export class World {
       else {
         const tao = h.tao ?? 0;
         // 随等级/道术成长：1 级较弱，高等级更强（base + tao 缩放）
-        const def: UnitDef = { ...SUMMON, level: this.level, hp: Math.round(140 + tao * 5), atk: Math.round(8 + tao * 0.9), def: Math.round(3 + this.level * 0.8) };
+        const def: UnitDef = { ...SUMMON, level: this.level, hp: Math.round((140 + tao * 5) * lvF), atk: Math.round((8 + tao * 0.9) * lvF), def: Math.round(3 + this.level * 0.8) };
         const u = this.spawn(def, 'ally', h.x - h.facing * 110, WORLD.summonLane); u.summon = true; u.facing = h.facing; u.ai = 'chase';
         this.events.push({ type: 'summon', uid: u.uid });
       }
     } else if (s.kind === 'dot') {
-      for (const t of targets) { t.poisonUntil = this.time + (s.duration ?? 8); t.poisonDps = pw * (s.mult ?? 0.5); t.poisonTick = this.time + 1; this.damage(t, pw * (s.mult ?? 0.5), h, false); }
+      for (const t of targets) { t.poisonUntil = this.time + dur; t.poisonDps = pw * (s.mult ?? 0.5); t.poisonTick = this.time + 1; this.damage(t, pw * (s.mult ?? 0.5), h, false); }
     } else {
-      for (const t of targets) {
-        this.damage(t, pw * (s.mult ?? 1) * this.roll(0.95, 0.1), h);
+      targets.forEach((t, j) => {
+        // 战士剑法：官方各级倍率（刺杀/半月：主目标 100%，其余按倍率；烈火：主目标倍率）
+        const m = s.lvMult ? (s.kind === 'pierce' ? (j === 0 ? 1 : s.lvMult[slv]) : s.lvMult[slv]) : (s.mult ?? 1);
+        this.damage(t, pw * m * this.roll(0.95, 0.1), h);
         if (s.slow && t.alive) t.slowUntil = this.time + (s.duration ?? 3);
-      }
+      });
     }
     return { ok: true, targets: targets.map(t => t.uid), skill: s.id, kind: s.kind };
   }
@@ -327,7 +378,7 @@ export class World {
 
   // ---------- 存档 ----------
   toSave(): SaveData {
-    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, kills: this.kills, nextUid: this.nextItem };
+    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, reached: [...this.reached], bossKilled: [...this.bossKilled] };
   }
 
   /** 点按一格：滑行中的按键全部排队（同向最多 10 格，反向则替换队列），每次按键都会走一格 */
@@ -434,7 +485,11 @@ export class World {
       if (inp.autoAttack !== false && side !== null && h.cd <= 0) {
         const f = this.queue(side)[0]; h.cd = h.atkInterval; if (!h.moving) h.facing = side as 1 | -1;
         this.events.push({ type: 'attack', source: h.uid, target: f.uid });
-        this.damage(f, this.autoDamage(h) * this.roll(0.9, 0.2), h);
+        let dmg = this.autoDamage(h) * this.roll(0.9, 0.2);
+        // 攻杀剑术（被动，官方：附加伤害与几率按等级）；用 lootRng 不扰动主随机序列
+        const sl = this.skills.find(k => k.passive && k.lvBonus);
+        if (sl) { const lv = this.skillLevel(sl); if (lv >= 0) { this.addTrain(sl, 10); if (this.lootRng() < sl.lvChance![lv]) { dmg += sl.lvBonus![lv]; this.events.push({ type: 'log', text: `攻杀剑术 +${sl.lvBonus![lv]}` }); } } }
+        this.damage(f, dmg, h);
       }
       for (const s of [1, -1]) {
         const f = this.queue(s)[0];
