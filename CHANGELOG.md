@@ -9,6 +9,7 @@
 - R54 技能面板：按学习等级升序 + [Fn] 标签，两行不重叠，状态颜色，未学显示「需 LvX」及获取途径，全设备翻页，手机字号 ≥12。
 - R54 动画不放大：攻击/受击/蓄力/待机呼吸关键帧 scale ≤1（src/ui/cardMotion.ts），主角、怪物、全部召唤物（骷髅/神兽/尸灵/金甲/替身，含升级变色骷髅）一致；e2e 实采 scale 全为 1.0。
 - R54 快捷栏点击即用：桌面药水格新增点击（技能格原已支持），与按键同走 BattleScene.onKey/World 处理（数量不足、冷却、满血判断一致）；格子 pointerdown 即 stopPropagation。手机 HUD tap 同时拦截 touchstart/touchend/mousedown/mouseup，修复城里点药水槽导致角色走动的穿透 bug。商店书行：已学会/差 N 级时不显示价格，避免压按钮；掉落说明改单行。e2e tests/e2e/hotbar-click-verify.mjs。
+- e2e 修正：mobile-skills-verify 诱惑之光目标改非免疫怪（骷髅在免疫表内）；chuanshi-verify 适配传世页取消（>25 级书模拟 BOSS 掉落入包后学习）并输出 ok/FAIL 判定。
 - R54 技能数字整数显示（仅显示，不改计算）：统一 src/ui/fmt.ts（fmtInt/fmtText，四舍五入）。
 
 ## 传世技能（feat/chuanshi-skills）
