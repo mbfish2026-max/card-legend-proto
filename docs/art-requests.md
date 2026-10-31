@@ -390,3 +390,21 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 | bone_ghost_general_full.png | 721x960 | bone_ghost_general | 骨鬼将 | 潘夜石窟（传奇3） | 据描述 | 与骷髅武将样子很像（17173 作「鬼骨将」） |
 | noma_full.png | 754x960 | noma | 诺玛 | 沙漠绿洲（传奇3） | 据描述 | 皮衣、骨制护身服和骨制武器 |
 | noma_pharaoh_full.png | 699x960 | noma_pharaoh | 诺玛法老 | 沙漠绿洲（传奇3） | 据描述 | 会魔法，持魔法拐棍 |
+
+### 批次4：沙漠 + 逆魔古刹 + 蛇魔谷（上）（11）
+
+预览：`docs/art-gap-preview/sq_b4_desert_nimo.jpg`
+
+| 文件 | 尺寸 | id | 名称 | 地图 | 外观 | 备注 |
+|---|---|---|---|---|---|---|
+| desert_fish_full.png | 721x960 | desert_fish | 沙漠鱼魔 | 沙漠（传奇3） | 未查到/推测 | 只查到"毒特别厉害"、不死系 |
+| desert_wind_full.png | 704x960 | desert_wind | 沙漠风魔 | 沙漠（传奇3） | 据描述 | 手持可呼风唤雨的扇子 |
+| desert_tree_full.png | 724x960 | desert_tree | 沙漠树魔 | 沙漠（传奇3） | 据描述 | 与仙人掌一模一样，射带刺果实，不能移动 |
+| desert_golem_full.png | 761x960 | desert_golem | 沙漠石人 | 沙漠（传奇3） | 据描述 | 石头垒成的巨大怪物 |
+| underground_imp_full.png | 933x960 | underground_imp | 地下小鬼 | 逆魔古刹（传世） | 据描述 | 身高一尺，挥巨石弯锤 |
+| nimo_archer_full.png | 695x960 | nimo_archer | 逆魔弓箭手 | 逆魔古刹（传世） | 部分推测 | 北方大漠善射民族被侵蚀 |
+| nimo_guard_full.png | 728x960 | nimo_guard | 逆魔卫士 | 逆魔古刹（传世） | 部分推测 | 迅猛近战卫士 |
+| nimo_attendant_full.png | 731x960 | nimo_attendant | 逆魔侍卫 | 逆魔古刹（传世） | 据描述 | 统领卫士，身后箭型巨尾 |
+| nimo_statue_full.png | 708x960 | nimo_statue | 逆魔雕像 | 逆魔古刹（传世） | 据描述 | "死神"，巨镰 |
+| red_snake_yao_full.png | 728x960 | red_snake_yao | 红蛇妖 | 蛇魔谷（传世） | 部分推测 | 蛇妖小喽啰 |
+| black_snake_yao_full.png | 708x960 | black_snake_yao | 黑蛇妖 | 蛇魔谷（传世） | 部分推测 | 蛇王近卫军，防御极高 |
