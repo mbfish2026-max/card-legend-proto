@@ -776,3 +776,19 @@ thunder_sword 雷霆剑、break_strike 破击剑法、shield_break 破盾斩、v
 | sq_tieyi_full.png | 960x702 | 铁翼 | 复用 art/sq-mir3 的 iron_wing_full.png |
 | sq_yaolishi_full.png | 720x960 | 妖力士 | 复用 art/sq-mir3 的 yao_lishi_full.png |
 | sq_youling_bug_full.png | 960x830 | 幽灵虫 | 复用 art/sq-mir3 的 ghost_bug_full.png |
+
+
+## art/maps-sq-mir3 交付·第 7 批（潘夜神殿，8 张）
+
+路径：`public/assets/portraits/<id>_full.png`，透明 PNG，最长边 960。预览：`docs/art-gap-preview/sq_mir3_batch7.jpg`。
+
+| 文件 | 尺寸 | 名称 | 来源 |
+|---|---|---|---|
+| m3_panye_fire_full.png | 709x960 | 潘夜火魔 | 复用 art/sq-mir3 的 panye_fire_full.png |
+| m3_panye_wind_full.png | 803x960 | 潘夜风魔 | 复用 art/sq-mir3 的 panye_wind_full.png |
+| m3_panye_ice_full.png | 782x960 | 潘夜冰魔 | 复用 art/sq-mir3 的 panye_ice_full.png |
+| m3_panye_cloud_full.png | 769x960 | 潘夜云魔 | 复用 art/sq-mir3 的 panye_cloud_full.png |
+| m3_panye_warrior_full.png | 701x960 | 潘夜战士 | 复用 art/sq-mir3 的 panye_warrior_full.png |
+| m3_panye_left_full.png | 712x960 | 潘夜左护卫 | 复用 art/sq-mir3 的 panye_left_guard_full.png |
+| m3_panye_right_full.png | 722x960 | 潘夜右护卫 | 复用 art/sq-mir3 的 panye_right_guard_full.png |
+| m3_panye_ghost_full.png | 708x960 | 潘夜鬼将 | 复用 art/sq-mir3 的 panye_ghost_general_full.png |
