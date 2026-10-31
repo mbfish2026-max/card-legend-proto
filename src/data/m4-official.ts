@@ -37,7 +37,7 @@ export function renderM4(): string {
   for (const m of M4_OFFICIAL) L.push(`| ${m.id} | ${m.name} | ${m.boss} | ${m.level} | ${m.hp} | ${m.atk} | ${m.def} | ${m.mdef} | ${m.exp} | ${m.interval} | ${m.behavior} | ${m.drops} | ${m.respawn} | ${m.map} | [21cq](${m.src})${m.extra ? ` [补充](${m.extra})` : ''} |`);
   L.push('', '### [适配] 与未实装', '', '| 本作 id | [适配] 依据 | 原版掉落未实装 |', '|---|---|---|');
   for (const m of M4_OFFICIAL) L.push(`| ${m.id} | ${m.adapt} | ${m.missing} |`);
-  L.push('', '放置：新增侧线层 56 白日门·雪域（雪人王/钉耙猫王/半兽统领/鹰卫）、57 骨魔洞五层（恶灵尸王/黄泉教主）、58 恶魔祭坛（双头金刚/双头血魔 + 赤月小怪）。均在 SIDE_FLOORS、不在 FLOOR_ORDER，主线 9 种子模拟不受影响。',
+  L.push('', '放置：新增侧线层 80 白日门·雪域（雪人王/钉耙猫王/半兽统领/鹰卫）、81 骨魔洞五层（恶灵尸王/黄泉教主）、82 恶魔祭坛（双头金刚/双头血魔 + 赤月小怪）。均在 SIDE_FLOORS、不在 FLOOR_ORDER，主线 9 种子模拟不受影响。',
     '', '### 美术注记', '', '- 魔龙教主 boss_molong 立绘（boss_molong_full.png）已到位：魔龙教主与魔龙守将 boss_hj_home 的 art key 均指向 boss_molong（原占位：沃玛教主贴图 + 紫色着色）。', '');
   return L.join('\n');
 }

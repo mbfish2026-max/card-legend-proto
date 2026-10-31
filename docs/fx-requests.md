@@ -164,9 +164,9 @@
 立绘 8 张已到位（yeti_king / rake_cat_king / orc_commander / evil_lich / huangquan_master / hawk_guard / twinhead_kong / twinhead_blood）。以下为缺口，当前用回退：
 | key | 内容 | 当前占位 | 规格 |
 |---|---|---|---|
-| bg_floor57 | 白日门·雪域背景（雪原、冰封村落） | 复用 bg_floor5.jpg | 与 bg_floor* 同尺寸 |
-| bg_floor58 | 骨魔洞五层背景（骨洞、黄泉祭坛） | 复用 bg_floor4.jpg | 同上 |
-| bg_floor59 | 恶魔祭坛背景（赤月峡谷祭坛） | 复用 bg_floor8.jpg | 同上 |
+| bg_floor81 | 白日门·雪域背景（雪原、冰封村落） | 复用 bg_floor5.jpg | 与 bg_floor* 同尺寸 |
+| bg_floor82 | 骨魔洞五层背景（骨洞、黄泉祭坛） | 复用 bg_floor4.jpg | 同上 |
+| bg_floor83 | 恶魔祭坛背景（赤月峡谷祭坛） | 复用 bg_floor8.jpg | 同上 |
 | fx_huangquan_fireball | 黄泉教主火球（绿/黑色冥火） | 复用祖玛教主 fireball | 256×256，8 帧，ADD |
 | fx_twinhead_petrify | 双头金刚麻痹/石化（机制未实装，需先有怪物控制主角机制） | 无 | 256×256，8 帧 |
 | fx_twinhead_blood_bolt | 双头血魔闪电（血红色） | 复用沃玛教主 spark | 256×256，8 帧，ADD |

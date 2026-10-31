@@ -6,9 +6,9 @@ const SAVE = { v: 1, level: 55, exp: 0, gold: 5000, pots: [5, 5, 5, 5], floorInd
 const PLAN = [
   [19, { boss_hj_home: 'boss_molong' }],
   [23, { boss_molong: 'boss_molong' }],
-  [56, { boss_yeti_king: 'yeti_king', rake_cat_king: 'rake_cat_king', orc_commander: 'orc_commander', hawk_guard: 'hawk_guard' }],
-  [57, { evil_lich: 'evil_lich', boss_huangquan: 'huangquan_master' }],
-  [58, { boss_twinhead_kong: 'twinhead_kong', boss_twinhead_blood: 'twinhead_blood' }],
+  [80, { boss_yeti_king: 'yeti_king', rake_cat_king: 'rake_cat_king', orc_commander: 'orc_commander', hawk_guard: 'hawk_guard' }],
+  [81, { evil_lich: 'evil_lich', boss_huangquan: 'huangquan_master' }],
+  [82, { boss_twinhead_kong: 'twinhead_kong', boss_twinhead_blood: 'twinhead_blood' }],
 ];
 const sv = await startPreview(), b = await launch(); const out = {}; let fail = 0;
 const chk = (c, m) => { console.log(c ? 'ok' : 'FAIL', m); if (!c) fail++; };
