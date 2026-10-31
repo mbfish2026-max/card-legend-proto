@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { FxQuality } from './Fx';
+import { FxQuality, FxBudget } from './Fx';
 
 /**
  * R12 配置驱动的技能特效播放器（素材：特效 Bot 交付的 Phaser JSON Hash 图集，见 assets/fx/MANIFEST）。
@@ -49,8 +49,6 @@ export function fxLoadOrder(cls: string, learned: Iterable<string>): string[] {
   return keys.sort((a, b) => rank(a) - rank(b));
 }
 /** 同屏特效精灵上限（手机性能）；低特效更少，并跳过纯装饰层 */
-const cap = () => (FxQuality.low ? 10 : 28);
-let live = 0;
 export interface PlayOpts { scale?: number; scaleY?: number; depth?: number; tint?: number; flip?: boolean; decorative?: boolean; ms?: number; onFrame?: [number, () => void]; onDone?: () => void }
 export function hasFx(s: Phaser.Scene, k: string) { return s.textures.exists(k) && !!FX_DEFS[k]; }
 function ensureAnim(s: Phaser.Scene, k: string) {
@@ -66,12 +64,12 @@ export function playFx(s: Phaser.Scene, k: string, x: number, y: number, o: Play
   const d = FX_DEFS[k];
   if (!d || !s.textures.exists(k) || !ensureAnim(s, k)) return null;
   if (o.decorative && FxQuality.low) return null;
-  if (live >= cap()) return null;
+  if (!FxBudget.free()) return null;
   const sp = s.add.sprite(x, y, k).setDepth(o.depth ?? d.depth);
   if (d.blend === 'ADD') sp.setBlendMode(Phaser.BlendModes.ADD);
   const sc = o.scale ?? d.scale ?? 1; sp.setScale(sc, sc * (o.scaleY ?? d.scaleY ?? 1));
   if (o.tint !== undefined) sp.setTint(o.tint);
-  live++; sp.once(Phaser.GameObjects.Events.DESTROY, () => { live--; });
+  FxBudget.track(sp);
   const fixPivot = () => { if (o.flip) { const f = sp.frame; const px = f.customPivot ? f.pivotX : 0.5, py = f.customPivot ? f.pivotY : 0.5; sp.setFlipX(true).setOrigin(1 - px, py); } };
   sp.play(k); fixPivot();
   if (o.flip) sp.on(Phaser.Animations.Events.ANIMATION_UPDATE, fixPivot);

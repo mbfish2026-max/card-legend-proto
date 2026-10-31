@@ -44,8 +44,9 @@ try {
     sv.stop();
   }
   if (!only || only === 'b') {
-    for (const [name, block] of [['fx_all_404', u => u.includes('/assets/fx/')], ['fx_json_404', u => u.includes('/assets/fx/') && u.endsWith('.json')], ['fx+sfx_404', u => u.includes('/assets/fx/') || u.includes('/assets/sfx/')]]) {
+    for (const [name, block, low] of [['fx_all_404', u => u.includes('/assets/fx/')], ['fx_json_404', u => u.includes('/assets/fx/') && u.endsWith('.json')], ['fx+sfx_404', u => u.includes('/assets/fx/') || u.includes('/assets/sfx/')], ['fx_all_404_lowFx', u => u.includes('/assets/fx/'), true]]) {
       const sv = await startPreview({ block }); const page = await b.newPage(); await page.setViewport({ width: 1280, height: 720 }); const w = watch(page);
+      if (low) await page.evaluateOnNewDocument(() => localStorage.setItem('fcl_settings_v1', JSON.stringify({ lowFx: true })));
       await page.goto(sv.url + '?class=mage&lv=40');
       const r = await stress(page, 5000);
       const alive = await page.evaluate(() => !!window.__game.scene.getScene('Battle').sys.isActive() && window.__game.loop.actualFps);

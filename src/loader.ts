@@ -24,11 +24,21 @@ export function criticalImageKeys(): string[] {
   const small = Object.keys(ASSETS).filter(k => !BIG(k));
   return [...small, 'hero', 'mage', 'taoist', 'skeleton', 'wolf', 'bg_floor1', ...floorKeys(FLOORS[0])];
 }
+/** 已排队/加载中的贴图（跨 Title/Preload 两个加载器去重，避免 "Texture key already in use"，BUG-003） */
+const pending = new Set<string>(); const hooked = new WeakSet<object>();
+export const imagePending = (k: string) => pending.has(k);
+function hook(load: Phaser.Loader.LoaderPlugin) {
+  if (hooked.has(load)) return; hooked.add(load);
+  load.on('filecomplete', (key: string) => pending.delete(key));
+  load.on('loaderror', (f: { key: string }) => pending.delete(f.key));
+}
 export function queueImages(load: Phaser.Loader.LoaderPlugin, tex: Phaser.Textures.TextureManager, keys: string[]) {
-  let n = 0;
-  for (const k of new Set(keys)) if (ASSETS[k] && !tex.exists(k)) { load.image(k, assetUrl(ASSETS[k])); n++; }
+  let n = 0; hook(load);
+  for (const k of new Set(keys)) if (ASSETS[k] && !tex.exists(k) && !pending.has(k)) { pending.add(k); load.image(k, assetUrl(ASSETS[k])); n++; }
   return n;
 }
+/** 特效图集失败次数：首次 + 最多重试 2 次，之后放弃（走 Graphics 兜底），不再阻塞音乐队列（BUG-001） */
+const FX_MAX_TRIES = 3; const fxTries = new Map<string, number>();
 export function queueCritical(s: Phaser.Scene) {
   queueImages(s.load, s.textures, criticalImageKeys());
   for (const c of Object.values(CLASSES)) for (const sk of c.skills) if (!s.textures.exists('sk_' + sk.id)) s.load.image('sk_' + sk.id, sk.icon);
@@ -52,11 +62,11 @@ export class PreloadScene extends Phaser.Scene {
   private pump() {
     const order = [...this.first, ...backgroundKeys()]; this.first = [];
     // 每批 4 张，避免与当前层抢带宽
-    const batch = order.filter(k => ASSETS[k] && !this.textures.exists(k)).slice(0, 4);
+    const batch = order.filter(k => ASSETS[k] && !this.textures.exists(k) && !pending.has(k)).slice(0, 4);
     if (batch.length) { queueImages(this.load, this.textures, batch); this.load.once('complete', () => this.pump()); this.load.start(); return; }
     // R12 技能特效图集：图片之后、音乐之前；本职业已学技能优先（registry 由 BattleScene 写入）
-    const fx = fxLoadOrder(this.registry.get('fxCls') ?? '', this.registry.get('fxLearned') ?? []).filter(k => !this.textures.exists(k)).slice(0, 4);
-    if (fx.length) { for (const k of fx) this.load.atlas(k, ...fxUrl(k)); this.load.once('complete', () => this.pump()); this.load.start(); return; }
+    const fx = fxLoadOrder(this.registry.get('fxCls') ?? '', this.registry.get('fxLearned') ?? []).filter(k => !this.textures.exists(k) && (fxTries.get(k) ?? 0) < FX_MAX_TRIES).slice(0, 4);
+    if (fx.length) { for (const k of fx) { fxTries.set(k, (fxTries.get(k) ?? 0) + 1); this.load.atlas(k, ...fxUrl(k)); } this.load.once('complete', () => this.pump()); this.load.start(); return; }
     let m = 0; for (const [id, p] of Object.entries(MUSIC)) if (!this.cache.audio.exists('bgm_' + id)) { this.load.audio('bgm_' + id, p); m++; }
     if (m) { this.load.once('complete', () => this.game.events.emit('music-ready')); this.load.start(); }
   }
