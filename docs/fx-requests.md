@@ -139,9 +139,9 @@
 | fx_combo_mori | 末日审判（法道） | 384×384 | 12 | ADD | 单体，紫色法阵+持续 8s 小循环 |
 | fx_combo_pixing | 劈星斩（战道） | 384×384 | 10 | ADD | 单体，星形斩击+麻痹电弧 3s |
 
-## 阶段 B #9 魔龙教主 / 魔龙血域美术需求（当前占位：沃玛教主贴图 + 紫色 tint 0xb070ff + figureScale 1.35；背景 bg_floor24 缺图走现有回退）
+## 阶段 B #9 魔龙教主 / 魔龙血域美术需求（立绘已到位：boss_molong_full.png（108d607），魔龙教主与魔龙守将 boss_hj_home 均指向 boss_molong，紫色 tint 占位已移除；背景 bg_floor24 缺图走现有回退）
 | key | 内容 | 规格 |
 |---|---|---|
-| boss_molong | 魔龙教主立绘：人形魔龙，背后巨翼（国服只用翅膀近战，21cq） | 与现有 boss_* 同规格 PNG 透明底，朝左，脚底锚点 |
+| boss_molong | ✅ 已交付（108d607，feat/m4-monsters 接入）魔龙教主立绘：人形魔龙，背后巨翼（国服只用翅膀近战，21cq） | 与现有 boss_* 同规格 PNG 透明底，朝左，脚底锚点 |
 | fx_molong_blink | 瞬移：原地黑紫烟散 + 主角身后现身 | 256×256，8 帧，ADD，0.4s |
 | bg_floor24 | 魔龙血域背景（血红熔岩城寨） | 与 bg_floor* 同尺寸 |

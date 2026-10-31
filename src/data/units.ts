@@ -50,7 +50,7 @@ export const ENEMIES: Record<string, UnitDef> = {
   boss_redmoon: b('boss_redmoon', 'boss_redmoon', '赤月恶魔', 32, 15000, 95, 26, 6000, [{ item: 'dragon_sword', chance: 0.5 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'lich_death', setDrop: ['set_chiyue_necklace', 'set_chiyue_ring', 'set_chiyue_bracelet'] }),
   // 合击版 #8 新地图怪物（docs/hejiban-official.md §4）。官方怪物表/数值未查到 → 名称/数值 [适配]，美术复用现有（见 art-requests）
   hj_guard: n('hj_guard', '家园守卫', 30, 1800, 76, 23, 470, [G(0.6), { item: 'hp_mid', chance: 0.35 }, { item: 'book_page', chance: 0.06 }], { art: 'orc', deathSfx: 'death2', oilChance: 0.02 }),
-  boss_hj_home: b('boss_hj_home', 'boss_woma', '魔龙守将', 33, 15500, 96, 26, 6200, [{ item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, { item: 'book_page', chance: 1 }, { item: 'gold_bar', chance: 0.5 }, G(1), G(1)], { deathSfx: 'death2' }),
+  boss_hj_home: b('boss_hj_home', 'boss_molong', '魔龙守将', 33, 15500, 96, 26, 6200, [{ item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, { item: 'book_page', chance: 1 }, { item: 'gold_bar', chance: 0.5 }, G(1), G(1)], { deathSfx: 'death2' }),
   wolong_guard: n('wolong_guard', '卧龙护卫', 31, 1850, 78, 24, 490, [G(0.6), { item: 'hp_mid', chance: 0.35 }, { item: 'book_page', chance: 0.06 }], { art: 'orc', deathSfx: 'death2', oilChance: 0.02 }),
   boss_wolong: b('boss_wolong', 'boss_orc_chief', '卧龙名将', 34, 16000, 98, 27, 6500, [{ item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, { item: 'book_page', chance: 1 }, { item: 'gold_bar', chance: 0.6 }, G(1), G(1)], { deathSfx: 'death2' }),
   leiyan_spider: n('leiyan_spider', '雷炎蜘蛛', 32, 1700, 82, 22, 510, [G(0.6), { item: 'mp_mid', chance: 0.35 }, { item: 'book_page', chance: 0.08 }], { art: 'spider', deathSfx: 'death', oilChance: 0.02 }),
@@ -59,8 +59,8 @@ export const ENEMIES: Record<string, UnitDef> = {
   boss_fire_dragon: b('boss_fire_dragon', 'boss_redmoon', '火龙', 36, 17000, 102, 28, 7500, [{ item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, { item: 'book_page', chance: 1 }, { item: 'gold_bar', chance: 1 }, G(1), G(1)], { deathSfx: 'lich_death' }),
   // 阶段 B #9 新 BOSS 魔龙教主（docs/hejiban-official.md §7）：HP 12000 官方（百度百科）；等级/攻/防未查到 → [适配] 取火龙(36 级)之后一档；
   // 掉落官方「腰带/靴子、技能书、魔龙首饰、开天/镇天/玄天」(17173)：本作无腰带/魔龙首饰/开天镇天玄天 → 只落已有的 靴子(boots)、技能残页(book_page)，其余未实装（不新建背包结构）
-  // 美术：无 boss_molong 立绘 → 复用沃玛教主贴图 + 紫色着色 + 放大占位（fx-requests.md 已提需求）
-  boss_molong: b('boss_molong', 'boss_woma', '魔龙教主', 38, 12000, 108, 24, 8000, [{ item: 'boots', chance: 0.5 }, { item: 'book_page', chance: 1 }, { item: 'book_page', chance: 0.5 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'death2', card: bossCard({ figureScale: 1.35, tint: 0xb070ff, bg: 0x2a0636 }) }),
+  // 美术：boss_molong 立绘已到位（108d607），去掉沃玛贴图+紫色着色占位
+  boss_molong: b('boss_molong', 'boss_molong', '魔龙教主', 38, 12000, 108, 24, 8000, [{ item: 'boots', chance: 0.5 }, { item: 'book_page', chance: 1 }, { item: 'book_page', chance: 0.5 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'death2', card: bossCard({ figureScale: 1.35, bg: 0x2a0636 }) }),
   // R13 新增地图（原版怪名/BOSS 见 docs/maps-research.md；数值按本作层位 [适配]，非原版数值）
   red_snake: n('red_snake', '红蛇', 10, 420, 28, 8, 110, [G(0.5), { item: 'hp_small', chance: 0.3 }, { item: 'bracelet', chance: 0.08 }], { art: 'red_snake', deathSfx: 'death' }),
   tiger_snake: n('tiger_snake', '虎蛇', 11, 460, 30, 8, 120, [G(0.5), { item: 'mp_small', chance: 0.3 }, { item: 'boots', chance: 0.08 }], { art: 'tiger_snake', deathSfx: 'death' }),

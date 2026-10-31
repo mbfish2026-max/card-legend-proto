@@ -138,7 +138,9 @@ const hitsBy = (ev: any[], uid: number, target?: number) => ev.filter(e => e.typ
   const { REGIONS } = await import('../src/data/map');
   const { HJ_FLOOR_ANCHORS, FLOOR_EXP_MULT } = await import('../src/data/expCurve');
   const d = ENEMIES.boss_molong;
-  ok(!!d && d.name === '魔龙教主' && d.tier === 'boss' && d.hp === ENEMIES.boss_zuma.hp && d.art === 'boss_woma' && d.card?.tint !== undefined, 'B3 魔龙教主：HP 基数 12000（官方，与祖玛教主同基数×难度），复用贴图着色占位');
+  ok(!!d && d.name === '魔龙教主' && d.tier === 'boss' && d.hp === ENEMIES.boss_zuma.hp && d.art === 'boss_molong' && d.card?.tint === undefined, 'B3 魔龙教主：HP 基数 12000（官方，与祖玛教主同基数×难度），专属立绘 boss_molong（无着色占位）占位');
+  { const { ASSETS } = await import('../src/assets-manifest'); const { existsSync } = await import('node:' + 'fs') as any;
+    ok(ENEMIES.boss_hj_home.art === 'boss_molong' && ASSETS.boss_molong === 'assets/portraits/boss_molong_full.png' && existsSync(new URL('../public/' + ASSETS.boss_molong, import.meta.url)), '魔龙守将/魔龙教主 art key → boss_molong，立绘文件存在'); }
   ok(d.drops!.some(x => x.item === 'boots') && d.drops!.some(x => x.item === 'book_page') && BOSS_MECH.has('boss_molong'), 'B3 掉落靴子/书页（官方掉落中本作已有的），走 BOSS 机制框架');
   ok(FLOORS[23]?.name === '魔龙血域' && FLOORS[23].spawns.some(x => x.id === 'boss_molong') && SIDE_FLOORS.includes(23) && !FLOOR_ORDER.includes(23) && nextFloorOf(22) === -1, 'B3 下标 23 侧线层，不进通关顺序（火龙仍是终点）');
   ok(REGIONS.find(r => r.id === 'hejiban')!.nodes.some(n => n.floor === 23) && townOfFloor(23) === 'mengzhong' && HJ_FLOOR_ANCHORS.length === 6 && FLOOR_EXP_MULT.length === 24, 'B3 接入合击区域/回盟重/经验锚点');

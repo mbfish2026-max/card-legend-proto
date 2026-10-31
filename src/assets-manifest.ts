@@ -14,6 +14,8 @@ export const ASSETS: Record<string, string> = {
   boss_zuma: P + 'boss_zuma_full.png', blood_zombie: P + 'blood_zombie_full.png', boss_redmoon: P + 'boss_redmoon_full.png',
   // feat/art-integrate：art/gap-fill 交付的独立立绘（原借用他怪贴图，见 docs/art-requests.md §L）
   tree_demon: P + 'tree_demon_full.png', boss_chulong: P + 'boss_chulong_full.png', boss_white_boar: P + 'boss_white_boar_full.png', boss_bull_king: P + 'boss_bull_king_full.png', boss_hongmo: P + 'boss_hongmo_full.png', woma_warrior: P + 'woma_warrior_full.png', zuma_guard: P + 'zuma_guard_full.png', bull_warrior: P + 'bull_warrior_full.png', bull_mage: P + 'bull_mage_full.png', bull_guard: P + 'bull_guard_full.png', hongmo_pig: P + 'hongmo_pig_full.png', hongmo_scorpion: P + 'hongmo_scorpion_full.png', redmoon_spider: P + 'redmoon_spider_full.png', red_snake: P + 'red_snake_full.png', tiger_snake: P + 'tiger_snake_full.png', scorpion: P + 'scorpion_full.png', centipede: P + 'centipede_full.png', jump_bee: P + 'jump_bee_full.png', black_maggot: P + 'black_maggot_full.png', red_boar: P + 'red_boar_full.png', black_boar: P + 'black_boar_full.png', scorpion_snake: P + 'scorpion_snake_full.png', summon_beast: P + 'summon_beast_full.png',
+  // 魔龙教主立绘（art/sq-mir3 108d607）：魔龙教主 / 魔龙守将共用
+  boss_molong: P + 'boss_molong_full.png',
   // 召唤物姿态单帧（art-requests L.2）
   summon_skeleton_atk: 'assets/fx/summon_skeleton_atk.png', summon_skeleton_hurt: 'assets/fx/summon_skeleton_hurt.png', summon_beast_atk: 'assets/fx/summon_beast_atk.png', summon_beast_hurt: 'assets/fx/summon_beast_hurt.png',
   merchant: P + 'INV_Misc_Head_Human_02.png',

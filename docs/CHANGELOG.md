@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 魔龙立绘接入（feat/m4-monsters）
+- 美术 boss_molong_full.png 接入 assets-manifest（key boss_molong）；魔龙守将 boss_hj_home 美术 key boss_woma → boss_molong；魔龙教主 boss_molong 同步改用专属立绘并移除紫色着色占位（fx-requests.md 状态同步）。纯表现，不改数值。
+
 ## 召唤物攻击与受伤动作（feat/summon-anim）
 - 召唤骷髅/召唤神兽/诱惑之光宠物与主角、怪物共用同一套事件→动画分发（新 `src/ui/combatAnim.ts` playCombatAnim）：攻击 = 立绘前冲前倾 + 整卡突进 + 挥砍；受伤 = 闪白→偏红 + 后仰 + 后退震动 + 火花/飘字。
 - 动作结束强制恢复立绘位置/角度/缩放；alert/前摇清色后重新套用状态色，诱惑宠物粉色不会丢失；名字蓝色分级/等级显示不受影响。
