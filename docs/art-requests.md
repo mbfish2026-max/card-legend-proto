@@ -360,3 +360,88 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 1. 背景 3 张（1920×1080 起）：兽人古墓（bg_floor14/15）、天然洞穴（骷髅洞，bg_floor16/17）、沃玛自然洞穴（bg_floor18/19）；现占位复用 bg_floor3 / bg_floor2。
 2. 怪物立绘 5 张：骷髅战士、骷髅战将、掷斧骷髅、洞蛆、山洞蝙蝠（现复用已有贴图）。
 3. 特效：掷斧骷髅飞斧弹道 1 个。
+
+
+## 传奇世界/传奇3 新增地图怪立绘（art/sq-mir3）
+
+统一规格：`public/assets/portraits/<id>_full.png`，透明底 PNG，最长边 960，卡通厚描边、3/4 战斗姿态。「外观」列标「未查到/推测」「部分推测」者为原作外观资料不足、按名称与设定原创推测。
+
+### 批次1：BOSS（10）
+
+预览：`docs/art-gap-preview/sq_b1_boss.jpg`
+
+| 文件 | 尺寸 | id | 名称 | 地图 | 外观 | 备注 |
+|---|---|---|---|---|---|---|
+| boss_shiba_full.png | 710x960 | boss_shiba | 尸霸 | 将军坟（传世） | 据描述 | 52pk 将军坟系：帝王亲信，紧握一双数百公斤巨锤 |
+| boss_ant_general_full.png | 926x960 | boss_ant_general | 蚂蚁将军 | 蚂蚁洞穴（传奇3） | 据描述 | 17173 传奇3：巨大蚂蚁，前额巨钳，体格强壮 |
+| boss_jiguan_beast_full.png | 960x737 | boss_jiguan_beast | 机关巨兽 | 机关洞·中枢大殿（传世） | 部分推测 | 17173 传世：机关洞最深处 BOSS，攻击时巨石从天而降；体型/兽形为推测 |
+| boss_skeleton_cult_full.png | 699x960 | boss_skeleton_cult | 骷髅教主 | 潘夜石窟（传奇3） | 据描述 | 17173/新浪：控制亡灵，魔杖由含冤骷髅聚成；袍服/冠为推测 |
+| boss_white_snake_full.png | 716x960 | boss_white_snake | 白蛇妖 | 蛇魔谷/五蛇殿（传世） | 据描述 | 17173 传世：蛇魔军团长，高大威猛，利爪 |
+| boss_snake_king_full.png | 710x960 | boss_snake_king | 三头蛇王 | 五蛇殿（传世） | 据描述 | 17173：三头；妖气游戏网：不如白蛇妖高大，携三职业标志性武器 |
+| boss_great_pharaoh_full.png | 729x960 | boss_great_pharaoh | 大法老 | 沙漠绿洲（传奇3） | 部分推测 | 新浪/17173：诺玛族守卫，用魔法拐棍，攻击为电；诺玛着皮衣骨甲；法老头饰为推测 |
+| boss_nimo_full.png | 709x960 | boss_nimo | 逆魔 | 逆魔古刹/逆魔大殿（传世） | 据描述 | 17173：巨斧之下烈焰横生；角/体型为推测 |
+| boss_jindi_king_full.png | 960x752 | boss_jindi_king | 禁地魔王 | 禁地（传世） | 未查到/推测 | 仅查到全屏攻击、不移动；外形未查到 |
+| boss_panye_bull_full.png | 733x960 | boss_panye_bull | 潘夜牛魔王 | 潘夜神殿（传奇3） | 据描述 | 17173：统治畜界的魔王，牛的样子；武器为推测 |
+
+### 批次2：将军坟 + 机关洞（10）
+
+预览：`docs/art-gap-preview/sq_b2_tomb_mech.jpg`
+
+| 文件 | 尺寸 | id | 名称 | 地图 | 外观 | 备注 |
+|---|---|---|---|---|---|---|
+| shiwei_full.png | 724x960 | shiwei | 尸卫 | 将军坟（传世） | 部分推测 | 殉葬帝王大军所化，千年不腐的尸兵 |
+| shiwei_brave_full.png | 706x960 | shiwei_brave | 尸卫勇士 | 将军坟（传世） | 据描述 | 原百夫长，整条手臂化为巨刀 |
+| shiwei_spear_full.png | 759x960 | shiwei_spear | 掷枪尸卫 | 将军坟（传世） | 据描述 | 掷枪兵所化，投枪 |
+| shiwei_general_full.png | 715x960 | shiwei_general | 尸卫战将 | 将军坟（传世） | 部分推测 | 亲卫军所化，最恐怖的部队 |
+| stone_man_full.png | 795x960 | stone_man | 石头人 | 机关洞（传世） | 据描述 | 巨石堆砌而成 |
+| bronze_man_full.png | 713x960 | bronze_man | 铜人 | 机关洞（传世） | 据描述 | 纯铜组装，握铜矛 |
+| bronze_beast_full.png | 960x720 | bronze_beast | 青铜兽 | 机关洞（传世） | 部分推测 | 兽化的铜机关；兽形为推测 |
+| blade_roller_full.png | 790x960 | blade_roller | 滚刀手 | 机关洞（传世） | 据描述 | 迅猛刀手，双刃 |
+| hammer_man_full.png | 721x960 | hammer_man | 铜锤手 | 机关洞（传世） | 据描述 | 持巨锤 |
+| vajra_man_full.png | 702x960 | vajra_man | 金刚人 | 机关洞（传世） | 部分推测 | 金刚不坏的巨人 |
+
+### 批次3：蚂蚁洞穴 + 潘夜石窟 + 诺玛（11）
+
+预览：`docs/art-gap-preview/sq_b3_ant_skel_noma.jpg`
+
+| 文件 | 尺寸 | id | 名称 | 地图 | 外观 | 备注 |
+|---|---|---|---|---|---|---|
+| ant_warrior_full.png | 882x960 | ant_warrior | 蚂蚁战士 | 蚂蚁洞穴（传奇3） | 据描述 | 兵蚁，块头大、外壳硬、前额利钳 |
+| ant_armored_full.png | 960x673 | ant_armored | 盔甲蚂蚁 | 蚂蚁洞穴（传奇3） | 据描述 | 巨大蚂蚁，前额巨钳，破坏力强 |
+| ant_poison_full.png | 960x687 | ant_poison | 爆毒蚂蚁 | 蚂蚁洞穴（传奇3） | 据描述 | 小腹有喷毒射管，钳/爪不发达 |
+| ant_taoist_full.png | 783x960 | ant_taoist | 蚂蚁道士 | 蚂蚁洞穴（传奇3） | 据描述 | 畸形巨大腹部，可为同伴回血 |
+| skel_samurai_full.png | 698x960 | skel_samurai | 骷髅武士 | 潘夜石窟（传奇3） | 据描述 | 刀背带两环的刀 |
+| skel_general_full.png | 717x960 | skel_general | 骷髅武将 | 潘夜石窟（传奇3） | 据描述 | 庞大身躯，全身变异骨头 |
+| skel_soldier_full.png | 755x960 | skel_soldier | 骷髅士兵 | 潘夜石窟（传奇3） | 据描述 | 带旗长枪 |
+| skel_archer_full.png | 674x960 | skel_archer | 骷髅弓箭手 | 潘夜石窟（传奇3） | 据描述 | 弓箭，远程 |
+| bone_ghost_general_full.png | 721x960 | bone_ghost_general | 骨鬼将 | 潘夜石窟（传奇3） | 据描述 | 与骷髅武将样子很像（17173 作「鬼骨将」） |
+| noma_full.png | 754x960 | noma | 诺玛 | 沙漠绿洲（传奇3） | 据描述 | 皮衣、骨制护身服和骨制武器 |
+| noma_pharaoh_full.png | 699x960 | noma_pharaoh | 诺玛法老 | 沙漠绿洲（传奇3） | 据描述 | 会魔法，持魔法拐棍 |
+
+### 批次4：沙漠 + 逆魔古刹 + 蛇魔谷（上）（11）
+
+预览：`docs/art-gap-preview/sq_b4_desert_nimo.jpg`
+
+| 文件 | 尺寸 | id | 名称 | 地图 | 外观 | 备注 |
+|---|---|---|---|---|---|---|
+| desert_fish_full.png | 721x960 | desert_fish | 沙漠鱼魔 | 沙漠（传奇3） | 未查到/推测 | 只查到"毒特别厉害"、不死系 |
+| desert_wind_full.png | 704x960 | desert_wind | 沙漠风魔 | 沙漠（传奇3） | 据描述 | 手持可呼风唤雨的扇子 |
+| desert_tree_full.png | 724x960 | desert_tree | 沙漠树魔 | 沙漠（传奇3） | 据描述 | 与仙人掌一模一样，射带刺果实，不能移动 |
+| desert_golem_full.png | 761x960 | desert_golem | 沙漠石人 | 沙漠（传奇3） | 据描述 | 石头垒成的巨大怪物 |
+| underground_imp_full.png | 933x960 | underground_imp | 地下小鬼 | 逆魔古刹（传世） | 据描述 | 身高一尺，挥巨石弯锤 |
+| nimo_archer_full.png | 695x960 | nimo_archer | 逆魔弓箭手 | 逆魔古刹（传世） | 部分推测 | 北方大漠善射民族被侵蚀 |
+| nimo_guard_full.png | 728x960 | nimo_guard | 逆魔卫士 | 逆魔古刹（传世） | 部分推测 | 迅猛近战卫士 |
+| nimo_attendant_full.png | 731x960 | nimo_attendant | 逆魔侍卫 | 逆魔古刹（传世） | 据描述 | 统领卫士，身后箭型巨尾 |
+| nimo_statue_full.png | 708x960 | nimo_statue | 逆魔雕像 | 逆魔古刹（传世） | 据描述 | "死神"，巨镰 |
+| red_snake_yao_full.png | 728x960 | red_snake_yao | 红蛇妖 | 蛇魔谷（传世） | 部分推测 | 蛇妖小喽啰 |
+| black_snake_yao_full.png | 708x960 | black_snake_yao | 黑蛇妖 | 蛇魔谷（传世） | 部分推测 | 蛇王近卫军，防御极高 |
+
+## 追加：魔龙教主（第23层 魔龙血域 BOSS）
+
+- 文件：`public/assets/portraits/boss_molong_full.png`（738×960，RGBA 透明底，最长边 960，与其它 `<id>_full.png` 同规范）
+- 预览：`docs/art-gap-preview/sq_molong.jpg`
+- 美术键说明：已 merge origin/main（37469df 之后），但 main 的 `docs/fx-requests.md` 中**没有「魔龙教主」条目**（全仓仅 ROADMAP.md / legend-research.md 提及），文档未给键名/文件名，故按约定使用 `boss_molong_full.png`，键为 `boss_molong`。src 中当前占位为 `boss_woma`（沃玛教主着色），未改 src，接入由程序侧处理。
+- 卡面：文档未要求另一尺寸/文件名，故未单独出卡面，卡面沿用本立绘。
+- 外观依据（热血传奇官方背景，百度百科）：原为人们祭奠的神将，与龙共同守护人类，龙堕落后随之化为妖魔；「神所赐的双翅」「由天地灵气化成的短枪」；作为龙命令的执行者带来血与火。据此绘制：龙角头盔的堕落神将、暗红金边重甲、一对龙翼、紫红灵气短枪、血火缭绕。
+- 未查到：原作具体配色与头部造型的官方立绘描述（配色暗红/黑红为玩家资料推测）；短枪画成两端带刃，属自由发挥。
+- 原创绘制，未描摹原作素材。
