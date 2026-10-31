@@ -538,8 +538,9 @@ export class BattleScene extends Phaser.Scene {
     this.bgImgs.forEach(b => b.setTexture(bg).setDisplaySize(1280, 720));
     // R10：本层背景未到 → 到了自动替换；下一层资源插队预加载
     const want = this.world.floor.bg;
-    if (want && bg !== want) { const on = (k: string) => { if (k === want && this.world.floor.bg === want) { this.textures.off('addtexture', on); this.bgImgs.forEach(b => b.setTexture(want).setDisplaySize(1280, 720)); } }; this.textures.on('addtexture', on); this.events.once('shutdown', () => this.textures.off('addtexture', on)); }
-    (this.scene.get('Preload') as PreloadScene | undefined)?.prioritize?.([...floorKeys(this.world.floor), ...floorKeys(this.world.floors[nextFloorOf(this.world.floorIndex, this.world.floors)])]);
+    // 回退图 bg 自身也可能尚未加载（后台队列按层排序，新层多时 bg 排在后面）→ 先显示 __MISSING，bg 到了也要补上
+    if (want && bg !== want) { const on = (k: string) => { if (this.world.floor.bg !== want) return; if (k === want) { this.textures.off('addtexture', on); this.bgImgs.forEach(b => b.setTexture(want).setDisplaySize(1280, 720)); } else if (k === 'bg' && this.bgImgs[0]?.texture.key === '__MISSING') this.bgImgs.forEach(b => b.setTexture('bg').setDisplaySize(1280, 720)); }; this.textures.on('addtexture', on); this.events.once('shutdown', () => this.textures.off('addtexture', on)); }
+    (this.scene.get('Preload') as PreloadScene | undefined)?.prioritize?.([...(this.textures.exists('bg') ? [] : ['bg']), ...floorKeys(this.world.floor), ...floorKeys(this.world.floors[nextFloorOf(this.world.floorIndex, this.world.floors)])]);
     this.hud?.setFloor(name, this.floorIcons());
     this.log(`进入 第 ${i + 1} 层 · ${name}（首领在地图尽头）`);
     this.cameras.main.centerOn(WORLD.heroStartX, 360); this.cameras.main.fadeIn(700, 0, 0, 0);
