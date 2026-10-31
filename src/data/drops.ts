@@ -32,7 +32,7 @@ export const BOOK_NAME: Record<string, string> = {
   '精神力战法': 'spirit_force', '施毒术': 'poison', '灵魂火符': 'soul_fire', '召唤骷髅': 'summon_skeleton', '召唤神兽': 'summon_beast',
   // 新书接入：#11 法师 5 本 + #12 道士 3 本（21cq 名称：群体治疗术）
   '地狱火': 'hell_fire', '大火球': 'big_fireball', '爆裂火焰': 'burst_fire', '疾光电影': 'lightning_flash', '地狱雷光': 'hell_thunder',
-  '幽灵盾': 'ghost_shield', '神圣战甲术': 'holy_armor', '群体治疗术': 'mass_heal',
+  '诱惑之光': 'charm', '幽灵盾': 'ghost_shield', '神圣战甲术': 'holy_armor', '群体治疗术': 'mass_heal',
 };
 export interface Drop { item: string; chance: number }
 /** 某怪的资料掉落（已映射、同物品取最高几率）；无资料返回 undefined */
