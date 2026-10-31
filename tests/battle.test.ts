@@ -326,4 +326,21 @@ const free = (w: World) => w.skills.map(() => 0);
   (sk as any).unlock = old;
 }
 
+{ // R1 幸运 / 祝福油
+  const w = mk([{ id: 'orc', x: 700 }], [], 'warrior', 5);
+  w.equip.weapon = w.makeItem('iron_sword');
+  ok(w.luck() === 0, '默认幸运 0');
+  w.equip.weapon.luck = 9; let allMax = true;
+  for (let i = 0; i < 50; i++) if (w.roll(0.9, 0.2) !== 0.9 + 0.2) allMax = false;
+  ok(allMax, '幸运 9 → 必出上限');
+  w.equip.weapon.luck = -9; ok(w.roll(0.9, 0.2) === 0.9, '诅咒 9 → 必出下限');
+  w.equip.weapon.luck = 7; w.bag.push(w.makeItem('bless_oil'));
+  ok(w.useOil(w.bag.length - 1).includes('上限') && w.bag.length > 0, '幸运 7 不消耗祝福油');
+  w.equip.weapon.luck = 0; w.rng = () => 0.5; const m = w.useOil(w.bag.length - 1);
+  ok(w.equip.weapon.luck === 1 && m.includes('+1'), `幸运 0 喝油 → 1（${m}）`);
+  w.equip.weapon.luck = 6; w.bag.push(w.makeItem('bless_oil')); w.rng = () => 0.95; w.useOil(w.bag.length - 1);
+  ok(w.equip.weapon.luck === 5, '高幸运失败有几率诅咒 -1');
+  delete w.equip.weapon; w.bag.push(w.makeItem('bless_oil')); ok(w.useOil(w.bag.length - 1).includes('武器'), '无武器不能用');
+}
+
 console.log(`全部通过 ${pass} 项`);

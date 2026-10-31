@@ -68,7 +68,7 @@ export class Panel {
     }
     const st = w.stats(), h = w.hero;
     const lines = [`${c.name}  Lv${w.level}`, `经验 ${w.exp}/${w.expNext}`, `生命 ${h ? Math.ceil(h.hp) : 0}/${st.hp}   魔法 ${h ? Math.floor(h.mp ?? 0) : 0}/${st.mp}`,
-      `攻击 ${st.atk}   魔法 ${st.mag}   道术 ${st.tao}   防御 ${Math.round(st.def)}`, `金币 ${w.gold}   击杀 ${w.kills}`];
+      `攻击 ${st.atk}   魔法 ${st.mag}   道术 ${st.tao}   防御 ${Math.round(st.def)}   幸运 ${w.luck()}`, `金币 ${w.gold}   击杀 ${w.kills}`];
     R.add(txt(s, 175, top + 345, lines.join('\n'), 15, '#ffe8a0', { lineSpacing: 6, strokeThickness: 2 }));
     R.add(txt(s, cx + 130, top + 270, IS_MOBILE ? '点两下\n装备栏=卸下' : '点击装备栏\n= 卸下', 12, '#999', { align: 'center' }).setOrigin(0.5, 0));
   }
@@ -94,6 +94,7 @@ export class Panel {
         if (this.mode === 'shop') { const g = w.sellItem(i); sfx(s, 'coin'); this.onChange(`出售 ${it!.name} 获得 ${g} 金币`, true); }
         else if (right) { w.dropItem(i); this.onChange(`丢弃 ${it!.name}`); }
         else if (it!.slot) { const e = w.equipItem(i); if (!e) sfx(s, 'loot', 0.5); this.onChange(e ?? `装备 ${it!.name}`, !e); }
+        else if (it!.item === 'bless_oil') { const m = w.useOil(i); sfx(s, 'loot', 0.5); this.onChange(m, m.includes('+1') || m.includes('减轻')); }
         else this.onChange(`${it!.name} 不能装备（可在商人处出售）`);
         this.render();
       }, 'bag_' + i);
@@ -160,6 +161,8 @@ export class Panel {
     this.hideTip(); const s = this.s, w = this.world();
     const lines: [string, string][] = [[it.name, RARITY_HEX[it.rarity]], [`${it.slot ? SLOT_NAMES[it.slot] : '杂物'} · ${RARITY_CN[it.rarity]}`, '#aaa']];
     for (const [k, v] of Object.entries(it.stats)) if (v) lines.push([`${STAT_NAMES[k as keyof typeof STAT_NAMES]} +${v}`, '#7aff7a']);
+    if (it.luck) lines.push([it.luck > 0 ? `幸运 +${it.luck}` : `诅咒 ${-it.luck}`, it.luck > 0 ? '#ffd24a' : '#ff4040']);
+    if (it.item === 'bless_oil') lines.push(['点击：作用于当前武器（幸运+1，上限7，可能诅咒）', '#9fd']);
     if (it.slot) {
       const cur = w.equip[it.slot];
       if (cur && cur !== it) lines.push([`当前：${cur.name}`, '#888']);

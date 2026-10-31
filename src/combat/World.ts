@@ -62,6 +62,27 @@ export class World {
     h.maxHp = s.hp; h.maxMp = s.mp; h.atk = s.atk; h.mag = s.mag; h.tao = s.tao; h.def = s.def; h.level = this.level;
     if (fill) { h.hp = h.maxHp; h.mp = h.maxMp; } else { h.hp = Math.max(1, Math.min(h.maxHp, Math.round(h.hp))); h.mp = Math.min(h.maxMp, h.mp ?? 0); }
   }
+  /** 总幸运（装备 luck 之和；负数=诅咒） */
+  luck(): number { let l = 0; for (const it of Object.values(this.equip)) l += it?.luck ?? 0; return l; }
+  /** 伤害浮动：幸运越高越易打出上限（幸运≥9 必上限），诅咒越高越易打出下限 */
+  roll(lo: number, span: number): number {
+    const L = this.luck();
+    if (L >= 9 || (L > 0 && this.rng() < L / 9)) return lo + span;
+    if (L < 0 && this.rng() < Math.min(1, -L / 9)) return lo;
+    return lo + this.rng() * span;
+  }
+  /** 使用背包里的祝福油（作用于当前武器） */
+  useOil(bagIdx: number): string {
+    const it = this.bag[bagIdx]; if (!it || it.item !== 'bless_oil') return '不是祝福油';
+    const wpn = this.equip.weapon; if (!wpn) return '需要先装备武器';
+    const L = wpn.luck ?? 0;
+    if (L >= 7) return '武器幸运已达上限 7';
+    this.bag.splice(bagIdx, 1); this.events.push({ type: 'inventory' });
+    const r = this.rng();
+    if (L < 0 || r < 1 - L * 0.12) { wpn.luck = L + 1; return L < 0 ? `诅咒减轻，武器幸运 ${wpn.luck}` : `武器幸运 +1（当前 ${wpn.luck}）`; }
+    if (r > 0.9) { wpn.luck = L - 1; return `武器被诅咒了！幸运 ${wpn.luck}`; }
+    return '祝福油没有效果';
+  }
   power(stat: 'atk' | 'mag' | 'tao') { const h = this.hero; return h ? (stat === 'atk' ? h.atk : stat === 'mag' ? h.mag ?? 0 : h.tao ?? 0) : 0; }
   skillScale() { return 1 + 0.02 * (this.level - 1); }
 
@@ -168,6 +189,12 @@ export class World {
       this.ground.push(...items);
       this.events.push({ type: 'drop', uid: u.uid, x: u.x, y: u.y, items });
     }
+    // Boss 必掉 1 瓶祝福油（固定落点，不消耗随机数，保持平衡模拟稳定）
+    if (u.tier === 'boss') {
+      const inv = this.makeItem('bless_oil');
+      const g: GroundItem = { gid: this.nextGid++, item: 'bless_oil', name: inv.name, rarity: 'common', x: Math.max(40, Math.min(WORLD.mapWidth - 40, u.x)), y: 0, landAt: this.time + WORLD.dropLandSec, atk: 0, hp: 0, amount: 1, inv };
+      this.ground.push(g); this.events.push({ type: 'drop', uid: u.uid, x: u.x, y: u.y, items: [g] });
+    }
     this.gainExp(u.exp ?? 10);
     if (!this.alive('enemy').length && !this.cleared) { this.cleared = true; this.events.push({ type: 'cleared' }); }
   }
@@ -256,7 +283,7 @@ export class World {
       for (const t of targets) { t.poisonUntil = this.time + (s.duration ?? 8); t.poisonDps = pw * (s.mult ?? 0.5); t.poisonTick = this.time + 1; this.damage(t, pw * (s.mult ?? 0.5), h, false); }
     } else {
       for (const t of targets) {
-        this.damage(t, pw * (s.mult ?? 1) * (0.95 + this.rng() * 0.1), h);
+        this.damage(t, pw * (s.mult ?? 1) * this.roll(0.95, 0.1), h);
         if (s.slow && t.alive) t.slowUntil = this.time + (s.duration ?? 3);
       }
     }
@@ -381,7 +408,7 @@ export class World {
       if (inp.autoAttack !== false && side !== null && h.cd <= 0) {
         const f = this.queue(side)[0]; h.cd = h.atkInterval; if (!h.moving) h.facing = side as 1 | -1;
         this.events.push({ type: 'attack', source: h.uid, target: f.uid });
-        this.damage(f, this.autoDamage(h) * (0.9 + this.rng() * 0.2), h);
+        this.damage(f, this.autoDamage(h) * this.roll(0.9, 0.2), h);
       }
       for (const s of [1, -1]) {
         const f = this.queue(s)[0];

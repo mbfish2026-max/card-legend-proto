@@ -25,7 +25,7 @@ export interface Unit extends UnitDef {
 export type Rarity = 'common' | 'magic' | 'rare';
 export interface ItemDef { id: string; name: string; icon: string; potion?: number; slot?: Slot; equip?: Partial<Stats>; req?: number; price?: number }
 /** 背包/装备栏里的一件物品 */
-export interface InvItem { uid: number; item: string; name: string; rarity: Rarity; slot?: Slot; stats: Partial<Stats>; req: number; price: number }
+export interface InvItem { uid: number; item: string; name: string; rarity: Rarity; slot?: Slot; stats: Partial<Stats>; req: number; price: number; luck?: number }
 export interface GroundItem { gid: number; item: string; name: string; rarity: Rarity; x: number; y: number; landAt: number; atk: number; hp: number; amount: number; inv?: InvItem }
 export type BattleEvent =
   | { type: 'attack'; source: number; target: number; skill?: string }

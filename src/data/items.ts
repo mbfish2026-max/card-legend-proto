@@ -9,6 +9,8 @@ export const ITEMS: Record<string, ItemDef> = {
   hp_mid: { id: 'hp_mid', name: '金创药(中量)', icon: 'assets/potions/INV_Potion_54.png', potion: 1 },
   mp_small: { id: 'mp_small', name: '魔法药(小量)', icon: 'assets/potions/INV_Potion_72.png', potion: 2 },
   mp_mid: { id: 'mp_mid', name: '魔法药(中量)', icon: 'assets/potions/INV_Potion_75.png', potion: 3 },
+  // 祝福油：武器幸运 +1（上限 7），有几率诅咒（参考传奇规则，重新实现）
+  bless_oil: { id: 'bless_oil', name: '祝福油', icon: I + 'INV_Misc_Gem_Pearl_01.png', price: 50 },
   gold: { id: 'gold', name: '金币', icon: I + 'INV_Misc_Coin_01.png' },
   // 杂物（可卖）
   chicken: { id: 'chicken', name: '鸡肉', icon: I + 'INV_Misc_Food_15.png', price: 3 },
