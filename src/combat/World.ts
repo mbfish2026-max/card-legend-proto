@@ -282,7 +282,9 @@ export class World {
       const near = this.alive('enemy').filter(u => Math.abs(u.x - h.x) <= WORLD.aggroRange).sort((a, b) => Math.abs(a.x - h.x) - Math.abs(b.x - h.x))[0];
       h.facing = (near && Math.sign(near.x - h.x) === -dx ? -dx : dx) as 1 | -1;
       let nx = h.x + dx * WORLD.heroSpeed * dt;
-      for (const u of this.alive('enemy')) if (Math.sign(u.x - h.x || dx) === dx) {
+      // 前后都被怪贴住（夹击）时不阻挡，允许从怪物身边挤过去，避免左右都锁死
+      const back = this.queue(-dx)[0], sandwiched = !!back && this.inMelee(h, back);
+      if (!sandwiched) for (const u of this.alive('enemy')) if (Math.sign(u.x - h.x || dx) === dx) {
         const limit = u.x - dx * (h.width + u.width) / 2;
         if (dx > 0 ? nx > limit : nx < limit) nx = dx > 0 ? Math.max(h.x, limit) : Math.min(h.x, limit);
       }

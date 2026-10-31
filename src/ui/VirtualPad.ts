@@ -19,7 +19,7 @@ export class VirtualPad {
       c.setInteractive(new Phaser.Geom.Circle(r, r, r * 1.08), Phaser.Geom.Circle.Contains);
       const press = (p: Phaser.Input.Pointer) => { held.add(p.id); c.setFillStyle(0xffd24a, 0.55); c.setScale(0.92); down(); };
       const release = (p: Phaser.Input.Pointer) => { if (!held.delete(p.id)) return; if (!held.size) { c.setFillStyle(0x000000, 0.35); c.setScale(1); up?.(); } };
-      c.on('pointerdown', press).on('pointerup', release).on('pointerout', release);
+      c.on('pointerdown', press).on('pointerup', release).on('pointerout', release).on('pointerupoutside', release);
       // 方向键允许手指滑入
       if (up) c.on('pointerover', (p: Phaser.Input.Pointer) => { if (p.isDown && !held.has(p.id)) press(p); });
       return c;
@@ -43,6 +43,7 @@ export class VirtualPad {
   }
   get dx() { return (this.dir.right ? 1 : 0) - (this.dir.left ? 1 : 0); }
   get dy() { return (this.dir.down ? 1 : 0) - (this.dir.up ? 1 : 0); }
+  reset() { this.dir = { left: false, right: false, up: false, down: false }; }
   setVisible(v: boolean) { this.root.setVisible(v); if (!v) this.dir = { left: false, right: false, up: false, down: false }; }
   update(cds: number[], skills: SkillDef[]) {
     const g = this.cdG; g.clear(); g.fillStyle(0x000000, 0.55);

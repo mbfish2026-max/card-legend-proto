@@ -191,4 +191,24 @@ const free = (w: World) => w.skills.map(() => 0);
   Settings.showPadMobile = true; ok(Settings.wantPad(true), '手机可手动开');
   Settings.showPadMobile = null;
 }
+{ // 战斗中方向键：后退 / 前进 / 边放技能边移动 / 多键同按
+  const fight = () => { const w = mk([{ id: 'zombie', x: 700 }, { id: 'zombie', x: 760 }]); tough(w); const h = w.hero!; h.hp = h.maxHp = 1e9; h.x = 560;
+    w.alive('enemy').forEach(e => (e.ai = 'chase', e.atk = 0)); run(w, 3); return { w, h }; };
+  { const { w, h } = fight(); const x0 = h.x; ok(w.meleeSide() !== null, '已进入近战');
+    run(w, 1, -1); ok(x0 - h.x > WORLD.heroSpeed * 0.9, `战斗中按住 A 后退（${Math.round(x0 - h.x)}px）`);
+    const x1 = h.x; run(w, 0.5, 0); ok(h.x === x1, '松开立即停止'); }
+  { const { w, h } = fight(); run(w, 1, -1); const x0 = h.x; for (let i = 0; i < 3; i++) w.step(0.05, { dx: 1, dy: 0 });
+    ok(h.x > x0, `后退后按住 D 立即前进（${Math.round(h.x - x0)}px）`);
+    run(w, 2, 1); const a = w.queue(1)[0]; ok(h.x + (h.width + a.width) / 2 <= a.x + 1e-6, '贴脸时前排阻挡（不重叠）');
+    const x2 = h.x; w.step(0.05, { dx: -1, dy: 0 }); ok(h.x < x2, '被阻挡后反向一帧就能离开，不会卡墙'); }
+  { const { w, h } = fight(); const x0 = h.x; h.mp = h.maxMp = 1e6;
+    for (let i = 0; i < 20; i++) { if (i % 4 === 0) w.cast(i % 8 === 0 ? 0 : 1, free(w)); w.step(0.05, { dx: -1, dy: 0 }); }
+    ok(x0 - h.x > WORLD.heroSpeed * 0.9 * 0.9, `连续放技能时后退不中断（${Math.round(x0 - h.x)}px）`); }
+  { const { w, h } = fight(); const x0 = h.x, y0 = h.y;
+    for (let i = 0; i < 20; i++) { if (i % 5 === 0) w.cast(0, free(w)); w.step(0.05, { dx: -1, dy: -1 }); }
+    ok(h.x < x0 - WORLD.heroSpeed * 0.8 && h.y <= y0, '方向 + 上下 + 技能同按：不丢输入'); }
+  { const w = mk([{ id: 'zombie', x: 600 }, { id: 'zombie', x: 300 }]); tough(w); const h = w.hero!; h.x = 450; h.hp = h.maxHp = 1e9;
+    w.alive('enemy').forEach(e => (e.ai = 'chase', e.atk = 0)); run(w, 3); const x0 = h.x;
+    run(w, 0.3, -1); const l = h.x; run(w, 0.3, 1); ok(h.x !== l || l !== x0, `前后夹击时不会两边都锁死（${Math.round(x0)}→${Math.round(l)}→${Math.round(h.x)}）`); }
+}
 console.log(`全部通过 ${pass} 项`);

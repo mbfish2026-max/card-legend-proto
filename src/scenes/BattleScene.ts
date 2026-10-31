@@ -65,11 +65,15 @@ export class BattleScene extends Phaser.Scene {
     this.buildPortal(this.world.exitX); this.buildMerchant();
     const h = this.world.hero!;
     this.views.set(h.uid, new CardView(this, h));
-    this.cameras.main.setBounds(0, 0, W, 720).startFollow(this.views.get(h.uid)!, true, 0.12, 0.12, 0, 120);
+    this.cameras.main.setBounds(0, 0, W, 720).startFollow(this.views.get(h.uid)!, true, 0.12, 0.12, 0, 120).setDeadzone(320, 720);
     this.keys = this.input.keyboard!.addKeys('LEFT,RIGHT,UP,DOWN,A,D') as any;
     // F1~F4 技能：阻止浏览器默认行为（F1 帮助等）；不占用 F5 等其它功能键
     this.input.keyboard!.on('keydown', (e: KeyboardEvent) => { if (/^F[1-4]$/.test(e.key)) e.preventDefault(); this.onKey(e.key.toUpperCase()); });
     this.input.keyboard!.addCapture('F1,F2,F3,F4');
+    // 失焦/切后台时清空按键状态，避免 keyup 丢失导致方向键"卡住"或失灵
+    const reset = () => { this.input.keyboard?.resetKeys(); this.ui?.pad?.reset?.(); };
+    window.addEventListener('blur', reset); document.addEventListener('visibilitychange', reset); this.game.events.on('blur', reset);
+    this.events.once('shutdown', () => { window.removeEventListener('blur', reset); document.removeEventListener('visibilitychange', reset); this.game.events.off('blur', reset); });
     this.handle(this.world.drainEvents());
     const sk = this.world.skills.map(s => `${s.key} ${s.name}`).join('  ');
     this.log(`${this.world.classDef.name}：${sk}`);
@@ -274,7 +278,7 @@ export class BattleScene extends Phaser.Scene {
   onRespawn() {
     this.overlay.forEach(o => o.destroy()); this.overlay = [];
     const h = this.world.hero!; const v = new CardView(this, h); this.views.set(h.uid, v);
-    this.cameras.main.startFollow(v, true, 0.12, 0.12, 0, 120); this.cameras.main.fadeIn(500);
+    this.cameras.main.startFollow(v, true, 0.12, 0.12, 0, 120).setDeadzone(320, 720); this.cameras.main.fadeIn(500);
     this.state = 'play'; this.sfx('heal'); this.log('你在本层起点复活了'); this.saveGame();
   }
   /** 进入新一层：淡入，换背景，清掉旧怪物与地上物品，刷新本层怪物；角色/召唤物保留 */
