@@ -21,4 +21,8 @@ const game = new Phaser.Game({
 (window as any).__game = game; (window as any).__mobile = IS_MOBILE;
 // 画布创建后再应用一次缩放
 game.events.once('ready', () => Settings.applyZoom());
-window.addEventListener('resize', () => Settings.applyZoom());
+// 尺寸变化/旋转实时重算（iOS 旋转后视口晚到，补两次）
+const reflow = () => { Settings.applyZoom(); setTimeout(() => Settings.applyZoom(), 120); setTimeout(() => Settings.applyZoom(), 400); };
+window.addEventListener('resize', reflow);
+window.addEventListener('orientationchange', reflow);
+window.visualViewport?.addEventListener('resize', reflow);

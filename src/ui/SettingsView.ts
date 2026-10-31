@@ -48,11 +48,14 @@ export function renderSettingsView(s: Phaser.Scene, R: Phaser.GameObjects.Contai
       Settings.toggleAutoSkill(sk.id, cls); o.rerender();
     }, 13)]);
   });
-  R.add(txt(s, 640, top + 372, `画面缩放 ${Math.round(Settings.zoom * 100)}%`, 18, '#ffe8a0').setOrigin(0.5));
-  R.add([...button(s, 480, top + 372, 50, 36, '－', () => { Settings.setZoom(Settings.zoom - ZOOM_STEP); o.rerender(); })]);
-  R.add([...button(s, 800, top + 372, 50, 36, '＋', () => { Settings.setZoom(Settings.zoom + ZOOM_STEP); o.rerender(); })]);
+  const auto = Settings.isAutoZoom();
+  R.add(txt(s, 640, top + 372, auto ? `画面缩放 自适应（${Settings.fitPercent()}%）` : `画面缩放 ${Math.round(Settings.zoom * 100)}%`, 18, '#ffe8a0').setOrigin(0.5));
+  R.add([...button(s, 460, top + 372, 50, 36, '－', () => { Settings.setZoom((auto ? 1 : Settings.zoom) - ZOOM_STEP); o.rerender(); })]);
+  R.add([...button(s, 820, top + 372, 50, 36, '＋', () => { Settings.setZoom((auto ? 1 : Settings.zoom) + ZOOM_STEP); o.rerender(); })]);
+  R.add([...button(s, 360, top + 414, 86, 30, `${auto ? '●' : ''}自适应`, () => { Settings.setAutoZoom(true); o.rerender(); }, 13)]);
   ;[0.8, 0.9, 1, 1.1, 1.2].forEach((z, i) => {
-    R.add([...button(s, 400 + i * 80, top + 414, 70, 30, `${Math.round(z * 100)}%`, () => { Settings.setZoom(z); o.rerender(); }, 13)]);
+    const on = !auto && Math.abs(Settings.zoom - z) < 0.001;
+    R.add([...button(s, 460 + i * 80, top + 414, 70, 30, `${on ? '●' : ''}${Math.round(z * 100)}%`, () => { Settings.setZoom(z); o.rerender(); }, 13)]);
   });
   const fw = o.footer.reduce((a, f) => a + f.w + 40, -40); let fx = 640 - fw / 2;
   for (const f of o.footer) { R.add([...button(s, fx + f.w / 2, top + 460, f.w, 40, f.label, f.fn, 16)]); fx += f.w + 40; }

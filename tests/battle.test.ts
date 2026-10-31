@@ -7,7 +7,7 @@ import { QUESTS, ACHIEVES } from '../src/data/quests';
 import { detectMobile } from '../src/mobile';
 import { StepGate, stepDir, HoldKeys, HOLD } from '../src/input/stepKeys';
 import { POTIONS } from '../src/data/skills';
-import { Settings, DEFAULT_AUTO_SKILLS, ZOOM_MIN, ZOOM_MAX, ZOOM_STEP } from '../src/settings';
+import { Settings, DEFAULT_AUTO_SKILLS, ZOOM_MIN, ZOOM_MAX, ZOOM_STEP, fitScale } from '../src/settings';
 let pass = 0; const ok = (c: boolean, m: string) => { if (!c) { console.error('FAIL', m); throw new Error(m); } pass++; console.log('ok', m); };
 function seeded(s: number) { return () => (s = (s * 16807) % 2147483647) / 2147483647; }
 const mk = (spawns: Floor['spawns'], extra: Floor[] = [], cls: ClassId = 'warrior', lv = 20, seed = 1) => new World(seeded(seed), lv, [{ name: '测试层', spawns }, ...extra], cls);
@@ -373,6 +373,14 @@ const free = (w: World) => w.skills.map(() => 0);
     Settings.toggleAutoSkill('fireball', 'mage');
     ok(!Settings.skillsFor('mage').includes('fireball') && !Settings.skillsFor('warrior').includes('thrust'), '两职业改动互不覆盖');
     Settings.autoTouched = bt;
+  }
+  { // R9 自适应缩放
+    const bz = Settings.zoomAuto;
+    Settings.zoomAuto = null; ok(Settings.isAutoZoom(true) && !Settings.isAutoZoom(false), '手机默认自适应，电脑默认关');
+    Settings.setZoom(1.1); ok(!Settings.isAutoZoom(true) && Settings.zoom === 1.1, '选预设即退出自适应');
+    Settings.setAutoZoom(true); ok(Settings.isAutoZoom(false), '可手动选自适应');
+    ok(fitScale(667, 375) === Math.min(667 / 1280, 375 / 720) && fitScale(1024, 768) === 0.8, 'fitScale 取宽高较小比例，不裁切');
+    Settings.zoomAuto = bz;
   }
   Settings.autoSkills = bak.as; Settings.zoom = bak.z; Settings.autoAttack = bak.aa;
 }

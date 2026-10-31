@@ -1,3 +1,4 @@
+import { IS_MOBILE } from './mobile';
 // 设置与存档（localStorage）
 import type { SaveData } from './combat/World';
 import type { ClassId } from './data/classes';
@@ -27,6 +28,8 @@ export const Settings = {
   autoTouched: null as ClassId[] | null,
   /** 画面缩放 0.8~1.2，适配不同手机；经 CSS transform 作用在画布上，HUD/虚拟键同步缩放 */
   zoom: 1,
+  /** 自适应：按视口（含安全区）等比 FIT，完整显示不裁切；null=手机默认开/电脑默认关 */
+  zoomAuto: null as boolean | null,
   load() {
     try {
       const raw = JSON.parse(ls()?.getItem(SET_KEY) ?? '{}') as Record<string, unknown>;
@@ -41,6 +44,7 @@ export const Settings = {
       if (raw.autoSkills === null) this.autoSkills = null;
       else if (Array.isArray(raw.autoSkills)) this.autoSkills = raw.autoSkills.filter((x): x is string => typeof x === 'string');
       if (Array.isArray(raw.autoTouched)) this.autoTouched = raw.autoTouched.filter((x): x is ClassId => typeof x === 'string' && x in DEFAULT_AUTO_SKILLS);
+      if (typeof raw.zoomAuto === 'boolean' || raw.zoomAuto === null) this.zoomAuto = raw.zoomAuto as boolean | null;
       if (typeof raw.zoom === 'number' && Number.isFinite(raw.zoom)) this.zoom = clampZoom(raw.zoom);
     } catch { /* ignore */ }
     return this;
@@ -49,16 +53,27 @@ export const Settings = {
     ls()?.setItem(SET_KEY, JSON.stringify({
       volume: this.volume, muted: this.muted, music: this.music,
       showPadMobile: this.showPadMobile, lowFx: this.lowFx,
-      autoAttack: this.autoAttack, autoSkills: this.autoSkills, autoTouched: this.autoTouched, zoom: this.zoom,
+      autoAttack: this.autoAttack, autoSkills: this.autoSkills, autoTouched: this.autoTouched, zoom: this.zoom, zoomAuto: this.zoomAuto,
     }));
   },
   /** 手机/触屏：null 或 true → 显示虚拟按键；电脑永远 false */
   wantPad(isMobile: boolean) { return isMobile && this.showPadMobile !== false; },
   apply(sound: { volume: number; mute: boolean }) { sound.volume = this.volume; sound.mute = this.muted; },
   /** 用 CSS transform 缩放画布；Phaser 用 getBoundingClientRect 映射输入，触控与虚拟键不跑偏 */
+  isAutoZoom(mobile = IS_MOBILE) { return this.zoomAuto ?? mobile; },
+  setAutoZoom(on = true) { this.zoomAuto = on; this.applyZoom(); this.save(); },
+  /** 自适应时实际显示比例（相对 1280×720 逻辑分辨率），用于面板显示 */
+  fitPercent(): number {
+    try {
+      const el = document.querySelector('#game') as HTMLElement | null; if (!el) return 100;
+      const cs = getComputedStyle(el), px = (v: string) => parseFloat(v) || 0;
+      const w = el.clientWidth - px(cs.paddingLeft) - px(cs.paddingRight), h = el.clientHeight - px(cs.paddingTop) - px(cs.paddingBottom);
+      return Math.round(fitScale(w, h) * 100);
+    } catch { return 100; }
+  },
   applyZoom() {
-    const z = clampZoom(this.zoom);
-    this.zoom = z;
+    const z = this.isAutoZoom() ? 1 : clampZoom(this.zoom);
+    if (!this.isAutoZoom()) this.zoom = z;
     try {
       const canvas = document.querySelector('#game canvas') as HTMLElement | null;
       if (canvas) {
@@ -69,7 +84,7 @@ export const Settings = {
       if (g?.scale?.refresh) g.scale.refresh();
     } catch { /* node / 无 DOM */ }
   },
-  setZoom(z: number) { this.zoom = clampZoom(z); this.applyZoom(); this.save(); },
+  setZoom(z: number) { this.zoomAuto = false; this.zoom = clampZoom(z); this.applyZoom(); this.save(); },
   /** 取当前职业的自动技能：null → 职业推荐；[] → 不放 */
   skillsFor(cls: ClassId): string[] {
     if (this.autoSkills === null) return DEFAULT_AUTO_SKILLS[cls];
@@ -89,6 +104,8 @@ export const Settings = {
     this.save();
   },
 };
+/** 等比完整放入 w×h 的比例（不裁切、不失真） */
+export function fitScale(w: number, h: number) { return w > 0 && h > 0 ? Math.min(w / 1280, h / 720) : 1; }
 function clampZoom(z: number) {
   const n = Math.round(z / ZOOM_STEP) * ZOOM_STEP;
   return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, +n.toFixed(2)));
