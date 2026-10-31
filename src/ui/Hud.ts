@@ -60,7 +60,7 @@ export class Hud {
     s.add.rectangle(1130, 36, 258, 34).setStrokeStyle(1, 0xffe8a0, 0.6).setDepth(20);
     this.plaque = txt(s, 1130, 36, levelName, 22, '#ffe8a0', { fontStyle: 'bold' }).setOrigin(0.5).setDepth(21);
     this.setFloor(levelName, waveIcons);
-    if (!mobile) txt(s, 640, 574, '移动 A/D ←→ 按住走  纵深 ↑↓  W/空格 传送门  S 回上层  技能 F1-F10  药水 1-4  背包 B/C  悬赏 Q  商人 T  地图 M  设置 Esc  静音 N', 13, '#cccccc', { strokeThickness: 2 }).setOrigin(0.5).setDepth(30);
+    if (!mobile) txt(s, 640, 574, '移动 A/D ←→ 按住走  纵深 ↑↓  W/空格 传送门  S 回上层  技能 F1-F11  药水 1-4  背包 B/C  悬赏 Q  商人 T  地图 M  设置 Esc  静音 N', 13, '#cccccc', { strokeThickness: 2 }).setOrigin(0.5).setDepth(30);
     // 底部栏
     // Diablo 式紧凑底栏：红球 | 技能+药水 | 蓝球，中间上方经验条
     s.add.rectangle(640, 664, 760, 112, 0x140f0a, 0.92).setStrokeStyle(2, 0x6a5030).setDepth(19);

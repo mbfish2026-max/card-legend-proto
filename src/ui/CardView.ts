@@ -143,7 +143,9 @@ export class CardView extends Phaser.GameObjects.Container {
   private statusTint() {
     const a = this.art; if (!(a instanceof Phaser.GameObjects.Image) || this.flashing) return;
     const t = (this.scene as any).world?.time ?? 0, u = this.unit;
-    const c = u.poisonUntil && u.poisonUntil > t ? 0x66ff55 : u.slowUntil && u.slowUntil > t ? 0x88ccff : 0;
+    // 诱惑之光宠物：粉色调 + 粉色等级字（无专用边框素材时的占位标识）
+    const c = u.poisonUntil && u.poisonUntil > t ? 0x66ff55 : u.slowUntil && u.slowUntil > t ? 0x88ccff : u.pet ? 0xffb0dd : 0;
+    this.lvlText.setColor(u.pet ? '#ff9ad5' : '#ffd24a');
     if (c === this.curStatus) return; this.curStatus = c;
     if (c) a.setTint(c); else a.clearTint();
   }

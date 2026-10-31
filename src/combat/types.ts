@@ -23,6 +23,8 @@ export type AIState = 'idle' | 'alert' | 'chase' | 'return';
 export interface Unit extends UnitDef {
   uid: number; team: Team; x: number; y: number; maxHp: number; maxMp: number; cd: number;
   alive: boolean; isHero?: boolean; summon?: boolean;
+  /** 诱惑之光宠物（summon=true 且 pet=true）；petUntil = 叛变时间。不存档 */
+  pet?: boolean; petUntil?: number;
   armorUntil?: number; armorReduce?: number;
   /** #12 幽灵盾（魔御）/神圣战甲术（防御）增益，不存档 */
   mdefUpUntil?: number; mdefUp?: number; defUpUntil?: number; defUp?: number;
@@ -58,6 +60,7 @@ export type BattleEvent =
   | { type: 'exp'; amount: number }
   | { type: 'levelup'; level: number }
   | { type: 'summon'; uid: number }
+  | { type: 'charm'; uid: number; result: 'ok' | 'fail' | 'immune' | 'high' | 'betray' }
   | { type: 'respawn' }
   | { type: 'inventory' }
   | { type: 'bossfx'; uid: number; kind: 'spark' | 'fireball' | 'spike_warn' | 'spike' | 'daze' | 'crazy' | 'fly' | 'call'; x: number; target?: number }

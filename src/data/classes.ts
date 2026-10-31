@@ -4,7 +4,7 @@ import { Stats } from '../combat/types';
 /** 职业基础/成长：魔御官方职业成长未查到 → 可省略（按 0） */
 type ClassStats = Omit<Stats, 'mdef'> & { mdef?: number };
 export type ClassId = 'warrior' | 'mage' | 'taoist';
-export type SkillKind = 'melee' | 'pierce' | 'ranged' | 'aoe' | 'dot' | 'buff' | 'summon' | 'zone' | 'rush' | 'line' | 'blast';
+export type SkillKind = 'melee' | 'pierce' | 'ranged' | 'aoe' | 'dot' | 'buff' | 'summon' | 'zone' | 'rush' | 'line' | 'blast' | 'charm';
 export interface SkillDef {
   key: string; id: string; name: string; kind: SkillKind; stat: 'atk' | 'mag' | 'tao';
   mana: number; cooldown: number; mult?: number; pierce?: number; range?: number;
@@ -67,6 +67,8 @@ export const CLASSES: Record<ClassId, ClassDef> = {
       { key: 'F8', id: 'hell_fire', name: '地狱火', kind: 'line', stat: 'mag', mana: 30, cooldown: 3, mult: 1.5, range: 425, learn: [16, 16, 21, 26], train: [1000, 4000, 8000], icon: S + 'skill_fire_wall.png', sfx: 'fireball_impact', desc: '向前 5 格火焰（官方）；[适配] 前方 2.5 卡内全部敌人' },
       { key: 'F9', id: 'lightning_flash', name: '疾光电影', kind: 'line', stat: 'mag', mana: 75, cooldown: 5, mult: 2.4, range: 680, learn: [26, 26, 29, 32], train: [3000, 6000, 12000], icon: S + 'skill_thunder.png', sfx: 'shockwave', desc: '直线穿透光电（官方）；[适配] 前方 4 卡内全部敌人' },
       { key: 'F10', id: 'hell_thunder', name: '地狱雷光', kind: 'aoe', stat: 'mag', mana: 105, cooldown: 6, mult: 2.2, range: 425, learn: [30, 30, 32, 34], train: [4000, 8000, 12000], icon: S + 'skill_thunder.png', sfx: 'shockwave2', desc: '以自身为中心 5×5 雷暴（官方）；[适配] 左右各 2.5 卡' },
+      // 诱惑之光：学习等级/修炼点/延迟 60 = 官方 C（21cq）；耗魔 = D Spell 3 ×3 [适配]；无伤害（倍率无）；规则见 World.charm*（docs/skills-official.md「诱惑之光」）
+      { key: 'F11', id: 'charm', name: '诱惑之光', kind: 'charm', stat: 'mag', mana: 9, cooldown: 0, range: 520, learn: [13, 13, 18, 24], train: [1000, 2000, 4000], icon: S + 'skill_thunder.png', sfx: 'shockwave', desc: '驯服不高于自身等级+2 的生物系怪物成为宠物（官方 C）；宠物上限 2/3/4/5（资料站）；BOSS/不死系/高智商免疫；[适配] 成功率与叛变时间' },
     ],
   },
   taoist: {
@@ -88,4 +90,19 @@ export const CLASSES: Record<ClassId, ClassDef> = {
     ],
   },
 };
+/**
+ * 取消冷却（用户：「学习官方，先不要冷却」）：官方只有施法延迟与耗魔，无独立冷却。
+ * 21cq 技能表「延迟」60/40/100 等单位 未查到 → 不直接换算；[适配] 统一公共施法间隔 CAST_GAP 秒（任意技能施放后所有技能共享，防同帧连放/刷屏）。
+ * COOLDOWN_BEFORE 保留改前 [适配] 冷却供文档/对照。
+ */
+export const CAST_GAP = 0.8;
+export const COOLDOWN_BEFORE: Record<string, number> = {};
+for (const c of Object.values(CLASSES)) for (const s of c.skills) { COOLDOWN_BEFORE[s.id] = s.cooldown; if (!s.passive) s.cooldown = CAST_GAP; }
+/** 取消冷却后的再平衡 [适配]：法/道 主动技能 耗魔×mana、倍率×mult（9 种子模拟调参；战士不动）。改前值见 MANA_BEFORE/MULT_BEFORE */
+export const REBALANCE = { mage: { mana: 1.5, mult: 0.56 }, taoist: { mana: 1.2, mult: 1 } } as const;
+export const MANA_BEFORE: Record<string, number> = {}, MULT_BEFORE: Record<string, number> = {};
+for (const c of ['mage', 'taoist'] as const) for (const s of CLASSES[c].skills) if (!s.passive) {
+  MANA_BEFORE[s.id] = s.mana; if (s.mult) MULT_BEFORE[s.id] = s.mult;
+  s.mana = Math.round(s.mana * REBALANCE[c].mana); if (s.mult) s.mult = +(s.mult * REBALANCE[c].mult).toFixed(2);
+}
 export const CLASS_IDS: ClassId[] = ['warrior', 'mage', 'taoist'];

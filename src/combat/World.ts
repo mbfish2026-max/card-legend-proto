@@ -3,11 +3,11 @@ import { BOOKS, BookDef, BOOK_DROP, BOOK_RATES, STARTER, bookItemId } from '../d
 // 自动战斗与技能、召唤物、掉落/背包/装备/商店、死亡复活、存档序列化。
 import { BattleEvent, EquipSlot, GroundItem, InvItem, Rarity, Slot, Stats, Team, Unit, UnitDef } from './types';
 import { POTIONS } from '../data/skills';
-import { CLASSES, ClassId, SkillDef } from '../data/classes';
+import { CLASSES, ClassId, SkillDef, CAST_GAP } from '../data/classes';
 import { ITEMS, SLOTS, SETS, equipSlotsFor, EQUIP_VERSION, ENHANCE_SLOTS, ENHANCE_MAX, ENHANCE_STAT, IRON_PRICE, IRON_MAX_PURITY, enhanceChance, shatterChance } from '../data/items';
 import { HERO, ENEMIES, SUMMON, SUMMON_BEAST } from '../data/units';
 import { EXP_PER_LEVEL, EXP_VERSION, migrateExp, scaledExp, fmtExp } from '../data/expCurve';
-import { WORLD, FLOORS, Floor } from '../data/world';
+import { WORLD, FLOORS, Floor, FARM_RESPAWN, FARM_SAFE_DIST } from '../data/world';
 import { TOWNS, townFloors, townOfFloor, returnTownOf, STORAGE_SIZE, TOWN_W, TOWN_GATE_X, GATE_RANGE, TOWN_SPAWN_X, DOOR_RANGE, streetDoors } from '../data/towns';
 import { CONSUMABLE } from '../data/items-town';
 import { WOMA_FLOOR_NAME, WOMA_SECTIONS, WOMA_DOOR_X, HORN_MOB_CHANCE, HORN_MOBS, RING_MIN_LEVEL, RingQuest, ringReward, IDENT_MIN_LEVEL, IDENT_PRICE, IDENT_POOL, identValue } from '../data/r14b';
@@ -44,10 +44,10 @@ export const FLOOR_MIGRATE_V3 = [0, 1, 2, 4, 5, 8, 9, 12];
 /** 商店祝福油价格（较贵，每层限购 1） */
 export const OIL_PRICE = 400;
 export { IRON_PRICE } from '../data/items';
+/** 新书接入（#11/#12 书）：无 learned 字段的旧档迁移时不白送这些技能（保持接入前行为） */
+const LATE_BOOKS: Record<string, true> = { big_fireball: true, burst_fire: true, hell_fire: true, lightning_flash: true, hell_thunder: true, ghost_shield: true, holy_armor: true, mass_heal: true };
 export type CastResult = { ok: true; targets: number[]; skill: string; kind: string } | { ok: false; reason: string };
 /** R13 官方 BOSS 机制（来源见 docs/combat-official.md）：沃玛教主/祖玛教主/赤月恶魔由 bossStep 接管攻击 */
-/** #12：已在 BOOKS 但尚未接入获取途径的书（S9 沃玛教主表含群疗，接入前不掉）；接入时从此表删除即可 */
-export const PENDING_BOOKS: Record<string, true> = { ghost_shield: true, holy_armor: true, mass_heal: true };
 /**
  * #12 幽灵盾/神圣战甲术（docs/skills-official.md #12）：
  * 增益 官方（新浪 2003 实测）= 0~(2 + ⌊目标等级/7⌋) 加在上限；[适配] 取区间中值 ×3（同装备防/魔御系数）= round(1.5 × (2 + ⌊等级/7⌋))
@@ -56,6 +56,18 @@ export const PENDING_BOOKS: Record<string, true> = { ghost_shield: true, holy_ar
 export const taoBuffValue = (level: number) => Math.round(1.5 * (2 + Math.floor(level / 7)));
 export const taoBuffDur = (slv: number, tao: number) => 30 + 10 * Math.max(0, slv) + 5 * Math.floor(tao / 10);
 export const BOSS_MECH = new Set(['boss_woma', 'boss_zuma', 'boss_redmoon']);
+/**
+ * 诱惑之光（docs/skills-official.md「诱惑之光」）
+ * 官方 C：可驯服等级 ≤ 法师等级+2 的生物系怪物；A：对高智商对手无效。资料站（17173）：宠物上限 Lv0..3 = 2/3/4/5。
+ * [适配]：免疫名单（BOSS + 不死系/石像 + 沃玛/祖玛/赤月/虹魔系 + 人形法师）、成功率公式、叛变时间（资料站 6 小时 → 卡牌节奏 90+30×技能等级 秒）。
+ */
+export const CHARM = {
+  levelGap: 2, maxPets: [2, 3, 4, 5],
+  immune: new Set(['skeleton', 'zombie', 'blood_zombie', 'zuma_statue', 'zuma_guard', 'woma_warrior', 'woma_guard', 'darkmage', 'bull_mage', 'redmoon_spider', 'hongmo_pig', 'hongmo_scorpion']),
+  /** [适配] 成功率：技能等级、人物与怪物等级差、怪物最大血量（因素来自资料站 21cq 文章，公式本作自拟） */
+  chance: (slv: number, heroLv: number, mon: { level: number; maxHp: number }) => Math.max(0.05, Math.min(0.85, 0.3 + 0.1 * slv + 0.05 * (heroLv - mon.level) - Math.min(0.3, mon.maxHp / 4000))),
+  duration: (slv: number) => 90 + 30 * slv,
+};
 /** R13 官方参数 */
 export const OFFICIAL = {
   womaStages: [5, 4, 3, 2, 1], womaDaze: 8, womaCrazy: 8, womaCrazyInterval: 0.5, womaFlySec: 30,
@@ -138,7 +150,7 @@ export class World {
       // 旧存档兼容：已达到学习等级的技能视为已学
       this.storage = [...(save.storage ?? [])]; this.skillOrder = [...(save.skillOrder ?? [])]; this.ringQ = save.ringQ ?? null; this.ringDone = save.ringDone ?? 0;
       // #11：旧档推导排除尚无获取途径的新书技能（shop:false 且无掉落）
-      this.learned = new Set(save.learned ?? this.skillPool.filter(s => this.level >= (s.unlock ?? s.learn?.[0] ?? 1) && (!BOOKS[s.id] || BOOKS[s.id].shop || BOOKS[s.id].drops.length)).map(s => s.id));
+      this.learned = new Set(save.learned ?? this.skillPool.filter(s => this.level >= (s.unlock ?? s.learn?.[0] ?? 1) && !(s.id in LATE_BOOKS) && (!BOOKS[s.id] || BOOKS[s.id].shop || BOOKS[s.id].drops.length)).map(s => s.id));
     }
     this.learned.add(this.starter);
     this.expNext = EXP_PER_LEVEL(this.level);
@@ -161,7 +173,23 @@ export class World {
   get floor() { return this.floors[this.floorIndex]; }
   get exitX() { return WORLD.mapWidth - WORLD.exitMargin; }
   get hero() { return this.units.find(u => u.isHero && u.alive); }
-  get summon() { return this.units.find(u => u.summon && u.alive); }
+  /** 道士骷髅/神兽（不含诱惑之光宠物） */
+  get summon() { return this.units.find(u => u.summon && !u.pet && u.alive); }
+  /** 自动施放门槛 [适配]：射程内最近目标可驯服且成功率 ≥50% 才放（免疫/等级过高/满宠不浪费魔法） */
+  charmAutoOk() {
+    const s = this.skillPool.find(x => x.id === 'charm'), side = s ? this.rangedSide(s.range ?? 520) : null;
+    if (side === null) return false; const c = this.charmCheck(this.queue(side)[0]); return c.res === 'ok' && c.p >= 0.3;
+  }
+  get pets() { return this.units.filter(u => u.pet && u.alive); }
+  /** 诱惑之光判定（不消耗随机数）：immune / high / full / ok + 成功率 */
+  charmCheck(t: Unit | undefined): { res: 'ok' | 'immune' | 'high' | 'full' | 'none'; p: number } {
+    const s = this.skillPool.find(x => x.id === 'charm'); if (!t || !s) return { res: 'none', p: 0 };
+    const slv = Math.max(0, this.skillLevel(s));
+    if (t.tier === 'boss' || BOSS_MECH.has(t.id) || CHARM.immune.has(t.id) || t.boss) return { res: 'immune', p: 0 };
+    if (t.level > this.level + CHARM.levelGap) return { res: 'high', p: 0 };
+    if (this.pets.length >= CHARM.maxPets[Math.min(3, slv)]) return { res: 'full', p: 0 };
+    return { res: 'ok', p: CHARM.chance(slv, this.level, t) };
+  }
 
   // ---------- 属性 ----------
   baseStats(lv = this.level): Stats {
@@ -347,10 +375,10 @@ export class World {
     this.units.push(u); return u;
   }
   loadFloor(i: number) { this.stepTarget = null; this.stepQueued = 0;
-    this.floorIndex = i; this.cleared = false; this.womaPending = null; this.womaSec = -1; this.womaWarnAt = -99; this.ground = []; this.zones = []; this.reached.add(i); this.checkAchieves();
+    this.floorIndex = i; this.cleared = false; this.womaPending = null; this.womaSec = -1; this.womaWarnAt = -99; this.ground = []; this.zones = []; this.farmQueue = []; this.reached.add(i); this.checkAchieves();
     this.units = this.units.filter(u => u.isHero || u.summon);
     const h = this.hero; if (h) { h.x = WORLD.heroStartX; h.y = 0; h.facing = 1; }
-    const s = this.summon; if (s) { s.x = WORLD.heroStartX - 110; s.y = WORLD.summonLane; }
+    this.units.filter(u => u.summon).forEach((s, k) => { s.x = WORLD.heroStartX - 110 - k * 60; s.y = WORLD.summonLane; });
     for (const sp of this.floor.spawns) {
       if (sp.id === 'boss_woma' && this.floor.name === WOMA_FLOOR_NAME) { this.womaPending = { x: sp.x, y: sp.y ?? 0 }; continue; } // R14 #14：教主之家需号角
       this.spawn(ENEMIES[sp.id], 'enemy', sp.x, sp.y ?? 0);
@@ -469,10 +497,11 @@ export class World {
     }
     // 额外掉落：独立随机流 lootRng（不消耗主 rng，保持平衡模拟稳定）。Boss 必掉 1 瓶祝福油；setDrop 随机 1 件套装
     if (u.tier === 'boss') this.bossKilled.add(this.floorIndex);
+    else if (this.floor?.farm && !u.summon) this.farmQueue.push({ id: u.id, x: u.homeX, y: u.homeY, at: this.time + FARM_RESPAWN });
     const extra: { id: string; purity?: number }[] = [];
     if (u.tier === 'boss' || this.lootRng() < (u.oilChance ?? 0)) extra.push({ id: 'bless_oil' });
     // R11 技能书掉落（本职业、未学、背包里也没有）
-    { const pool = Object.values(BOOKS).filter(b => b.cls === this.cls && (b.shop || b.drops.length || !(b.skill in PENDING_BOOKS)) && (u.id in BOOK_RATES ? (BOOK_RATES[u.id][b.skill] ?? 0) > 0 : b.drops.includes(u.id)) && !this.learned.has(b.skill) && !this.bag.some(x => x.item === bookItemId(b.skill)));
+    { const pool = Object.values(BOOKS).filter(b => b.cls === this.cls && (u.id in BOOK_RATES ? (BOOK_RATES[u.id][b.skill] ?? 0) > 0 : b.drops.includes(u.id)) && !this.learned.has(b.skill) && !this.bag.some(x => x.item === bookItemId(b.skill)));
       // R13：有资料的怪逐本按资料爆率（1/N）独立判定；无资料的怪沿用 [适配] 首领/普通几率随机一本
       if (u.id in BOOK_RATES) { for (const b of pool) if (this.lootRng() < BOOK_RATES[u.id][b.skill]) { extra.push({ id: bookItemId(b.skill) }); break; } }
       else if (pool.length && this.lootRng() < (u.tier === 'boss' ? BOOK_DROP.boss : BOOK_DROP.normal)) extra.push({ id: bookItemId(pool[Math.floor(this.lootRng() * pool.length)].skill) }); }
@@ -690,6 +719,10 @@ export class World {
     } else if (s.kind === 'ranged' || s.kind === 'dot' || s.kind === 'zone') {
       const side = this.rangedSide(s.range ?? 500); if (side === null) return { ok: false, reason: '射程内没有目标' };
       h.facing = side as 1 | -1; targets = [this.queue(side)[0]];
+    } else if (s.kind === 'charm') {
+      const side = this.rangedSide(s.range ?? 520); if (side === null) return { ok: false, reason: '射程内没有目标' };
+      h.facing = side as 1 | -1; targets = [this.queue(side)[0]];
+      if (this.charmCheck(targets[0]).res === 'full') return { ok: false, reason: '宠物数量已达上限' };
     } else if (s.kind === 'line') {
       // 地狱火/疾光电影：直线 [适配] 选边后命中该方向射程内全部敌人（穿透）
       const side = this.rangedSide(s.range ?? 500); if (side === null) return { ok: false, reason: '射程内没有目标' };
@@ -713,7 +746,7 @@ export class World {
     if (s.kind === 'buff' && s.reduce && (h.armorUntil ?? 0) > this.time) return { ok: false, reason: `${s.name}持续中（官方：持续期间重复开启无效）` };
     if (s.buffStat && ((s.buffStat === 'def' ? h.defUpUntil : h.mdefUpUntil) ?? 0) > this.time) return { ok: false, reason: `${s.name}持续中（沿用魔法盾：持续期间重复开启无效）` };
     if (s.area) targets = [h, ...this.units.filter(u => u.summon && u.alive && Math.abs(u.x - h.x) <= s.area!)];
-    h.mp = (h.mp ?? 0) - s.mana; cds[i] = s.cooldown;
+    h.mp = (h.mp ?? 0) - s.mana; for (let j = 0; j < cds.length; j++) cds[j] = Math.max(cds[j], CAST_GAP); cds[i] = Math.max(cds[i], s.cooldown); // 公共施法间隔（取消冷却）
     this.events.push({ type: 'attack', source: h.uid, target: targets[0]?.uid ?? h.uid, skill: s.id });
     this.addTrain(s, 100);
     const pw = this.power(s.stat) * this.skillScale() * (s.lvMult ? 1 : lvF);
@@ -746,6 +779,17 @@ export class World {
         const def: UnitDef = { ...base, level: this.level + (beast ? slv : 0), hp: Math.round(hp0 * lvF), atk: Math.round(atk0 * lvF), def: Math.round(def0) };
         const u = this.spawn(def, 'ally', h.x - h.facing * 110, WORLD.summonLane); u.summon = true; u.facing = h.facing; u.ai = 'chase';
         this.events.push({ type: 'summon', uid: u.uid });
+      }
+    } else if (s.kind === 'charm') {
+      const t = targets[0], c = this.charmCheck(t);
+      if (c.res === 'immune') { this.events.push({ type: 'charm', uid: t.uid, result: 'immune' }, { type: 'log', text: `${t.name}免疫诱惑之光` }); }
+      else if (c.res === 'high') { this.events.push({ type: 'charm', uid: t.uid, result: 'high' }, { type: 'log', text: `诱惑失败：${t.name}等级高于自身 ${CHARM.levelGap} 级以上` }); }
+      else if (this.rng() < c.p) {
+        Object.assign(t, { team: 'ally', summon: true, pet: true, petUntil: this.time + CHARM.duration(slv), ai: 'chase', y: WORLD.summonLane, boss: undefined, poisonUntil: 0, redUntil: 0, slowUntil: 0, facing: h.facing });
+        this.events.push({ type: 'charm', uid: t.uid, result: 'ok' }, { type: 'log', text: `诱惑成功：${t.name}成为宠物（${CHARM.duration(slv)} 秒后叛变）`, color: 'green' });
+      } else {
+        if (t.ai !== 'chase') { t.ai = 'chase'; this.events.push({ type: 'aggro', uid: t.uid }); }
+        this.events.push({ type: 'charm', uid: t.uid, result: 'fail' }, { type: 'log', text: `诱惑失败（成功率 ${Math.round(c.p * 100)}%）` });
       }
     } else if (s.kind === 'dot') {
       // R13 官方施毒：红绿毒同时施加（[适配] 本作不区分毒粉），无直接伤害；绿毒每 2.5 秒掉血且无视防御，红毒受伤 +20%
@@ -878,7 +922,15 @@ export class World {
     for (let i = 0; i < n; i++) { const k = pool.splice(Math.floor(this.lootRng() * pool.length), 1)[0] as keyof typeof it.stats; const v = identValue(k, it.req); it.stats[k] = (it.stats[k] ?? 0) + v; got.push(`${k}+${v}`); }
     it.ided = n; this.events.push({ type: 'inventory' }, { type: 'log', text: `鉴定 ${it.name}：${got.join(' ')}`, color: 'green' }); return null;
   }
+  /** 首图练级：待刷新的小怪 */
+  farmQueue: { id: string; x: number; y: number; at: number }[] = [];
+  private farmTick() { const h = this.hero;
+    for (const q of [...this.farmQueue]) if (q.at <= this.time) {
+      if (h && Math.abs(h.x - q.x) < FARM_SAFE_DIST) { q.at = this.time + 3; continue; }
+      this.farmQueue.splice(this.farmQueue.indexOf(q), 1); this.spawn(ENEMIES[q.id], 'enemy', q.x, q.y); this.cleared = false;
+    } }
   step(dt: number, inp: Input = { dx: 0, dy: 0 }) {
+    if (this.farmQueue.length) this.farmTick();
     this.womaTick();
     if (this.done) return;
     this.time += dt;
@@ -951,16 +1003,22 @@ export class World {
       }
 
     for (const u of this.units) if (u.alive) u.cd = Math.max(0, u.cd - dt);
-    // 召唤骷髅：跟随主角；有交战中的敌人则冲上去近战
-    const sm = this.summon;
-    if (sm && h) {
+    // 召唤骷髅/神兽 + 诱惑之光宠物：跟随主角；有交战中的敌人则冲上去近战
+    for (const p of this.pets) if ((p.petUntil ?? 0) <= this.time) {
+      // 叛变（资料站：到时变回敌人）[适配] 城镇内直接离开
+      if (this.town) { p.alive = false; this.events.push({ type: 'death', uid: p.uid }, { type: 'log', text: `${p.name}离开了` }); continue; }
+      Object.assign(p, { team: 'enemy', summon: false, pet: false, petUntil: undefined, ai: 'chase', y: 0, homeX: p.x });
+      this.events.push({ type: 'charm', uid: p.uid, result: 'betray' }, { type: 'aggro', uid: p.uid }, { type: 'log', text: `${p.name}叛变了！` });
+    }
+    const allies = this.units.filter(u => u.summon && u.alive);
+    for (const [k, sm] of allies.entries()) if (h) {
       const tg = this.alive('enemy').filter(e => e.ai === 'chase' && Math.abs(e.x - h.x) < 700).sort((a, b) => Math.abs(a.x - sm.x) - Math.abs(b.x - sm.x))[0];
       if (tg) {
         const side = Math.sign(tg.x - sm.x) || 1; sm.facing = side as 1 | -1;
         if (!this.inMelee(sm, tg)) this.toward(sm, tg.x - side * ((sm.width + tg.width) / 2), WORLD.summonLane, WORLD.baseSpeed * 1.1, dt);
         else { sm.moving = false; if (sm.cd <= 0) { sm.cd = sm.atkInterval; this.events.push({ type: 'attack', source: sm.uid, target: tg.uid }); this.damage(tg, sm.atk * (0.9 + this.rng() * 0.2), sm); } }
       } else {
-        const tx = h.x - h.facing * 110;
+        const tx = h.x - h.facing * (110 + k * 60);
         if (Math.abs(tx - sm.x) > 30) { sm.facing = Math.sign(tx - sm.x) as 1 | -1; this.toward(sm, tx, WORLD.summonLane, WORLD.baseSpeed * 1.1, dt); } else sm.moving = false;
       }
     }
@@ -986,7 +1044,7 @@ export class World {
       for (const s of [1, -1]) {
         const f = this.queue(s)[0];
         if (!f || f.ai !== 'chase' || f.cd > 0 || !h.alive || BOSS_MECH.has(f.id)) continue;
-        const s2 = this.summon, hitSummon = s2 && this.inMelee(s2, f) && this.rng() < 0.5;
+        const s2 = this.summon ?? this.units.find(u => u.summon && u.alive && this.inMelee(u, f)), hitSummon = s2 && this.inMelee(s2, f) && this.rng() < 0.5;
         if (!hitSummon && !this.inMelee(h, f)) continue;
         const tgt = hitSummon ? s2! : h;
         f.cd = f.atkInterval * (f.slowUntil && f.slowUntil > this.time ? 1.5 : 1);
