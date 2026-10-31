@@ -274,13 +274,27 @@
 | E3 | bone_helm | 骷髅头盔 | `public/assets/items/eq_bone_helm.png`（+@2x） | 64×64 | 参考原作：图集 e2a；颜色偏粉，存疑 |
 | E3 | cloth | 布衣 | `public/assets/items/eq_cloth.png`（+@2x） | 64×64 | 参考原作 |
 | E3 | armor | 重盔甲 | `public/assets/items/eq_armor.png`（+@2x） | 64×64 | 参考原作 |
-| E3 | pearl | 珍珠 | `public/assets/items/eq_pearl.png`（+@2x） | 64×64 | 推测 |
+| E3 | pearl | 黑珍珠项链 | `public/assets/items/eq_pearl.png`（+@2x） | 64×64 | 推测：自创物品；E3 首版为白珍珠，I1 批按物品名重绘为黑珍珠项链（图集 i1a） |
 | E3 | iron_ring | 铁戒指 | `public/assets/items/eq_iron_ring.png`（+@2x） | 64×64 | 推测 |
 | E3 | gold_ring | 金戒指 | `public/assets/items/eq_gold_ring.png`（+@2x） | 64×64 | 参考原作 |
-| E3 | bracelet | 手镯 | `public/assets/items/eq_bracelet.png`（+@2x） | 64×64 | 推测：与铁戒指形近，存疑 |
+| E3 | bracelet | 翡翠手镯 | `public/assets/items/eq_bracelet.png`（+@2x） | 64×64 | 推测：自创物品；E3 首版为银镯，I1 批按物品名重绘为翡翠镯（图集 i1a） |
 | E3 | light_armor | 轻型盔甲 | `public/assets/items/eq_light_armor.png`（+@2x） | 64×64 | 参考原作 |
 | E3 | soul_robe | 灵魂战衣 | `public/assets/items/eq_soul_robe.png`（+@2x） | 64×64 | 参考原作 |
 | E3 | magic_robe | 魔法长袍 | `public/assets/items/eq_magic_robe.png`（+@2x） | 64×64 | 参考原作 |
 | E3 | tao_helm | 道士头盔 | `public/assets/items/eq_tao_helm.png`（+@2x） | 64×64 | 改编：斗笠造型 |
 | E3 | magic_helm | 魔法头盔 | `public/assets/items/eq_magic_helm.png`（+@2x） | 64×64 | 参考原作 |
 | E3 | medium_armor | 中型盔甲 | `public/assets/items/eq_medium_armor.png`（+@2x） | 64×64 | 参考原作 |
+| I1 | hp_small | 金创药(小量) | `public/assets/items/hp_small.png`（+@2x） | 64×64 | 改编：原创替换现有 WoW 占位图标；命名 items/<id>.png（同 bless_oil/black_iron 规则），药水需把 assets/potions/ 路径改为 assets/items/ |
+| I1 | hp_mid | 金创药(中量) | `public/assets/items/hp_mid.png`（+@2x） | 64×64 | 改编：原创替换现有 WoW 占位图标；命名 items/<id>.png（同 bless_oil/black_iron 规则），药水需把 assets/potions/ 路径改为 assets/items/ |
+| I1 | mp_small | 魔法药(小量) | `public/assets/items/mp_small.png`（+@2x） | 64×64 | 改编：原创替换现有 WoW 占位图标；命名 items/<id>.png（同 bless_oil/black_iron 规则），药水需把 assets/potions/ 路径改为 assets/items/ |
+| I1 | mp_mid | 魔法药(中量) | `public/assets/items/mp_mid.png`（+@2x） | 64×64 | 改编：原创替换现有 WoW 占位图标；命名 items/<id>.png（同 bless_oil/black_iron 规则），药水需把 assets/potions/ 路径改为 assets/items/ |
+| I1 | hp_strong | 强效金创药 | `public/assets/items/hp_strong.png`（+@2x） | 64×64 | 改编：原创替换现有 WoW 占位图标；命名 items/<id>.png（同 bless_oil/black_iron 规则），药水需把 assets/potions/ 路径改为 assets/items/ |
+| I1 | mp_strong | 强效魔法药 | `public/assets/items/mp_strong.png`（+@2x） | 64×64 | 改编：原创替换现有 WoW 占位图标；命名 items/<id>.png（同 bless_oil/black_iron 规则），药水需把 assets/potions/ 路径改为 assets/items/ |
+| I1 | sun_water | 太阳水 | `public/assets/items/sun_water.png`（+@2x） | 64×64 | 改编：原创替换现有 WoW 占位图标；命名 items/<id>.png（同 bless_oil/black_iron 规则），药水需把 assets/potions/ 路径改为 assets/items/ |
+| I1 | return_scroll | 回城卷 | `public/assets/items/return_scroll.png`（+@2x） | 64×64 | 改编：原创替换现有 WoW 占位图标；命名 items/<id>.png（同 bless_oil/black_iron 规则），药水需把 assets/potions/ 路径改为 assets/items/ |
+| I1 | dungeon_scroll | 地牢逃脱卷 | `public/assets/items/dungeon_scroll.png`（+@2x） | 64×64 | 改编：原创替换现有 WoW 占位图标；命名 items/<id>.png（同 bless_oil/black_iron 规则），药水需把 assets/potions/ 路径改为 assets/items/ |
+| I1 | woma_horn | 沃玛号角 | `public/assets/items/woma_horn.png`（+@2x） | 64×64 | 改编：原创替换现有 WoW 占位图标；命名 items/<id>.png（同 bless_oil/black_iron 规则），药水需把 assets/potions/ 路径改为 assets/items/ |
+| I1 | gold | 金币 | `public/assets/items/gold.png`（+@2x） | 64×64 | 改编：原创替换现有 WoW 占位图标；命名 items/<id>.png（同 bless_oil/black_iron 规则），药水需把 assets/potions/ 路径改为 assets/items/ |
+| I1 | chicken | 鸡肉 | `public/assets/items/chicken.png`（+@2x） | 64×64 | 改编：原创替换现有 WoW 占位图标；命名 items/<id>.png（同 bless_oil/black_iron 规则），药水需把 assets/potions/ 路径改为 assets/items/ |
+| I1 | meat | 鹿肉 | `public/assets/items/meat.png`（+@2x） | 64×64 | 改编：原创替换现有 WoW 占位图标；命名 items/<id>.png（同 bless_oil/black_iron 规则），药水需把 assets/potions/ 路径改为 assets/items/ |
+| I1 | bone | 骷髅骨头 | `public/assets/items/bone.png`（+@2x） | 64×64 | 改编：原创替换现有 WoW 占位图标；命名 items/<id>.png（同 bless_oil/black_iron 规则），药水需把 assets/potions/ 路径改为 assets/items/ |
