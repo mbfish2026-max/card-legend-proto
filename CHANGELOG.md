@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 手机网页版界面（feat/mobile-ui）
+- 新增 src/ui/MobileHud.ts：手机专用 DOM HUD，按 safe-area 布局，支持多点触控。
+  - 左下浮动摇杆；右下技能弧（原图标、冷却、自动开关）、「进入/对话」键、4 个药水格、合击（有伙伴时）。
+  - 左上细条 HP/MP/EXP（带数字）和可折叠日志（默认 3 行）。
+  - 右上图标：角色/技能/悬赏/地图/回城/设置，每个只出现一次。商人与传送合并到「进入/对话」。
+- 手机模式下隐藏 Phaser 版 HUD，旧的映射虚拟键（VirtualPad）不再创建。面板整体放大 1.2–1.28 倍，字号下限 18/20（src/ui/mtext.ts），关闭键 ≥44px。
+- 场景提示去掉键位：「回xx城」「点「进入」」。
+- 电脑端不变（IS_MOBILE 为假时代码路径与 main 相同）；?mobile=1/0、竖屏提示保留。
+- 文档：docs/mobile-ui.md（桌面功能 → 手机入口对照表）。
+- 测试：tests/e2e/mobile-ui-verify.mjs（四种横屏 + 面板 + 竖屏 + 桌面与 main 对比）。tests/e2e/lib.mjs 的 startPreview 新增可选 root 参数。
+
 ## 合击持续特效（feat/hj-fx-loop）
 - 噬魂沼泽：起手段播完后，fx_combo_shihun 帧 8–11 往返循环作毒沼尾段，跟随主目标（主目标死后跟随仍中毒的目标），中毒 10s 结束 / 中毒目标全死即销毁。
 - 末日审判：fx_combo_mori 帧 8–11 法阵循环跟随目标，持续掉血 8s 结束或目标死亡即销毁。

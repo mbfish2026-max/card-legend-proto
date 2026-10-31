@@ -14,7 +14,8 @@ import { WORLD } from '../data/world';
 import { CLASSES, CLASS_IDS } from '../data/classes';
 export const BAG_PAGE = 30;
 import { renderSettingsView } from './SettingsView';
-import { txt, button, sfx } from '../scenes/TitleScene';
+import { sfx } from '../scenes/TitleScene';
+import { txt, button } from './mtext';
 import { IS_MOBILE } from '../mobile';
 import { FxQuality } from './Fx';
 import { REGIONS, floorBoss, regionOf, clampView, zoomAt, WORLD_W, WORLD_H, View } from '../data/map';
@@ -57,7 +58,7 @@ export class Panel {
     if (this.mode === 'town') this.npc = null;
     this.clearMapInput(); this.sel = null; this.ironIdx = null; this.mode = null; this.root?.destroy(true); this.root = undefined; this.hideTip(); }
   /** #11 修复：面板打开时升级/得经验不刷新。render 时记录快照，UIScene.update 每帧比对 */
-  private snap = '';
+  private snap = ''; mscale = 1; skPage = 0;
   statSnap() { const w = this.world(); return `${w.level}:${w.exp}:${JSON.stringify(w.skillTrain)}:${w.learned.size}`; }
   /** 角色/技能面板数据变了就重绘；返回是否重绘（供测试） */
   refreshIfStale(): boolean {
@@ -76,7 +77,10 @@ export class Panel {
     R.add(s.add.rectangle(640, this.mode === 'settings' ? 300 : top + H / 2 - 20, W, H, 0x15100b, 0.97).setStrokeStyle(3, 0xd4a64a));
     const titles = { bag: '角色 / 背包', shop: '商人 · 杂货铺', skills: '技能', settings: '设置', map: '世界地图', quests: '悬赏 / 成就', town: `${TOWNS[this.world().town ?? 'bichi']?.name ?? '城镇'} · 安全区` };
     R.add(txt(s, 640, top + 22, titles[this.mode], 24, '#ffd24a', { fontStyle: 'bold' }).setOrigin(0.5));
-    R.add([...button(s, 640 + W / 2 - 26, top + 22, 36, 32, '✕', () => this.close(), 18)]);
+    // 手机：面板整体放大到接近全屏（地图面板自带拖动/缩放坐标换算，不放大）；关闭键加大到 ≥44px
+    if (IS_MOBILE && this.mode !== 'map') { const k = Math.min(1280 / W, 700 / H); this.mscale = k; const cy = this.mode === 'settings' ? 300 : top + H / 2 - 20; R.setScale(k).setPosition(640 * (1 - k), cy * (1 - k) + (360 - cy)); } else this.mscale = 1;
+    if (IS_MOBILE) { const cw = this.mscale > 1 ? 84 : 90, ch = this.mscale > 1 ? 76 : 84; R.add([...button(s, 640 + W / 2 - cw / 2 - 4, top + 14 + (ch - 64) / 2, cw, ch, '✕', () => this.close(), 30)]); }
+    else R.add([...button(s, 640 + W / 2 - 26, top + 22, 36, 32, '✕', () => this.close(), 18)]);
     if (this.mode === 'settings') return this.renderSettings(R, top);
     if (this.mode === 'skills') return this.renderSkills(R, top);
     if (this.mode === 'map') return this.renderMap(R, top);
@@ -98,7 +102,7 @@ export class Panel {
     const setId = it && key.startsWith('eq_') ? ITEMS[it.item]?.set : undefined;
     if (setId && SETS[setId] && (this.world().setCounts()[setId] ?? 0) >= Math.min(...SETS[setId].bonus.map(b => b.n)) && s.textures.exists('set_badge'))
       R.add(s.add.image(x + size / 2 - 10, y - size / 2 + 10, 'set_badge').setDisplaySize(22, 22));
-    if (selected) { r.setStrokeStyle(4, 0xffe080); s.time.delayedCall(0, () => it && this.root && this.showTip(it, x + size / 2 + 6, y - size / 2, true)); }
+    if (selected) { r.setStrokeStyle(4, 0xffe080); s.time.delayedCall(0, () => it && this.root && this.showTip(it, this.root.x + (x + size / 2 + 6) * this.mscale, this.root.y + (y - size / 2) * this.mscale, true)); }
     r.setInteractive({ useHandCursor: !!it });
     if (!IS_MOBILE) r.on('pointerover', () => { r.setFillStyle(0x2a2016); if (it) this.showTip(it, x + size / 2 + 6, y - size / 2); });
     if (!IS_MOBILE) r.on('pointerout', () => { r.setFillStyle(0x0a0806); this.hideTip(); });
@@ -136,7 +140,7 @@ export class Panel {
     const sc = w.setCounts(), setLine = Object.values(SETS).filter(st => sc[st.id]).map(st => `${st.name}${sc[st.id]}/${st.pieces.length}`).join('  ');
     if (setLine) lines.push(`套装 ${setLine}`);
     R.add(txt(s, 175, top + 345, lines.join('\n'), 15, '#ffe8a0', { lineSpacing: setLine ? 2 : 6, strokeThickness: 2 }));
-    R.add(txt(s, cx + 130, top + 270, IS_MOBILE ? '点两下\n装备栏=卸下' : '点击装备栏\n= 卸下', 12, '#999', { align: 'center' }).setOrigin(0.5, 0));
+    if (!IS_MOBILE) R.add(txt(s, cx + 130, top + 270, IS_MOBILE ? '点两下\n装备栏=卸下' : '点击装备栏\n= 卸下', 12, '#999', { align: 'center' }).setOrigin(0.5, 0));
   }
   private renderShop(R: Phaser.GameObjects.Container, top: number) {
     const s = this.s, w = this.world();
@@ -223,9 +227,13 @@ export class Panel {
   private renderSkills(R: Phaser.GameObjects.Container, top: number) {
     const s = this.s, w = this.world();
     const bar = w.skills, barIdx = new Map(bar.map((k, i) => [k.id, i]));
-    const list = [...bar, ...w.skillPool.filter(k => !barIdx.has(k.id))];
+    const full = [...bar, ...w.skillPool.filter(k => !barIdx.has(k.id))];
+    // 手机：放大字号后一页只放 6 行（每行 ≥66 逻辑 px），右下 ◀ ▶ 翻页；电脑原样一页全放
+    const PER = 6, pages = IS_MOBILE ? Math.max(1, Math.ceil(full.length / PER)) : 1; this.skPage = Math.max(0, Math.min(pages - 1, this.skPage));
+    const list = IS_MOBILE ? full.slice(this.skPage * PER, this.skPage * PER + PER) : full;
+    if (IS_MOBILE && pages > 1) { R.add([...button(s, 380, top + 22, 64, 56, '◀', () => { this.skPage--; this.render(); }, 22, this.skPage > 0)]); R.add(txt(s, 440, top + 22, `${this.skPage + 1}/${pages}`, 18, '#ffe8a0').setOrigin(0.5)); R.add([...button(s, 500, top + 22, 64, 56, '▶', () => { this.skPage++; this.render(); }, 22, this.skPage < pages - 1)]); }
     const autoList = Settings.skillsFor(w.cls), autoable = new Set(DEFAULT_AUTO_SKILLS[w.cls]);
-    const rowH = Math.min(70, Math.floor(400 / Math.max(1, list.length))), y0 = top + 48 + rowH / 2, fs = rowH < 56 ? 12 : 13;
+    const rowH = IS_MOBILE ? 68 : Math.min(70, Math.floor(400 / Math.max(1, list.length))), y0 = top + 48 + rowH / 2, fs = rowH < 56 ? 12 : 13;
     list.forEach((k, i) => {
       const y = y0 + i * rowH, inBar = barIdx.has(k.id);
       const need = w.needLevel(k), lv = w.skillLevel(k), locked = lv < 0, pts = w.skillTrain[k.id] ?? 0, learned = w.learned.has(k.id), bk = BOOKS[k.id];
@@ -244,22 +252,22 @@ export class Panel {
       if (k.train && lv >= 0 && lv < 3) { const p = Math.min(1, pts / k.train[lv]); R.add(s.add.rectangle(212, y + rowH / 2 - 6, 220, 4, 0x333333).setOrigin(0, 0.5)); R.add(s.add.rectangle(212, y + rowH / 2 - 6, 220 * p, 4, 0x55cc77).setOrigin(0, 0.5)); }
       if (inBar) {
         const bi = barIdx.get(k.id)!;
-        R.add([...button(s, 800, y, 36, rowH - 18, '▲', () => { w.moveSkill(k.id, bi - 1); this.render(); }, 14, bi > 0)]);
-        R.add([...button(s, 840, y, 36, rowH - 18, '▼', () => { w.moveSkill(k.id, bi + 1); this.render(); }, 14, bi < bar.length - 1)]);
-        // 拖放：按住 ≡ 上下拖到目标行松开
-        const hd = s.add.rectangle(890, y, 44, rowH - 12, 0x3a2a14).setStrokeStyle(1, 0xd4a64a).setInteractive({ draggable: true, useHandCursor: true });
+        R.add([...button(s, IS_MOBILE ? 760 : 800, y, IS_MOBILE ? 60 : 36, rowH - 18, '▲', () => { w.moveSkill(k.id, bi - 1); this.render(); }, 14, bi > 0)]);
+        R.add([...button(s, IS_MOBILE ? 830 : 840, y, IS_MOBILE ? 60 : 36, rowH - 18, '▼', () => { w.moveSkill(k.id, bi + 1); this.render(); }, 14, bi < bar.length - 1)]);
+        // 拖放：按住 ≡ 上下拖到目标行松开（手机翻页后用 ▲▼ 调整，不放拖柄）
+        if (!IS_MOBILE) { const hd = s.add.rectangle(890, y, 44, rowH - 12, 0x3a2a14).setStrokeStyle(1, 0xd4a64a).setInteractive({ draggable: true, useHandCursor: true });
         const ht = txt(s, 890, y, '≡', 22, '#ffd24a').setOrigin(0.5); R.add([hd, ht]); s.input.setDraggable(hd);
         hd.on('drag', (_p: Phaser.Input.Pointer, _x: number, dy: number) => { hd.y = dy; ht.y = dy; });
-        hd.on('dragend', () => { const to = Math.max(0, Math.min(bar.length - 1, Math.round((hd.y - y0) / rowH))); if (to !== bi) { w.moveSkill(k.id, to); this.onChange(`${k.name} 移到 F${to + 1}`, true); } this.render(); });
+        hd.on('dragend', () => { const to = Math.max(0, Math.min(bar.length - 1, Math.round((hd.y - y0) / rowH))); if (to !== bi) { w.moveSkill(k.id, to); this.onChange(`${k.name} 移到 F${to + 1}`, true); } this.render(); }); }
         if (autoable.has(k.id)) {
           const on = autoList.includes(k.id), pr = autoList.indexOf(k.id);
-          R.add([...button(s, 975, y, 96, rowH - 18, `${on ? '☑' : '☐'} 自动${on ? ' #' + (pr + 1) : ''}`, () => { Settings.toggleAutoSkill(k.id, w.cls); this.render(); }, 13)]);
-          R.add([...button(s, 1045, y, 32, rowH - 18, '↑', () => { Settings.moveAutoSkill(k.id, -1, w.cls); this.render(); }, 13, on && pr > 0)]);
-          R.add([...button(s, 1081, y, 32, rowH - 18, '↓', () => { Settings.moveAutoSkill(k.id, 1, w.cls); this.render(); }, 13, on && pr < autoList.length - 1)]);
+          R.add([...button(s, IS_MOBILE ? 940 : 975, y, 96, rowH - 18, `${on ? '☑' : '☐'} 自动${on ? ' #' + (pr + 1) : ''}`, () => { Settings.toggleAutoSkill(k.id, w.cls); this.render(); }, 13)]);
+          R.add([...button(s, IS_MOBILE ? 1020 : 1045, y, IS_MOBILE ? 56 : 32, rowH - 18, '↑', () => { Settings.moveAutoSkill(k.id, -1, w.cls); this.render(); }, 13, on && pr > 0)]);
+          R.add([...button(s, IS_MOBILE ? 1082 : 1081, y, IS_MOBILE ? 56 : 32, rowH - 18, '↓', () => { Settings.moveAutoSkill(k.id, 1, w.cls); this.render(); }, 13, on && pr < autoList.length - 1)]);
         } else R.add(txt(s, 975, y, '手动', 12, '#888').setOrigin(0.5));
       }
     });
-    R.add(txt(s, 160, top + 452, `▲▼/拖动≡ 调整快捷栏；☑自动 与设置页同一份，#n 为自动优先级。学习等级/修炼点取自 1.76 官方，修炼满足后自动升级；耗魔×3；轻量冷却 1.5–6s + 公共施法间隔 0.8s（适配）。等级加成 ×${w.skillScale().toFixed(2)}`, 12, '#aaa', { wordWrap: { width: 960 } }));
+    if (IS_MOBILE) R.add(txt(s, 160, top + 450, '▲▼ 调整快捷栏顺序；☑自动 勾选后自动施放，↑↓ 调优先级', 18, '#9fd')); else R.add(txt(s, 160, top + 452, `▲▼/拖动≡ 调整快捷栏；☑自动 与设置页同一份，#n 为自动优先级。学习等级/修炼点取自 1.76 官方，修炼满足后自动升级；耗魔×3；轻量冷却 1.5–6s + 公共施法间隔 0.8s（适配）。等级加成 ×${w.skillScale().toFixed(2)}`, 12, '#aaa', { wordWrap: { width: 960 } }));
   }
   // ---------- R14 城镇 ----------
   private npcDef() { const t = TOWNS[this.world().town ?? '']; return t?.npcs.find(n => n.id === this.npc); }
@@ -437,8 +445,8 @@ export class Panel {
     ACHIEVES.forEach((a, i) => {
       const y = top + 95 + i * 48, got = w.achieves.has(a.id);
       R.add(s.add.rectangle(980, y, 360, 44, 0x0a0806).setStrokeStyle(1, got ? 0x3a6a3a : 0x333));
-      R.add(txt(s, 820, y - 10, `${got ? '【' + a.title + '】' : a.name}`, 14, got ? '#ffd24a' : '#888'));
-      R.add(txt(s, 820, y + 8, a.desc + (got ? '  ✓' : ''), 12, got ? '#9f9' : '#666', { strokeThickness: 2 }));
+      R.add(txt(s, 820, y - (IS_MOBILE ? 21 : 10), `${got ? '【' + a.title + '】' : a.name}`, 14, got ? '#ffd24a' : '#888'));
+      R.add(txt(s, 820, y + (IS_MOBILE ? 1 : 8), a.desc + (got ? '  ✓' : ''), 12, got ? '#9f9' : '#666', { strokeThickness: 2 }));
     });
     R.add(txt(s, 640, top + 455, '悬赏按层击杀目标怪；成就永久加属性。按 Q 关闭', 13, '#9fd').setOrigin(0.5));
   }

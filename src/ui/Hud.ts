@@ -42,7 +42,7 @@ export class Hud {
   setExp(lv: number, cur: number, next: number) { this.expFill.width = 480 * Math.max(0, Math.min(1, cur / Math.max(1, next))); this.expT.setText(`Lv${lv}  经验 ${fmtExp(cur)}/${fmtExp(next)}`); } info: Phaser.GameObjects.Text;
   bagPos = { x: 0, y: 0 }; plaque!: Phaser.GameObjects.Text; dotObjs: Phaser.GameObjects.GameObject[] = [];
   setFloor(name: string, icons: string[]) {
-    this.plaque?.setText(name); this.dotObjs.forEach(o => o.destroy()); this.dotObjs = []; this.dots = [];
+    this.plaque?.setText(name); this.floorName = name; this.dotObjs.forEach(o => o.destroy()); this.dotObjs = []; this.dots = [];
     const n = icons.length, sp = Math.min(34, 260 / Math.max(1, n));
     icons.forEach((id, i) => {
       const x = 1130 + (i - (n - 1) / 2) * sp, y = 84;
@@ -52,9 +52,13 @@ export class Hud {
       const c = this.s.add.text(x, y, '✕', { fontFamily: FONT, fontSize: '20px', color: '#ff3333', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5).setDepth(22).setVisible(false);
       this.dotObjs.push(c); (r as any).cross = c;
     });
+    if (this.mobile) this.dotObjs.forEach(o => (o as any).setVisible?.(false));
   }
   static SK = 60; gold = 0;
+  /** 手机：Phaser 版 HUD 全部隐藏，由 DOM 版 MobileHud 显示（读 lines/dead/floorName） */
+  mobile = false; floorName = ''; dead: boolean[] = [];
   constructor(public s: Phaser.Scene, levelName: string, waveIcons: string[], public skills: SkillDef[], onMenu: (i: number) => void, mobile = false, onSkill?: (key: string) => void) {
+    const n0 = s.children.list.length; this.mobile = mobile; this.floorName = levelName;
     // 右上角牌匾（层名）+ 本层怪物进度小图标
     s.add.rectangle(1130, 36, 270, 46, 0x8a1010).setStrokeStyle(3, 0xd4a64a).setDepth(20);
     s.add.rectangle(1130, 36, 258, 34).setStrokeStyle(1, 0xffe8a0, 0.6).setDepth(20);
@@ -112,6 +116,7 @@ export class Hud {
     if (!mobile) this.logBg = s.add.rectangle(0, 596, 252, 124, 0x000000, 0.35).setOrigin(0, 0).setDepth(29);
     for (let i = 0; i < 6; i++) this.logT.push(txt(s, 8, ly + i * lh, '', mobile ? 14 : 12, '#fff', { strokeThickness: 2, ...(mobile ? {} : { fixedWidth: 244 }) }).setDepth(30));
     this.info = txt(s, 12, 10, '', 14, '#ffe8a0').setDepth(30);
+    if (mobile) s.children.list.slice(n0).forEach(o => (o as any).setVisible?.(false));
   }
   /** 日志：白字系统提示、绿字拾取/经验 */
   log(t: string, green = false) {
@@ -129,7 +134,8 @@ export class Hud {
       const sk = (this as any)._skSize ?? Hud.SK;
       g.slice(p.x, p.y, sk, start, Math.PI * 1.5, false); g.fillPath();
     });
-    this.dots.forEach((d, i) => { d.setStrokeStyle(2, dead[i] ? 0x444444 : 0xffd24a); (d as any).cross?.setVisible(!!dead[i]); });
+    this.dead = dead;
+    this.dots.forEach((d, i) => { d.setStrokeStyle(2, dead[i] ? 0x444444 : 0xffd24a); (d as any).cross?.setVisible(!!dead[i] && !this.mobile); });
     POTIONS.forEach((p, i) => this.potT[i].setText(p.item ? String(pots[i]) : ''));
     this.info.setText(info);
     const now = this.s.time.now; let any = 0;
