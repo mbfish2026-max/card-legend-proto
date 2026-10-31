@@ -30,7 +30,7 @@ import { ENEMIES } from '../data/units';
 import { FLOORS, floorNo } from '../data/world';
 import { World as WorldCls } from '../combat/World';
 import { BOOKS } from '../data/books';
-import { TOWNS, NODE_TOWN, STORAGE_SIZE, NPC_ART } from '../data/towns';
+import { TOWNS, NODE_TOWN, STORAGE_SIZE, NPC_ART, npcArtOf } from '../data/towns';
 import { CONSUMABLE } from '../data/items-town';
 import { Settings, DEFAULT_AUTO_SKILLS } from '../settings';
 import { equipLook } from './EquipLayers';
@@ -288,7 +288,7 @@ export class Panel {
     if (!t) { R.add(txt(s, 640, top + 200, '不在城内', 20, '#fff').setOrigin(0.5)); return; }
     if (s.textures.exists('bg_town')) R.add(s.add.image(640, top + 240, 'bg_town').setDisplaySize(996, 460).setAlpha(0.35));
     R.add(txt(s, 160, top + 14, `金币 ${w.gold}   安全区`, 14, '#ffd24a'));
-    const cur = this.npcDef(), art = cur && 'npc_' + NPC_ART[cur.kind];
+    const cur = this.npcDef(), art = cur && npcArtOf(this.world().town, cur.id, cur.kind);
     if (art && s.textures.exists(art)) R.add(s.add.image(240, top + 400, art).setOrigin(0.5, 1).setDisplaySize(200, 250));
     else if (cur) { R.add(s.add.rectangle(240, top + 275, 200, 250, 0x2a2018).setStrokeStyle(2, 0x6a5a28)); R.add(txt(s, 240, top + 275, cur.name.replace(/（.*）/, ''), 16, '#ffe8a0').setOrigin(0.5)); }
     R.add([...button(s, 240, top + 448, 170, 36, '回到街上', () => this.close(), 16)]);

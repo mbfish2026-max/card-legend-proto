@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## feat/towns
+- 盟重土城/白日门/封魔谷/苍月岛接入长街美术与 NPC/店铺摆位（TOWN_LAYOUT），龙人 x=5300，封魔谷/苍月岛用换色门面；装饰店不可进入；进店取最近门；城镇美术登记 assets-manifest 并懒加载。
+- 新增 tests/towns.test.ts、tests/e2e/towns-shots.mjs。
+
 ## feat/balance-sys：21–30 死亡压力 + 掉落逐层测试
 - 怪物侧：目标 21–30 级层普通怪攻 ×1.15；尸王殿普通怪攻 ×0.85、尸王攻 ×0.7 血 ×0.8；蛛网晶洞一只蜘蛛换蝙蝠。三职业 9 种子均 Lv50 通关，战士 20–29 段 5/9 种子有死亡（原 0/9）。数据见 docs/exp-curve.md。
 - 新增 tests/drop-plan.test.ts：0–82 层逐怪校验装备需求封顶、docs/drop-plan.md 一致性。

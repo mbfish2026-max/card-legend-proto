@@ -66,3 +66,7 @@ export const SFX: Record<string, string> = {
   lich_death: A + 'lich_death.ogg', skeleton_death: A + 'skeleton_death.ogg',
   loot: A + 'loot.ogg', coin: A + 'coin.ogg', levelup: A + 'levelup.ogg', click: A + 'click.ogg', click2: A + 'click2.ogg', potion: A + 'potion.ogg',
 };
+
+/** 大城长街美术（feat/towns，进城时按需加载；摆位见 src/data/towns.ts TOWN_LAYOUT）。jpg = 背景 */
+import { TOWN_LAYOUT, townArtKeys } from './data/towns';
+export const TOWN_ASSETS: Record<string, string> = Object.fromEntries(Object.keys(TOWN_LAYOUT).flatMap(townArtKeys).map(k => [k, `assets/town/${k}.${k.startsWith('bg_') ? 'jpg' : 'png'}`]));
