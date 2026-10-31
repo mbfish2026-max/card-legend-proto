@@ -104,10 +104,17 @@ const ZERO: Stats = { hp: 0, mp: 0, atk: 0, mag: 0, tao: 0, def: 0, mdef: 0 };
 
 /**
  * 防御结算（[适配] 卡牌化）：物理部分按防御、魔法部分按魔御（MAC）减免，各部分减免量按占比分摊：
- *   伤害 = Σ max(部分×20%, 部分 − 对应防御×defFactor×占比)；magic=0 与旧公式完全一致。
+ *   伤害 = Σ max(部分×dmgFloor, 部分 − 对应防御×defFactor×占比)；magic=0 与旧公式完全一致。
+ *   feat/balance-battle：dmgFloor 20%→30%、defFactor 0.6→0.5（首图沿用旧值，见 World.newbieFloor）。
  */
-export function mitigate(amount: number, def: number, mdef: number, magic = 0): number {
-  const m = Math.max(0, Math.min(1, magic)), red = (a: number, d: number, w: number) => w <= 0 ? 0 : Math.max(a * w * 0.2, a * w - d * WORLD.defFactor * w);
+/** 等级差修正（balance-plan B [适配]）：攻击方等级 − 受击方等级 = d；d>0 ×(1+0.03d)，d<0 ×max(0.7, 1+0.02d) */
+export function lvDiffMult(atkLv: number, defLv: number): number {
+  const d = atkLv - defLv; return d >= 0 ? 1 + WORLD.lvDiffUp * d : Math.max(WORLD.lvDiffMin, 1 + WORLD.lvDiffDown * d);
+}
+/**
+ */
+export function mitigate(amount: number, def: number, mdef: number, magic = 0, floorPct = WORLD.dmgFloor, f = WORLD.defFactor): number {
+  const m = Math.max(0, Math.min(1, magic)), red = (a: number, d: number, w: number) => w <= 0 ? 0 : Math.max(a * w * floorPct, a * w - d * f * w);
   return red(amount, def, 1 - m) + red(amount, mdef, m);
 }
 export class World {
@@ -459,7 +466,10 @@ export class World {
     if (!target.alive) return 0;
     const crit = canCrit && this.rng() < (source?.isHero ? this.critChance() : CRIT_CHANCE);
     if (crit) amount *= CRIT_MULT;
-    if (!ignoreDef) { const up = (u?: number, v?: number) => u && u > this.time ? v ?? 0 : 0; amount = mitigate(amount, (target.def ?? 0) + up(target.defUpUntil, target.defUp), (target.mdef ?? target.def ?? 0) + up(target.mdefUpUntil, target.mdefUp), magic); }
+    const nb = this.newbieFloor;
+    if (!ignoreDef) { const up = (u?: number, v?: number) => u && u > this.time ? v ?? 0 : 0; amount = mitigate(amount, (target.def ?? 0) + up(target.defUpUntil, target.defUp), (target.mdef ?? target.def ?? 0) + up(target.mdefUpUntil, target.mdefUp), magic, nb ? WORLD.legacyDmgFloor : WORLD.dmgFloor, nb ? WORLD.legacyDefFactor : WORLD.defFactor); }
+    // 等级差修正：仅「怪物 → 主角/英雄」（balance-plan B 只定义了主角受伤）；首图豁免
+    if (!nb && source && source.team === 'enemy' && (target.isHero || target.companion)) amount *= lvDiffMult(source.level ?? 1, target.isHero ? this.level : this.companion?.level ?? this.level);
     if (target.redUntil && target.redUntil > this.time) amount *= 1 + OFFICIAL.redAmp; // R13 红毒
     if (target.vulnUntil && target.vulnUntil > this.time) amount *= 1 + (target.vulnPhys ?? 0) * (1 - magic) + (target.vulnMag ?? 0) * magic; // 阶段 B 合击受伤加深 [适配]
     if (target.armorUntil && target.armorUntil > this.time) amount *= 1 - (target.armorReduce ?? 0.5);
@@ -1341,6 +1351,8 @@ export class World {
     }
   }
   /** R13 官方 BOSS 机制（沃玛教主 / 祖玛教主 / 赤月恶魔），来源与 [适配] 说明见 docs/combat-official.md */
+  /** 首图（主线 FLOORS 第 0 层 幽暗森林）：balance-plan 不变量，战斗系数全部保持改前值 */
+  get newbieFloor(): boolean { return this.floors === FLOORS && this.floorIndex === 0 && !this.town; }
   bossStep(dt: number, h: Unit) {
     for (const b of this.alive('enemy')) {
       if (!BOSS_MECH.has(b.id) || b.ai !== 'chase') continue;

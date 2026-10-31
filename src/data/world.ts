@@ -28,7 +28,12 @@ export const WORLD = {
   exitMargin: 160,
   mpRegen: 4,                  // 每秒回蓝
   hpRegen: 1,                  // 每秒回血（脱战时 ×5）
-  defFactor: 0.6,              // 伤害 = 原始 − 防御×该值（最低保留 20%）
+  defFactor: 0.5,              // 伤害 = 原始 − 防御×该值（最低保留 dmgFloor）。feat/balance-battle：0.6→0.5 [适配]（balance-plan B）
+  dmgFloor: 0.3,               // 保底伤害比例。feat/balance-battle：20%→30% [适配]（balance-plan B）
+  /** 首图（幽暗森林）保持旧公式：balance-plan「不变量」——首图所有系数取改前值 */
+  legacyDefFactor: 0.6, legacyDmgFloor: 0.2,
+  /** 等级差修正（balance-plan B [适配]，官方公式未查到）：怪物每高主角 1 级伤害 +3%；每低 1 级 −2%，下限 −30% */
+  lvDiffUp: 0.03, lvDiffDown: 0.02, lvDiffMin: 0.7,
   rarityRoll: { magic: 0.3, rare: 0.1 },
   affix: { magic: 0.5, rare: 1.2 },
   goldAmount: [5, 40] as [number, number],

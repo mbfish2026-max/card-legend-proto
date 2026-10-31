@@ -969,7 +969,7 @@ const free = (w: World) => w.skills.map(() => 0);
   w.bag.push(w.makeItem('tao_helm')); w.equipItem(0); const m2 = w.stats().mdef, hm = ITEMS.tao_helm.equip!.mdef ?? 0;
   ok(hm > 0 && m2 === m1 + hm && w.hero!.mdef === m2, `装备魔御叠加 ${m1}+${hm}=${m2}，并同步到角色`);
   const h = w.hero!; h.def = 0; h.mdef = 30; h.hp = h.maxHp = 99999;
-  const e = w.spawn(ENEMIES.boss_woma, 'enemy', h.x + 50);
+  const e = w.spawn(ENEMIES.boss_woma, 'enemy', h.x + 50); e.level = w.level; // 等级差修正归零，只测魔御
   const hp0 = h.hp; w.rng = () => 0.5; w.damage(h, 100, e, false); const phys = hp0 - h.hp;
   const hp1 = h.hp; w.damage(h, 100, e, false, false, false, 1); const mag = hp1 - h.hp;
   ok(phys === 100 && mag === Math.round(100 - 30 * f), `角色魔御 30：物理 ${phys}、魔法 ${mag}`);
