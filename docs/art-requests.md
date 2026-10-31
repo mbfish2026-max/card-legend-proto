@@ -189,3 +189,12 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 ## town-return（feat/town-return）
 - 银杏村（新手村）专属街景/门面（暂复用比奇长街素材）
 - 战斗层起点「回城」入口门图（暂用原商人摊 Graphics）
+
+## 高清/2K 画质所需 2x 素材（feat/hd-resolution，按优先级）
+现状（public/assets 源文件）：注意构建脚本 compress-assets 会把非立绘缩到 ≤1280 宽、立绘缩到 ≤640，**即使源图更大，dist 里也只有 1x**；要 2K 真正清晰，需先放宽该限制（会增大包体，手机流量需权衡）。
+1. 图标类（显示约 40–64 逻辑 px，2K 下需 128px）：items 39 张、skills 39 张、potions 20 张，现均 64×64；portraits 中 13 张 64×64 小怪头像 → 需 128×128。
+2. 战斗/地图背景：bg_floor1–5、ui/bg_dungeon、map/map_world 现 1280×720 → 需 2560×1440（bg_floor6–8、town 背景已是 1920×1080，可补到 2560）。
+3. 世界地图节点 map_node_* 128×72 → 256×144。
+4. UI 九宫格/边框（ui/UI-*：48–256px）→ 2x 版本；set_badge 48 → 96。
+5. 角色/NPC 立绘（600–960px 源图，构建缩到 640）：放宽构建上限即可，暂不需重画。
+文字与 Graphics（血条、面板底、按钮框）为矢量/运行时栅格化，已按倍率清晰，无需素材。

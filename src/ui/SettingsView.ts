@@ -29,11 +29,11 @@ export function renderSettingsView(s: Phaser.Scene, R: Phaser.GameObjects.Contai
   R.add([...button(s, 740, top + 118, 160, 36, `低特效：${Settings.lowFx ? '开' : '关'}`, () => { Settings.lowFx = !Settings.lowFx; FxQuality.low = !!Settings.lowFx; Settings.save(); o.rerender(); }, 15)]);
   if (IS_MOBILE) {
     const on = Settings.wantPad(true);
-    R.add([...button(s, 400, top + 162, 200, 36, `虚拟按键：${on ? '开' : '关'}`, () => {
+    R.add([...button(s, 468, top + 162, 150, 36, `虚拟按键：${on ? '开' : '关'}`, () => {
       Settings.showPadMobile = !Settings.wantPad(true); Settings.save(); o.rerender();
     }, 15)]);
   } else {
-    R.add(txt(s, 400, top + 162, '虚拟按键：电脑默认关', 13, '#888').setOrigin(0.5));
+    R.add(txt(s, 468, top + 162, '虚拟按键：电脑默认关', 12, '#888').setOrigin(0.5));
   }
   R.add([...button(s, 640, top + 210, 280, 38, `自动攻击：${Settings.autoAttack ? '开' : '关'}`, () => {
     Settings.autoAttack = !Settings.autoAttack; Settings.save(); o.rerender();
@@ -63,10 +63,10 @@ export function renderSettingsView(s: Phaser.Scene, R: Phaser.GameObjects.Contai
   const fw = o.footer.reduce((a, f) => a + f.w + 40, -40); let fx = 640 - fw / 2;
   for (const f of o.footer) { R.add([...button(s, fx + f.w / 2, top + 460, f.w, 40, f.label, f.fn, 16)]); fx += f.w + 40; }
   // 画质/分辨率：只改渲染像素，布局不变；切换后重载生效
-  R.add(txt(s, 555, top + 162, `画质 ${RES_OPTIONS.find(r => r.k === Render.k)?.label ?? ''}`, 14, '#ffe0a0').setOrigin(0.5));
+  R.add(txt(s, 586, top + 162, `画质 ${RES_OPTIONS.find(r => r.k === Render.k)?.label ?? ''}`, 14, '#ffe0a0').setOrigin(0.5));
   (['auto', '720', '1080', '1440'] as ResId[]).forEach((id, i) => {
     const on = Settings.res === id, lab = id === 'auto' ? '自动' : RES_OPTIONS.find(r => r.id === id)!.label;
-    R.add([...button(s, 650 + i * 86, top + 162, 80, 32, `${on ? '●' : ''}${lab}`, () => { if (Settings.res === id) return; Settings.res = id; Settings.save(); location.reload(); }, 13)]);
+    R.add([...button(s, 658 + i * 66, top + 162, 60, 30, `${on ? '●' : ''}${lab}`, () => { if (Settings.res === id) return; Settings.res = id; Settings.save(); location.reload(); }, 13)]);
   });
   refresh();
 }
