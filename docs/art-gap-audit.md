@@ -270,3 +270,17 @@
 | M4 | hawk_guard | 鹰卫 | `public/assets/portraits/hawk_guard_full.png` | 694×960 | 参考原作：预留 |
 | M4 | twinhead_kong | 双头金刚 | `public/assets/portraits/twinhead_kong_full.png` | 780×960 | 推测：预留；仅文字描述 |
 | M4 | twinhead_blood | 双头血魔 | `public/assets/portraits/twinhead_blood_full.png` | 685×960 | 推测：预留；首版生成成三头已重绘 |
+| E3 | helmet | 青铜头盔 | `public/assets/items/eq_helmet.png`（+@2x） | 64×64 | 参考原作：图集 e2a |
+| E3 | bone_helm | 骷髅头盔 | `public/assets/items/eq_bone_helm.png`（+@2x） | 64×64 | 参考原作：图集 e2a；颜色偏粉，存疑 |
+| E3 | cloth | 布衣 | `public/assets/items/eq_cloth.png`（+@2x） | 64×64 | 参考原作 |
+| E3 | armor | 重盔甲 | `public/assets/items/eq_armor.png`（+@2x） | 64×64 | 参考原作 |
+| E3 | pearl | 珍珠 | `public/assets/items/eq_pearl.png`（+@2x） | 64×64 | 推测 |
+| E3 | iron_ring | 铁戒指 | `public/assets/items/eq_iron_ring.png`（+@2x） | 64×64 | 推测 |
+| E3 | gold_ring | 金戒指 | `public/assets/items/eq_gold_ring.png`（+@2x） | 64×64 | 参考原作 |
+| E3 | bracelet | 手镯 | `public/assets/items/eq_bracelet.png`（+@2x） | 64×64 | 推测：与铁戒指形近，存疑 |
+| E3 | light_armor | 轻型盔甲 | `public/assets/items/eq_light_armor.png`（+@2x） | 64×64 | 参考原作 |
+| E3 | soul_robe | 灵魂战衣 | `public/assets/items/eq_soul_robe.png`（+@2x） | 64×64 | 参考原作 |
+| E3 | magic_robe | 魔法长袍 | `public/assets/items/eq_magic_robe.png`（+@2x） | 64×64 | 参考原作 |
+| E3 | tao_helm | 道士头盔 | `public/assets/items/eq_tao_helm.png`（+@2x） | 64×64 | 改编：斗笠造型 |
+| E3 | magic_helm | 魔法头盔 | `public/assets/items/eq_magic_helm.png`（+@2x） | 64×64 | 参考原作 |
+| E3 | medium_armor | 中型盔甲 | `public/assets/items/eq_medium_armor.png`（+@2x） | 64×64 | 参考原作 |
