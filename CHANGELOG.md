@@ -51,6 +51,7 @@
 - 旧档：等级/经验保留，经验夹到本级所需−1，不掉级不报错。
 - 测试：等级差衰减、锚点、官方经验、首清不跨级、任务封顶、旧档夹取；模拟按文档目标断言，未达标项打印 GAP（见报告）。scripts/sim-bands.ts 分段统计。
 
+
 ## 传世后续（fix/chuanshi-followup）
 - 金甲骷髅按官方一次召唤 2 只：同时上限 2，再召唤补足/替换最旧；单只下调为骷髅 HP×1.1 攻×0.85 防×1.5（合计≈旧单只 1.1 倍，见 docs/skills-official.md）；自动施法：2 只健康时不重放。
 - 手机 HUD 技能弧翻页：主动技能 >10 时出现「翻页 n/m」键，每页内 4 外 6，所有已学技能（含传世、F12 之后）均可点击施放；e2e tests/e2e/mobile-skills-verify.mjs。
@@ -63,6 +64,72 @@
 - e2e 修正：mobile-skills-verify 诱惑之光目标改非免疫怪（骷髅在免疫表内）；chuanshi-verify 适配传世页取消（>25 级书模拟 BOSS 掉落入包后学习）并输出 ok/FAIL 判定。
 - R54 技能数字整数显示（仅显示，不改计算）：统一 src/ui/fmt.ts（fmtInt/fmtText，四舍五入）。
 
+## feat/balance-sys：21–30 死亡压力 + 掉落逐层测试
+- 怪物侧：目标 21–30 级层普通怪攻 ×1.15；尸王殿普通怪攻 ×0.85、尸王攻 ×0.7 血 ×0.8；蛛网晶洞一只蜘蛛换蝙蝠。三职业 9 种子均 Lv50 通关，战士 20–29 段 5/9 种子有死亡（原 0/9）。数据见 docs/exp-curve.md。
+- 新增 tests/drop-plan.test.ts：0–82 层逐怪校验装备需求封顶、docs/drop-plan.md 一致性。
+- GAP：品质 12%/2% 未落地；食人花未放第 3 层；法师/战士时长比 0.62。
+
+## 地图总览与位置条（feat/balance-sys）
+- 点右上角层名弹「当前地图总览」：地图名、主线第 N/39、多层洞穴第 N/总层（地图组数据）、推荐等级、BOSS/精英/怪物、左右端出口名（与 backGate/nextFloorOf 一致，侧线显示回城，最后一层「已到尽头」）。
+- 新位置条：整层宽、主角、BOSS、两端；≤1 屏高亮并提示「前方：下一张地图 X」/「后方出口：回 X」。
+- 手机/桌面不与 HUD 重叠（e2e 重叠检查）；单测 tests/map-overview.test.ts（18 项）；docs/map-overview.md、docs/mobile-ui.md。
+## 装备对比改版：左右并排（feat/balance-sys）
+- 左=身上同部位、右=查看中；属性并集逐行对齐，缺项 0/「—」；差值涨绿降红，需要等级按「越低越好」反向；空部位右侧全绿。
+- 戒指/手镯只列较弱一件（新 `cmpScore`），另一件注明；穿戴时同样替换较弱一件。
+- 手机 844×390 字≥12px 不溢出；桌面 1280×720。单测 tests/equip-compare.test.ts（重写，14 项）；截图 equip-cmp-*.png。详见 docs/equip-compare.md。
+
+
+## feat/balance-sys 技能书 extraDrops 钩子
+- drop-plan.ts 新增空表 `BOSS_EXTRA_DROPS` + `applyExtraDrops`（只认 BOSS、已存在物品，几率夹 0–1，不重复）；数据归战斗开发，不断言具体技能书。tests/extra-drops.test.ts。
+
+## feat/balance-sys 9:27 新手怪
+- 注：第 1 层（兽人要塞）放雪人/食人花后，battle 模拟出现个别种子未通关（法师 1 种子、战士种子 11 卡 29 级），故第 1 层暂保持原布局；食人花数值已入表但未投放，待决定。
+- 新增鸡/稻草人/多钩猫/钉耙猫/森林雪人/食人花，各用专属立绘（*_full.png）。官方 21cq 1.76 值写入 NOVICE_OFFICIAL / OFFICIAL_MON_EXP，折算 NOVICE_SCALE [适配]；羊未查到不加。
+- 第 0 层：鸡/稻草人/双猫进前中段，森林雪人 ×2 做层尾守关（新 `Spawn.tail`，缩放不复制，计入目标总量）；第 0 层 15 只（旧 13），每屏 ≤6。第 1 层暂保持原布局（投放雪人/食人花会让 battle 模拟个别种子未通关，待决定）。新手怪掉落 [适配]：布衣/木剑/铁靴进第 0 层。
+- 第 0 层蝙蝠移出；首章入口不跳级（测试：任意新手怪单杀 < 当前级经验 1/3）。
+- docs/monsters-official.md 新手怪折算前后表（gen:monsters）、docs/floor-scale.md 更新；tests/novice-monsters.test.ts。
+
+## 城内 NPC 长列表可滚动（传送员 / 比奇老兵等）
+- 传送员、老兵的传送列表原来只显示前 8 个且超出面板；现在列出全部已到达楼层（最多 83 项），每列可视 7 行，超出即可滚动：手机触摸拖动、电脑滚轮/拖动。
+- 只画可视窗口内的行（隐藏行不存在，不会被误点）；可滚动列的按钮改为抬起触发，拖动超过 8px 不算点击；右侧滚动条 + 「▲ 上面还有 N 项 / ▼ 下面还有 N 项」提示。
+- 通用于 NPC 面板所有列（右侧环式任务/英雄列、书店、铁匠鉴定列等超过 7 行时同样滚动）。纯计算在 src/ui/scrollList.ts。
+- 技能页电脑端底部说明文字上移 8px（原来压到面板边框外 6px）。
+- 检查：背包、商店、技能、悬赏/成就、世界地图在 844×390 / 932×430 / 1280×720 内容都没超出面板框（技能页手机端本来就分页，世界地图本来可拖动/缩放）。
+- 测试：tests/scroll-list.test.ts（单元）；tests/e2e/scroll-panels.py（e2e，需先 build 并起服务）；截图 shared-mobile/shots/scroll-*.png。
+
+## 任务B：每层左端「返回上一层」传送门（feat/balance-sys）
+- 去掉「回比奇城 [S]」红顶小房子和女头像，每层最左端换成传送门（public/assets/portal_exit_sheet.png 4 帧 8fps 循环，静态图 portal_exit.png 兜底，再缺就程序绘制）。
+- 去向 `World.backGate()`：上一层（prevFloorOf）；第 1 层 / 区域首层 → 城镇（新手为小村）。文案「传送门：返回 XXX」，电脑端加 [S]；手机大按钮显示「上一层」/「回村」「回城」。
+- assets-manifest 新增 SHEETS（portal_exit_sheet 256×384），loader 用 spritesheet 载入。
+- 阶段4 补：普通怪原来的油/铁两次 lootRng 抽签位保留（弃用），BOSS 的油用原黑铁抽签位判定，避免掉落随机序列漂移把难度基线带偏（不改任何测试目标）。
+- 测试：tests/back-portal.test.ts（门类型、目标、文案，manifest 两个 key 和文件）；battle.test 丢弃/出售用例补两件夹具。
+- m4-monsters「再次进入重新刷新」：首领有刷新冷却（bossCdUntil），改为先断言小怪全刷、清冷却后整层全刷（7f5d285 合并 main 后即失败，非本次引入）。
+
+## 祝福油只由高级 BOSS 掉 / 黑铁矿只能挖矿（feat/balance-sys 阶段4 追加）
+- 祝福油：取消「BOSS 必掉」与 oilChance 小怪掉落；只在 OIL_BOSSES（祖玛教主、牛魔王、虹魔教主、赤月恶魔、黄泉教主、双头金刚、双头血魔；1.76 掉油名单 ∩ L≥28 BOSS）按 1/8 [适配] 掉；杂货铺停售（代码保留 SELL_OIL_IRON 开关）。
+- 黑铁矿石：怪物不再掉（原 BOSS 必掉/小怪 5%），铁匠停售；新增最简挖矿 src/data/mining.ts：矿层 28–34 层（比奇矿区五层 + 山谷矿区两层，附官方链接），矿点在层宽 45%，W/空格 或手机大键「挖矿」读条 4s，移动/受伤/施法/死亡打断，产出纯度 1–2（31 层后 1–3），矿脉 300s 刷新，存档 mineCd（旧档兼容）。矿点图代码绘制，见 docs/art-requests.md F。
+- 测试 tests/oil-mine.test.ts（进 npm test）；battle.test 中商店买油/买铁、BOSS 掉铁用例按新规则改为「停售/不掉」；赤月套用例角色等级 25→35（阶段3 赤月套需求 35）。docs/drop-plan.md 增「祝福油 / 黑铁矿」旧→新表。
+
+## 立绘去复用 / 异界裂隙背景（feat/balance-sys art-wire）
+- hj_guard、wolong_guard、fire_dragon_guard、leiyan_spider、cave_skel_warrior、cave_skel_general、axe_skeleton、cave_bat、cave_maggot 改用各自 `<id>_full.png`（main 重画·第1–8组）；其余 10 个已指向自身。
+- 新测试 tests/art-unique.test.ts（进 npm test）：全部怪物立绘文件存在、不同单位不共用（显式允许名单附原因）、56–79 层出怪用自身立绘、bg_floor57–80 → 第 57–80 层且文件存在。
+- 允许共用（缺图）：boss_hj_home↔boss_molong（有意共用），boss_wolong→boss_orc_chief、boss_leiyan/boss_fire_dragon→boss_redmoon（未交付）。
+
+## BOSS 刷新 / 回城卷轴 / 装备需求 / 掉落计划（feat/balance-sys 任务 B、C、阶段 3、4）
+- 任务B：BOSS 击杀后本层 600s（游戏时间，离线不走）内重进不刷 BOSS，小怪照常全刷，出口照开；冷却写入存档 bossCd，旧档视为无冷却。
+- 任务C：回城卷轴读条 3s [适配]（官方瞬发），移动/受伤/主动施法/死亡打断且不消耗；H 键 / 手机顶栏「回城」/ 背包点击均可用；新角色送 3 张 [适配]，旧档不补发；杂货商有售。
+- 阶段3：屠龙需求 15→34（官方）；自创沃玛/祖玛/赤月套需求 14/18/22 → 24/30/35（= TIER_REQ）[适配]。魔杖/银蛇（官方 26）、重盔甲/金戒指（官方 22）暂保留原值 [待决定]（模拟回归，见报告）。旧档已有实例不追溯。
+- 阶段4：src/data/drop-plan.ts 覆盖层——武器按最低出现层 +8、其它装备 +14、普通怪 +6 封顶（万年树妖不再掉龙纹/裁决/无极/井中月、骷髅精灵不掉破魂）；移除条目下移到尸王（几率 ≤1/4）；圣战/法神/祖玛套/赤月套/铁戒指/中型盔甲补源；合击版 4 层 + 魔龙血域 BOSS 补本段装备。docs/drop-plan.md（npm run gen:drops，测试校验一致）。
+- 8:37 校准：蛛网晶洞 3 只一包拆为 2+1；尝试 21–30 段怪物攻击 ×1.0/31+ ×0.92 后法师死亡中位翻倍，已回退。
+- 测试：tests/balance-sys.test.ts 新增任务 B/C/阶段 3/4 断言；tests/sim-band.ts 每 10 级段死亡/击杀/耗时报告。
+
+## 层长 + 怪量（feat/balance-sys 任务 A）
+- 每层宽度改为可配置（Floor.widthScreens）：第一张图 5 屏、普通层 6–8 屏、洞穴/深层 8–10 屏，BOSS 房仍在最右端。出口、相机、背景、小地图都按当前层宽。
+- 普通怪 ×1.8–2.5，按包均匀铺开，入口 800px 内不放怪，每屏最多 6 只。BOSS 数量不变。
+- 离屏怪休眠。新增压力测试（单层 120 只怪）。
+- 沃玛寺庙的门和分段按层宽等比缩放；保底号角改为门前小怪清完就给（修复 sim 卡在 38 级）。
+- sim：SIM_MAX_T 放宽到 ×6（保护上限，不是验收指标）；同层连死 5 次回上一层练 1 级（玩家行为模拟）。三职业 9 seed 都在 50 级通关。
+- 文档：docs/floor-scale.md。
 ## 传世技能（feat/chuanshi-skills）
 - 新增传世 16 技能（战士 雷霆剑/破击剑法/破盾斩/金刚护体/突斩；法师 冰箭术/冰龙破/玄冰刃/五雷轰/冰旋风；道士 赶尸/替身法符/灵魂墙/道心清明/神光术/解毒术）+ 金甲骷髅。学习等级取 DB 官方表，耗魔 DB×3，未查到项标 [适配]，详见 docs/skills-official.md。
 - 书店新增「传世秘籍」页签（书店 NPC 第二栏），不进掉落池；旧存档不自动学会。
@@ -107,6 +174,19 @@
 - 文档：docs/mobile-ui.md（桌面功能 → 手机入口对照表）。
 - 测试：tests/e2e/mobile-ui-verify.mjs（四种横屏 + 面板 + 竖屏 + 桌面与 main 对比）。tests/e2e/lib.mjs 的 startPreview 新增可选 root 参数。
 
+
+## sq-mir3 美术接入（feat/balance-sys）
+
+- 63 个传世/传奇3 怪物与 BOSS 立绘（art/maps-sq-mir3 第1–7批）接入：`assets-manifest.ts` 增加同名 key，`units.ts` 中 SQMIR3 怪 art 改为自身 id（原占位贴图列保留作记录）。
+- 第8批 10 张合层背景按交付表接入 bg_floor57–80（57–58、60–61、62–66、69–73、74–75、76–79 共图）。
+- 测试：tests/balance-sys.test.ts（立绘文件存在、背景映射）。
+
+## 平衡系统 阶段1+2（feat/balance-sys）
+- 经验：怪物经验改为 21cq 官方值 ÷10（src/data/monsterExp.ts，55 只匹配，余者对数回归拟合，标 未查到[适配]）；层倍率按 plan-60h 段时长反推每级击杀数；叠加等级差衰减 高3/6/10 级 ×0.7/0.4/0.1；任务/环经验封顶 0.3×本层所需。升级表不变。
+- 主线锚点 1→50（src/data/balance.ts MAIN_ANCHORS），支线取官方怪等级最近的主线锚点。
+- 怪物面板按层目标等级公式生成（atk=0.6·DEF+k·HP，HP=PW×T，含模拟校准 [适配]），新手图豁免；BOSS 显示 L_f+5、面板按 L_f+2。
+- 旧档：等级/经验保留，经验夹到本级所需−1，不掉级不报错。
+- 测试：等级差衰减、锚点、官方经验、首清不跨级、任务封顶、旧档夹取；模拟按文档目标断言，未达标项打印 GAP（见报告）。scripts/sim-bands.ts 分段统计。
 ## 合击持续特效（feat/hj-fx-loop）
 - 噬魂沼泽：起手段播完后，fx_combo_shihun 帧 8–11 往返循环作毒沼尾段，跟随主目标（主目标死后跟随仍中毒的目标），中毒 10s 结束 / 中毒目标全死即销毁。
 - 末日审判：fx_combo_mori 帧 8–11 法阵循环跟随目标，持续掉血 8s 结束或目标死亡即销毁。

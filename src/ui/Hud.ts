@@ -3,6 +3,7 @@ import Phaser from 'phaser';
 import { POTIONS, SkillDef } from '../data/skills';
 import { FX, FONT } from '../data/fx';
 import { MENU_LABELS } from '../assets-manifest';
+import type { Overview, PosBar } from '../data/mapOverview';
 
 const txt = (s: Phaser.Scene, x: number, y: number, t: string, size: number, color = '#fff', extra: Phaser.Types.GameObjects.Text.TextStyle = {}) =>
   s.add.text(x, y, t, { fontFamily: FONT, fontSize: size + 'px', color, stroke: '#000', strokeThickness: 3, ...extra });
@@ -54,6 +55,31 @@ export class Hud {
     });
     if (this.mobile) this.dotObjs.forEach(o => (o as any).setVisible?.(false));
   }
+  onOverview?: () => void; posG?: Phaser.GameObjects.Graphics; posT?: Phaser.GameObjects.Text; ovw?: Phaser.GameObjects.Container;
+  /** 位置条（桌面）：x 1000–1260、y 106–116；null = 城内/自定义层隐藏 */
+  setPos(p: PosBar | null) {
+    const g = this.posG; if (!g || !this.posT) return; g.clear(); this.posT.setText(p?.hint ?? '');
+    if (!p) return; const x0 = 1000, x1 = 1260, y = 111, X = (r: number) => x0 + (x1 - x0) * r;
+    g.fillStyle(0x000000, 0.6).fillRect(x0 - 4, y - 9, x1 - x0 + 8, 18).lineStyle(1, 0x8a7040).strokeRect(x0 - 4, y - 9, x1 - x0 + 8, 18);
+    g.fillStyle(0x6a5a40, 1).fillRect(x0, y - 2, x1 - x0, 4);
+    const end = (x: number, on: boolean, c: number) => { g.fillStyle(on ? 0xffe040 : c, 1).fillRect(x - 3, y - 7, 6, 14); if (on) g.lineStyle(2, 0xffe040).strokeRect(x - 6, y - 9, 12, 18); };
+    end(x0, p.near === 'left', 0x5aa8ff); end(x1, p.near === 'right', 0x7aff7a);
+    p.boss.forEach(b => g.fillStyle(0xff3030, 1).fillTriangle(X(b) - 5, y - 8, X(b) + 5, y - 8, X(b), y));
+    g.fillStyle(0xffffff, 1).fillCircle(X(p.hero), y, 5).lineStyle(2, 0x000000).strokeCircle(X(p.hero), y, 5);
+  }
+  /** 当前地图总览面板（桌面）：再点牌匾或 ✕ 关闭 */
+  toggleOverview(o: Overview | null) {
+    if (this.ovw || !o) { this.ovw?.destroy(true); this.ovw = undefined; return; }
+    const s = this.s, rows: [string, string][] = [[o.main, '#fff'], [o.layer, '#fff'], [`推荐等级：Lv${o.recLevel}`, '#ffd24a'],
+      [`BOSS：${o.bosses.join('、') || '无'}`, '#ff8a8a'], [`精英：${o.elites.join('、') || '无'}`, '#ffb040'], [`怪物：${o.monsters.join('、') || '无'}`, '#ccc'], [o.left, '#9fd'], [o.right, '#9fd']];
+    const W = 600, lh = 30, H = 70 + rows.length * lh + 16, c = this.ovw = s.add.container(640 - W / 2, 120).setDepth(250).setName('mapOverview');
+    c.add(s.add.rectangle(0, 0, W, H, 0x05060c, 0.96).setOrigin(0).setStrokeStyle(2, 0xd4a64a).setInteractive());
+    c.add(txt(s, W / 2, 16, `当前地图：${o.name}`, 22, '#ffe8a0', { fontStyle: 'bold' }).setOrigin(0.5, 0));
+    const close = s.add.rectangle(W - 30, 28, 48, 48, 0x2a1d10).setStrokeStyle(2, 0xb8893a).setInteractive({ useHandCursor: true }).setName('ovwClose');
+    close.on('pointerdown', (_p: any, _x: any, _y: any, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); this.toggleOverview(null); });
+    c.add([close, txt(s, W - 30, 28, '✕', 22, '#ffe8a0').setOrigin(0.5)]);
+    rows.forEach(([t, col], k) => c.add(txt(s, 20, 66 + k * lh, t, 16, col, { strokeThickness: 2, wordWrap: { width: W - 40 } } as any)));
+  }
   static SK = 60; gold = 0;
   /** 手机：Phaser 版 HUD 全部隐藏，由 DOM 版 MobileHud 显示（读 lines/dead/floorName） */
   mobile = false; floorName = ''; dead: boolean[] = [];
@@ -64,6 +90,10 @@ export class Hud {
     s.add.rectangle(1130, 36, 258, 34).setStrokeStyle(1, 0xffe8a0, 0.6).setDepth(20);
     this.plaque = txt(s, 1130, 36, levelName, 22, '#ffe8a0', { fontStyle: 'bold' }).setOrigin(0.5).setDepth(21);
     this.setFloor(levelName, waveIcons);
+    // 地图总览：点击牌匾（层名）开关；位置条在牌匾/怪物图标下方（docs/map-overview.md）
+    if (!mobile) s.add.rectangle(1130, 36, 270, 46, 0, 0.001).setDepth(23).setName('plaqueHit').setInteractive({ useHandCursor: true })
+      .on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); this.onOverview?.(); });
+    if (!mobile) { this.posG = s.add.graphics().setDepth(22).setName('posBar'); this.posT = txt(s, 1262, 128, '', 13, '#ffe8a0', { strokeThickness: 3 }).setOrigin(1, 0).setDepth(22).setName('posHint'); }
     if (!mobile) txt(s, 640, 574, '移动 A/D ←→ 按住走  纵深 ↑↓  W/空格 传送门  S 回上层  技能 F1-F12(更多点击)  药水 1-4  背包 B/C  悬赏 Q  商人 T  地图 M  设置 Esc  静音 N', 13, '#cccccc', { strokeThickness: 2 }).setOrigin(0.5).setDepth(30);
     // 底部栏
     // Diablo 式紧凑底栏：红球 | 技能+药水 | 蓝球，中间上方经验条

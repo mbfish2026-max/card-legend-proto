@@ -4,9 +4,9 @@ import * as EXPC from '../src/data/expCurve';
 import * as B from '../src/data/balance';
 import { OFFICIAL_MON_EXP } from '../src/data/monsterExp';
 import { returnTownOf } from '../src/data/towns';
-import { World, SaveData, OIL_PRICE, IRON_PRICE, OFFICIAL, mitigate, taoBuffValue, taoBuffDur, SKELETON_OFFICIAL, SUMMON_NAME_COLORS, SUMMON_MAX_LV, SUMMON_LV_KILLS } from '../src/combat/World';
+import { World, SaveData, OIL_PRICE, IRON_PRICE, OFFICIAL, mitigate, taoBuffValue, taoBuffDur, SKELETON_OFFICIAL, SUMMON_NAME_COLORS, SUMMON_MAX_LV, SUMMON_LV_KILLS, BOSS_RESPAWN } from '../src/combat/World';
 import { ITEMS, SETS, ENHANCE_MAX, enhanceChance, shatterChance } from '../src/data/items';
-import { WORLD, CARD, Floor, FLOORS, FLOOR_ORDER, SIDE_FLOORS, nextFloorOf, floorNo, DEPTH_STEP, prevLayerOf, groupOf } from '../src/data/world';
+import { WORLD, CARD, Floor, FLOORS, FLOOR_ORDER, SIDE_FLOORS, nextFloorOf, floorNo, DEPTH_STEP, prevLayerOf, groupOf, floorWidth } from '../src/data/world';
 import { comboFor } from '../src/data/companion';
 import { CLASSES, ClassId, CAST_GAP, COOLDOWN_BEFORE, REBALANCE, MANA_BEFORE, SKILL_CD, CD_BEFORE_LIGHT, PLAN_G, PLAN_G_BEFORE, castGapOf } from '../src/data/classes';
 import { ENEMIES, DIFF } from '../src/data/units';
@@ -65,7 +65,7 @@ const free = (w: World) => w.skills.map(() => 0);
   run(w, 20); ok(z.ai === 'idle' && z.x === 3500, '回到原位');
 }
 { // 脱战规则：距离阈值、保留血量、缓慢回血、BOSS 一致、不卡死
-  ok(WORLD.leashRange === 6 * CARD && WORLD.leashRange * 1.5 < WORLD.mapWidth, '脱战距离 6 卡宽（用户反馈 10 卡宽太长跑不掉），离家上限 < 地图宽');
+  ok(WORLD.leashRange === 6 * CARD && WORLD.leashRange * 1.5 < Math.min(...FLOORS.map(f => floorWidth(f))), '脱战距离 6 卡宽（用户反馈 10 卡宽太长跑不掉），离家上限 < 地图宽');
   for (const id of ['zombie', 'boss_woma']) {
     const w = mk([{ id, x: 3000 }]); const h = w.hero!, z = w.alive('enemy')[0]; h.hp = h.maxHp = 1e9;
     z.ai = 'chase'; h.x = z.x - WORLD.leashRange + 20; w.step(0.05); ok(z.ai === 'chase', `${id} 阈值内不脱战`);
@@ -171,8 +171,8 @@ const free = (w: World) => w.skills.map(() => 0);
   // R13：尸王资料掉落不含必掉屠龙，本用例临时注入一条 1/1 屠龙以测试拾取/装备流程
   const L0 = ENEMIES.boss_lich.drops; ENEMIES.boss_lich.drops = [...(L0 ?? []), { item: 'dragon_sword', chance: 1 }];
   const w = mk([{ id: 'boss_lich', x: 2000 }, { id: 'wolf', x: 3500 }], [], 'warrior', 30); const h = w.hero!, b = w.alive('enemy')[0];
-  w.kill(b); ENEMIES.boss_lich.drops = L0; ok(w.ground.length >= 6 && w.ground.some(g => g.item === 'dragon_sword'), 'Boss 掉落多件（含注入的屠龙刀）');
-  run(w, 3); ok(w.ground.length >= 6, '离得远不会自动拾取');
+  w.kill(b); ENEMIES.boss_lich.drops = L0; ok(w.ground.length >= 4 && w.ground.some(g => g.item === 'dragon_sword'), 'Boss 掉落多件（含注入的屠龙刀）'); // 阶段4：尸王不再必掉祝福油+黑铁，6→4
+  const n0 = w.ground.length; run(w, 3); ok(w.ground.length === n0, '离得远不会自动拾取');
   const g = w.ground[0]; h.x = g.x; h.y = g.y; w.time = g.landAt - 0.2; w.step(0.01); ok(w.ground.includes(g), '落地前不可拾取');
   w.step(0.3); ok(!w.ground.includes(g), '落地后靠近自动拾取');
   const pot0 = w.pots[1], allHp = w.ground.filter(x => x.item === 'hp_mid').length + (g.item === 'hp_mid' ? 1 : 0);
@@ -184,6 +184,7 @@ const free = (w: World) => w.skills.map(() => 0);
   ok(w.equipItem(si) === null && w.equip.weapon === sw && h.atk === atk0 + (sw.stats.atk ?? 0), `装备屠龙刀攻击 +${sw.stats.atk}`);
   ok(w.unequip('weapon') === null && h.atk === atk0 && w.bag.includes(sw), '卸下回到背包，属性还原');
   const low = mk([], [], 'warrior', 1); low.bag.push(low.makeItem('dragon_sword')); ok(low.equipItem(0)?.includes('需要等级') === true, '等级不足不能装备');
+  w.bag.push(w.makeItem('bone'), w.makeItem('bone')); // 阶段4：BOSS 不再必掉油/铁，补两件供丢弃/出售用例
   const n = w.bag.length; w.dropItem(0); ok(w.bag.length === n - 1, '丢弃物品');
   const g0 = w.gold, price = w.bag[0].price; w.sellItem(0); ok(w.gold === g0 + price, '出售给商人得金币');
   w.gold = 100; const p0 = w.pots[0]; ok(w.buyPotion(0) === null && w.pots[0] === p0 + 1 && w.gold === 100 - POTIONS[0].price, '购买药水');
@@ -379,6 +380,7 @@ const free = (w: World) => w.skills.map(() => 0);
   for (const c of ['warrior', 'mage', 'taoist'] as ClassId[]) {
     const rs = SEEDS.map(sd => simRun(c, sd)); const ds = rs.map(r => r.deaths); const med = median(ds); tm[c] = median(rs.map(r => r.t));
     const perFloor = Math.max(0, ...rs.map(r => { const m: Record<number, number> = {}; for (const d of r.deathAt) m[d.floor] = (m[d.floor] ?? 0) + 1; return Math.max(0, ...Object.values(m)); }));
+    if (process.env.LEARNLOG) rs.forEach((r, k) => console.log(`   学书 ${CLASSES[c].name} 种子${SEEDS[k]}: ${r.learnLog.filter(x => !x.includes('死@')).join(' ')}`));
     console.log(`  ${CLASSES[c].name}: 种子 ${SEEDS.join('/')} 死亡 ${ds.join('/')} 中位数 ${med} 等级 ${rs.map(r => r.level).join('/')} 单层最多 ${perFloor}`);
     if (process.env.LEARNLOG) rs.forEach((r, k) => console.log(`   学书 ${CLASSES[c].name} 种子${SEEDS[k]}: ${r.learnLog.filter(x => !x.includes('死@')).join(' ')}`));
     if (process.env.SIM) continue;
@@ -658,12 +660,12 @@ const free = (w: World) => w.skills.map(() => 0);
   wear('set_woma_bracelet'); const s3 = w.stats(); ok(w.setBonuses().length === 2 && s3.def === base.def + 10 + 5 + 5, `沃玛 3 件：防御+5 激活（def ${s3.def}）`);
   ok(w.hero!.maxHp === s3.hp, '套装加成同步到主角属性');
   w.unequip('bracelet1'); ok(w.setBonuses().length === 1 && w.stats().def === base.def + 10, '卸下 1 件：3 件加成失效');
-  const c = mk([], [], 'mage', 25); for (const id of SETS.chiyue.pieces) { c.bag.push(c.makeItem(id)); c.equipItem(c.bag.length - 1); }
+  const c = mk([], [], 'mage', 35); for (const id of SETS.chiyue.pieces) { /* balance-sys 阶段3：赤月套需求 35 */ c.bag.push(c.makeItem(id)); c.equipItem(c.bag.length - 1); }
   ok(c.luck() === 1, '赤月 3 件：幸运+1');
   ok(Object.values(SETS).every(st => st.pieces.every(id => ENEMIES && (id.startsWith('set_') || /^(shengzhan|fashen|tianzun)_/.test(id)))), '套装物品 ID 规范');
   for (const [bid, sid] of [['boss_woma', 'woma'], ['boss_zuma', 'zuma'], ['boss_redmoon', 'shengzhan']] as const) {
     const t = mk([{ id: bid, x: 800 }]); t.kill(t.alive('enemy')[0]); const ids = t.ground.map(g => g.item);
-    ok(ids.includes('bless_oil') && ids.some(i => SETS[sid].pieces.includes(i)), `${ENEMIES[bid].name} 掉落祝福油 + ${SETS[sid].name}套装 1 件`);
+    ok(ids.some(i => SETS[sid].pieces.includes(i)), `${ENEMIES[bid].name} 掉落${SETS[sid].name}套装 1 件`); // 阶段4：祝福油改为高级 BOSS 1/8，见 balance-sys.test
   }
   { // R14 #13 赤月三职业套：按职业掉
     for (const [c, sid] of [['warrior', 'shengzhan'], ['mage', 'fashen'], ['taoist', 'tianzun']] as const) { const t = mk([{ id: 'boss_redmoon', x: 800 }], [], c, 40); t.kill(t.alive('enemy')[0]);
@@ -675,10 +677,13 @@ const free = (w: World) => w.skills.map(() => 0);
   { // R14 #14 沃玛寺庙多层 + 号角
     const fi = FLOORS.findIndex(f => f.name === '沃玛寺庙'); const w = new World(seeded(5), 30, FLOORS); w.loadFloor(fi); const h = w.hero!;
     ok(!!w.womaPending && !w.alive('enemy').some(u => u.id === 'boss_woma'), '教主之家未开：沃玛教主不刷');
-    h.x = 2400; w.step(0.05); ok(w.drainEvents().some(e => e.type === 'log' && /三层/.test(e.text)), '分层提示');
-    w.bag = w.bag.filter(x => x.item !== 'woma_horn'); h.x = 3000; w.step(0.05); ok(h.x < 2850 && !!w.womaPending, '无号角被挡在门外');
-    w.bag.push(w.makeItem('woma_horn')); h.x = 2900; w.step(0.05); ok(!w.womaPending && w.alive('enemy').some(u => u.id === 'boss_woma') && !w.bag.some(x => x.item === 'woma_horn'), '吹号角消耗 1 个，教主现身');
+    const D = w.womaDoorX; ok(Math.abs(D - 2850 * w.mapW / 3840) < 1, '教主之家门按层宽等比（任务 A）');
+    h.x = D * 2400 / 2850; w.step(0.05); ok(w.drainEvents().some(e => e.type === 'log' && /三层/.test(e.text)), '分层提示');
+    w.bag = w.bag.filter(x => x.item !== 'woma_horn'); h.x = D + 150; w.step(0.05); ok(h.x < D && !!w.womaPending, '无号角被挡在门外');
+    w.bag.push(w.makeItem('woma_horn')); h.x = D + 50; w.step(0.05); ok(!w.womaPending && w.alive('enemy').some(u => u.id === 'boss_woma') && !w.bag.some(x => x.item === 'woma_horn'), '吹号角消耗 1 个，教主现身');
     const w2 = new World(seeded(6), 30, FLOORS); w2.loadFloor(fi); for (const u of w2.alive('enemy')) w2.kill(u); w2.step(0.05); ok(w2.bag.some(x => x.item === 'woma_horn') && !w2.cleared, '清完小怪保底给号角且未判通关');
+    const w3 = new World(seeded(7), 30, FLOORS); w3.loadFloor(fi); w3.bag = w3.bag.filter(x => x.item !== 'woma_horn'); for (const u of w3.alive('enemy')) if (u.x < w3.womaDoorX) w3.kill(u); w3.step(0.05);
+    ok(w3.bag.some(x => x.item === 'woma_horn'), '门前小怪清完即保底给号角（门后的怪不再卡死，任务 A 层变长回归）');
   }
   { // R14 #17 环式任务 / 鉴定
     const w = mk([{ id: 'zombie', x: 3000 }], [], 'warrior', 19); ok(w.ringAccept()?.includes('20') === true, '环式任务 20 级开放');
@@ -692,8 +697,8 @@ const free = (w: World) => w.skills.map(() => 0);
   const b = mk([{ id: 'boss_woma', x: 800 }]); b.kill(b.alive('enemy')[0]);
   b.hero!.x = 800; for (let i = 0; i < 40; i++) b.step(0.05); ok(b.bag.some(x => SETS.woma.pieces.includes(x.item)), '套装可拾取进背包');
   const shop = mk([]); shop.gold = OIL_PRICE * 2;
-  ok(shop.buyOil() === null && shop.bag.some(x => x.item === 'bless_oil') && shop.gold === OIL_PRICE, `商店可买祝福油（${OIL_PRICE} 金）`);
-  ok(shop.buyOil() !== null && shop.gold === OIL_PRICE, '同层限购 1 瓶');
+  // 阶段4：祝福油只由高级 BOSS 掉 → 商店停售
+  ok(shop.buyOil() !== null && !shop.bag.some(x => x.item === 'bless_oil') && shop.gold === OIL_PRICE * 2, '商店不再出售祝福油');
 }
 
 
@@ -732,14 +737,13 @@ const free = (w: World) => w.skills.map(() => 0);
   ok(shatterChance(4) === 0 && shatterChance(5) > 0 && enhanceChance(0, 5) > enhanceChance(0, 1), '成功率/破碎概率公式');
   // 商店
   const shop = mk([]); shop.gold = IRON_PRICE * 6;
-  ok(shop.buyIron() === null && shop.bag[0].item === 'black_iron' && shop.bag[0].purity === 1, '商店可买黑铁');
-  for (let i = 0; i < 4; i++) shop.buyIron();
+  ok(shop.buyIron() !== null && shop.bag.length === 0 && shop.gold === IRON_PRICE * 6, '商店不再出售黑铁（阶段4：只能挖矿）');
+  for (let i = 0; i < 5; i++) shop.addIron(1);
   ok((shop.bag[0].qty ?? 1) === 5 && shop.bag.length === 1, '同纯度堆叠');
-  ok(shop.buyIron() !== null, '每层限购 5');
   // Boss 掉落黑铁
   const b = mk([{ id: 'boss_woma', x: 800 }]); b.kill(b.alive('enemy')[0]);
-  ok(b.ground.some(g => g.item === 'black_iron'), 'Boss 掉落黑铁矿石');
-  ok(b.ground.some(g => g.item === 'bless_oil'), 'Boss 仍掉祝福油');
+  ok(!b.ground.some(g => g.item === 'black_iron'), '阶段4：Boss 不掉黑铁矿石');
+  ok(!b.ground.some(g => g.item === 'bless_oil'), '阶段4：沃玛教主（L<28）不掉祝福油');
 }
 
 
@@ -1130,7 +1134,8 @@ console.log('# 诱惑之光');
   w.hero!.x = 3600; for (let t = 0; t < FARM_RESPAWN + 1; t += 0.05) w.step(0.05);
   ok(w.floorIndex === 0 && w.alive('enemy').filter(u => u.tier !== 'boss').length > 0, '清完仍可刷（小怪刷新，不强制进下一层）');
   ok(!w.alive('enemy').some(u => u.tier === 'boss'), 'BOSS 不随小怪刷新（重进地图才刷）');
-  w.loadFloor(0); ok(w.alive('enemy').some(u => u.tier === 'boss') && w.farmQueue.length === 0, '重进首图：BOSS 与小怪重置');
+  w.loadFloor(0); ok(!w.alive('enemy').some(u => u.tier === 'boss') && w.alive('enemy').length > 0 && w.farmQueue.length === 0, '重进首图（BOSS 600s 冷却内，任务B）：小怪重置、BOSS 不刷');
+  w.time += BOSS_RESPAWN; w.loadFloor(0); ok(w.alive('enemy').some(u => u.tier === 'boss') && w.farmQueue.length === 0, '重进首图（冷却结束）：BOSS 与小怪重置');
   const w2 = new World(seeded(5), 30, FLOORS, 'warrior'); w2.loadFloor(1); const k = w2.alive('enemy')[0]; w2.kill(k); ok(w2.farmQueue.length === 0, '其他层不刷新');
   const sv = w.toSave(); ok(new World(seeded(5), 1, FLOORS, 'warrior', sv).floorIndex === 0, '旧档兼容');
 }
@@ -1140,8 +1145,8 @@ console.log('# 诱惑之光');
   const old = w.toSave(); old.bag = Array.from({ length: 30 }, () => w.makeItem('bone'));
   const w2 = new World(seeded(9), 10, FLOORS, 'warrior', old); ok(w2.bag.length === 30 && w2.buyBook !== undefined, '旧档 30 格背包读入不变');
   w.bag = Array.from({ length: 199 }, () => w.makeItem('bone'));
-  ok(w.storage.length === 0 && w.buyOil() === null && w.bag.length === 200, '199 格时仍可购买');
-  ok(w.buyOil() !== null && w.bag.length === 200, '满 200 格不能再买');
+  ok(w.storage.length === 0 && w.addIron(1) && w.bag.length === 200, '199 格时仍可入包');
+  ok(!w.addIron(2) && w.bag.length === 200, '满 200 格不能再入包');
   w.ground.push(w.rollDrop('wood_sword', undefined, w.hero!.x, w.hero!.y)); w.ground[w.ground.length - 1].landAt = 0; w.step(0.05);
   ok(w.bag.length === 200 && w.ground.some(g => g.item === 'wood_sword') && w.drainEvents().some(e => e.type === 'log' && /满/.test((e as any).text)), '满包拾取提示且物品留在地上');
   ok(w.sellItem(0) > 0 && w.bag.length === 199, '满包可出售');

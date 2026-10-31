@@ -103,6 +103,7 @@ export const atkK = (L: number) => L <= 6 ? 0.04 : L <= 15 ? 0.06 : L <= 30 ? 0.
 /** [适配] 文档 T=4/5/6/7；7–30 级段模拟校准下调到 4.5/5（战士无群攻，同屏 2–3 怪时原值死亡过多） */
 export const hpT = (L: number) => L <= 6 ? 4 : L <= 15 ? 4.5 : L <= 30 ? 5 : 7;
 /** [适配] 本作同屏多怪同时出手（文档公式按单怪推），攻击按等级段 ×0.8/0.7/0.9/0.85（1–6/7–20/21–30/31+），模拟校准值 */
+/** 8:37 校准：试过 21–30 段 0.9→1.0、31+ 0.85→0.92，法师死亡中位 35→77、战士卡尸王殿，已回退；21–30 压力改由掉落节奏（drop-plan 越级封顶）提供 */
 export const FOE_ATK_SCALE_AT = (L: number) => L <= 6 ? 0.8 : L <= 20 ? 0.7 : L <= 30 ? 0.9 : 0.85;
 export const formulaStats = (L: number) => { const e = expectWarrior(L);
   return { atk: Math.round(FOE_ATK_SCALE_AT(L) * (0.6 * e.def + atkK(L) * e.hp)), hp: Math.round(e.pw * hpT(L)), def: Math.round(0.25 * e.pw * 0.6) }; };
@@ -114,8 +115,10 @@ const ratio = (v: number, avg: number) => Math.max(0.85, Math.min(1.15, avg > 0 
 export const foeStatsAt = (id: string, f: number): { level: number; hp: number; atk: number; def: number } | null => {
   const d = ENEMIES[id]; if (!d || EXEMPT_FLOORS.includes(f) || f < 0 || f >= FLOORS.length) return null;
   const level = monsterLevelAt(id, f), s = formulaStats(FLOOR_TARGET_LV[f] + (d.tier === 'boss' ? 2 : 0)); // [适配] 显示等级（经验衰减用）普通 L_f+0~3、BOSS L_f+5；面板统一按 L_f（BOSS L_f+2）计算，同层强弱差异由 ratio 体现
-  if (d.tier === 'boss') return { level, hp: Math.round(s.hp * BOSS_HP_X), atk: Math.round(s.atk * BOSS_ATK_X), def: Math.round(s.def * BOSS_DEF_X) };
+  if (d.tier === 'boss') return { level, hp: Math.round(s.hp * BOSS_HP_X * (f === 5 ? 0.8 : 1)), atk: Math.round(s.atk * BOSS_ATK_X * (f === 5 ? 0.7 : 1)), def: Math.round(s.def * BOSS_DEF_X) };
   const ns = FLOORS[f].spawns.map(sp => ENEMIES[sp.id]).filter(x => x && x.tier !== 'boss');
   const avg = (k: 'hp' | 'atk') => ns.reduce((a, x) => a + x[k], 0) / Math.max(1, ns.length);
-  return { level, hp: Math.round(s.hp * ratio(d.hp, avg('hp'))), atk: Math.round(s.atk * ratio(d.atk, avg('atk'))), def: s.def };
+  // 21–30 死亡压力（怪物侧）[适配]：该段普通怪攻 ×1.15；尸王殿(5) 为战士断崖层，普通怪 ×0.85、BOSS 攻 ×0.7 血 ×0.8（9 种子 sim-band 校准，见 docs/exp-curve.md）
+  const L = FLOOR_TARGET_LV[f], pa = f === 5 ? 0.85 : L >= 21 && L <= 30 ? 1.15 : 1;
+  return { level, hp: Math.round(s.hp * ratio(d.hp, avg('hp'))), atk: Math.round(s.atk * pa * ratio(d.atk, avg('atk'))), def: s.def };
 };

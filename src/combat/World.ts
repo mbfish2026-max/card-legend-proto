@@ -1,3 +1,4 @@
+import { compareSlot } from '../ui/equipCompare';
 import { CompanionState, migrateCompanion, companionGainExp, COMPANION_BAG, COMPANION_UNLOCK_LEVEL, newCompanion, feedHeart, heartFeedValue, HEART_STORE_MAX, RAGE_MAX, COMBO_LEVEL, COMBO_GOLD_BARS, BRM_BOOK, BOOK_PAGE, GOLD_BAR, PAGES_PER_BOOK, comboFor, HEART_ITEM, COMPANION_UNIT_ID, COMPANION_RECALL_CD, COMPANION_MODES, COMPANION_MODE_NAME, CompanionMode, companionStats, rageTick, unleash, canUnleash, comboEffect, COMBO_RANGE, pickPotion, COMPANION_POT_HP, COMPANION_POT_MP } from '../data/companion';
 import { fmtInt } from '../ui/fmt';
 import { BOOK_DROPS_BY_BOSS } from '../data/skillBookDrops';
@@ -12,7 +13,12 @@ import { ITEMS, SLOTS, SETS, equipSlotsFor, EQUIP_VERSION, ENHANCE_SLOTS, ENHANC
 import { HERO, ENEMIES, SUMMON, SUMMON_BEAST, SUMMON_CORPSE, SUMMON_GOLDEN, DECOY } from '../data/units';
 import { EXP_PER_LEVEL, EXP_VERSION, migrateExp, scaledExp, fmtExp } from '../data/expCurve';
 import { killExp, foeStatsAt, FLOOR_TARGET_LV } from '../data/balance';
-import { WORLD, FLOORS, Floor, FARM_RESPAWN, FARM_SAFE_DIST, nextFloorOf, SIDE_FLOORS, DEPTH_STEP, prevLayerOf, prevFloorOf, summonMulAt } from '../data/world';
+import '../data/drop-plan';
+import { REGIONS } from '../data/map';
+import { MINE_FLOORS, MINE_CAST, MINE_RESPAWN, MINE_RADIUS, mineX, minePurity, OIL_BOSSES, OIL_RATE } from '../data/mining'; // 阶段4：drop-plan 覆盖（副作用：改写 ENEMIES.drops）
+import { WORLD, FLOORS, Floor, FARM_RESPAWN, FARM_SAFE_DIST, nextFloorOf, SIDE_FLOORS, DEPTH_STEP, prevLayerOf, prevFloorOf, floorWidth, OLD_MAP_W, summonMulAt } from '../data/world';
+/** 任务 A：待机怪离主角超过「半屏 + 2 屏」即休眠 */
+export const SLEEP_DIST = 640 + 2 * 1280;
 import { TOWNS, townFloors, townOfFloor, returnTownOf, STORAGE_SIZE, TOWN_W, TOWN_GATE_X, GATE_RANGE, TOWN_SPAWN_X, DOOR_RANGE, streetDoors } from '../data/towns';
 import { CONSUMABLE } from '../data/items-town';
 import { WOMA_FLOOR_NAME, WOMA_SECTIONS, WOMA_DOOR_X, HORN_MOB_CHANCE, HORN_MOBS, RING_MIN_LEVEL, RingQuest, ringReward, IDENT_MIN_LEVEL, IDENT_PRICE, IDENT_POOL, identValue } from '../data/r14b';
@@ -43,7 +49,17 @@ export interface SaveData {
   eqV?: number;
   /** R22 经验曲线版本：缺省=1（旧线性），2=官方形状 */
   expV?: number;
+  /** balance-sys 任务B：BOSS 刷新冷却剩余秒数（层 index → 秒），存档时写剩余值；缺省=旧档，无冷却 */
+  bossCd?: Record<string, number>;
+  /** 阶段4 挖矿：各矿层距下次刷新的剩余秒数 */
+  mineCd?: Record<string, number>;
 }
+/** balance-sys 任务B：BOSS 击杀后 600 秒刷新 [适配]（官方各服不一，未查到统一值）；按游戏时间计（离线不走） */
+export const BOSS_RESPAWN = 600;
+/** 任务C：回城卷读条秒数 [适配]（官方回城卷为瞬发，本作加读条防战斗中秒逃）；移动/受伤/施法打断，不消耗 */
+export const RECALL_CAST = 3;
+/** 任务C：新角色赠送回城卷数量 [适配]（官方未查到新手赠送数）；旧档不补发 */
+export const STARTER_SCROLLS = 3;
 /** R11 旧层号 → 新层号（按原版递进重排：兽人要塞提前到第 2 层） */
 export const FLOOR_MIGRATE = [0, 2, 3, 1, 4, 5, 6, 7];
 /** R13 新增 5 张地图后，mapV2 的 8 层层号 → mapV3 层号 */
@@ -158,6 +174,9 @@ export class World {
   /** 技能修炼点（官方等级要求/点数见 docs/skills-official.md） */
   skillTrain: Record<string, number> = {};
   reached = new Set<number>(); bossKilled = new Set<number>();
+  /** 任务B：层 index → BOSS 可再刷新的游戏时间（this.time） */
+  bossCdUntil: Record<number, number> = {};
+  bossCdLeft(i = this.floorIndex) { return Math.max(0, Math.ceil((this.bossCdUntil[i] ?? 0) - this.time)); }
   questProg: Record<string, number> = {}; questDone = new Set<string>(); achieves = new Set<string>();
   /** R11 已学技能（新角色只有初始技能，其余用技能书学习） */
   learned = new Set<string>();
@@ -182,6 +201,8 @@ export class World {
       this.cls = save.cls; this.level = save.level; this.exp = migrateExp(save.level, save.exp, save.expV); this.gold = save.gold; this.pots = [...save.pots];
       this.equip = migrateEquip(save); this.bag = [...save.bag]; this.kills = save.kills; this.nextItem = save.nextUid;
       this.skillTrain = { ...(save.skillTrain ?? {}) }; this.reached = new Set(save.reached ?? []); this.bossKilled = new Set(save.bossKilled ?? []);
+      for (const [k, v] of Object.entries(save.bossCd ?? {})) if (v > 0) this.bossCdUntil[+k] = Math.min(BOSS_RESPAWN, v);
+      for (const [k, v] of Object.entries(save.mineCd ?? {})) if (v > 0) this.mineCdUntil[+k] = Math.min(MINE_RESPAWN, v);
       this.questProg = { ...(save.questProg ?? {}) }; this.questDone = new Set(save.questDone ?? []); this.achieves = new Set(save.achieves ?? []);
       if (save.mapV !== 2 && save.mapV !== 3 && this.floors === FLOORS) {
         const m = (i: number) => FLOOR_MIGRATE[i] ?? i;
@@ -215,7 +236,9 @@ export class World {
     return this.skillPool.filter(s => !s.passive && this.learned.has(s.id)).map((s, i) => ({ s, i })).sort((a, b) => ord(a.s.id) - ord(b.s.id) || a.i - b.i).map(({ s }, i) => ({ ...s, key: `F${i + 1}` }));
   }
   get floor() { return this.floors[this.floorIndex]; }
-  get exitX() { return WORLD.mapWidth - WORLD.exitMargin; }
+  get exitX() { return this.mapW - WORLD.exitMargin; }
+  /** 本层宽度（px，任务 A：按 Floor.widthScreens） */
+  get mapW() { return floorWidth(this.floor); }
   get hero() { return this.units.find(u => u.isHero && u.alive); }
   /** 道士骷髅/神兽（不含诱惑之光宠物） */
   get summon() { return this.units.find(u => u.summon && !u.pet && u.alive); }
@@ -370,6 +393,9 @@ export class World {
     return `提纯成功：黑铁矿石[+${pa + 1}]`;
   }
   buyIron(): string | null {
+    return '黑铁矿石只能在矿区挖矿获得'; // 阶段4：商店停售
+  }
+  private buyIronOld(): string | null {
     const LIM = 5;
     if (this.ironBoughtFloor === this.floorIndex && this.ironBoughtCount >= LIM) return `黑铁矿石每层限购 ${LIM} 块`;
     if (this.gold < IRON_PRICE) return `金币不足（需 ${IRON_PRICE}）`;
@@ -446,17 +472,20 @@ export class World {
     if (isHero) u.level = this.level;
     this.units.push(u); return u;
   }
-  loadFloor(i: number) { this.stepTarget = null; this.stepQueued = 0;
+  loadFloor(i: number) { this.recall = null; this.mine = null; this.stepTarget = null; this.stepQueued = 0;
     this.floorIndex = i; this.cleared = false; this.womaPending = null; this.womaSec = -1; this.womaWarnAt = -99; this.ground = []; this.zones = []; this.farmQueue = []; this.reached.add(i); this.checkAchieves();
     this.units = this.units.filter(u => u.isHero || u.summon || u.companion); this.companionTarget = null;
     const h = this.hero; if (h) { h.x = WORLD.heroStartX; h.y = 0; h.facing = 1; }
     this.units.filter(u => u.summon).forEach((s, k) => { s.x = WORLD.heroStartX - 110 - k * 60; s.y = WORLD.summonLane; });
     const cu = this.companionUnit; if (cu) { cu.x = WORLD.heroStartX - 80; cu.y = WORLD.summonLane; }
+    const cd = this.bossCdLeft(i); // 任务B：进层时普通怪全量重刷；BOSS 冷却中不刷（防反复进出刷 BOSS）
     for (const sp of this.floor.spawns) {
+      if (cd > 0 && ENEMIES[sp.id]?.tier === 'boss') continue;
       if (sp.id === 'boss_woma' && this.floor.name === WOMA_FLOOR_NAME) { this.womaPending = { x: sp.x, y: sp.y ?? 0 }; continue; } // R14 #14：教主之家需号角
       this.spawnFoe(sp.id, sp.x, sp.y ?? 0);
     }
     this.events.push({ type: 'floor', index: i, name: this.floor.name });
+    if (cd > 0) this.events.push({ type: 'log', text: `本层首领已被击败，${Math.ceil(cd / 60)} 分钟内不会刷新（出口已开启）` });
   }
   /** feat/maps-more：刷怪并按子层深度加成（官方第 d 层 攻/血 ×(1+DEPTH_STEP×(d−1))，原有层 depth 缺省=1 不变） */
   spawnFoe(id: string, x: number, y: number) { const u = this.spawn(ENEMIES[id], 'enemy', x, y), d = this.floor.depth ?? 1;
@@ -606,7 +635,7 @@ export class World {
     const entries = (u.drops ?? []).filter(d => this.rng() < d.chance);
     if (entries.length) {
       const items = entries.map(d => {
-        const x = Math.max(40, Math.min(WORLD.mapWidth - 40, u.x + (this.rng() - 0.5) * WORLD.dropSpread));
+        const x = Math.max(40, Math.min(this.mapW - 40, u.x + (this.rng() - 0.5) * WORLD.dropSpread));
         const y = WORLD.laneMin + this.rng() * (WORLD.laneMax - WORLD.laneMin);
         return this.rollDrop(d.item, d.rarity, x, y);
       });
@@ -614,10 +643,12 @@ export class World {
       this.events.push({ type: 'drop', uid: u.uid, x: u.x, y: u.y, items });
     }
     // 额外掉落：独立随机流 lootRng（不消耗主 rng，保持平衡模拟稳定）。Boss 必掉 1 瓶祝福油；setDrop 随机 1 件套装
-    if (u.tier === 'boss') this.bossKilled.add(this.floorIndex);
+    if (u.tier === 'boss') { this.bossKilled.add(this.floorIndex); this.bossCdUntil[this.floorIndex] = this.time + BOSS_RESPAWN; }
     else if (this.floor?.farm && !u.summon) this.farmQueue.push({ id: u.id, x: u.homeX, y: u.homeY, at: this.time + FARM_RESPAWN });
     const extra: { id: string; purity?: number }[] = [];
-    if (u.tier === 'boss' || this.lootRng() < (u.oilChance ?? 0)) extra.push({ id: 'bless_oil' });
+    // 阶段4：祝福油只由高级 BOSS（OIL_BOSSES）掉，[适配] 1/8；普通怪/精英不掉（oilChance 已停用）
+    // 随机序列保持与改动前一致（原：普通怪 2 次抽签 油/铁，BOSS 1 次 铁纯度）→ 其余掉落与难度基线不漂移
+    if (u.tier !== 'boss') this.lootRng(); // 原 oilChance 抽签位（弃用）
     // R11 技能书掉落（本职业、未学、背包里也没有）
     { const pool = Object.values(BOOKS).filter(b => b.cls === this.cls && this.bookLv(b) <= SHOP_BOOK_MAX_LV && (u.id in BOOK_RATES ? (BOOK_RATES[u.id][b.skill] ?? 0) > 0 : b.drops.includes(u.id)) && !this.learned.has(b.skill) && !this.bag.some(x => x.item === bookItemId(b.skill)));
       // R13：有资料的怪逐本按资料爆率（1/N）独立判定；无资料的怪沿用 [适配] 首领/普通几率随机一本
@@ -630,12 +661,12 @@ export class World {
       if (!has && HORN_MOBS.includes(u.id) && this.lootRng() < HORN_MOB_CHANCE) extra.push({ id: 'woma_horn' });
     } // R14 #14：号角 [适配] 8%；清怪保底见 womaTick
     // 黑铁：Boss 必掉 1 块纯度 1–3；普通怪 8% 掉纯度 1（lootRng，不影响平衡模拟主序列）
-    if (u.tier === 'boss') extra.push({ id: 'black_iron', purity: 1 + Math.floor(this.lootRng() * 3) });
-    else if (this.lootRng() < 0.05) extra.push({ id: 'black_iron', purity: 1 });
+    // 阶段4：黑铁矿只能挖矿（startMine），怪物不掉；原黑铁抽签位保留：BOSS 用它判定祝福油，普通怪弃用
+    { const r = this.lootRng(); if (u.tier === 'boss' && OIL_BOSSES.includes(u.id) && r < OIL_RATE) extra.push({ id: 'bless_oil' }); }
     if (extra.length) {
       const items = extra.map((e, i) => {
         const inv = this.makeItem(e.id, 'common', e.purity ? { purity: e.purity } : undefined);
-        const x = Math.max(40, Math.min(WORLD.mapWidth - 40, u.x + (i - (extra.length - 1) / 2) * 50));
+        const x = Math.max(40, Math.min(this.mapW - 40, u.x + (i - (extra.length - 1) / 2) * 50));
         return { gid: this.nextGid++, item: e.id, name: inv.name, rarity: 'common' as const, x, y: 0, landAt: this.time + WORLD.dropLandSec, atk: inv.stats.atk ?? 0, hp: inv.stats.hp ?? 0, amount: 1, inv } as GroundItem;
       });
       this.ground.push(...items); this.events.push({ type: 'drop', uid: u.uid, x: u.x, y: u.y, items });
@@ -683,7 +714,7 @@ export class World {
   targetSlot(it: InvItem, target?: EquipSlot): EquipSlot | null {
     if (!it.slot) return null; const c = equipSlotsFor(it.slot);
     if (target) return c.includes(target) ? target : null;
-    return c.find(sl => !this.equip[sl]) ?? c[0];
+    return compareSlot(it, this.equip) ?? c[0]; // 双槽位都穿时替换较弱一件（与对比面板左侧一致）
   }
   equipItem(bagIdx: number, target?: EquipSlot): string | null {
     const it = this.bag[bagIdx]; if (!it) return '没有物品';
@@ -736,6 +767,9 @@ export class World {
     return `学会了 ${s.name}`;
   }
   buyOil(): string | null {
+    return '祝福油只由高级 BOSS 掉落'; // 阶段4：商店停售
+  }
+  private buyOilOld(): string | null {
     if (this.oilBoughtFloor === this.floorIndex) return '祝福油每层限购 1 瓶';
     if (this.gold < OIL_PRICE) return '金币不足';
     if (this.bag.length >= WORLD.bagSize) return '背包已满';
@@ -772,7 +806,7 @@ export class World {
     if (!TOWNS[t]) return '无此城镇';
     if (this.town === t) return null;
     if (!free && this.inCombat()) return '战斗中无法回城';
-    this.town = t; this.stepTarget = null; this.stepQueued = 0;
+    this.town = t; this.recall = null; this.mine = null; this.stepTarget = null; this.stepQueued = 0;
     const h = this.hero; if (h) { h.hp = h.maxHp; h.mp = h.maxMp; h.x = TOWN_SPAWN_X; h.y = WORLD.laneMin + (WORLD.laneMax - WORLD.laneMin) / 2; }
     // 横版长街：清掉野外怪物/地上物品（出城时重新刷层）
     this.units = this.units.filter(u => u.isHero || u.summon); this.ground = []; this.zones = [];
@@ -821,13 +855,64 @@ export class World {
     if (c.town) {
       const t = c.town === 'bichi' ? 'bichi' : townOfFloor(this.floorIndex);
       if (this.town === t) return '已在城内';
-      this.bag.splice(bagIdx, 1); this.enterTown(t, true); this.events.push({ type: 'inventory' }); return `使用 ${it.name}：回到 ${TOWNS[t].name}`;
+      if (this.town) { this.bag.splice(bagIdx, 1); this.enterTown(t, true); this.events.push({ type: 'inventory' }); return `使用 ${it.name}：回到 ${TOWNS[t].name}`; }
+      const h = this.hero; if (!h || !h.alive) return '无法使用';
+      if (this.recall) return '正在读条';
+      this.recall = { item: it.item, town: t, at: this.time + RECALL_CAST, x: h.x, y: h.y, hp: h.hp };
+      this.events.push({ type: 'log', text: `${it.name}读条 ${RECALL_CAST} 秒：移动/受伤/施法会打断（不消耗）` }); return `使用 ${it.name}：读条中`;
     }
     const h = this.hero; if (!h) return '无法使用';
     this.bag.splice(bagIdx, 1);
     if (c.hp) h.hp = Math.min(h.maxHp, h.hp + c.hp);
     if (c.mp) h.mp = Math.min(h.maxMp, (h.mp ?? 0) + c.mp);
     this.events.push({ type: 'inventory' }); return `使用 ${it.name}`;
+  }
+  /** 任务C：新建角色赠送回城卷（BattleScene 无存档开局时调用；读旧档不调用 → 旧档不补发） */
+  grantStarterKit() { for (let k = 0; k < STARTER_SCROLLS; k++) this.bag.push(this.makeItem('return_scroll')); }
+  /** 任务C：回城卷读条状态（null=无） */
+  recall: { item: string; town: string; at: number; x: number; y: number; hp: number } | null = null;
+  /** 快捷键/手机键：用背包里第一张回城卷（无则地牢逃脱卷） */
+  useRecallScroll(): string {
+    const i = ['return_scroll', 'dungeon_scroll'].map(id => this.bag.findIndex(b => b.item === id)).find(k => k >= 0);
+    if (i === undefined) return '没有回城卷（城镇杂货商有售）'; return this.useConsumable(i);
+  }
+  /** 阶段4 挖矿：矿点读条状态 / 各层下次刷新时间 */
+  mine: { floor: number; at: number; x: number; y: number; hp: number } | null = null;
+  mineCdUntil: Record<number, number> = {};
+  mineCdLeft(i = this.floorIndex) { return Math.max(0, Math.ceil((this.mineCdUntil[i] ?? 0) - this.time)); }
+  hasMine(i = this.floorIndex) { return !this.town && MINE_FLOORS.includes(i); }
+  mineX() { return mineX(this.mapW); }
+  /** 主角在矿点范围内（不论是否刷新） */
+  atMine(): boolean { const h = this.hero; return this.hasMine() && !!h && Math.abs(h.x - this.mineX()) <= MINE_RADIUS; }
+  startMine(): string {
+    const h = this.hero; if (!h || !this.atMine()) return '附近没有矿点';
+    if (this.mine) return '正在挖矿';
+    const cd = this.mineCdLeft(); if (cd > 0) return `矿脉已挖空，${cd} 秒后刷新`;
+    this.mine = { floor: this.floorIndex, at: this.time + MINE_CAST, x: h.x, y: h.y, hp: h.hp };
+    this.events.push({ type: 'log', text: `挖矿读条 ${MINE_CAST} 秒：移动/受伤/施法会打断` }); return '挖矿中';
+  }
+  cancelMine(why: string) { if (!this.mine) return; this.mine = null; this.events.push({ type: 'log', text: `挖矿被${why}打断` }); }
+  private mineStep(h: Unit) {
+    const m = this.mine; if (!m) return;
+    if (!h.alive) return this.cancelMine('死亡');
+    if (Math.abs(h.x - m.x) > 0.5 || Math.abs(h.y - m.y) > 0.5) return this.cancelMine('移动');
+    if (h.hp < m.hp - 0.01) return this.cancelMine('受伤');
+    m.hp = h.hp; if (this.time < m.at) return;
+    this.mine = null; const p = minePurity(m.floor, this.lootRng());
+    if (!this.addIron(p)) { this.events.push({ type: 'log', text: '背包已满，挖到的矿石掉回矿脉' }); return; }
+    this.mineCdUntil[m.floor] = this.time + MINE_RESPAWN;
+    this.events.push({ type: 'log', text: `挖到 黑铁矿石[+${p}]（矿脉 ${MINE_RESPAWN} 秒后刷新）` });
+  }
+  cancelRecall(why: string) { if (!this.recall) return; this.recall = null; this.events.push({ type: 'log', text: `回城读条被${why}打断（卷轴未消耗）` }); }
+  private recallStep(h: Unit) {
+    const r = this.recall; if (!r) return;
+    if (!h.alive) return this.cancelRecall('死亡');
+    if (Math.abs(h.x - r.x) > 0.5 || Math.abs(h.y - r.y) > 0.5) return this.cancelRecall('移动');
+    if (h.hp < r.hp - 0.01) return this.cancelRecall('受伤');
+    r.hp = h.hp;
+    if (this.time < r.at) return;
+    const k = this.bag.findIndex(b => b.item === r.item); this.recall = null; if (k < 0) return;
+    const name = this.bag[k].name; this.bag.splice(k, 1); this.enterTown(r.town, true); this.events.push({ type: 'inventory' }, { type: 'log', text: `使用 ${name}：回到 ${TOWNS[r.town].name}` });
   }
   /** 技能页：快捷栏顺序（拖放/上下移） */
   moveSkill(id: string, to: number) {
@@ -855,6 +940,8 @@ export class World {
   cast(i: number, cds: number[], opts: { auto?: boolean } = {}): CastResult {
     const s = this.skills[i], h = this.hero;
     if (!s || !h) return { ok: false, reason: '' };
+    if (this.recall && !opts.auto) this.cancelRecall('施法');
+    if (this.mine && !opts.auto) this.cancelMine('施法');
     const need = this.needLevel(s);
     if (this.level < need) return { ok: false, reason: `${s.name} 需等级 ${need}` };
     if (s.passive) return { ok: false, reason: `${s.name} 为被动技能` };
@@ -1013,7 +1100,7 @@ export class World {
     } else if (s.kind === 'rush') {
       for (const t of targets) {
         t.x += h.facing * (s.pushCells ? s.pushCells[Math.min(3, slv)] * 85 : 150);
-        t.x = Math.max(t.width / 2, Math.min(WORLD.mapWidth - t.width / 2, t.x));
+        t.x = Math.max(t.width / 2, Math.min(this.mapW - t.width / 2, t.x));
         this.damage(t, pw * (s.lvMult ? s.lvMult[slv] : s.mult ?? 0.5) * this.roll(0.95, 0.1), h, true, false, false, s.stat === 'atk' ? 0 : 1);
       }
       this.events.push({ type: 'log', text: `${s.name}：撞开 ${targets.length} 个低等级目标` });
@@ -1241,7 +1328,7 @@ export class World {
     this.events.push({ type: 'combo', id: cb?.id ?? 'placeholder', name: cb?.name ?? '合击', source: h.uid, partner: u.uid, target: t.uid, amount: dealt, hits: targets.length, affected, statusUntil }, { type: 'log', text: `合击「${cb?.name ?? '合击'}」造成 ${dealt} 伤害`, color: 'green' });
   }
   toSave(): SaveData {
-    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, town: this.town, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], ringQ: this.ringQ, ringDone: this.ringDone, eqV: EQUIP_VERSION, expV: EXP_VERSION, companion: this.companion ? JSON.parse(JSON.stringify(this.companion)) : null  };
+    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, town: this.town, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], ringQ: this.ringQ, ringDone: this.ringDone, eqV: EQUIP_VERSION, expV: EXP_VERSION, bossCd: Object.fromEntries(Object.keys(this.bossCdUntil).map(k => [k, this.bossCdLeft(+k)]).filter(e => (e[1] as number) > 0)), mineCd: Object.fromEntries(Object.keys(this.mineCdUntil).map(k => [k, this.mineCdLeft(+k)]).filter(e => (e[1] as number) > 0)), companion: this.companion ? JSON.parse(JSON.stringify(this.companion)) : null  };
   }
 
   /** 点按一格：滑行中的按键全部排队（同向最多 10 格，反向则替换队列），每次按键都会走一格 */
@@ -1262,7 +1349,7 @@ export class World {
       const f = this.queue(dx)[0];
       if (f) { const reach = (h.width + f.width) / 2 + Math.max(h.range, f.range); const d0 = Math.abs(f.x - h.x), d1 = Math.abs(f.x - nx); if (d0 > reach + 0.5 && d1 < reach) nx = f.x - dx * reach; }
       // 可直接穿过怪物卡牌（不阻挡、不推开）；穿到怪身后后，怪会转身/跳跃追到新的一侧
-      h.x = Math.max(h.width / 2, Math.min(WORLD.mapWidth - h.width / 2, nx));
+      h.x = Math.max(h.width / 2, Math.min(this.mapW - h.width / 2, nx));
     }
     if (this.stepTarget !== null) this.stepAge += dt;
     // 超时保险：补间被打断/卡住（如被暂停、帧率抖动）也必定释放，不会永久 busy
@@ -1292,15 +1379,17 @@ export class World {
 
   // ===== R14 #14 沃玛寺庙多层 =====
   womaPending: { x: number; y: number } | null = null; womaSec = -1; womaWarnAt = -99;
-  womaSection() { const h = this.hero; if (!h || this.floor.name !== WOMA_FLOOR_NAME) return null; return WOMA_SECTIONS.findIndex(s => h.x < s.until); }
+  womaSection() { const h = this.hero; if (!h || this.floor.name !== WOMA_FLOOR_NAME) return null; const k = this.mapW / OLD_MAP_W; return WOMA_SECTIONS.findIndex(s => h.x < s.until * k); }
+  /** 教主之家门口：按层宽等比（任务 A 层变长后门仍在原相对位置，门后无小怪） */
+  get womaDoorX() { return WOMA_DOOR_X * this.mapW / OLD_MAP_W; }
   womaTick() {
     const h = this.hero; if (!h || this.town || this.floor.name !== WOMA_FLOOR_NAME) return;
     const sec = this.womaSection()!; if (sec !== this.womaSec) { this.womaSec = sec; this.events.push({ type: 'log', text: `进入 ${WOMA_SECTIONS[sec].name}`, color: 'green' }); }
     if (!this.womaPending) return;
     let k = this.bag.findIndex(x => x.item === 'woma_horn');
-    if (k < 0 && !this.alive('enemy').length) { this.ground = this.ground.filter(g => g.item !== 'woma_horn'); this.bag.push(this.makeItem('woma_horn')); k = this.bag.length - 1; this.events.push({ type: 'log', text: '获得沃玛号角（清怪保底）', color: 'green' }); } // [适配] 背包满也给
-    if (h.x < WOMA_DOOR_X - h.width / 2) return;
-    if (k < 0) { h.x = WOMA_DOOR_X - h.width / 2 - 1; if (this.time - this.womaWarnAt > 3) { this.womaWarnAt = this.time; this.events.push({ type: 'log', text: '教主之家大门紧闭：需要沃玛号角（沃玛战士/卫士掉落）', color: 'white' }); } return; }
+    if (k < 0 && !this.alive('enemy').some(u => u.x < this.womaDoorX)) { this.ground = this.ground.filter(g => g.item !== 'woma_horn'); this.bag.push(this.makeItem('woma_horn')); k = this.bag.length - 1; this.events.push({ type: 'log', text: '获得沃玛号角（清怪保底）', color: 'green' }); } // [适配] 背包满也给
+    if (h.x < this.womaDoorX - h.width / 2) return;
+    if (k < 0) { h.x = this.womaDoorX - h.width / 2 - 1; if (this.time - this.womaWarnAt > 3) { this.womaWarnAt = this.time; this.events.push({ type: 'log', text: '教主之家大门紧闭：需要沃玛号角（沃玛战士/卫士掉落）', color: 'white' }); } return; }
     this.bag.splice(k, 1); const p = this.womaPending; this.womaPending = null;
     this.spawn(ENEMIES.boss_woma, 'enemy', p.x, p.y); this.events.push({ type: 'log', text: '吹响沃玛号角，教主之家大门打开，沃玛教主现身！', color: 'green' }, { type: 'inventory' });
   }
@@ -1354,12 +1443,14 @@ export class World {
       h.hp = Math.min(h.maxHp, h.hp + WORLD.hpRegen * (fighting ? 1 : 5) * dt);
     }
     const chase = WORLD.baseSpeed * WORLD.chaseSpeedRatio, ret = WORLD.baseSpeed * WORLD.returnSpeedRatio;
-    if (h) for (const u of this.alive('enemy')) if (u.ai === 'idle' && Math.hypot(u.x - h.x, u.y - h.y) < WORLD.aggroRange) {
-      for (const v of this.alive('enemy')) if (v.ai === 'idle' && Math.abs(v.homeX - u.homeX) <= WORLD.groupRadius) {
+    // 任务 A 性能：离屏超过 2 屏的待机怪休眠（不跑仇恨/回血/AI；中毒照常结算）
+    const act = this.alive('enemy').filter(u => !h || u.ai !== 'idle' || Math.abs(u.x - h.x) <= SLEEP_DIST || (u.poisonUntil ?? 0) > this.time);
+    if (h) for (const u of act) if (u.ai === 'idle' && Math.hypot(u.x - h.x, u.y - h.y) < WORLD.aggroRange) {
+      for (const v of act) if (v.ai === 'idle' && Math.abs(v.homeX - u.homeX) <= WORLD.groupRadius) {
         v.ai = 'alert'; v.alertT = WORLD.alertSec; this.events.push({ type: 'aggro', uid: v.uid });
       }
     }
-    for (const u of this.alive('enemy')) {
+    for (const u of act) {
       u.moving = false;
       // 中毒（R13 官方绿毒）：每 2.5 秒结算一次，无视防御、不暴击
       if (u.poisonUntil && u.poisonTick !== undefined && this.time >= u.poisonTick && u.poisonTick <= u.poisonUntil) {
@@ -1477,6 +1568,8 @@ export class World {
     for (const d of this.units) if (d.decoy && d.alive && (d.decoyUntil ?? 0) <= this.time) { d.alive = false; this.events.push({ type: 'death', uid: d.uid }, { type: 'log', text: `${d.name}消散` }); }
     this.units = this.units.filter(u => u.alive);
     const hh = this.hero; if (!hh) return;
+    if (this.recall) { this.recallStep(hh); if (this.town) return; }
+    if (this.mine) this.mineStep(hh);
     for (const g of [...this.ground]) if (g.landAt <= this.time && Math.hypot(g.x - hh.x, (g.y - hh.y) * 0.5) <= WORLD.pickupRadius) this.pickup(g);
     this.atExit = Math.abs(hh.x - this.exitX) <= WORLD.exitRadius || hh.x >= this.exitX;
     if (this.atExit && this.requireUse && !inp.use) {
@@ -1603,6 +1696,13 @@ export class World {
   }
   /** 每张战斗层起点都有「回城/回村」入口：原路回到进来的城镇（未查到官方连接的统一回本区域主城） */
   returnTownName(): string { return TOWNS[returnTownOf(this.floorIndex)].name; }
+  /** 任务B：本层最左端「返回上一层」传送门的去向。第 1 层/区域首层 → 回城镇（新手为小村），其它 → 上一层（prevFloorOf） */
+  backGate(): { kind: 'portal'; to: 'town' | 'floor'; index: number; name: string; label: string } | null {
+    if (this.town) return null; const i = this.floorIndex;
+    const p = i > 0 && !REGIONS.some(r => r.floors[0] === i) ? prevFloorOf(i, this.floors) : -1;
+    const name = p >= 0 ? this.floors[p].name : this.returnTownName().replace(/（.*）/, '');
+    return { kind: 'portal', to: p >= 0 ? 'floor' : 'town', index: p, name, label: `传送门：返回 ${name}` };
+  }
   atReturnGate(): boolean { const h = this.hero; return !this.town && !!h && h.x <= WORLD.heroStartX + 150; }
   returnToTown(): string | null {
     if (this.town) return '已在城内'; if (!this.atReturnGate()) return '回城入口在本层起点（左侧）';
