@@ -818,3 +818,138 @@ thunder_sword 雷霆剑、break_strike 破击剑法、shield_break 破盾斩、v
 ## 手机界面（feat/mobile-ui）
 按钮底板、摇杆、技能圆框都用 CSS 代码绘制（暗金边框 + 径向渐变）。顶部功能图标暂用 emoji（🎒📜🎯🗺🏯⚙）。
 待美术：6 个手机顶部图标（48×46 CSS px，2x 出图 96×92）、摇杆底盘和摇杆头、「进入/对话」大圆键底板。
+
+## PWA 图标（feat/pwa-fullscreen）
+- apple-touch-icon.png（180×180）和 icon-512.png 目前是用 favicon.png（192）放大生成的占位图，512 会发糊。需要 1024×1024 的正式 App 图标（不透明、黑底、不带圆角，iOS 会自己加圆角）。
+
+## art/maps-sq-mir3 重画·第1组（15 张，取消复用）
+
+用户要求不再复用小怪素材，以下 id 的复制图都换成了各自的新立绘，外形和配色都与原图明显不同。路径：`public/assets/portraits/<id>_full.png`。预览：`docs/art-gap-preview/sq_mir3_redo1.jpg`。
+
+| 文件 | 尺寸 | 名称 | 状态 | 依据 |
+|---|---|---|---|---|
+| sq_shiwei_full.png | 525x960 | 尸卫 | 新画（取代原复用图） | 部分推测：殉葬尸兵，绷带木乃伊+青铜札甲+长戟 |
+| sq_shiwei_yong_full.png | 735x960 | 尸卫勇士 | 新画（取代原复用图） | 据描述：手臂化为巨刀；圆盾、铁面具为推测 |
+| sq_shiwei_qiang_full.png | 699x960 | 尸卫投枪兵 | 新画（取代原复用图） | 据描述：掷枪兵所化，投枪 |
+| sq_shiwei_zhan_full.png | 724x960 | 尸卫战将 | 新画（取代原复用图） | 部分推测：亲卫军所化，金黑重甲+偃月大刀 |
+| m3_ant_warrior_full.png | 960x636 | 蚂蚁战士 | 新画（取代原复用图） | 据描述：兵蚁，大头硬壳前额利钳；黑亮外壳为新设计 |
+| m3_ant_armor_full.png | 960x549 | 盔甲蚂蚁 | 新画（取代原复用图） | 据描述：前额巨钳；钢蓝铆甲为新设计（重画1次） |
+| m3_ant_bomb_full.png | 960x543 | 爆毒蚂蚁 | 新画（取代原复用图） | 据描述：小腹喷毒射管，钳不发达 |
+| m3_ant_tao_full.png | 751x960 | 蚂蚁道士 | 新画（取代原复用图） | 据描述：畸形巨大腹部、为同伴回血；骨杖叶披风为新设计 |
+| sq_stone_man_full.png | 747x960 | 石人 | 新画（取代原复用图） | 据描述：巨石堆砌；苔藓藤根为新设计 |
+| sq_bronze_man_full.png | 486x960 | 铜人 | 新画（取代原复用图） | 据描述：纯铜组装、握铜矛 |
+| sq_bronze_beast_full.png | 943x960 | 铜兽 | 新画（取代原复用图） | 部分推测：铜机关兽，狮犬形与蒸汽为推测 |
+| sq_blade_man_full.png | 695x960 | 滚刀手 | 新画（取代原复用图） | 据描述：迅猛刀手双刃；背负锯盘、白面具为新设计 |
+| sq_hammer_man_full.png | 651x960 | 锤手 | 新画（取代原复用图） | 据描述：持巨锤；矮胖黄铜机关身为新设计 |
+| sq_jingang_full.png | 690x960 | 金刚人 | 新画（取代原复用图） | 部分推测：金刚不坏巨人；铸铁肤色、袈裟为新设计 |
+| m3_skel_wushi_full.png | 683x960 | 骷髅武士 | 新画（取代原复用图） | 据描述：刀背带两环的刀 |
+
+
+## art/maps-sq-mir3 重画·第2组（9 张，取消复用）
+
+用户要求不再复用小怪素材，以下 id 的复制图都换成了各自的新立绘，外形和配色都与原图明显不同。路径：`public/assets/portraits/<id>_full.png`。预览：`docs/art-gap-preview/sq_mir3_redo2.jpg`。
+
+| 文件 | 尺寸 | 名称 | 状态 | 依据 |
+|---|---|---|---|---|
+| m3_skel_soldier_full.png | 438x960 | 骷髅士兵 | 新画（取代原复用图） | 据描述：持带旗长枪 |
+| m3_skel_archer_full.png | 674x960 | 骷髅弓箭手 | 新画（取代原复用图） | 据描述：弓箭手；兜帽跪射为新设计 |
+| m3_bone_general_full.png | 603x960 | 骨鬼将 | 新画（取代原复用图） | 未查到/推测：骷髅系将领，鬼烟下身、长柄刀为推测 |
+| sq_red_snake_yao_full.png | 746x960 | 红蛇妖 | 新画（取代原复用图） | 据描述：蛇妖喽啰；眼镜蛇兜帽、短弯刀为新设计 |
+| sq_black_snake_yao_full.png | 723x960 | 黑蛇妖 | 新画（取代原复用图） | 据描述：近卫、高防；塔盾三叉戟为新设计 |
+| sq_scarab_full.png | 960x703 | 圣甲虫 | 新画（取代原复用图） | 据描述：高防甲虫；翠玉壳、日珠为新设计 |
+| sq_magic_beetle_full.png | 960x785 | 魔甲虫 | 新画（取代原复用图） | 据描述：石化魔法；石纹壳、灰雾为新设计 |
+| sq_termite_full.png | 960x588 | 白蚁 | 新画（取代原复用图） | 据描述：小生物；兵蚁大头、朽木为新设计 |
+| sq_three_snake_full.png | 696x960 | 三头蛇 | 新画（取代原复用图） | 据描述：三头 |
+
+
+## art/maps-sq-mir3 重画·第3组（7 张，取消复用）
+
+用户要求不再复用小怪素材，以下 id 的复制图都换成了各自的新立绘，外形和配色都与原图明显不同。路径：`public/assets/portraits/<id>_full.png`。预览：`docs/art-gap-preview/sq_mir3_redo3.jpg`。
+
+| 文件 | 尺寸 | 名称 | 状态 | 依据 |
+|---|---|---|---|---|
+| m3_skel_wujiang_full.png | 728x960 | 骷髅武将 | 新画（取代原复用图） | 据描述：骨骼变异成巨躯；骨刺、劈刀为新设计 |
+| sq_white_snake_yao_full.png | 629x960 | 白蛇妖 | 新画（取代原复用图） | 据描述：蛇魔军团长、高大、利爪 |
+| sq_imp_full.png | 780x960 | 地下小鬼 | 新画（取代原复用图） | 据描述：一尺高、持石锤（弯柄改直柄，存疑） |
+| sq_nimo_archer_full.png | 628x960 | 逆魔弓箭手 | 新画（取代原复用图） | 部分推测：大漠善射民族被侵蚀；头巾面纱为新设计 |
+| sq_nimo_shiwei_full.png | 697x960 | 逆魔侍卫 | 新画（取代原复用图） | 据描述：身后箭型巨尾；蜥蜴形、盾矛为推测 |
+| sq_nimo_guard_full.png | 687x960 | 逆魔卫士 | 新画（取代原复用图） | 部分推测：迅猛近战卫士；双弯刀为新设计 |
+| sq_nimo_statue_full.png | 653x960 | 逆魔雕像 | 新画（取代原复用图） | 据描述："死神"、巨镰；砂岩活化为新设计 |
+
+
+## art/maps-sq-mir3 重画·第4组（8 张，取消复用）
+
+用户要求不再复用小怪素材，以下 id 的复制图都换成了各自的新立绘，外形和配色都与原图明显不同。路径：`public/assets/portraits/<id>_full.png`。预览：`docs/art-gap-preview/sq_mir3_redo4.jpg`。
+
+| 文件 | 尺寸 | 名称 | 状态 | 依据 |
+|---|---|---|---|---|
+| m3_noma_full.png | 746x960 | 诺玛 | 新画（取代原复用图） | 据描述：皮衣骨甲、骨制武器；兽颅盔为新设计 |
+| m3_noma_pharaoh_full.png | 689x960 | 诺玛法老 | 新画（取代原复用图） | 据描述：魔法拐棍；法老头饰木乃伊为推测 |
+| m3_desert_fish_full.png | 714x960 | 沙漠鱼魔 | 新画（取代原复用图） | 据描述：毒强、不死系；腐烂鱼形为新设计 |
+| m3_desert_wind_full.png | 693x960 | 沙漠风魔 | 新画（取代原复用图） | 据描述：持扇；沙旋风下身为新设计（无五官，存疑） |
+| m3_desert_tree_full.png | 703x960 | 沙漠树魔 | 新画（取代原复用图） | 据描述：仙人掌、射刺果 |
+| m3_desert_stone_full.png | 730x960 | 沙漠石人 | 新画（取代原复用图） | 据描述：石垒；红砂岩层叠、胸晶为新设计（与 sq_stone_man 区分） |
+| sq_cimo_full.png | 679x960 | 刺魔 | 新画（取代原复用图） | 据描述：剪刀爪、六背鳍（剪刀爪画成钩爪，存疑） |
+| sq_lizhua_full.png | 740x960 | 利爪魔 | 新画（取代原复用图） | 未查到/推测：按名称画长爪兽魔 |
+
+
+## art/maps-sq-mir3 重画·第5组（6 张，取消复用）
+
+用户要求不再复用小怪素材，以下 id 的复制图都换成了各自的新立绘，外形和配色都与原图明显不同。路径：`public/assets/portraits/<id>_full.png`。预览：`docs/art-gap-preview/sq_mir3_redo5.jpg`。
+
+| 文件 | 尺寸 | 名称 | 状态 | 依据 |
+|---|---|---|---|---|
+| sq_shanling_full.png | 717x960 | 闪灵 | 新画（取代原复用图） | 未查到/推测：闪电魔，雷纹暗影躯体为推测 |
+| sq_tengyao_full.png | 724x960 | 藤妖 | 新画（取代原复用图） | 据描述：藤树化身；紫花为新设计（与 tree_demon 同类，存疑） |
+| sq_xueyao_full.png | 700x960 | 血妖 | 新画（取代原复用图） | 据描述：吐血、似僵尸 |
+| sq_tieyi_full.png | 960x695 | 铁翼魔 | 新画（取代原复用图） | 据描述：巨蝙蝠；铁板翼为新设计 |
+| sq_yaolishi_full.png | 722x960 | 妖力士 | 新画（取代原复用图） | 据描述：一臂粗大；独角、锁链为新设计 |
+| sq_youling_bug_full.png | 960x746 | 幽灵虫 | 新画（取代原复用图） | 未查到/推测：按名称画幽灵螳蜂（重画1次） |
+
+
+## art/maps-sq-mir3 重画·第6组（8 张，取消复用）
+
+用户要求不再复用小怪素材，以下 id 的复制图都换成了各自的新立绘，外形和配色都与原图明显不同。路径：`public/assets/portraits/<id>_full.png`。预览：`docs/art-gap-preview/sq_mir3_redo6.jpg`。
+
+| 文件 | 尺寸 | 名称 | 状态 | 依据 |
+|---|---|---|---|---|
+| m3_panye_fire_full.png | 728x960 | 潘夜火魔 | 新画（取代原复用图） | 据描述：黄甲、偃月刀；火焰为新设计（牛形只画了牛角，存疑） |
+| m3_panye_wind_full.png | 732x960 | 潘夜风魔 | 新画（取代原复用图） | 据描述：黑甲、长柄斧；风旋为新设计（牛形只画了牛角，存疑） |
+| m3_panye_ice_full.png | 726x960 | 潘夜冰魔 | 新画（取代原复用图） | 据描述：蓝甲、双刃斧×2（牛形只画了牛角，存疑） |
+| m3_panye_cloud_full.png | 727x960 | 潘夜云魔 | 新画（取代原复用图） | 据描述：绿甲、双锤（牛形只画了角，存疑） |
+| m3_panye_warrior_full.png | 753x960 | 潘夜战士 | 新画（取代原复用图） | 据描述：牛形战士；狼牙棒、圆盾为推测 |
+| m3_panye_left_full.png | 629x960 | 潘夜左护卫 | 新画（取代原复用图） | 部分推测：黑太阳灵气、施法；法袍体型为推测 |
+| m3_panye_right_full.png | 551x960 | 潘夜右护卫 | 新画（取代原复用图） | 部分推测：黑月亮灵气、施法；冰雾、体型为推测 |
+| m3_panye_ghost_full.png | 724x960 | 潘夜鬼将 | 新画（取代原复用图） | 据描述：与潘夜战士相似的牛形；亡灵化、长刃为推测 |
+
+
+## art/maps-sq-mir3 重画·第7组（9 张，取消复用）
+
+用户要求不再复用小怪素材，以下 id 的复制图都换成了各自的新立绘，外形和配色都与原图明显不同。路径：`public/assets/portraits/<id>_full.png`。预览：`docs/art-gap-preview/sq_mir3_redo7.jpg`。
+
+| 文件 | 尺寸 | 名称 | 状态 | 依据 |
+|---|---|---|---|---|
+| hj_guard_full.png | 488x960 | 家园守卫 | 新画（取代原复用图） | 未查到/推测：外形无资料，画成持矛提灯的人类守卫 |
+| wolong_guard_full.png | 507x960 | 卧龙护卫 | 新画（取代原复用图） | 未查到/推测：外形无资料，按“卧龙山庄”画成龙纹札甲护院+偃月刀 |
+| fire_dragon_guard_full.png | 724x960 | 火龙守卫 | 新画（取代原复用图） | 未查到/推测：外形无资料，按“火龙神殿”画成赤鳞龙人+火焰戟 |
+| leiyan_spider_full.png | 960x729 | 雷炎蜘蛛 | 新画（取代原复用图） | 部分推测：按名称画成熔岩甲壳+雷电蜘蛛 |
+| cave_skel_warrior_full.png | 727x960 | 骷髅战士 | 新画（取代原复用图） | 部分推测：天然洞穴骷髅战士，持刀盾；苔藓铁锅盔为新设计 |
+| cave_skel_general_full.png | 466x960 | 骷髅战将 | 新画（取代原复用图） | 部分推测：青铜角盔+双手大剑；锈绿配色为新设计 |
+| axe_skeleton_full.png | 526x960 | 掷斧骷髅 | 新画（取代原复用图） | 据名称：投掷手斧；红头巾为新设计（胸前斧袋画得像子弹带，存疑） |
+| cave_bat_full.png | 960x562 | 山洞蝙蝠 | 新画（取代原复用图） | 据名称：洞穴蝙蝠；棕毛、白瞳为推测 |
+| cave_maggot_full.png | 794x960 | 洞蛆 | 新画（取代原复用图） | 据名称：蛆虫；圆口利齿为推测 |
+
+
+## art/maps-sq-mir3 重画·第8组（1 张，取消复用）
+
+用户要求不再复用小怪素材，以下 id 的复制图都换成了各自的新立绘，外形和配色都与原图明显不同。路径：`public/assets/portraits/<id>_full.png`。预览：`docs/art-gap-preview/sq_mir3_redo8.jpg`。
+
+| 文件 | 尺寸 | 名称 | 状态 | 依据 |
+|---|---|---|---|---|
+| boss_evil_pincer_full.png | 960x759 | 邪恶钳虫 | 新画（取代原复用图） | 部分推测：原图与 pincer_bug 同构图仅换色，重画为直立巨钳虫后；外形细节为推测（毒液绿边可能被抠，存疑） |
+
+## 说明：旧「复用」记录作废
+
+上文 art/maps-sq-mir3 第2–7批中标为「复用」的行，已由「重画·第1–8组」各章取代。所有 sq_/m3_ 小怪、9 个借用他怪 art 的单位，以及 boss_evil_pincer（原图与 pincer_bug 同构图、只换了颜色），现在都是独立新画。src 里的 `art` 字段仍指向旧图，本分支不改 src，需要开发把它们改成各自的 id。
+
+需改 `art` 的单位：hj_guard、wolong_guard、fire_dragon_guard、leiyan_spider、cave_skel_warrior、cave_skel_general、axe_skeleton、cave_bat、cave_maggot，以及 dark_warrior、dung_beetle、fire_woma、giant_worm、horn_fly、mine_zombie、pincer_bug、wedge_moth、woma_brave、woma_general。SQMIR3_BOSS 元组的第 4/5 字段也引用了其他 BOSS 的图（例如蚂蚁将军→boss_evil_pincer），但这些 BOSS 都已有自己的 `<id>_full.png`，建议一并改为自身 id。

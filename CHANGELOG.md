@@ -15,6 +15,21 @@
 - 沃玛寺庙的门和分段按层宽等比缩放；保底号角改为门前小怪清完就给（修复 sim 卡在 38 级）。
 - sim：SIM_MAX_T 放宽到 ×6（保护上限，不是验收指标）；同层连死 5 次回上一层练 1 级（玩家行为模拟）。三职业 9 seed 都在 50 级通关。
 - 文档：docs/floor-scale.md。
+## 传世技能（feat/chuanshi-skills）
+- 新增传世 16 技能（战士 雷霆剑/破击剑法/破盾斩/金刚护体/突斩；法师 冰箭术/冰龙破/玄冰刃/五雷轰/冰旋风；道士 赶尸/替身法符/灵魂墙/道心清明/神光术/解毒术）+ 金甲骷髅。学习等级取 DB 官方表，耗魔 DB×3，未查到项标 [适配]，详见 docs/skills-official.md。
+- 书店新增「传世秘籍」页签（书店 NPC 第二栏），不进掉落池；旧存档不自动学会。
+- 召唤：尸灵、金甲骷髅沿用骷髅规则（等级=技能等级、击杀升级变色、仇恨、自动重召）；替身法符转移仇恨；灵魂墙定身；破击/破盾几率破增益并破防。
+- 快捷栏超过 10 个主动技能时改 3 行×6；F12 可用，更多技能点击施放。
+- 测试：tests/chuanshi.test.ts；模拟新增 CS=1（购买传世秘籍）与 LEARNLOG=1。
+
+## PWA 主屏幕全屏（feat/pwa-fullscreen）
+- 修复 iPhone「添加到主屏幕」后画面偏小、四周黑边：
+  - 手机上忽略旧的手动缩放（画布 transform）；
+  - 视口改以 innerWidth/innerHeight 为准（独立模式下 visualViewport 可能停在旧值）；
+  - pageshow、visibilitychange、旋转时多次重排。
+- 元数据：manifest 改为 fullscreen，standalone 作回退，横屏，start_url/scope 为 /card-legend-proto/；新增 apple-touch-icon 180 和 icon-512（由 favicon 放大生成，见 art-requests）；theme 和背景改为黑色；html/body 用 dvh/svh/fill-available，position:fixed。
+- e2e：tests/e2e/pwa-fullscreen-verify.mjs；文档：docs/mobile-ui.md「PWA」。
+
 ## 手机入口全覆盖（feat/mobile-fill）
 - 右下大键按位置显示「进入/封印/上一层/回城/出城/对话」，入口在范围内高亮；左端回城与返回上一层可直接点大键。
 - 手机端可直接点传送门本体进入；顶栏地图图标改名「传送」。

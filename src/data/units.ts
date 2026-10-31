@@ -48,14 +48,14 @@ export const ENEMIES: Record<string, UnitDef> = {
   blood_zombie: n('blood_zombie', '血僵尸', 28, 1700, 68, 22, 420, [G(0.6), { item: 'hp_mid', chance: 0.35 }], { deathSfx: 'ghoul_death', speed: 75, atkInterval: 1.5, oilChance: 0.02 }),
   redmoon_spider: n('redmoon_spider', '赤月蜘蛛', 29, 1400, 75, 18, 440, [G(0.6), { item: 'mp_mid', chance: 0.3 }], { art: 'redmoon_spider', deathSfx: 'death', oilChance: 0.02 }),
   boss_redmoon: b('boss_redmoon', 'boss_redmoon', '赤月恶魔', 32, 15000, 95, 26, 6000, [{ item: 'dragon_sword', chance: 0.5 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'lich_death', setDrop: ['set_chiyue_necklace', 'set_chiyue_ring', 'set_chiyue_bracelet'] }),
-  // 合击版 #8 新地图怪物（docs/hejiban-official.md §4）。官方怪物表/数值未查到 → 名称/数值 [适配]，美术复用现有（见 art-requests）
-  hj_guard: n('hj_guard', '家园守卫', 30, 1800, 76, 23, 470, [G(0.6), { item: 'hp_mid', chance: 0.35 }, { item: 'book_page', chance: 0.06 }], { art: 'orc', deathSfx: 'death2', oilChance: 0.02 }),
+  // 合击版 #8 新地图怪物（docs/hejiban-official.md §4）。官方怪物表/数值未查到 → 名称/数值 [适配]，美术：重画·第1组起各用自身 <id>_full.png（不再复用小怪素材）
+  hj_guard: n('hj_guard', '家园守卫', 30, 1800, 76, 23, 470, [G(0.6), { item: 'hp_mid', chance: 0.35 }, { item: 'book_page', chance: 0.06 }], { art: 'hj_guard', deathSfx: 'death2', oilChance: 0.02 }),
   boss_hj_home: b('boss_hj_home', 'boss_molong', '魔龙守将', 33, 15500, 96, 26, 6200, [{ item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, { item: 'book_page', chance: 1 }, { item: 'gold_bar', chance: 0.5 }, G(1), G(1)], { deathSfx: 'death2' }),
-  wolong_guard: n('wolong_guard', '卧龙护卫', 31, 1850, 78, 24, 490, [G(0.6), { item: 'hp_mid', chance: 0.35 }, { item: 'book_page', chance: 0.06 }], { art: 'orc', deathSfx: 'death2', oilChance: 0.02 }),
+  wolong_guard: n('wolong_guard', '卧龙护卫', 31, 1850, 78, 24, 490, [G(0.6), { item: 'hp_mid', chance: 0.35 }, { item: 'book_page', chance: 0.06 }], { art: 'wolong_guard', deathSfx: 'death2', oilChance: 0.02 }),
   boss_wolong: b('boss_wolong', 'boss_orc_chief', '卧龙名将', 34, 16000, 98, 27, 6500, [{ item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, { item: 'book_page', chance: 1 }, { item: 'gold_bar', chance: 0.6 }, G(1), G(1)], { deathSfx: 'death2' }),
-  leiyan_spider: n('leiyan_spider', '雷炎蜘蛛', 32, 1700, 82, 22, 510, [G(0.6), { item: 'mp_mid', chance: 0.35 }, { item: 'book_page', chance: 0.08 }], { art: 'spider', deathSfx: 'death', oilChance: 0.02 }),
+  leiyan_spider: n('leiyan_spider', '雷炎蜘蛛', 32, 1700, 82, 22, 510, [G(0.6), { item: 'mp_mid', chance: 0.35 }, { item: 'book_page', chance: 0.08 }], { art: 'leiyan_spider', deathSfx: 'death', oilChance: 0.02 }),
   boss_leiyan: b('boss_leiyan', 'boss_redmoon', '雷炎蛛王', 35, 16500, 100, 27, 7000, [{ item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, { item: 'book_page', chance: 1 }, { item: 'book_page', chance: 1 }, { item: 'gold_bar', chance: 0.6 }, G(1), G(1)], { deathSfx: 'lich_death' }),
-  fire_dragon_guard: n('fire_dragon_guard', '火龙守卫', 33, 1900, 84, 24, 530, [G(0.6), { item: 'hp_mid', chance: 0.35 }, { item: 'book_page', chance: 0.08 }], { art: 'orc', deathSfx: 'death2', oilChance: 0.02 }),
+  fire_dragon_guard: n('fire_dragon_guard', '火龙守卫', 33, 1900, 84, 24, 530, [G(0.6), { item: 'hp_mid', chance: 0.35 }, { item: 'book_page', chance: 0.08 }], { art: 'fire_dragon_guard', deathSfx: 'death2', oilChance: 0.02 }),
   boss_fire_dragon: b('boss_fire_dragon', 'boss_redmoon', '火龙', 36, 17000, 102, 28, 7500, [{ item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, { item: 'book_page', chance: 1 }, { item: 'gold_bar', chance: 1 }, G(1), G(1)], { deathSfx: 'lich_death' }),
   // 阶段 B #9 新 BOSS 魔龙教主（docs/hejiban-official.md §7）：HP 12000 官方（百度百科）；等级/攻/防未查到 → [适配] 取火龙(36 级)之后一档；
   // 掉落官方「腰带/靴子、技能书、魔龙首饰、开天/镇天/玄天」(17173)：本作无腰带/魔龙首饰/开天镇天玄天 → 只落已有的 靴子(boots)、技能残页(book_page)，其余未实装（不新建背包结构）
@@ -92,11 +92,11 @@ export const ENEMIES: Record<string, UnitDef> = {
   hongmo_scorpion: n('hongmo_scorpion', '虹魔蝎卫', 27, 1650, 66, 21, 420, [G(0.6), { item: 'mp_mid', chance: 0.3 }], { art: 'hongmo_scorpion', deathSfx: 'death', oilChance: 0.02 }),
   boss_hongmo: b('boss_hongmo', 'boss_hongmo', '虹魔教主', 31, 14000, 92, 25, 5500, [{ item: 'dragon_sword', chance: 0.4 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'death2' }),
   // feat/maps-more 新增 6 层（怪名/刷怪/BOSS 按 21cq，见 docs/map-system-full.md；数值按本作层位 [适配]，非原版数值）
-  cave_skel_warrior: n('cave_skel_warrior', '骷髅战士', 14, 670, 35, 10, 170, [G(0.4), { item: 'hp_small', chance: 0.3 }], { art: 'skeleton', speed: 95, deathSfx: 'skeleton_death', card: card({ figureScale: 1.2, anchorX: 0.56 }) }),
-  cave_skel_general: n('cave_skel_general', '骷髅战将', 14, 720, 37, 11, 185, [G(0.4), { item: 'mp_small', chance: 0.3 }], { art: 'skeleton', speed: 95, deathSfx: 'skeleton_death', card: card({ figureScale: 1.25, anchorX: 0.56 }) }),
-  axe_skeleton: n('axe_skeleton', '掷斧骷髅', 14, 600, 38, 9, 175, [G(0.4), { item: 'hp_small', chance: 0.3 }], { art: 'skeleton', range: 220, speed: 85, deathSfx: 'skeleton_death', card: card({ figureScale: 1.2, anchorX: 0.56 }) }),
-  cave_bat: n('cave_bat', '山洞蝙蝠', 14, 560, 34, 9, 165, [G(0.4), { item: 'hp_small', chance: 0.25 }], { art: 'bat', deathSfx: 'death', card: card({ figureScale: 1.0 }) }),
-  cave_maggot: n('cave_maggot', '洞蛆', 14, 740, 36, 12, 185, [G(0.4), { item: 'hp_mid', chance: 0.25 }], { art: 'zombie', speed: 70, deathSfx: 'ghoul_death' }),
+  cave_skel_warrior: n('cave_skel_warrior', '骷髅战士', 14, 670, 35, 10, 170, [G(0.4), { item: 'hp_small', chance: 0.3 }], { art: 'cave_skel_warrior', speed: 95, deathSfx: 'skeleton_death', card: card({ figureScale: 1.2, anchorX: 0.56 }) }),
+  cave_skel_general: n('cave_skel_general', '骷髅战将', 14, 720, 37, 11, 185, [G(0.4), { item: 'mp_small', chance: 0.3 }], { art: 'cave_skel_general', speed: 95, deathSfx: 'skeleton_death', card: card({ figureScale: 1.25, anchorX: 0.56 }) }),
+  axe_skeleton: n('axe_skeleton', '掷斧骷髅', 14, 600, 38, 9, 175, [G(0.4), { item: 'hp_small', chance: 0.3 }], { art: 'axe_skeleton', range: 220, speed: 85, deathSfx: 'skeleton_death', card: card({ figureScale: 1.2, anchorX: 0.56 }) }),
+  cave_bat: n('cave_bat', '山洞蝙蝠', 14, 560, 34, 9, 165, [G(0.4), { item: 'hp_small', chance: 0.25 }], { art: 'cave_bat', deathSfx: 'death', card: card({ figureScale: 1.0 }) }),
+  cave_maggot: n('cave_maggot', '洞蛆', 14, 740, 36, 12, 185, [G(0.4), { item: 'hp_mid', chance: 0.25 }], { art: 'cave_maggot', speed: 70, deathSfx: 'ghoul_death' }),
   // feat/maps-batch2（plan-60h B2）新增 6 种：官方名/出没按 21cq（docs/map-system-full.md）；等级/数值官方逐怪未查到，全部 [适配]（21cq 区间沃玛寺庙 20–31、矿区 21–25 与本作层位曲线冲突，按通关顺序普通怪等级递增取值）；僵尸1–5 合为一种 [适配]
   dung_beetle: n('dung_beetle', '粪虫', 19, 900, 38, 12, 210, [G(0.5), { item: 'hp_mid', chance: 0.25 }], { art: 'dung_beetle', speed: 70, deathSfx: 'ghoul_death' }),
   woma_brave: n('woma_brave', '沃玛勇士', 20, 1100, 42, 15, 245, [G(0.6), { item: 'hp_mid', chance: 0.3 }], { art: 'woma_brave', deathSfx: 'death2', oilChance: 0.02 }),
@@ -136,5 +136,11 @@ export const SUMMON: UnitDef = { id: 'summon_skeleton', art: 'skeleton', name: '
 /** 召唤神兽（官方 C：1/2/3 级神兽）；占位立绘用狼，美术见 art-requests */
 export const SUMMON_BEAST: UnitDef = { id: 'summon_beast', art: 'summon_beast', name: '神兽', level: 1, hp: 360, atk: 22, def: 10, atkInterval: 1.15, range: 8, speed: 0, width: 140, height: 180, tier: 'player',
   card: card({ w: 150, h: 190, figureScale: 1.2, bg: 0x5a4010 }) };
+/** 传世赶尸「尸灵」：占位立绘用僵尸（[适配] 属性 = 骷髅 ×1.25，见 World CS_SUMMON） */
+export const SUMMON_CORPSE: UnitDef = { ...SUMMON, id: 'summon_corpse', art: 'zombie', name: '尸灵', card: card({ w: 120, h: 160, figureScale: 1.15, bg: 0x4a5a20 }) };
+/** 传世强化骷髅术「金甲骷髅」：复用骷髅立绘 + 金色着色（美术见 docs/fx-requests.md） */
+export const SUMMON_GOLDEN: UnitDef = { ...SUMMON, id: 'summon_golden_skeleton', name: '金甲骷髅', width: 130, height: 180, card: card({ w: 130, h: 175, figureScale: 1.25, bg: 0x8a6a10, tint: 0xffd040 }) };
+/** 传世替身法符「替身」：复用骷髅立绘 + 纸符色着色占位 */
+export const DECOY: UnitDef = { ...SUMMON, id: 'decoy_talisman', name: '替身', atkInterval: 99, card: card({ w: 110, h: 150, figureScale: 1.05, bg: 0x5a4a30, tint: 0xe8d8a0 }) };
 /** R22：经验曲线移至 expCurve.ts（官方形状 ÷ 常数）；怪物 exp 字段为旧曲线基准值，按层由 scaledExp 同步缩放 */
 export { EXP_PER_LEVEL } from './expCurve';

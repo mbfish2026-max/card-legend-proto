@@ -4,7 +4,7 @@ import { Stats } from '../combat/types';
 /** 职业基础/成长：魔御官方职业成长未查到 → 可省略（按 0） */
 type ClassStats = Omit<Stats, 'mdef'> & { mdef?: number };
 export type ClassId = 'warrior' | 'mage' | 'taoist';
-export type SkillKind = 'melee' | 'pierce' | 'ranged' | 'aoe' | 'dot' | 'buff' | 'summon' | 'zone' | 'rush' | 'line' | 'blast' | 'charm';
+export type SkillKind = 'melee' | 'pierce' | 'ranged' | 'aoe' | 'dot' | 'buff' | 'summon' | 'zone' | 'rush' | 'line' | 'blast' | 'charm' | 'decoy' | 'wall';
 export interface SkillDef {
   key: string; id: string; name: string; kind: SkillKind; stat: 'atk' | 'mag' | 'tao';
   mana: number; cooldown: number; mult?: number; pierce?: number; range?: number;
@@ -28,6 +28,26 @@ export interface SkillDef {
   buffStat?: 'def' | 'mdef';
   /** #12 群体治愈术：以主角为中心的治疗半径（px）[适配] */
   area?: number;
+  /** 传世技能（docs/skills-official.md「传世」节）：书在「传世秘籍」页，不进默认书店/掉落 */
+  cs?: boolean;
+  /** 对不死系（骷髅/僵尸/尸王类）额外伤害比例 */
+  undeadBonus?: number;
+  /** 各级固定附加伤害（DB 威力 [适配]） */
+  flatBonus?: number[];
+  /** 破击/破盾：各级解除目标增益几率；[适配] 并施加 4s 防御/魔御 −30% */
+  dispel?: number[]; breakStat?: 'def' | 'mdef';
+  /** 金刚护体：同时提高防御与魔御 */
+  buffBoth?: boolean;
+  /** 突斩：每级击退格数（1 格 = 85px） */
+  pushCells?: number[];
+  /** 五雷轰：最多目标数 */
+  maxTargets?: number;
+  /** 冰旋风：把等级低于主角的目标吸到中心 */
+  pull?: boolean;
+  /** 解毒术/神光术：各级解除负面状态几率 */
+  cleanse?: number[];
+  /** 道心清明：击杀双倍经验几率（各级） */
+  doubleExp?: number[];
 }
 export interface ClassDef {
   id: ClassId; name: string; art: string; bg: number; artFacing: 1 | -1; atkInterval: number;
@@ -48,6 +68,12 @@ export const CLASSES: Record<ClassId, ClassDef> = {
       { key: 'F2', id: 'half_moon', name: '半月弯刀', kind: 'pierce', stat: 'atk', mana: 0, cooldown: 3, pierce: 3, learn: [28, 28, 31, 34], train: [8000, 16000, 24000], lvMult: [0.15, 0.23, 0.31, 0.38], icon: S + 'skill_half_moon.png', sfx: 'cleave', desc: '主目标 100%，周围其他敌人按等级' },
       { key: 'F3', id: 'rush', name: '野蛮冲撞', kind: 'rush', stat: 'atk', mana: 0, cooldown: 8, mult: 0.5, range: 220, learn: [30, 30, 34, 39], train: [3000, 6000, 9000], icon: S + 'skill_rush.png', sfx: 'shout', desc: '撞开等级低于自己的目标（官方）；[适配] 附带 50% 攻击力伤害（伤害官方未查到）' },
       { key: 'F4', id: 'fire_sword', name: '烈火剑法', kind: 'melee', stat: 'atk', mana: 0, cooldown: 6, learn: [35, 35, 37, 40], train: [2000, 4000, 6000], lvMult: [1.4, 1.8, 2.2, 2.6], icon: S + 'skill_fire_sword.png', sfx: 'fireball_impact', desc: '火精灵附剑，对前排造成倍数伤害' },
+      // 传世战士 5 技能（docs/skills-official.md#传世）：学习等级 = 传世 DB；耗魔 = DB Spell ×3 [适配]；修炼点 = DB ×60 [适配]
+      { key: 'F5', id: 'thunder_sword', name: '雷霆剑', kind: 'melee', stat: 'atk', mana: 0, cooldown: 3, cs: true, lvMult: [1.2, 1.5, 1.8, 2.1], undeadBonus: 0.2, learn: [34, 34, 36, 39], train: [3000, 6000, 12000], icon: S + 'skill_thunder_sword.png', sfx: 'fire_sword', desc: '雷电附剑重击（烈火的二选一替代，伤害略低）；对不死系 +20% [适配]' },
+      { key: 'F6', id: 'break_strike', name: '破击剑法', kind: 'melee', stat: 'atk', mana: 3, cooldown: 2, cs: true, lvMult: [1, 1, 1, 1], flatBonus: [15, 22, 28, 35], dispel: [0.25, 0.4, 0.55, 0.7], breakStat: 'def', learn: [36, 36, 36, 36], train: [3000, 6000, 12000], icon: S + 'skill_break_strike.png', sfx: 'cleave', desc: '几率破除目标神圣战甲/幽灵盾/护身真气（官方）；[适配] 并破防 4s' },
+      { key: 'F7', id: 'shield_break', name: '破盾斩', kind: 'melee', stat: 'atk', mana: 3, cooldown: 3, cs: true, lvMult: [1.1, 1.1, 1.1, 1.1], flatBonus: [35, 35, 36, 36], dispel: [0.25, 0.4, 0.55, 0.7], breakStat: 'mdef', learn: [39, 39, 39, 39], train: [3000, 6000, 12000], icon: S + 'skill_shield_break.png', sfx: 'cleave', desc: '几率破除目标魔法盾/金刚护体（官方）；[适配] 并破魔御 4s' },
+      { key: 'F8', id: 'vajra_body', name: '金刚护体', kind: 'buff', stat: 'atk', mana: 6, cooldown: 6, cs: true, buffBoth: true, duration: 15, durPerLv: 5, learn: [41, 41, 41, 41], train: [3000, 6000, 12000], icon: S + 'skill_vajra_body.png', sfx: 'heal2', desc: '一段时间内大幅提高防御与魔御（官方）；持续中重复施放无效' },
+      { key: 'F9', id: 'dash_slash', name: '突斩', kind: 'rush', stat: 'atk', mana: 6, cooldown: 4, cs: true, range: 220, lvMult: [0.3, 0.6, 0.9, 1.2], pushCells: [1, 2, 3, 4], learn: [37, 37, 37, 37], train: [3000, 6000, 12000], icon: S + 'skill_dash_slash.png', sfx: 'rush', desc: '突进斩击并击退 1/2/3/4 格（官方）；只能击退等级低于自己的目标' },
     ],
   },
   mage: {
@@ -69,6 +95,12 @@ export const CLASSES: Record<ClassId, ClassDef> = {
       { key: 'F10', id: 'hell_thunder', name: '地狱雷光', kind: 'aoe', stat: 'mag', mana: 105, cooldown: 6, mult: 2.2, range: 425, learn: [30, 30, 32, 34], train: [4000, 8000, 12000], icon: S + 'skill_thunder.png', sfx: 'shockwave2', desc: '以自身为中心 5×5 雷暴（官方）；[适配] 左右各 2.5 卡' },
       // 诱惑之光：学习等级/修炼点/延迟 60 = 官方 C（21cq）；耗魔 = D Spell 3 ×3 [适配]；无伤害（倍率无）；规则见 World.charm*（docs/skills-official.md「诱惑之光」）
       { key: 'F11', id: 'charm', name: '诱惑之光', kind: 'charm', stat: 'mag', mana: 9, cooldown: 0, range: 520, learn: [13, 13, 18, 24], train: [1000, 2000, 4000], icon: S + 'skill_thunder.png', sfx: 'shockwave', desc: '驯服不高于自身等级+2 的生物系怪物成为宠物（官方 C）；宠物上限 2/3/4/5（资料站）；BOSS/不死系/高智商免疫；[适配] 成功率与叛变时间' },
+      // 传世法师 5 技能：学习等级 = 传世 DB；耗魔 = DB ×3 [适配]（再经 REBALANCE）；倍率 [适配]
+      { key: 'F12', id: 'ice_arrow', name: '冰箭术', kind: 'ranged', stat: 'mag', mana: 36, cooldown: 2, cs: true, mult: 3.96, range: 560, slow: 0.5, duration: 1.5, learn: [17, 17, 20, 23], train: [3000, 6000, 12000], icon: S + 'skill_ice_arrow.png', sfx: 'thunder', desc: '冰箭（雷电术的二选一替代）对所有怪 +10%（官方）；[适配] 减速 1.5s' },
+      { key: 'F13', id: 'ice_dragon', name: '冰龙破', kind: 'line', stat: 'mag', mana: 90, cooldown: 3, cs: true, mult: 2.4, range: 595, learn: [26, 26, 29, 32], train: [3000, 6000, 12000], icon: S + 'skill_ice_dragon.png', sfx: 'shockwave2', desc: '前方 7 格直线冰龙（官方）；[适配] 7×85px' },
+      { key: 'F14', id: 'frost_blade', name: '玄冰刃', kind: 'aoe', stat: 'mag', mana: 90, cooldown: 3, cs: true, mult: 2.4, range: 170, learn: [26, 26, 29, 32], train: [3000, 6000, 12000], icon: S + 'skill_frost_blade.png', sfx: 'shockwave2', desc: '以自身为中心 3×3 冰刃（官方）；[适配] 左右各 2 格' },
+      { key: 'F15', id: 'five_thunder', name: '五雷轰', kind: 'aoe', stat: 'mag', mana: 36, cooldown: 3, cs: true, mult: 2.6, range: 520, maxTargets: 5, undeadBonus: 0.2, learn: [34, 34, 36, 39], train: [3000, 6000, 12000], icon: S + 'skill_five_thunder.png', sfx: 'thunder', desc: '同时轰击最多 5 个目标，对不死系 +20%（官方）' },
+      { key: 'F16', id: 'ice_whirl', name: '冰旋风', kind: 'blast', stat: 'mag', mana: 90, cooldown: 4, cs: true, mult: 1.5, splash: 170, pull: true, learn: [37, 37, 39, 42], train: [3000, 6000, 12000], icon: S + 'skill_ice_whirl.png', sfx: 'shockwave2', desc: '大范围冰风，把低于自己等级的怪吸到中心（官方）' },
     ],
   },
   taoist: {
@@ -87,6 +119,14 @@ export const CLASSES: Record<ClassId, ClassDef> = {
       { key: 'F6', id: 'ghost_shield', name: '幽灵盾', kind: 'buff', stat: 'tao', mana: 45, cooldown: 10, buffStat: 'mdef', learn: [22, 22, 24, 26], train: [5000, 10000, 15000], icon: S + 'skill_magic_shield.png', sfx: 'heal2', desc: '提高魔御，持续随技能等级与道术（官方）；持续中重复施放无效' },
       { key: 'F7', id: 'holy_armor', name: '神圣战甲术', kind: 'buff', stat: 'tao', mana: 45, cooldown: 10, buffStat: 'def', learn: [25, 25, 27, 29], train: [5000, 10000, 15000], icon: S + 'Ability_Warrior_DefensiveStance.png', sfx: 'heal2', desc: '提高防御，持续随技能等级与道术（官方）；持续中重复施放无效' },
       { key: 'F8', id: 'mass_heal', name: '群体治愈术', kind: 'buff', stat: 'tao', mana: 36, cooldown: 6, heal: 2.5, area: 170, learn: [33, 33, 35, 38], train: [4000, 8000, 12000], icon: S + 'Spell_Holy_Renew.png', sfx: 'heal', desc: '3×3 范围治疗（官方）；[适配] 主角与 1 卡内召唤物' },
+      // 传世道士 6 技能 + 金甲骷髅（强化骷髅术）：学习等级 = 传世 DB；耗魔 = DB ×3 [适配]（再经 REBALANCE）
+      { key: 'F9', id: 'drive_corpse', name: '赶尸', kind: 'summon', stat: 'tao', mana: 48, cooldown: 12, cs: true, learn: [19, 19, 23, 26], train: [3000, 6000, 12000], icon: S + 'skill_drive_corpse.png', sfx: 'summon', desc: '驱使尸灵作战（召唤骷髅的二选一替代，属性更高）；[适配] 尸灵 = 骷髅 ×1.25' },
+      { key: 'F10', id: 'decoy_talisman', name: '替身法符', kind: 'decoy', stat: 'tao', mana: 15, cooldown: 6, cs: true, duration: 8, durPerLv: 2, learn: [20, 20, 23, 26], train: [3000, 6000, 12000], icon: S + 'skill_decoy_talisman.png', sfx: 'summon', desc: '放出替身，周围怪物仇恨转移到替身（官方）；[适配] 持续 8+2×等级 秒' },
+      { key: 'F11', id: 'soul_wall', name: '灵魂墙', kind: 'wall', stat: 'tao', mana: 30, cooldown: 6, cs: true, range: 520, area: 160, duration: 2, durPerLv: 1, learn: [28, 28, 30, 32], train: [3000, 6000, 12000], icon: S + 'skill_soul_wall.png', sfx: 'poison', desc: '灵魂墙困住目标区域怪物（困魔咒的二选一替代）；[适配] 非 BOSS 定身 2+等级 秒' },
+      { key: 'P', id: 'clear_mind', name: '道心清明', kind: 'melee', stat: 'tao', mana: 0, cooldown: 0, cs: true, passive: true, doubleExp: [0.05, 0.1, 0.15, 0.2], learn: [30, 30, 30, 30], train: [3000, 6000, 12000], icon: S + 'skill_clear_mind.png', sfx: 'heal', desc: '被动：击杀怪物有几率获得双倍经验（官方）；几率 [适配]' },
+      { key: 'F12', id: 'holy_light', name: '神光术', kind: 'ranged', stat: 'tao', mana: 48, cooldown: 3, cs: true, mult: 1.4, range: 520, undeadBonus: 0.2, cleanse: [0.4, 0.6, 0.8, 1], learn: [36, 36, 36, 36], train: [3000, 6000, 12000], icon: S + 'skill_holy_light.png', sfx: 'heal2', desc: '几率解除己方石化/诅咒类状态（官方）；[适配] 解除减速/定身，并以圣光攻击目标' },
+      { key: 'F13', id: 'cleanse', name: '解毒术', kind: 'buff', stat: 'tao', mana: 60, cooldown: 4, cs: true, heal: 1, area: 170, cleanse: [0.4, 0.6, 0.8, 1], learn: [38, 38, 38, 38], train: [3000, 6000, 12000], icon: S + 'skill_cleanse.png', sfx: 'heal', desc: '几率解除 3×3 内己方中毒（官方）；[适配] 并小量治疗' },
+      { key: 'F14', id: 'summon_golden_skeleton', name: '金甲骷髅', kind: 'summon', stat: 'tao', mana: 90, cooldown: 12, cs: true, learn: [42, 42, 44, 46], train: [600, 1200, 1800], icon: S + 'skill_summon_skeleton.png', sfx: 'summon', desc: '召唤重甲金甲骷髅（传世强化骷髅术）；[适配] 单只，属性 = 骷髅 HP×2 攻×1.6 防×1.5' },
     ],
   },
 };
@@ -103,6 +143,8 @@ export const COOLDOWN_BEFORE: Record<string, number> = {};
  * 公共施法间隔 CAST_GAP 0.8s 保留（任一技能施放后所有技能 ≥0.8s）。CD_BEFORE_LIGHT = 本次改前值（即 0.8s 公共间隔）。
  */
 export const SKILL_CD: Record<string, number> = {
+  thunder_sword: 3, break_strike: 2, shield_break: 3, vajra_body: 6, dash_slash: 4, ice_arrow: 2, ice_dragon: 3, frost_blade: 3, five_thunder: 3, ice_whirl: 4,
+  drive_corpse: 6, decoy_talisman: 6, soul_wall: 6, holy_light: 3, cleanse: 4, summon_golden_skeleton: 6,
   thrust: 1.5, half_moon: 2, rush: 4, fire_sword: 4,
   fireball: 1.5, thunder: 2.5, fire_wall: 5, magic_shield: 6, ice_roar: 4, big_fireball: 2, burst_fire: 3, hell_fire: 2, lightning_flash: 3, hell_thunder: 4, charm: 2,
   heal: 2, poison: 2, soul_fire: 1.5, summon_skeleton: 6, summon_beast: 6, ghost_shield: 6, holy_armor: 6, mass_heal: 3,

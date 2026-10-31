@@ -95,7 +95,7 @@ const free = (w: World) => w.skills.map(() => 0);
   const r = w.cast(idx(w, 'half_moon'), free(w)); ok(r.ok && r.targets.length === 3, '半月弯刀命中 3 个目标');
   const r2 = w.cast(idx(w, 'fire_sword'), free(w)); ok(r2.ok && r2.targets[0] === w.queue(1)[0].uid, '烈火剑法打前排');
   const r3 = w.cast(idx(w, 'thrust'), free(w)); ok(r3.ok && r3.targets.length === 2, '刺杀剑术命中 2 格');
-  ok(w.skills.every(k => k.mana === 0), '战士剑法不耗魔（官方）');
+  ok(w.skills.filter(k => !k.cs).every(k => k.mana === 0), '战士剑法不耗魔（官方）'); ok(w.skillPool.filter(k => k.cs && !k.passive).every(k => k.mana === ({ thunder_sword: 0, break_strike: 3, shield_break: 3, vajra_body: 6, dash_slash: 6 } as Record<string, number>)[k.id]), '传世战士技能耗魔 = DB Spell ×3（雷霆剑 0）');
   const sly = pool(w, 'slaying'); ok(!!sly && sly.passive === true, '攻杀剑术为被动且在 skillPool'); ok(idx(w, 'slaying') < 0, '攻杀不占快捷栏');
   const cds = free(w); w.cast(idx(w, 'fire_sword'), cds); const r4 = w.cast(idx(w, 'fire_sword'), cds); ok(!r4.ok && r4.reason.includes('冷却'), '冷却中不可再放');
   const fs = w.skills[idx(w, 'fire_sword')]; ok(fs.lvMult!.join() === '1.4,1.8,2.2,2.6' && fs.learn![0] === 35, '烈火剑法 35 级学习，1.4~2.6 倍（官方）');
@@ -379,6 +379,7 @@ const free = (w: World) => w.skills.map(() => 0);
   for (const c of ['warrior', 'mage', 'taoist'] as ClassId[]) {
     const rs = SEEDS.map(sd => simRun(c, sd)); const ds = rs.map(r => r.deaths); const med = median(ds); tm[c] = median(rs.map(r => r.t));
     const perFloor = Math.max(0, ...rs.map(r => { const m: Record<number, number> = {}; for (const d of r.deathAt) m[d.floor] = (m[d.floor] ?? 0) + 1; return Math.max(0, ...Object.values(m)); }));
+    if (process.env.LEARNLOG) rs.forEach((r, k) => console.log(`   学书 ${CLASSES[c].name} 种子${SEEDS[k]}: ${r.learnLog.filter(x => !x.includes('死@')).join(' ')}`));
     console.log(`  ${CLASSES[c].name}: 种子 ${SEEDS.join('/')} 死亡 ${ds.join('/')} 中位数 ${med} 等级 ${rs.map(r => r.level).join('/')} 单层最多 ${perFloor}`);
     if (process.env.SIM) continue;
     ok(rs.every(r => r.done && r.level >= 48 && r.level <= 52), `${CLASSES[c].name} 每个种子通关主线、通关等级≈50（${rs.map(r => r.level).join('/')}）`);
@@ -449,10 +450,11 @@ const free = (w: World) => w.skills.map(() => 0);
   const w2 = mk([]); const h2 = w2.hero!; w2.step(0.05, { dx: -1, dy: 0 }); ok(h2.facing === -1, '附近无怪时向左走会转身');
 }
 { // 技能键：主动 F1~Fn，被动 P，且不占用 W/A/S/D
-  const actives = (Object.keys(CLASSES) as ClassId[]).flatMap(c => CLASSES[c].skills.filter(s => !s.passive));
+  const actives = (Object.keys(CLASSES) as ClassId[]).flatMap(c => CLASSES[c].skills.filter(s => !s.passive && !s.cs)); // 传世秘籍静态键 F12+ 仅占位，快捷栏按学会顺序重标
   const keys = actives.map(s => s.key);
   ok(keys.every(k => /^F([1-9]|1[01])$/.test(k)) && !keys.some(k => 'WASD'.includes(k)), `三职业主动技能键均为 F1~F11（${[...new Set(keys)].join(',')}）`);
-  ok(CLASSES.warrior.skills.filter(s => !s.passive).length === 4 && CLASSES.mage.skills.filter(s => !s.passive).length === 11, '战士 4 主动 / 法师 11 主动（#11 + 诱惑之光）');
+  ok(CLASSES.warrior.skills.filter(s => !s.passive && !s.cs).length === 4 && CLASSES.mage.skills.filter(s => !s.passive && !s.cs).length === 11, '战士 4 主动 / 法师 11 主动（#11 + 诱惑之光）');
+  ok(CLASSES.warrior.skills.filter(s => s.cs).length === 5 && CLASSES.mage.skills.filter(s => s.cs).length === 5 && CLASSES.taoist.skills.filter(s => s.cs).length === 7, '传世秘籍：战士 5 / 法师 5 / 道士 6+金甲骷髅');
   ok(POTIONS.every(p => !keys.includes(p.key)), '药水 1-4 与技能键不冲突');
 }
 { // S 键：起点返回上一层
@@ -597,7 +599,7 @@ const free = (w: World) => w.skills.map(() => 0);
     const bt = Settings.autoTouched; Settings.autoSkills = null; Settings.autoTouched = null;
     Settings.toggleAutoSkill('thrust', 'warrior');
     ok(!Settings.skillsFor('warrior').includes('thrust'), '战士取消刺杀生效');
-    ok(Settings.skillsFor('mage').length === 11 && Settings.skillsFor('taoist').length === 8, '法师/道士仍为推荐默认（#12 道士 +3，法师 +诱惑之光）');
+    ok(Settings.skillsFor('mage').length === 16 && Settings.skillsFor('taoist').length === 14, '法师/道士仍为推荐默认（#12 道士 +3，法师 +诱惑之光；传世：法师 +5，道士 +6）');
     Settings.toggleAutoSkill('fireball', 'mage');
     ok(!Settings.skillsFor('mage').includes('fireball') && !Settings.skillsFor('warrior').includes('thrust'), '两职业改动互不覆盖');
     Settings.autoTouched = bt;
@@ -1013,7 +1015,7 @@ const free = (w: World) => w.skills.map(() => 0);
 }
 { // #12 道士 3 技能：幽灵盾 / 神圣战甲术 / 群体治愈术
   const NEW: [string, number, number[], number][] = [['ghost_shield', 22, [5000, 10000, 15000], 45], ['holy_armor', 25, [5000, 10000, 15000], 45], ['mass_heal', 33, [4000, 8000, 12000], 36]];
-  ok(CLASSES.taoist.skills.filter(s => !s.passive).length === 8 && CLASSES.taoist.skills.every(s => !s.key || +s.key.slice(1) <= 10), '道士 8 主动，快捷栏不超过 F10');
+  ok(CLASSES.taoist.skills.filter(s => !s.passive && !s.cs).length === 8 && CLASSES.taoist.skills.filter(s => !s.cs).every(s => !s.key || +s.key.slice(1) <= 10), '道士 8 主动，快捷栏不超过 F10');
   for (const [id, lv, tr, mana] of NEW) {
     const d = CLASSES.taoist.skills.find(s => s.id === id)!;
     ok(d.learn![0] === lv && JSON.stringify(d.train) === JSON.stringify(tr) && MANA_BEFORE[d.id] === mana && d.mana === Math.round(mana * REBALANCE.taoist.mana) && d.stat === 'tao', `${d.name}：官方学习 Lv${lv}、修炼点 ${tr.join('/')}，耗魔 ${mana}`);

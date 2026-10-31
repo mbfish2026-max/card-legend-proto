@@ -1,3 +1,4 @@
+import { foesWithoutView } from '../ui/foeViews';
 import { hdFixed, Render, MAX_LW } from '../render';
 import { ComboStatusTracker, COMBO_STATUS } from '../ui/comboStatus';
 import { REGIONS } from '../data/map';
@@ -100,7 +101,7 @@ export class BattleScene extends Phaser.Scene {
     // 其它键（F1~F4 技能等）：阻止 F1 帮助等默认行为；不占用 F5 等其它功能键
     this.input.keyboard!.on('keydown', (e: KeyboardEvent) => {
       if (stepDir(e)) return; if (/^F([1-9]|10)$/.test(e.key)) e.preventDefault(); this.onKey(e.key.toUpperCase()); });
-    this.input.keyboard!.addCapture('F1,F2,F3,F4,F5,F6,F7,F8,F9,F10,F11');
+    this.input.keyboard!.addCapture('F1,F2,F3,F4,F5,F6,F7,F8,F9,F10,F11,F12');
     // 失焦/切后台时清空按键状态，避免 keyup 丢失导致方向键"卡住"或失灵
     const reset = () => { hold.reset(); this.input.keyboard?.resetKeys(); this.ui?.pad?.reset?.(); };
     window.addEventListener('blur', reset); document.addEventListener('visibilitychange', reset); this.game.events.on('blur', reset);
@@ -128,7 +129,7 @@ export class BattleScene extends Phaser.Scene {
     }
     this.handle(w.drainEvents());
     // 号角召出的沃玛教主、第一张图的刷新怪不发 summon 事件：补建缺失的视图，避免「有怪无图」
-    if (!w.town) for (const u of w.alive('enemy')) if (!this.views.has(u.uid)) { const v = new CardView(this, u); v.setAlpha(0); this.tweens.add({ targets: v, alpha: 1, duration: 400 }); this.views.set(u.uid, v); }
+    this.ensureFoeViews();
     this.views.forEach(v => { v.x = v.unit.x; v.sync(); });
     const last = es.filter(e => e.tier !== 'boss').pop();
     if (last && !qs.has('nodrop')) { last.drops = [{ item: 'gold', chance: 1 }, { item: 'hp_small', chance: 1 }, { item: 'iron_sword', chance: 1, rarity: 'rare' }]; w.kill(last); this.handle(w.drainEvents()); }
@@ -306,6 +307,34 @@ export class BattleScene extends Phaser.Scene {
         tv.forEach(v => { if (!playFx(this, 'fx_rush_hit', v.cx, v.cy)) fx.shadowSlash(this, v.cx, v.cy, v.h); });
         return done();
       }
+      // 传世技能（docs/fx-requests.md #传世）：专属图集缺失 → 复用相近图集着色 / Graphics 占位
+      case 'thunder_sword': hv.lunge(dir, 34); if (tv[0]) { if (!playFx(this, 'fx_thunder_strike', tv[0].cx, tv[0].y, { tint: 0xc8e0ff })) fx.lightning(this, tv[0].cx, tv[0].y - 600, tv[0].cy); fx.bloodBlade(this, tv[0].cx, tv[0].cy, tv[0].h, 0x9fd0ff); } return done();
+      case 'break_strike': case 'shield_break': hv.lunge(dir, 30); if (tv[0]) { const c = skill === 'break_strike' ? 0xffa040 : 0x80b0ff; if (!playFx(this, 'fx_thrust_hit', tv[0].cx, tv[0].cy, { flip, tint: c })) fx.shadowSlash(this, tv[0].cx, tv[0].cy, tv[0].h); } return done();
+      case 'dash_slash': {
+        hv.lunge(dir, 60); const d = playFx(this, 'fx_rush_dash', hv.cx, hv.cy, { flip, decorative: true, tint: 0xffe0a0 }); if (d) follow(this, d, () => hv.active ? { x: hv.cx, y: hv.cy } : null);
+        tv.forEach(v => { if (!playFx(this, 'fx_rush_hit', v.cx, v.cy)) fx.shadowSlash(this, v.cx, v.cy, v.h); }); return done();
+      }
+      case 'vajra_body': {
+        const ms = dur * 1000, l = playFx(this, 'fx_holy_armor_loop', hv.cx, hv.cy, { ms, tint: 0xffc040, decorative: true });
+        if (l) follow(this, l, () => hv.active ? { x: hv.cx, y: hv.cy } : null); else fx.holyLight(this, hv.cx, hv.cy, hv.h);
+        fx.floatNumber(this, hv.cx, hv.cy - hv.h * 0.2, hv.h, '金刚护体', '#ffd060', 0.7); return done();
+      }
+      case 'ice_arrow': if (tv[0]) { const t = tv[0], x0 = hv.cx + dir * hv.w * 0.4, y0 = hv.cy - 20; fx.projectile(this, x0, y0, t.cx, t.cy, 'talisman', () => { if (!playFx(this, 'fx_ice_roar_burst', t.cx, t.y, { scale: 0.6 })) fx.hitSpark(this, t.cx, t.cy); fx.frostTint(t.art, 1500); done(); }); return; } return done();
+      case 'ice_dragon': case 'frost_blade': case 'ice_whirl': {
+        if (skill === 'frost_blade') fx.iceRoar(this, hv.cx, GROUND_Y + hv.unit.y - 10, sk?.range ?? 170);
+        tv.forEach((v, i) => this.time.delayedCall(i * 40, () => { if (v.active && !playFx(this, 'fx_ice_roar_burst', v.cx, v.y, { scale: skill === 'ice_whirl' ? 1.2 : 0.9 })) fx.hitSpark(this, v.cx, v.cy); }));
+        tv.forEach(v => fx.frostTint(v.art, 1200)); return done();
+      }
+      case 'five_thunder': { tv.forEach((v, i) => this.time.delayedCall(i * 70, () => { if (v.active && !playFx(this, 'fx_thunder_strike', v.cx, v.y, { tint: 0xd0a0ff })) fx.lightning(this, v.cx, v.y - 600, v.cy); })); if (!FxQuality.low) this.cameras.main.shake(140, 0.004); return done(); }
+      case 'soul_wall': { tv.forEach(v => { const l = playFx(this, 'fx_poison_loop', v.cx, v.cy, { ms: dur * 1000, tint: 0xa080ff }); if (!l) fx.poisonCloud(this, v.cx, v.cy, v.h); }); fx.floatNumber(this, tv[0]?.cx ?? hv.cx, (tv[0]?.cy ?? hv.cy) - 60, 120, '灵魂墙', '#c0a0ff', 0.7); return done(); }
+      case 'holy_light': if (tv[0]) { if (!playFx(this, 'fx_heal_pillar', tv[0].cx, tv[0].y, { tint: 0xfff0a0 })) fx.holyLight(this, tv[0].cx, tv[0].cy, tv[0].h); } return done();
+      case 'cleanse': { const all = [hv, ...tv.filter(v => v !== hv)]; all.forEach(v => { if (!playFx(this, 'fx_heal_pillar', v.cx, v.y, { tint: 0x90ffb0 })) fx.holyLight(this, v.cx, v.cy, v.h); }); fx.floatNumber(this, hv.cx, hv.cy - hv.h * 0.2, hv.h, '解毒术', '#90ffb0', 0.7); return done(); }
+      case 'decoy_talisman': { const x = hv.cx + dir * 120, y = GROUND_Y + WORLD.summonLane; if (!playFx(this, 'fx_summon_pillar', x, y, { tint: 0xe8d8a0 })) fx.summonCircle(this, x, y); return done(); }
+      case 'drive_corpse': case 'summon_golden_skeleton': {
+        const x = hv.x - dir * 110, y = GROUND_Y + WORLD.summonLane, tint = skill === 'drive_corpse' ? 0x90c060 : 0xffd040;
+        const c = playFx(this, 'fx_summon_circle', x, y, { tint, onFrame: [4, () => playFx(this, 'fx_summon_pillar', x, y, { tint })] });
+        if (!c) fx.summonCircle(this, x, y); return done();
+      }
       case 'summon_beast': case 'summon_skeleton': {
         const x = skill === 'summon_beast' ? hv.cx - dir * 80 : hv.x - dir * 110, y = GROUND_Y + WORLD.summonLane;
         const c = playFx(this, skill === 'summon_beast' ? 'fx_summon_beast_circle' : 'fx_summon_circle', x, y, { onFrame: [4, () => playFx(this, 'fx_summon_pillar', x, y)] });
@@ -413,7 +442,7 @@ export class BattleScene extends Phaser.Scene {
           const u = sv.unit, fx0 = sv.x + dir * (sv.w / 2 + 6);
           if (u.summon) sv.showPose(u.id + '_atk'); // 姿态帧（art-requests L.2），缺帧保留原动画
           const ok = u.pet ? !!playFx(this, 'fx_pet_hit_pink', tv.cx, tv.cy)
-            : u.summon && u.id === 'summon_skeleton' ? !!playFx(this, 'fx_skeleton_claw', fx0, sv.cy - 10, { flip: dir < 0 })
+            : u.summon && (u.id === 'summon_skeleton' || u.id === 'summon_corpse' || u.id === 'summon_golden_skeleton') ? !!playFx(this, 'fx_skeleton_claw', fx0, sv.cy - 10, { flip: dir < 0 })
             : u.summon && u.id === 'summon_beast' ? !!playFx(this, 'fx_beast_bite', tv.cx, tv.cy) : false;
           if (!ok) fx.slash(this, fx0, sv.cy - 10, sv.h, dir);
         }
@@ -688,6 +717,10 @@ export class BattleScene extends Phaser.Scene {
       return;
     }
   }
+  /** 存活怪物都要有卡牌：练级图（farm）刷新怪、号角召出的怪等不发 summon 事件，逐帧补建缺失视图，避免「看不到的怪在攻击我」 */
+  ensureFoeViews() {
+    for (const u of foesWithoutView(this.world, uid => this.views.has(uid))) { const v = new CardView(this, u); v.x = u.x; v.setAlpha(0); this.tweens.add({ targets: v, alpha: 1, duration: 400 }); this.views.set(u.uid, v); }
+  }
   update(time: number, dms: number) {
     const dt = Math.min(0.05, dms / 1000), k = this.keys;
     if (this.skillsDirty && !this.paused) { this.skillsDirty = false; this.cds = this.world.skills.map(() => 0); this.scene.stop('UI'); this.scene.launch('UI'); }
@@ -703,6 +736,7 @@ export class BattleScene extends Phaser.Scene {
       this.saveT += dt; if (this.saveT > 15) { this.saveT = 0; this.saveGame(); }
     }
     this.handle(this.world.drainEvents());
+    this.ensureFoeViews();
     this.layoutQueue();
     this.comboStatus.sync(this.world.time, uid => this.views.get(uid)?.unit);
     this.views.forEach(v => { v.sync(); v.anim(time); v.setDepth(10 + v.unit.y / 1000 + (v.unit.isHero ? 0.0005 : 0)); });

@@ -51,7 +51,7 @@ export const simRun = (c: ClassId, seed: number, maxT = SIM_MAX_T) => {
         if (!cp.out && w.companionCooldown() <= 0) w.toggleCompanion(); w.unleashCombo(); }
       if (process.env.SIM && Math.round(t * 20) % 2000 === 0) console.log("   t", Math.round(t), "lv", w.level, "gold", w.gold, "floor", w.floorIndex + 1, "deaths", w.deaths);
       // R11 技能书：达到等级且金币有余就买，背包里的书能学就学（学会后快捷栏重排，冷却重置）
-      for (const b of w.shopBooks()) { const sk = w.skillPool.find(x => x.id === b.skill)!; if (!w.learned.has(b.skill) && w.level >= w.needLevel(sk) && w.gold >= b.price && !w.bag.some(x => ITEMS[x.item]?.book === b.skill)) w.buyBook(b.skill); }
+      for (const b of process.env.CS ? [...w.shopBooks(), ...w.csBooks()] : w.shopBooks()) { const sk = w.skillPool.find(x => x.id === b.skill)!; if (!w.learned.has(b.skill) && w.level >= w.needLevel(sk) && w.gold >= b.price && !w.bag.some(x => ITEMS[x.item]?.book === b.skill)) w.buyBook(b.skill); }
       for (let i = w.bag.length - 1; i >= 0; i--) if (ITEMS[w.bag[i].item]?.book && w.learnBook(i).startsWith('学会')) { cds = w.skills.map(() => 0); learnLog.push(`${w.level}级${w.skillPool.find(x => x.id === [...w.learned].pop())!.name}@${w.floorIndex + 1}层`); }
       // 可选对照（NEWBOOKS=1）：#11/#12 新书达到官方学习等级即学会（最坏情况；默认 = 已接入后的真实书店/掉落）
       if (process.env.NEWBOOKS) for (const b of Object.values(BOOKS)) if (NEW_BOOKS.includes(b.skill) &&  b.cls === w.cls && !w.learned.has(b.skill) && w.level >= w.needLevel(w.skillPool.find(x => x.id === b.skill)!)) { w.learned.add(b.skill); cds = w.skills.map(() => 0); }
