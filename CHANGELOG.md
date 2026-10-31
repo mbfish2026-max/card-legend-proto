@@ -9,7 +9,6 @@
 - W2 src/ui/WorldMapView.ts 接入 Panel 地图页：总图 ↔ 区域图、拖动/双指/滚轮/＋－缩放、群节点展开、确认卡传送/回城、Esc 逐级返回；手机 844×390 节点 82、字号 ≥24 逻辑像素，不与 HUD 重叠。e2e tests/e2e/worldmap-shots.mjs。
 - W3 真图替换占位（底图/区域插画/图标/迷雾/边框），docs/art-requests.md 记 W 接入状态与 [适配] 节点。
 - W4 地图总览新增「在世界地图中查看」（桌面按钮 / 手机 ≥44px），直接打开当前区域；传送员列表按世界地图区域分组并带区域名；docs/world-map-plan.md 更新决定（8 区域、hejiban=魔龙、裂隙留区域内、浮岛装饰、出口用 portal）。
-
 ## 战斗平衡 R56b（feat/balance-battle，合入 origin/main ae01726 balance-sys 后）
 合并提交 acc05a5。9 种子（3/7/11/19/23/42/57/88/101），scripts/sim-bands.ts 口径。
 
