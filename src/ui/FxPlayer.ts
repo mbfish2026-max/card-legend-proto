@@ -44,6 +44,10 @@ export const FX_DEFS: Record<string, FxDef> = {
   fx_hell_fire_line: D(20, 'ADD', 57, ['hell_fire']),
   fx_lightning_flash_beam: D(24, 'ADD', 59, ['lightning_flash']),
   fx_hell_thunder_burst: D(20, 'ADD', 57, ['hell_thunder']),
+  // 召唤物动作（v5）：骷髅爪击 / 神兽撕咬 / 宠物命中
+  fx_skeleton_claw: D(20, 'ADD', 57, ['summon_skeleton']),
+  fx_beast_bite: D(20, 'ADD', 58, ['summon_beast']),
+  fx_pet_hit_pink: D(20, 'ADD', 58, ['*']),
   fx_thunder_strike: D(20, 'ADD', 60, ['thunder', 'hell_thunder']),
   // #12 道士新技能专属（v4）
   fx_ghost_shield_cast: D(20, 'ADD', 56, ['ghost_shield']),
