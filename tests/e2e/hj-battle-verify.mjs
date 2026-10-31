@@ -66,5 +66,57 @@ try {
   await page.screenshot({ path: `${dir}/hj-6-recall-cd.png` });
   const errs = w.errs.filter(e => !/404|Failed to load/.test(e)); out.errs = errs; chk(errs.length === 0, `无控制台报错（${errs.length}）`);
   await page.close();
+  // ===== 阶段 B：六合击各触发一次（含战士英雄）+ 魔龙血域 =====
+  const open = async (cls, floorIndex = 2) => {
+    const p = await b.newPage(); await p.setViewport({ width: 1280, height: 720 }); const ww = watch(p);
+    await p.evaluateOnNewDocument(s => localStorage.setItem('fcl_save_v1', JSON.stringify(s)), { ...SAVE, cls, level: 55, floorIndex });
+    await p.goto(sv.url); await p.waitForFunction(() => window.__game?.scene.getScene('Title')?.sys.isActive(), { timeout: 30000 }); await sleep(1500);
+    const t = await findPos(p, 'Title', '继'); await p.mouse.click(t.x, t.y);
+    await p.waitForFunction(() => window.__game.scene.getScene('Battle')?.world?.hero && window.__game.scene.getScene('Battle')?.hud, { timeout: 30000 }); await sleep(1200);
+    await p.evaluate(() => { const B = window.__game.scene.getScene('Battle'); window.__combo = []; window.__fx = []; const hd = B.handle.bind(B); B.handle = evs => { for (const v of evs) { if (v.type === 'combo') window.__combo.push(v); if (v.type === 'bossfx') window.__fx.push(v.kind); } return hd(evs); }; });
+    return { p, ww };
+  };
+  const combo = async (p, hcls, id) => {
+    await p.evaluate((hcls, id) => { const W = window.__game.scene.getScene('Battle').world, h = W.hero; h.hp = h.maxHp = 1e7;
+      W.units.filter(u => u.companion).forEach(u => { u.alive = false; }); W.companion = null; W.recruitCompanion(hcls, '英雄');
+      const c = W.companion; c.level = 45; c.combo = [id]; c.equip.heart = { uid: 9100, item: 'fire_heart', name: '火龙之心', rarity: 'common', stats: {}, req: 0, price: 0 }; c.heartStore = 30000; c.rage = 100; c.out = true;
+      for (const e of W.units.filter(u => u.team === 'enemy' && u.alive)) { e.x = h.x + 2000 + Math.random() * 500; e.ai = 'idle'; }
+      const base = W.units.find(u => u.team === 'enemy' && u.alive);
+      window.__tg = [180, 300, 420].map(dx => { const e = W.spawn({ ...base, boss: undefined }, 'enemy', h.x + dx, 0); e.hp = e.maxHp = 1e6; e.atk = 0; e.ai = 'chase'; return e.uid; });
+      window.__combo = []; }, hcls, id);
+    await sleep(300); await p.keyboard.press('g');
+    await p.waitForFunction(() => window.__combo.length > 0, { timeout: 10000 }).catch(() => {}); await sleep(200);
+    return p.evaluate(() => { const W = window.__game.scene.getScene('Battle').world, c = window.__combo[0]; if (!c) return null; const t = W.units.find(u => u.uid === c.target); const T = W.time;
+      return { id: c.id, name: c.name, amount: c.amount, hits: c.hits, poison: (t?.poisonUntil ?? 0) > T, stun: (t?.stunUntil ?? 0) > T, vuln: (t?.vulnUntil ?? 0) > T }; });
+  };
+  const plan = { warrior: [['warrior', 'pohun'], ['mage', 'leiting'], ['taoist', 'pixing']], mage: [['mage', 'huolong'], ['taoist', 'mori']], taoist: [['taoist', 'shihun']] };
+  const expect = { pohun: r => r.hits >= 2, huolong: r => r.hits >= 2 && r.vuln, shihun: r => r.hits >= 2 && r.poison, leiting: r => r.hits === 1 && r.vuln, mori: r => r.hits === 1 && r.poison, pixing: r => r.hits === 1 && r.stun && r.vuln };
+  out.combos = {};
+  for (const [mc, list] of Object.entries(plan)) {
+    const { p, ww } = await open(mc);
+    for (const [hc, id] of list) {
+      const r = await combo(p, hc, id); out.combos[id] = r;
+      chk(!!r && r.id === id && r.amount > 0 && expect[id](r), `合击 ${id}（${mc}+${hc}${mc === 'warrior' && hc === 'warrior' ? '，战士英雄' : ''}）：${r?.name} ${r?.amount} 伤害，命中 ${r?.hits}，毒 ${r?.poison} 麻痹 ${r?.stun} 易伤 ${r?.vuln}`);
+      await p.screenshot({ path: `${dir}/hj-b-${id}.png` });
+    }
+    const e2 = ww.errs.filter(e => !/404|Failed to load/.test(e)); chk(e2.length === 0, `${mc} 页无控制台报错（fx_combo_* 走 Graphics 占位）（${e2.length}）${e2.slice(0, 2).join(' | ')}`); await p.close();
+  }
+  { // 魔龙血域：进入 → 观察瞬移 → 击杀 → 回城不判通关
+    const { p, ww } = await open('warrior', 22);
+    await p.evaluate(() => window.__game.scene.getScene('Battle').world.loadFloor(23)); await sleep(1500);
+    out.molong = await p.evaluate(() => { const W = window.__game.scene.getScene('Battle').world, h = W.hero; h.hp = h.maxHp = 1e8; const bb = W.units.find(u => u.id === 'boss_molong');
+      for (const e of W.units.filter(u => u.team === 'enemy' && u !== bb)) W.kill(e); h.x = bb.x - 150; bb.ai = 'chase'; window.__bb = bb.uid; return { floor: W.floor.name, boss: bb?.name, hp: bb?.maxHp }; });
+    await sleep(1500); await p.screenshot({ path: `${dir}/hj-b-molong-enter.png` });
+    await p.waitForFunction(() => { const W = window.__game.scene.getScene('Battle').world, bb = W.units.find(u => u.uid === window.__bb); if (bb?.boss && bb.boss.flyT < 25) bb.boss.flyT = 29; if (bb && Math.abs(bb.x - W.hero.x) > 120) W.hero.x = bb.x - 60; return window.__fx.includes('fly'); }, { timeout: 15000, polling: 100 }).catch(() => {});
+    await sleep(300); await p.screenshot({ path: `${dir}/hj-b-molong-blink.png` });
+    const fly = await p.evaluate(() => window.__fx.includes('fly'));
+    chk(out.molong.boss === '魔龙教主' && out.molong.floor === '魔龙血域' && fly, `进入魔龙血域：${out.molong.boss}（HP ${out.molong.hp}），观察到瞬移 ${fly}`);
+    await p.evaluate(() => { const W = window.__game.scene.getScene('Battle').world; const bb = W.units.find(u => u.uid === window.__bb); W.kill(bb); }); await sleep(1500);
+    await p.evaluate(() => { const W = window.__game.scene.getScene('Battle').world; W.hero.x = W.exitX; }); await sleep(600); await p.keyboard.press('w'); await sleep(2000);
+    out.molongEnd = await p.evaluate(() => { const W = window.__game.scene.getScene('Battle').world; return { town: W.town, done: W.done }; });
+    chk(out.molongEnd.town === 'mengzhong' && !out.molongEnd.done, `击杀魔龙教主后出口回盟重、不判通关（${JSON.stringify(out.molongEnd)}）`);
+    await p.screenshot({ path: `${dir}/hj-b-molong-town.png` });
+    const e2 = ww.errs.filter(e => !/404|Failed to load/.test(e)); chk(e2.length === 0, `魔龙血域页无控制台报错（${e2.length}）${e2.slice(0, 2).join(' | ')}`); await p.close();
+  }
 } finally { await b.close(); sv.kill?.(); sv.close?.(); }
 console.log(JSON.stringify(out)); console.log(fail ? `失败 ${fail}` : '全部通过'); process.exit(fail ? 1 : 0);

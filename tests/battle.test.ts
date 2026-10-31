@@ -1,7 +1,7 @@
 declare const process: { env: Record<string, string | undefined> };
 import { World, SaveData, OIL_PRICE, IRON_PRICE, OFFICIAL, mitigate, taoBuffValue, taoBuffDur, SKELETON_OFFICIAL, SUMMON_NAME_COLORS, SUMMON_MAX_LV, SUMMON_LV_KILLS } from '../src/combat/World';
 import { ITEMS, SETS, ENHANCE_MAX, enhanceChance, shatterChance } from '../src/data/items';
-import { WORLD, CARD, Floor, FLOORS, FLOOR_ORDER, nextFloorOf, floorNo, DEPTH_STEP, prevLayerOf, groupOf } from '../src/data/world';
+import { WORLD, CARD, Floor, FLOORS, FLOOR_ORDER, SIDE_FLOORS, nextFloorOf, floorNo, DEPTH_STEP, prevLayerOf, groupOf } from '../src/data/world';
 import { comboFor } from '../src/data/companion';
 import { CLASSES, ClassId, CAST_GAP, COOLDOWN_BEFORE, REBALANCE, MANA_BEFORE, SKILL_CD, CD_BEFORE_LIGHT } from '../src/data/classes';
 import { ENEMIES, DIFF } from '../src/data/units';
@@ -240,7 +240,7 @@ const free = (w: World) => w.skills.map(() => 0);
   ok(FLOORS.slice(0, 13).map(f => f.name).join() === '幽暗森林,兽人要塞,蛛网晶洞,毒蛇山谷,白骨墓穴,尸王殿,蜈蚣洞,石墓·猪洞,沃玛寺庙,祖玛阁,牛魔寺庙,封魔殿,赤月魔穴', '层序：新手村→沃玛森林(兽人/蛛洞)→兽人古墓→比奇矿区尸王殿→沃玛寺庙→祖玛→赤月');
   // feat/maps-more（plan-60h B1）：洞穴群子层追加在 13–18（旧档下标不变），通关顺序按 FLOOR_ORDER
   ok(FLOORS.slice(13, 19).map(f => f.name).join() === '兽人古墓二层,兽人古墓三层,骷髅洞·洞穴一层,骷髅洞·洞穴二层,沃玛自然洞穴·一,沃玛自然洞穴·二' && FLOORS.slice(13, 19).every(f => f.farm && f.group && f.sub && f.src), 'B1 6 个子层：官方名/图群/子层名/来源，全部 farm');
-  ok([...FLOOR_ORDER].sort((a, b) => a - b).join() === FLOORS.map((_, i) => i).join() && FLOOR_ORDER.slice(0, 5).join() === '0,1,2,3,4', 'FLOOR_ORDER 覆盖全部层，新手段不变');
+  ok([...FLOOR_ORDER, ...SIDE_FLOORS].sort((a, b) => a - b).join() === FLOORS.map((_, i) => i).join() && SIDE_FLOORS.every(i => !FLOOR_ORDER.includes(i)) && FLOOR_ORDER.slice(0, 5).join() === '0,1,2,3,4', 'FLOOR_ORDER + 侧线层（魔龙血域）覆盖全部层，新手段不变');
   ok(nextFloorOf(4) === 13 && nextFloorOf(14) === 15 && nextFloorOf(18) === 5 && nextFloorOf(12) === 19 && nextFloorOf(22) === -1 && floorNo(13) === 6 && floorNo(5) === 12 && floorNo(12) === 19, '子层顺序：古墓一→二→三→洞穴一→二→自然洞穴一→二→尸王殿');
   ok(nextFloorOf(2, FLOORS.slice(0, 3)) === -1 && floorNo(1, FLOORS.slice(0, 3)) === 2 && prevLayerOf(1, FLOORS.slice(0, 3)) === -1, '自定义层表仍按线性');
   ok(prevLayerOf(13) === 4 && prevLayerOf(14) === 13 && prevLayerOf(16) === 15 && prevLayerOf(15) === -1 && prevLayerOf(17) === -1 && prevLayerOf(18) === 17 && prevLayerOf(5) === -1 && prevLayerOf(0) === -1, '上一层入口只在同图群内');
@@ -347,7 +347,7 @@ const free = (w: World) => w.skills.map(() => 0);
   // feat/charm：诱惑之光书接入官方掉落（骷髅精灵/尸王/沃玛卫士）后掉落随机序列漂移，法师种子 19 由 10→13（该种子未买到地狱火；模拟中诱惑之光 0 次施放，目标均免疫/等级过高），上限 12→14
   const PASS_MAX_DEATHS = 14;
   const simRun = (c: ClassId, seed: number) => {
-    const w = (process.env.ALL ? learnAll : (x: World) => x)(new World(seeded(seed), 1, FLOORS, c)); let cds = w.skills.map(() => 0); let t = 0, potUsed = 0; const learnLog: string[] = [];
+    const w = (process.env.ALL ? learnAll : (x: World) => x)(new World(seeded(seed), 1, FLOORS, c)); let cds = w.skills.map(() => 0); let t = 0, potUsed = 0; const learnLog: string[] = []; let hjCombo = 0, hjHeroDmg = 0, hjAllDmg = 0, hjT = 0, hjOut = 0;
     while (!w.done && t < 7200) {
       const h = w.hero;
       if (!h) { learnLog.push(`死@${w.floorIndex + 1}层Lv${w.level}`); w.respawn(); continue; }
@@ -376,8 +376,9 @@ const free = (w: World) => w.skills.map(() => 0);
       const saving = w.shopBooks().some(b => !w.learned.has(b.skill) && w.level >= w.needLevel(w.skillPool.find(x => x.id === b.skill)!)); const cap = saving ? 1 : 3;
       while (w.gold >= 60 && w.pots[1] < cap) w.buyPotion(1);
       while (w.gold >= 60 && w.pots[3] < cap) w.buyPotion(3);
-      w.step(0.05, { dx: (() => { const f = w.queue(1)[0]; return f && w.inMelee(h, f) ? 0 : 1; })(), dy: 0 }); w.drainEvents(); t += 0.05; /* 玩家：前方接战时站定输出（可穿怪） */ for (let i = 0; i < cds.length; i++) cds[i] = Math.max(0, cds[i] - 0.05);
+      w.step(0.05, { dx: (() => { const f = w.queue(1)[0]; return f && w.inMelee(h, f) ? 0 : 1; })(), dy: 0 }); { const evs = w.drainEvents(); if (process.env.HJ) { const cu = w.companionUnit?.uid; if (w.level >= 40) hjT += 0.05; if (w.companionUnit) hjOut += 0.05; for (const e of evs) { if (e.type === 'combo') hjCombo++; else if (e.type === 'damage' && (e as any).source !== undefined && w.units.some(u => u.uid === (e as any).target && u.team === 'enemy') || (e.type === 'damage' && (e as any).source === cu && cu !== undefined)) { if ((e as any).source === cu) hjHeroDmg += (e as any).amount; else hjAllDmg += (e as any).amount; } } } } t += 0.05; /* 玩家：前方接战时站定输出（可穿怪） */ for (let i = 0; i < cds.length; i++) cds[i] = Math.max(0, cds[i] - 0.05);
     }
+    if (process.env.HJ_STATS) console.log(`   HJ ${c} 种子${seed}: lv≥40 时长 ${Math.round(hjT)}s 英雄在场 ${Math.round(hjOut)}s 合击 ${hjCombo} 次 英雄伤害占比 ${(100 * hjHeroDmg / Math.max(1, hjHeroDmg + hjAllDmg)).toFixed(1)}% 英雄等级 ${w.companion?.level ?? "-"} Lv≥40后死亡 ${learnLog.filter(x => /死@.*Lv(\d+)/.test(x) && +x.match(/Lv(\d+)/)![1] >= 40).length}`);
     return { deaths: w.deaths, done: w.done, potUsed, t, level: w.level, learnLog };
   };
   const median = (a: number[]) => { const b = [...a].sort((x, y) => x - y); return b[(b.length - 1) >> 1] / 2 + b[b.length >> 1] / 2; };

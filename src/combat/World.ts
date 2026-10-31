@@ -9,7 +9,7 @@ import { CLASSES, ClassId, SkillDef, CAST_GAP } from '../data/classes';
 import { ITEMS, SLOTS, SETS, equipSlotsFor, EQUIP_VERSION, ENHANCE_SLOTS, ENHANCE_MAX, ENHANCE_STAT, IRON_PRICE, IRON_MAX_PURITY, enhanceChance, shatterChance } from '../data/items';
 import { HERO, ENEMIES, SUMMON, SUMMON_BEAST } from '../data/units';
 import { EXP_PER_LEVEL, EXP_VERSION, migrateExp, scaledExp, fmtExp } from '../data/expCurve';
-import { WORLD, FLOORS, Floor, FARM_RESPAWN, FARM_SAFE_DIST, nextFloorOf, DEPTH_STEP, prevLayerOf, prevFloorOf } from '../data/world';
+import { WORLD, FLOORS, Floor, FARM_RESPAWN, FARM_SAFE_DIST, nextFloorOf, SIDE_FLOORS, DEPTH_STEP, prevLayerOf, prevFloorOf } from '../data/world';
 import { TOWNS, townFloors, townOfFloor, returnTownOf, STORAGE_SIZE, TOWN_W, TOWN_GATE_X, GATE_RANGE, TOWN_SPAWN_X, DOOR_RANGE, streetDoors } from '../data/towns';
 import { CONSUMABLE } from '../data/items-town';
 import { WOMA_FLOOR_NAME, WOMA_SECTIONS, WOMA_DOOR_X, HORN_MOB_CHANCE, HORN_MOBS, RING_MIN_LEVEL, RingQuest, ringReward, IDENT_MIN_LEVEL, IDENT_PRICE, IDENT_POOL, identValue } from '../data/r14b';
@@ -73,7 +73,7 @@ export const SUMMON_NAME_COLORS = ['#ffffff', '#a8d8ff', '#7cc0ff', '#4fa3ff', '
 export const HEAL_SUMMON_RANGE = 170;
 /** [适配] 自动施放召唤技能：已有召唤物且血量 ≥ 该比例时跳过（不耗魔、不占公共间隔）；低于则自动重召（= 回满血/替换）。手动不受限 */
 export const AUTO_RESUMMON_HP = 0.5;
-export const BOSS_MECH = new Set(['boss_woma', 'boss_zuma', 'boss_redmoon']);
+export const BOSS_MECH = new Set(['boss_woma', 'boss_zuma', 'boss_redmoon', 'boss_molong']);
 /**
  * 诱惑之光（docs/skills-official.md「诱惑之光」）
  * 官方 C：可驯服等级 ≤ 法师等级+2 的生物系怪物；A：对高智商对手无效。资料站（17173）：宠物上限 Lv0..3 = 2/3/4/5。
@@ -461,6 +461,7 @@ export class World {
     if (crit) amount *= CRIT_MULT;
     if (!ignoreDef) { const up = (u?: number, v?: number) => u && u > this.time ? v ?? 0 : 0; amount = mitigate(amount, (target.def ?? 0) + up(target.defUpUntil, target.defUp), (target.mdef ?? target.def ?? 0) + up(target.mdefUpUntil, target.mdefUp), magic); }
     if (target.redUntil && target.redUntil > this.time) amount *= 1 + OFFICIAL.redAmp; // R13 红毒
+    if (target.vulnUntil && target.vulnUntil > this.time) amount *= 1 + (target.vulnPhys ?? 0) * (1 - magic) + (target.vulnMag ?? 0) * magic; // 阶段 B 合击受伤加深 [适配]
     if (target.armorUntil && target.armorUntil > this.time) amount *= 1 - (target.armorReduce ?? 0.5);
     amount = Math.max(1, Math.round(amount));
     target.hp -= amount;
@@ -1049,10 +1050,10 @@ export class World {
     if (!tg) this.companionTarget = null;
     // 官方：攻击 = 主动打选定目标或附近怪；跟随 = 一直跟随主号，受到攻击也不自己攻击（指定目标 Ctrl+W 仍执行 [适配]）
     if (!tg && c.mode === 'fight') tg = this.alive('enemy').filter(e => e.ai === 'chase' && Math.abs(e.x - h.x) < (e.aggroUid === u!.uid ? WORLD.leashRange : 700)).sort((a, b) => Math.abs(a.x - u!.x) - Math.abs(b.x - u!.x))[0];
-    if (!tg) { if (Math.abs(followX - u.x) > 30) { u.facing = Math.sign(followX - u.x) as 1 | -1; this.toward(u, followX, WORLD.summonLane, WORLD.baseSpeed * 1.2, dt); } else u.moving = false; this.comboCheck(c, u, h); return; }
+    if (!tg) { if (Math.abs(followX - u.x) > 30) { u.facing = Math.sign(followX - u.x) as 1 | -1; this.toward(u, followX, WORLD.summonLane, this.companionSpeed(u, h), dt); } else u.moving = false; this.comboCheck(c, u, h); return; }
     const caster = c.cls !== 'warrior', side = Math.sign(tg.x - u.x) || 1; u.facing = side as 1 | -1;
     const inRange = caster ? this.gap(u, tg) <= World.COMPANION_CAST_RANGE : this.inMelee(u, tg);
-    if (!inRange) this.toward(u, tg.x - side * ((u.width + tg.width) / 2 + (caster ? World.COMPANION_CAST_RANGE * 0.8 : 0)), WORLD.summonLane, WORLD.baseSpeed * 1.2, dt);
+    if (!inRange) this.toward(u, tg.x - side * ((u.width + tg.width) / 2 + (caster ? World.COMPANION_CAST_RANGE * 0.8 : 0)), WORLD.summonLane, this.companionSpeed(u, h), dt);
     else if (u.cd <= 0) {
       u.moving = false; u.cd = u.atkInterval;
       // [适配] 职业策略：战=近战普攻；法=火球（魔法）；道=主人 HP<50% 先治疗，否则灵魂火符（道术）；蓝不足退化为物理普攻
@@ -1066,6 +1067,8 @@ export class World {
     }
     this.comboCheck(c, u, h);
   }
+  /** 阶段 B 战士英雄修复 [适配]：离主人超过 COMBO_RANGE 时以主角速度追赶（原 baseSpeed×1.2 追不上奔跑的主角，近战英雄掉队→几乎不出手、合击永远不满足同范围） */
+  private companionSpeed(u: Unit, h: Unit) { return Math.abs(u.x - h.x) > COMBO_RANGE ? Math.max(WORLD.heroSpeed, WORLD.baseSpeed * 1.2) : WORLD.baseSpeed * 1.2; }
   /** A4：爆发中 + 主人与英雄同一目标 + 双方都在 COMBO_RANGE 内 → 放合击（阶段 A 占位伤害），清空怒气 */
   private comboCheck(c: CompanionState, u: Unit, h: Unit) {
     if (!c.burst || this.heroTargetUid === null) return;
@@ -1076,8 +1079,18 @@ export class World {
     const pw = (k: 'atk' | 'mag' | 'tao', x: Unit) => k === 'atk' ? x.atk : (x[k] ?? 0);
     const amt = (pw(this.classDef.autoStat as any, h) + pw(CLASSES[c.cls].autoStat as any, u)) * fx.mult;
     c.burst = false; c.rage = 0;
-    const dealt = this.damage(t, amt, h, false, false, false, fx.magic);
-    this.events.push({ type: 'combo', id: cb?.id ?? 'placeholder', name: cb?.name ?? '合击', source: h.uid, partner: u.uid, target: t.uid, amount: dealt }, { type: 'log', text: `合击「${cb?.name ?? '合击'}」造成 ${dealt} 伤害`, color: 'green' });
+    const targets = fx.aoe > 0 ? this.alive('enemy').filter(e => e === t || Math.abs(e.x - t.x) <= fx.aoe) : [t];
+    let dealt = 0;
+    for (const e of targets) {
+      const d = this.damage(e, amt, h, false, false, !!fx.ignoreDef, fx.magic); dealt += d;
+      if (!e.alive) continue;
+      if (fx.poison) { e.poisonUntil = this.time + fx.poison.dur; e.poisonDps = Math.max(1, Math.round(d * fx.poison.frac)); e.poisonTick = this.time + OFFICIAL.poisonTick; }
+      if (fx.stun && e.tier !== 'boss') { e.stunUntil = this.time + fx.stun; e.cd = Math.max(e.cd, fx.stun); }
+      if (fx.slow) e.slowUntil = this.time + fx.slow;
+      if (fx.vuln) { e.vulnUntil = this.time + fx.vuln.dur; e.vulnPhys = fx.vuln.phys ?? 0; e.vulnMag = fx.vuln.mag ?? 0; }
+    }
+    if (fx.lifesteal && h.alive) this.heal(h, Math.round(dealt * fx.lifesteal));
+    this.events.push({ type: 'combo', id: cb?.id ?? 'placeholder', name: cb?.name ?? '合击', source: h.uid, partner: u.uid, target: t.uid, amount: dealt, hits: targets.length }, { type: 'log', text: `合击「${cb?.name ?? '合击'}」造成 ${dealt} 伤害`, color: 'green' });
   }
   toSave(): SaveData {
     return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, town: this.town, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], ringQ: this.ringQ, ringDone: this.ringDone, eqV: EQUIP_VERSION, expV: EXP_VERSION, companion: this.companion ? JSON.parse(JSON.stringify(this.companion)) : null  };
@@ -1225,12 +1238,12 @@ export class World {
           const ag = this.summonAggro(u);
           if (ag) { // 仇恨在召唤物：走向召唤物贴身，不占主角排队位
             const sd = Math.sign(u.x - ag.x) || 1; u.facing = -sd as 1 | -1;
-            if (u.id !== 'boss_redmoon' && !this.inMelee(u, ag)) this.toward(u, ag.x + sd * ((u.width + ag.width) / 2 + u.range), h.y, chase * (u.slowUntil && u.slowUntil > this.time ? 0.5 : 1), dt);
+            if (u.id !== 'boss_redmoon' && !this.inMelee(u, ag)) this.toward(u, ag.x + sd * ((u.width + ag.width) / 2 + u.range), h.y, (u.stunUntil && u.stunUntil > this.time ? 0 : 1) * chase * (u.slowUntil && u.slowUntil > this.time ? 0.5 : 1), dt);
             continue;
           }
           u.facing = -side as 1 | -1;
           if (u.id === 'boss_redmoon') { prevDist = Math.abs(u.x - h.x); prev = u; continue; } // R13 赤月恶魔：速度 0，不移动
-          const sp = chase * (u.slowUntil && u.slowUntil > this.time ? 0.5 : 1);
+          const sp = (u.stunUntil && u.stunUntil > this.time) ? 0 : chase * (u.slowUntil && u.slowUntil > this.time ? 0.5 : 1);
           const tx = dist > stop ? h.x + side * stop : u.x;
           // 近战怪：玩家后退拉开距离时，跳跃式扑上去补位（短时间 3 倍速，有冷却）
           if (u.tier !== 'boss' && dist > stop + WORLD.leapGap && this.time >= (u.leapReady ?? 0)) {
@@ -1322,7 +1335,8 @@ export class World {
       const boss = this.alive('enemy').find(u => u.tier === 'boss');
       if (this.floor.boss && boss) {
         if (this.time - this.sealedLogT > 3) { this.sealedLogT = this.time; this.events.push({ type: 'log', text: `出口被${boss.name}的力量封印，击败${boss.name}后开启` }); }
-      } else if (nextFloorOf(this.floorIndex, this.floors) < 0) { this.done = true; this.events.push({ type: 'win' }); }
+      } else if (this.floors === FLOORS && SIDE_FLOORS.includes(this.floorIndex)) { this.events.push({ type: 'log', text: `${this.floor.name}已肃清，返回城镇`, color: 'green' }); this.enterTown(returnTownOf(this.floorIndex), true); }
+      else if (nextFloorOf(this.floorIndex, this.floors) < 0) { this.done = true; this.events.push({ type: 'win' }); }
       else this.loadFloor(nextFloorOf(this.floorIndex, this.floors));
     }
   }
@@ -1355,6 +1369,19 @@ export class World {
         b.cd = crazy ? OFFICIAL.womaCrazyInterval : b.atkInterval * slow;
         this.events.push({ type: 'attack', source: b.uid, target: t.uid, skill: 'boss' }, { type: 'bossfx', uid: b.uid, kind: 'spark', x: t.x, target: t.uid });
         this.damage(t, b.atk * (0.9 + this.rng() * 0.2), b, true, false, false, OFFICIAL.womaMagic); // 官方 50% 物理 + 50% 魔法
+      } else if (b.id === 'boss_molong') {
+        // 阶段 B 魔龙教主：国服只用翅膀近战 + 保留瞬移（21cq）。瞬移复用沃玛教主 fly 计时（30 秒 + 被贴身）[适配]：瞬移到主角身后
+        m.flyT += dt;
+        if (m.flyT >= OFFICIAL.womaFlySec && this.inMelee(h, b)) {
+          m.flyT = 0; const side = Math.sign(b.x - h.x) || 1;
+          b.x = h.x - side * ((h.width + b.width) / 2 + b.range); b.facing = side as 1 | -1;
+          this.events.push({ type: 'bossfx', uid: b.uid, kind: 'fly', x: b.x }, { type: 'log', text: `${b.name}瞬移到了你的背后！` });
+        }
+        if (b.cd > 0) continue;
+        const t = pick(); if (!this.inMelee(t, b)) continue;
+        b.cd = b.atkInterval * slow;
+        this.events.push({ type: 'attack', source: b.uid, target: t.uid, skill: 'boss' }, { type: 'bossfx', uid: b.uid, kind: 'spark', x: t.x, target: t.uid });
+        this.damage(t, b.atk * (0.9 + this.rng() * 0.2), b);
       } else if (b.id === 'boss_zuma') {
         // 丢火球远程攻击，边攻击边召唤祖玛雕像/卫士
         if (b.cd > 0 || Math.abs(b.x - h.x) > OFFICIAL.zumaRange) continue;

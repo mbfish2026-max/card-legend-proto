@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 合击版阶段 B（feat/hj-battle）
+- 六合击各自效果（AOE/单体、无视防御/吸血/易伤/中毒/麻痹，数值 [适配]）；BOSS 免疫麻痹
+- 6 个 fx_combo_* 美术需求；未到素材时 Graphics 占位（浏览器验证无报错）
+- 新 BOSS 魔龙教主（HP 12000 官方；等级/攻防 [适配]）+ 支线层「魔龙血域」：不在主线，肃清回盟重不判通关；瞬移复用沃玛 fly
+- 模拟 HJ_STATS 统计；英雄关闭时与 main 逐种子一致
+
 ## feat/art-integrate（接入 art/gap-fill 素材，只改图片路径/art 字段，数值未动）
 - 物品图标：99 处 icon 改指 `assets/items/eq_<id>.png` / `assets/items/<id>.png`（装备 87、药水/卷轴/杂物 12；只指向实际存在的文件）；HUD 药水 potion_0..3 同步改为 items/hp_*/mp_*。
 - 2x：新增 `itemIconUrl`，画质 >720p（Render.k>1）且存在 `@2x` 文件时加载 @2x（88 个，列表 src/data/item-icons-2x.ts）；显示尺寸不变。

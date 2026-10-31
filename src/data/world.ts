@@ -139,8 +139,16 @@ export const FLOORS: Floor[] = [
     { id: 'fire_dragon_guard', x: 800 }, { id: 'leiyan_spider', x: 910, y: 20 },
     { id: 'fire_dragon_guard', x: 1550 }, { id: 'leiyan_spider', x: 1650, y: -15 },
     { id: 'fire_dragon_guard', x: 2300 }, { id: 'leiyan_spider', x: 2400, y: 15 },
-    { id: 'boss_fire_dragon', x: 3380 } ] }
+    { id: 'boss_fire_dragon', x: 3380 } ] },
+  // 阶段 B #9 下标 23：魔龙血域（魔龙教主）。侧线层：不进 FLOOR_ORDER（主线模拟/通关不受影响），清层后回城、不判通关
+  { name: '魔龙血域', bg: 'bg_floor24', boss: true, zone: '魔龙城·魔龙血域（魔龙教主，6 小时刷新；入口等级未查到）', src: 'https://www.21cq.com/chuanqi/628.html', spawns: [
+    { id: 'fire_dragon_guard', x: 800 }, { id: 'hj_guard', x: 910, y: 20 },
+    { id: 'fire_dragon_guard', x: 1550 }, { id: 'wolong_guard', x: 1650, y: -15 },
+    { id: 'fire_dragon_guard', x: 2300 }, { id: 'leiyan_spider', x: 2400, y: 15 },
+    { id: 'boss_molong', x: 3380 } ] }
 ];
+/** 侧线层（不在通关顺序里，清完回城） */
+export const SIDE_FLOORS: readonly number[] = [23];
 /** 通关顺序：兽人古墓一层(白骨墓穴)→二层→三层→洞穴一层→二层→沃玛自然洞穴一→二→尸王殿…（按 21cq 进出表连通） */
 export const FLOOR_ORDER = [0, 1, 2, 3, 4, 13, 14, 15, 16, 17, 18, 5, 6, 7, 8, 9, 10, 11, 12, 19, 20, 21, 22];
 /** 图群：白骨墓穴（下标 4）作为兽人古墓一层 */
@@ -153,7 +161,7 @@ export const prevFloorOf = (i: number, floors: Floor[] = FLOORS) => floors !== F
 /** [适配] 层深难度（plan-60h §4：每深一层 HP/ATK 约 +8%）；原有层无 depth 不受影响 */
 export const DEPTH_STEP = 0.08;
 /** 下标 i 的通关序号（1 起，显示「第 N 层」用）；非默认层表按下标 */
-export const floorNo = (i: number, floors: Floor[] = FLOORS) => floors === FLOORS ? FLOOR_ORDER.indexOf(i) + 1 : i + 1;
+export const floorNo = (i: number, floors: Floor[] = FLOORS) => floors === FLOORS && FLOOR_ORDER.includes(i) ? FLOOR_ORDER.indexOf(i) + 1 : i + 1;
 /** 下一层下标；最后一层返回 -1 */
 export const nextFloorOf = (i: number, floors: Floor[] = FLOORS) => { if (floors !== FLOORS) return i + 1 < floors.length ? i + 1 : -1; const k = FLOOR_ORDER.indexOf(i); return k >= 0 && k + 1 < FLOOR_ORDER.length ? FLOOR_ORDER[k + 1] : -1; };
 

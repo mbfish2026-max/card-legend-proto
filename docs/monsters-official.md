@@ -24,14 +24,15 @@
 | blood_zombie | 血僵尸 | normal | 13.赤月魔穴 | 未查到 | 未查到 |
 | redmoon_spider | 赤月蜘蛛 | normal | 13.赤月魔穴 20.保卫家园 | 未查到 | 未查到 |
 | boss_redmoon | 赤月恶魔 | boss | 13.赤月魔穴 | 赤月恶魔 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=180) |
-| hj_guard | 家园守卫 | normal | 20.保卫家园 21.卧龙山庄 | 未查到 | 未查到 |
+| hj_guard | 家园守卫 | normal | 20.保卫家园 21.卧龙山庄 24.魔龙血域 | 未查到 | 未查到 |
 | boss_hj_home | 魔龙守将 | boss | 20.保卫家园 | 未查到 | 未查到 |
-| wolong_guard | 卧龙护卫 | normal | 21.卧龙山庄 22.雷炎洞穴 | 未查到 | 未查到 |
+| wolong_guard | 卧龙护卫 | normal | 21.卧龙山庄 22.雷炎洞穴 24.魔龙血域 | 未查到 | 未查到 |
 | boss_wolong | 卧龙名将 | boss | 21.卧龙山庄 | 未查到 | 未查到 |
-| leiyan_spider | 雷炎蜘蛛 | normal | 22.雷炎洞穴 23.火龙神殿 | 未查到 | 未查到 |
+| leiyan_spider | 雷炎蜘蛛 | normal | 22.雷炎洞穴 23.火龙神殿 24.魔龙血域 | 未查到 | 未查到 |
 | boss_leiyan | 雷炎蛛王 | boss | 22.雷炎洞穴 | 未查到 | 未查到 |
-| fire_dragon_guard | 火龙守卫 | normal | 23.火龙神殿 | 未查到 | 未查到 |
+| fire_dragon_guard | 火龙守卫 | normal | 23.火龙神殿 24.魔龙血域 | 未查到 | 未查到 |
 | boss_fire_dragon | 火龙 | boss | 23.火龙神殿 | 未查到 | 未查到 |
+| boss_molong | 魔龙教主 | boss | 24.魔龙血域 | 未查到 | 未查到 |
 | red_snake | 红蛇 | normal | 4.毒蛇山谷 | 红蛇 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=92) |
 | tiger_snake | 虎蛇 | normal | 4.毒蛇山谷 | 虎蛇 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=94) |
 | scorpion | 蝎子 | normal | 4.毒蛇山谷 16.骷髅洞·洞穴一层 17.骷髅洞·洞穴二层 | 蝎子 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=45) |

@@ -16,7 +16,7 @@ export interface UnitDef {
   /** 立绘纹理 ID（缺省 = id）；Boss 变体复用普通怪立绘 */
   art?: string;
   /** 渲染用（不影响战斗逻辑） */
-  card?: { w: number; h: number; figureScale: number; anchorX?: number; footSink?: number; maxWidthRatio?: number; artFacing?: 1 | -1; bg?: number };
+  card?: { w: number; h: number; figureScale: number; anchorX?: number; footSink?: number; maxWidthRatio?: number; artFacing?: 1 | -1; bg?: number; tint?: number };
 }
 /** idle 原地待机；alert 发现主角（感叹号）；chase 追击/战斗；return 脱战回位 */
 export type AIState = 'idle' | 'alert' | 'chase' | 'return';
@@ -34,7 +34,7 @@ export interface Unit extends UnitDef {
   armorUntil?: number; armorReduce?: number;
   /** #12 幽灵盾（魔御）/神圣战甲术（防御）增益，不存档 */
   mdefUpUntil?: number; mdefUp?: number; defUpUntil?: number; defUp?: number;
-  leapUntil?: number; leapReady?: number; slowUntil?: number; poisonUntil?: number; poisonDps?: number; poisonTick?: number;
+  leapUntil?: number; leapReady?: number; slowUntil?: number; stunUntil?: number; vulnUntil?: number; vulnPhys?: number; vulnMag?: number; poisonUntil?: number; poisonDps?: number; poisonTick?: number;
   /** R13 红毒：受到伤害 +20% 截止时间 */
   redUntil?: number;
   /** R13 官方 BOSS 机制状态（沃玛发呆/狂暴、瞬移计时；祖玛召唤；赤月地刺） */
@@ -66,7 +66,7 @@ export type BattleEvent =
   | { type: 'exp'; amount: number }
   | { type: 'levelup'; level: number }
   | { type: 'summon'; uid: number }
-  | { type: 'combo'; id: string; name: string; source: number; partner: number; target: number; amount: number }
+  | { type: 'combo'; id: string; name: string; source: number; partner: number; target: number; amount: number; hits?: number }
   | { type: 'charm'; uid: number; result: 'ok' | 'fail' | 'immune' | 'high' | 'betray' }
   | { type: 'respawn' }
   | { type: 'inventory' }
