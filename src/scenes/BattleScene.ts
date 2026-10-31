@@ -246,7 +246,7 @@ export class BattleScene extends Phaser.Scene {
         tv.forEach(v => fx.frostTint(v.art, (sk?.duration ?? 4) * 1000)); return done();
       }
       case 'magic_shield': {
-        const sc = Phaser.Math.Clamp(hv.h / 256 * 1.1, 1.0, 1.3), ms = dur * 1000;
+        const sc = 1, ms = dur * 1000; // R13 F3：非命中特效统一 1×（原按卡高放大至 1.0–1.3）
         const startLoop = () => { const l = playFx(this, 'fx_magic_shield_loop', hv.cx, hv.cy, { scale: sc, ms }); if (l) follow(this, l, () => hv.active ? { x: hv.cx, y: hv.cy } : null); return !!l; };
         const c = playFx(this, 'fx_magic_shield_cast', hv.cx, hv.cy, { scale: sc, onDone: () => { startLoop(); } });
         if (!c && !startLoop()) fx.magicShield(this, hv, hv.cy, hv.h, ms);
