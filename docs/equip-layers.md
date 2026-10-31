@@ -47,3 +47,35 @@
 
 ## 制作方法
 先生成基础身体（纯绿底），再以其为参考图生成各“穿衣/持武器”变体，Python 抠绿、按腿部区域平移对齐，与身体做差分得到装备层。全部为原创生成图。
+
+---
+
+# 法师（mage）
+
+## 职业可装备武器的判定
+`src/data/items.ts` 的物品定义中 **没有 allowedClass / 职业限制字段**（全文无 cls/class 限制），数据上任何职业都能装备任意武器。因此按名称+属性判断：法师做 `magic_staff`（魔杖，主武器）、`wood_sword`、`iron_sword`、`dragon_sword`（屠龙刀带 mag+20，判定为可装备）；`tao_sword`（银蛇剑，道士向）不做。
+
+## 文件（均为 1024×1024 RGBA 透明 PNG，左上角对齐叠加）
+| 文件 | 内容 | 包围盒 (x0,y0,x1,y1) |
+|---|---|---|
+| `public/assets/equip/mage/body.png` | 基础身体：浅灰蓝长袖布衫、藏青布裤、布鞋；法师脸型（皱眉沉静）；右手空心握拳 | 48,2,689,1010 |
+| `public/assets/equip/mage/armor/cloth.png` | 布衣=学徒法袍：蓝紫长袍、宽袖、白边领、白布腰带，袍摆及踝 | 54,235,692,1015 |
+| `public/assets/equip/mage/armor/armor.png` | 重盔甲=战斗法师袍：藏青/白多层长袍、银蓝纹饰、金边钢肩甲、皮腰封蓝宝石扣、皮靴 | 64,214,723,1016 |
+| `public/assets/equip/mage/weapon/magic_staff.png` | 魔杖：扭曲深色木杖、顶端藤爪托蓝水晶、银环 | 434,80,834,855 |
+| `public/assets/equip/mage/weapon/wood_sword.png` | 木剑 | 556,424,991,811 |
+| `public/assets/equip/mage/weapon/iron_sword.png` | 铁剑 | 538,416,1001,832 |
+| `public/assets/equip/mage/weapon/dragon_sword.png` | 屠龙刀（金龙护手、红宝石、金纹刀脊） | 538,415,1008,873 |
+
+## 锚点
+- 手部锚点（右手握持中心）：**(640, 475)**。剑类沿约 40° 斜向右下伸出。
+- 魔杖握在同一只手里，杖身斜穿拳心：水晶杖头朝右上、杖尾朝左下（法杖造型需要杖头在上，所以和剑的方向相反）。
+
+## 叠加顺序
+body → armor → weapon（武器和握持手在最上层）。
+
+## 兜底
+- 法师 `tao_sword` 暂用 `mage/weapon/iron_sword.png`。
+- 未知衣服：req < 12 用 cloth，否则 armor；未知武器同战士规则（法系武器优先用 magic_staff）。
+
+## 预览
+`docs/equip-preview/mage_light.png`、`mage_dark.png`（11 种组合）。
