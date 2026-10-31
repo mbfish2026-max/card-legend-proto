@@ -14,15 +14,15 @@
 | orc | 兽人战士 | normal | 2.兽人要塞 | 半兽人 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=34) |
 | darkmage | 黑暗法师 | normal | 2.兽人要塞 6.尸王殿 | 未查到 | 未查到 |
 | orc_chief | 兽人酋长 | boss | 2.兽人要塞 | 未查到 | 未查到 |
-| boss_lich | 尸王 | boss | 6.尸王殿 | 尸王 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=89) |
-| woma_warrior | 沃玛战士 | normal | 9.沃玛寺庙 | 沃玛战士 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=64) |
-| woma_guard | 沃玛卫士 | normal | 9.沃玛寺庙 | 沃玛卫士 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=73) |
+| boss_lich | 尸王 | boss | 6.尸王殿 32.矿区B二层 33.山谷矿区·一 34.山谷矿区·二 | 尸王 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=89) |
+| woma_warrior | 沃玛战士 | normal | 9.沃玛寺庙 26.沃玛寺庙一层 27.沃玛寺庙二层 | 沃玛战士 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=64) |
+| woma_guard | 沃玛卫士 | normal | 9.沃玛寺庙 26.沃玛寺庙一层 27.沃玛寺庙二层 | 沃玛卫士 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=73) |
 | boss_woma | 沃玛教主 | boss | 9.沃玛寺庙 | 沃玛教主 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=76) |
 | zuma_statue | 祖玛雕像 | normal | 10.祖玛阁 | 祖玛雕像 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=153) |
 | zuma_guard | 祖玛卫士 | normal | 10.祖玛阁 | 祖玛卫士 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=156) |
 | boss_zuma | 祖玛教主 | boss | 10.祖玛阁 | 祖玛教主 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=160) |
-| blood_zombie | 血僵尸 | normal | 13.赤月魔穴 27.恶魔祭坛 | 未查到 | 未查到 |
-| redmoon_spider | 赤月蜘蛛 | normal | 13.赤月魔穴 20.保卫家园 27.恶魔祭坛 | 未查到 | 未查到 |
+| blood_zombie | 血僵尸 | normal | 13.赤月魔穴 37.恶魔祭坛 | 未查到 | 未查到 |
+| redmoon_spider | 赤月蜘蛛 | normal | 13.赤月魔穴 20.保卫家园 37.恶魔祭坛 | 未查到 | 未查到 |
 | boss_redmoon | 赤月恶魔 | boss | 13.赤月魔穴 | 赤月恶魔 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=180) |
 | hj_guard | 家园守卫 | normal | 20.保卫家园 21.卧龙山庄 24.魔龙血域 | 未查到 | 未查到 |
 | boss_hj_home | 魔龙守将 | boss | 20.保卫家园 | 未查到 | 未查到 |
@@ -33,14 +33,14 @@
 | fire_dragon_guard | 火龙守卫 | normal | 23.火龙神殿 24.魔龙血域 | 未查到 | 未查到 |
 | boss_fire_dragon | 火龙 | boss | 23.火龙神殿 | 未查到 | 未查到 |
 | boss_molong | 魔龙教主 | boss | 24.魔龙血域 | 未查到 | 未查到 |
-| rake_cat_king | 钉耙猫王 | normal | 25.白日门·雪域 | 未查到 | 未查到 |
-| orc_commander | 半兽统领 | normal | 25.白日门·雪域 | 未查到 | 未查到 |
-| evil_lich | 恶灵尸王 | normal | 26.骨魔洞五层 | 未查到 | 未查到 |
-| hawk_guard | 鹰卫 | normal | 25.白日门·雪域 | 未查到 | 未查到 |
-| boss_yeti_king | 雪人王 | boss | 25.白日门·雪域 | 未查到 | 未查到 |
-| boss_huangquan | 黄泉教主 | boss | 26.骨魔洞五层 | 未查到 | 未查到 |
-| boss_twinhead_kong | 双头金刚 | boss | 27.恶魔祭坛 | 未查到 | 未查到 |
-| boss_twinhead_blood | 双头血魔 | boss | 27.恶魔祭坛 | 未查到 | 未查到 |
+| rake_cat_king | 钉耙猫王 | normal | 35.白日门·雪域 | 未查到 | 未查到 |
+| orc_commander | 半兽统领 | normal | 35.白日门·雪域 | 未查到 | 未查到 |
+| evil_lich | 恶灵尸王 | normal | 36.骨魔洞五层 | 未查到 | 未查到 |
+| hawk_guard | 鹰卫 | normal | 35.白日门·雪域 | 未查到 | 未查到 |
+| boss_yeti_king | 雪人王 | boss | 35.白日门·雪域 | 未查到 | 未查到 |
+| boss_huangquan | 黄泉教主 | boss | 36.骨魔洞五层 | 未查到 | 未查到 |
+| boss_twinhead_kong | 双头金刚 | boss | 37.恶魔祭坛 | 未查到 | 未查到 |
+| boss_twinhead_blood | 双头血魔 | boss | 37.恶魔祭坛 | 未查到 | 未查到 |
 | red_snake | 红蛇 | normal | 4.毒蛇山谷 | 红蛇 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=92) |
 | tiger_snake | 虎蛇 | normal | 4.毒蛇山谷 | 虎蛇 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=94) |
 | scorpion | 蝎子 | normal | 4.毒蛇山谷 16.骷髅洞·洞穴一层 17.骷髅洞·洞穴二层 | 蝎子 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=45) |
@@ -63,8 +63,14 @@
 | cave_skel_warrior | 骷髅战士 | normal | 14.兽人古墓二层 15.兽人古墓三层 16.骷髅洞·洞穴一层 17.骷髅洞·洞穴二层 18.沃玛自然洞穴·一 19.沃玛自然洞穴·二 | 未查到 | 未查到 |
 | cave_skel_general | 骷髅战将 | normal | 14.兽人古墓二层 15.兽人古墓三层 17.骷髅洞·洞穴二层 18.沃玛自然洞穴·一 19.沃玛自然洞穴·二 | 未查到 | 未查到 |
 | axe_skeleton | 掷斧骷髅 | normal | 14.兽人古墓二层 15.兽人古墓三层 17.骷髅洞·洞穴二层 18.沃玛自然洞穴·一 19.沃玛自然洞穴·二 | 未查到 | 未查到 |
-| cave_bat | 山洞蝙蝠 | normal | 14.兽人古墓二层 15.兽人古墓三层 16.骷髅洞·洞穴一层 17.骷髅洞·洞穴二层 18.沃玛自然洞穴·一 19.沃玛自然洞穴·二 | 未查到 | 未查到 |
-| cave_maggot | 洞蛆 | normal | 14.兽人古墓二层 15.兽人古墓三层 16.骷髅洞·洞穴一层 17.骷髅洞·洞穴二层 18.沃玛自然洞穴·一 19.沃玛自然洞穴·二 | 未查到 | 未查到 |
+| cave_bat | 山洞蝙蝠 | normal | 14.兽人古墓二层 15.兽人古墓三层 16.骷髅洞·洞穴一层 17.骷髅洞·洞穴二层 18.沃玛自然洞穴·一 19.沃玛自然洞穴·二 25.沃玛寺庙入口 26.沃玛寺庙一层 27.沃玛寺庙二层 | 未查到 | 未查到 |
+| cave_maggot | 洞蛆 | normal | 14.兽人古墓二层 15.兽人古墓三层 16.骷髅洞·洞穴一层 17.骷髅洞·洞穴二层 18.沃玛自然洞穴·一 19.沃玛自然洞穴·二 25.沃玛寺庙入口 28.废矿入口 29.废矿区东部 | 未查到 | 未查到 |
+| dung_beetle | 粪虫 | normal | 26.沃玛寺庙一层 27.沃玛寺庙二层 | 未查到 | 未查到 |
+| woma_brave | 沃玛勇士 | normal | 26.沃玛寺庙一层 27.沃玛寺庙二层 | 未查到 | 未查到 |
+| woma_general | 沃玛战将 | normal | 26.沃玛寺庙一层 27.沃玛寺庙二层 | 未查到 | 未查到 |
+| fire_woma | 火焰沃玛 | normal | 26.沃玛寺庙一层 27.沃玛寺庙二层 | 未查到 | 未查到 |
+| dark_warrior | 暗黑战士 | normal | 27.沃玛寺庙二层 | 未查到 | 未查到 |
+| mine_zombie | 僵尸 | normal | 28.废矿入口 29.废矿区东部 30.矿区一层 31.矿区·桥 32.矿区B二层 33.山谷矿区·一 34.山谷矿区·二 | 未查到 | 未查到 |
 
 ## M4 新怪（feat/m4-monsters）
 
@@ -94,7 +100,7 @@
 | boss_twinhead_kong | 本作 39 级 / HP 17000 / 攻 110 / 防 22 / 魔御 40（原版低防高魔御）；祝福油由 BOSS 必掉覆盖；行为复用魔龙教主机制（近战 + 被贴身 30 秒瞬移）；麻痹/石化本作无怪物对主角控制机制 → 未实装 | 麻痹/石化、神水、太阳水、强效药水、技能书（以书页代）、祈祷套、首饰、竹笛、道士头盔、死神手套、法神套 |
 | boss_twinhead_blood | 本作 40 级 / HP 17000 / 攻 112 / 防 32 / 魔御 10（原版高防低魔御）；祝福油由 BOSS 必掉覆盖；行为复用沃玛教主机制（发呆→狂暴、30 秒瞬移、半物理半魔法闪电） | 同双头金刚（圣战套代替法神套） |
 
-放置：新增侧线层 24 白日门·雪域（雪人王/钉耙猫王/半兽统领/鹰卫）、25 骨魔洞五层（恶灵尸王/黄泉教主）、26 恶魔祭坛（双头金刚/双头血魔 + 赤月小怪）。均在 SIDE_FLOORS、不在 FLOOR_ORDER，主线 9 种子模拟不受影响。
+放置：新增侧线层 34 白日门·雪域（雪人王/钉耙猫王/半兽统领/鹰卫）、35 骨魔洞五层（恶灵尸王/黄泉教主）、36 恶魔祭坛（双头金刚/双头血魔 + 赤月小怪）。均在 SIDE_FLOORS、不在 FLOOR_ORDER，主线 9 种子模拟不受影响。
 
 ### 美术注记
 

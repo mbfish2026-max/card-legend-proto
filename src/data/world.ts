@@ -146,29 +146,40 @@ export const FLOORS: Floor[] = [
     { id: 'fire_dragon_guard', x: 1550 }, { id: 'wolong_guard', x: 1650, y: -15 },
     { id: 'fire_dragon_guard', x: 2300 }, { id: 'leiyan_spider', x: 2400, y: 15 },
     { id: 'boss_molong', x: 3380 } ] },
-  // M4 下标 24–26 侧线层（同魔龙血域：不进 FLOOR_ORDER，清层回城，主线模拟不受影响）
-  { name: '白日门·雪域', bg: 'bg_floor25', boss: true, zone: '白日门（雪人王 348,132 / 钉耙猫王 380,270 / 半兽统领 多点；鹰卫原版在丛林迷宫 [适配] 并入）', src: 'https://www.21cq.com/mir/Mob.aspx?id=33', spawns: [
+  // feat/maps-batch2（plan-60h B2）：下标 24–33 追加在末尾（旧档下标不变）。沃玛寺庙 D021–D023（D024 教主层=原下标 8）；比奇矿区主线 D401→D402→D403→D412→D404→尸王殿 Q004（原下标 5）；毒蛇矿区 D421/D422 与沃玛寺庙入口 D021（仅蝙蝠/洞蛆，等级低于前一层）为侧线练级层。来源 docs/map-system-full.md
+  { name: '沃玛寺庙入口', bg: 'bg_floor25', boss: false, farm: true, group: 'woma', sub: '沃玛寺庙入口 D021', depth: 1, zone: '沃玛寺庙入口 D021（21cq：山洞蝙蝠/洞蛆，怪 20–21 级，无 BOSS；连通沃玛森林、沃玛寺庙一层）', src: 'https://www.21cq.com/mir/Map.aspx?id=312', spawns: [{ id: 'cave_bat', x: 800 }, { id: 'cave_maggot', x: 900, y: 20 }, { id: 'cave_bat', x: 1500 }, { id: 'cave_maggot', x: 1600, y: -15 }, { id: 'cave_bat', x: 1700 }, { id: 'cave_maggot', x: 2300 }, { id: 'cave_bat', x: 2400, y: 15 }, { id: 'cave_maggot', x: 2500 }] },
+  { name: '沃玛寺庙一层', bg: 'bg_floor26', boss: false, farm: true, group: 'woma', sub: '沃玛寺庙一层 D022', depth: 2, zone: '沃玛寺庙一层 D022（21cq：粪虫/沃玛战士/沃玛勇士/沃玛战将/火焰沃玛/山洞蝙蝠，BOSS 沃玛卫士（本作沃玛卫士为普通怪 [适配]，本层无 BOSS），20–31 级）', src: 'https://www.21cq.com/mir/Map.aspx?id=313', spawns: [{ id: 'dung_beetle', x: 800 }, { id: 'woma_warrior', x: 900, y: 20 }, { id: 'woma_brave', x: 1500 }, { id: 'woma_general', x: 1600, y: -15 }, { id: 'fire_woma', x: 1700 }, { id: 'cave_bat', x: 2300 }, { id: 'dung_beetle', x: 2400, y: 15 }, { id: 'woma_warrior', x: 2500 }, { id: 'woma_guard', x: 3350 }] },
+  { name: '沃玛寺庙二层', bg: 'bg_floor27', boss: false, farm: true, group: 'woma', sub: '沃玛寺庙二层 D023', depth: 3, zone: '沃玛寺庙二层 D023（21cq：暗黑战士/粪虫/沃玛战士/沃玛勇士/沃玛战将/火焰沃玛/山洞蝙蝠，BOSS 沃玛卫士（本作沃玛卫士为普通怪 [适配]，本层无 BOSS），20–31 级）', src: 'https://www.21cq.com/mir/Map.aspx?id=314', spawns: [{ id: 'dark_warrior', x: 800 }, { id: 'dung_beetle', x: 900, y: 20 }, { id: 'woma_warrior', x: 1500 }, { id: 'woma_brave', x: 1600, y: -15 }, { id: 'woma_general', x: 1700 }, { id: 'fire_woma', x: 2300 }, { id: 'cave_bat', x: 2400, y: 15 }, { id: 'dark_warrior', x: 2500 }, { id: 'woma_guard', x: 3350 }] },
+  { name: '废矿入口', bg: 'bg_floor28', boss: false, farm: true, group: 'bq_mine', sub: '废矿入口 D401', depth: 1, zone: '比奇矿区·废矿入口 D401（21cq：僵尸2/僵尸3/洞蛆，21–25 级，无 BOSS；连通比奇省、尸王殿、矿区A/B一层）', src: 'https://www.21cq.com/mir/Map.aspx?id=401', spawns: [{ id: 'mine_zombie', x: 800 }, { id: 'cave_maggot', x: 900, y: 20 }, { id: 'mine_zombie', x: 1500 }, { id: 'cave_maggot', x: 1600, y: -15 }, { id: 'mine_zombie', x: 1700 }, { id: 'cave_maggot', x: 2300 }, { id: 'mine_zombie', x: 2400, y: 15 }, { id: 'cave_maggot', x: 2500 }] },
+  { name: '废矿区东部', bg: 'bg_floor29', boss: false, farm: true, group: 'bq_mine', sub: '废矿区东部 D402', depth: 2, zone: '比奇矿区·废矿区东部 D402（21cq：僵尸2/僵尸3/洞蛆，21–25 级，无 BOSS；连通尸王殿、矿区A一层、矿区C一层）', src: 'https://www.21cq.com/mir/Map.aspx?id=404', spawns: [{ id: 'mine_zombie', x: 800 }, { id: 'cave_maggot', x: 900, y: 20 }, { id: 'mine_zombie', x: 1500 }, { id: 'cave_maggot', x: 1600, y: -15 }, { id: 'mine_zombie', x: 1700 }, { id: 'cave_maggot', x: 2300 }, { id: 'mine_zombie', x: 2400, y: 15 }, { id: 'cave_maggot', x: 2500 }] },
+  { name: '矿区一层', bg: 'bg_floor30', boss: false, farm: true, group: 'bq_mine', sub: '矿区一层 D403', depth: 3, zone: '比奇矿区·矿区一层 D403（21cq：僵尸2/僵尸3/僵尸5，25 级，无 BOSS；连通尸王殿、桥、矿区C一层）', src: 'https://www.21cq.com/mir/Map.aspx?id=406', spawns: [{ id: 'mine_zombie', x: 800 }, { id: 'mine_zombie', x: 900, y: 20 }, { id: 'mine_zombie', x: 1500 }, { id: 'mine_zombie', x: 1600, y: -15 }, { id: 'mine_zombie', x: 1700 }, { id: 'mine_zombie', x: 2300 }, { id: 'mine_zombie', x: 2400, y: 15 }, { id: 'mine_zombie', x: 2500 }] },
+  { name: '矿区·桥', bg: 'bg_floor31', boss: false, farm: true, group: 'bq_mine', sub: '桥 D412', depth: 4, zone: '比奇矿区·桥 D412（21cq：僵尸4，25 级，无 BOSS；连通矿区一层、矿区B二层）', src: 'https://www.21cq.com/mir/Map.aspx?id=407', spawns: [{ id: 'mine_zombie', x: 800 }, { id: 'mine_zombie', x: 900, y: 20 }, { id: 'mine_zombie', x: 1500 }, { id: 'mine_zombie', x: 1600, y: -15 }, { id: 'mine_zombie', x: 1700 }, { id: 'mine_zombie', x: 2300 }, { id: 'mine_zombie', x: 2400, y: 15 }, { id: 'mine_zombie', x: 2500 }] },
+  { name: '矿区B二层', bg: 'bg_floor32', boss: true, farm: true, group: 'bq_mine', sub: '矿区B二层 D404', depth: 5, zone: '比奇矿区·矿区B二层 D404（21cq：僵尸1/僵尸3/僵尸4，BOSS 尸王，25 级；BOSS 首杀必掉/官方刷新÷10 机制本作未实现，刷新时间未查到）', src: 'https://www.21cq.com/mir/Map.aspx?id=408', spawns: [{ id: 'mine_zombie', x: 800 }, { id: 'mine_zombie', x: 900, y: 20 }, { id: 'mine_zombie', x: 1500 }, { id: 'mine_zombie', x: 1600, y: -15 }, { id: 'mine_zombie', x: 1700 }, { id: 'mine_zombie', x: 2300 }, { id: 'mine_zombie', x: 2400, y: 15 }, { id: 'mine_zombie', x: 2500 }, { id: 'boss_lich', x: 3350 }] },
+  { name: '山谷矿区·一', bg: 'bg_floor33', boss: true, farm: true, group: 'valley_mine', sub: '山谷矿区 D421', depth: 1, zone: '毒蛇矿区·山谷矿区 D421（21cq：僵尸2/僵尸3/僵尸4，BOSS 尸王，25 级；连通毒蛇山谷、尸王殿；BOSS 首杀必掉/官方刷新÷10 机制本作未实现，刷新时间未查到）', src: 'https://www.21cq.com/mir/Map.aspx?id=457', spawns: [{ id: 'mine_zombie', x: 800 }, { id: 'mine_zombie', x: 900, y: 20 }, { id: 'mine_zombie', x: 1500 }, { id: 'mine_zombie', x: 1600, y: -15 }, { id: 'mine_zombie', x: 1700 }, { id: 'mine_zombie', x: 2300 }, { id: 'mine_zombie', x: 2400, y: 15 }, { id: 'mine_zombie', x: 2500 }, { id: 'boss_lich', x: 3350 }] },
+  { name: '山谷矿区·二', bg: 'bg_floor34', boss: true, farm: true, group: 'valley_mine', sub: '山谷矿区 D422', depth: 2, zone: '毒蛇矿区·山谷矿区 D422（21cq：僵尸1/僵尸2/僵尸4/僵尸5，BOSS 尸王，25 级；连通尸王殿、骨魔洞二层；BOSS 首杀必掉/官方刷新÷10 机制本作未实现，刷新时间未查到）', src: 'https://www.21cq.com/mir/Map.aspx?id=458', spawns: [{ id: 'mine_zombie', x: 800 }, { id: 'mine_zombie', x: 900, y: 20 }, { id: 'mine_zombie', x: 1500 }, { id: 'mine_zombie', x: 1600, y: -15 }, { id: 'mine_zombie', x: 1700 }, { id: 'mine_zombie', x: 2300 }, { id: 'mine_zombie', x: 2400, y: 15 }, { id: 'mine_zombie', x: 2500 }, { id: 'boss_lich', x: 3350 }] },
+  // M4 下标 34–36（排在 main batch2 的 24–33 之后） 侧线层（同魔龙血域：不进 FLOOR_ORDER，清层回城，主线模拟不受影响）
+  { name: '白日门·雪域', bg: 'bg_floor35', boss: true, zone: '白日门（雪人王 348,132 / 钉耙猫王 380,270 / 半兽统领 多点；鹰卫原版在丛林迷宫 [适配] 并入）', src: 'https://www.21cq.com/mir/Mob.aspx?id=33', spawns: [
     { id: 'orc_commander', x: 800 }, { id: 'hawk_guard', x: 910, y: 20 },
     { id: 'rake_cat_king', x: 1550 }, { id: 'orc_commander', x: 1650, y: -15 },
     { id: 'hawk_guard', x: 2300 }, { id: 'rake_cat_king', x: 2400, y: 15 },
     { id: 'boss_yeti_king', x: 3380 } ] },
-  { name: '骨魔洞五层', bg: 'bg_floor26', boss: true, zone: '骨魔洞五层（黄泉教主 195,240，180 分钟；恶灵尸王原版在尸魔洞1–3层/骨魔洞一层）', src: 'https://www.21cq.com/mir/Mob.Aspx?ID=208', spawns: [
+  { name: '骨魔洞五层', bg: 'bg_floor36', boss: true, zone: '骨魔洞五层（黄泉教主 195,240，180 分钟；恶灵尸王原版在尸魔洞1–3层/骨魔洞一层）', src: 'https://www.21cq.com/mir/Mob.Aspx?ID=208', spawns: [
     { id: 'evil_lich', x: 800 }, { id: 'evil_lich', x: 910, y: 20 },
     { id: 'evil_lich', x: 1550 }, { id: 'evil_lich', x: 1650, y: -15 },
     { id: 'evil_lich', x: 2300 }, { id: 'evil_lich', x: 2400, y: 15 },
     { id: 'boss_huangquan', x: 3380 } ] },
-  { name: '恶魔祭坛', bg: 'bg_floor27', boss: true, zone: '赤月峡谷·恶魔祭坛（双头金刚 15,18 / 双头血魔，360 分钟）', src: 'https://www.21cq.com/mir/Mob.Aspx?ID=163', spawns: [
+  { name: '恶魔祭坛', bg: 'bg_floor37', boss: true, zone: '赤月峡谷·恶魔祭坛（双头金刚 15,18 / 双头血魔，360 分钟）', src: 'https://www.21cq.com/mir/Mob.Aspx?ID=163', spawns: [
     { id: 'blood_zombie', x: 800 }, { id: 'redmoon_spider', x: 910, y: 20 },
     { id: 'blood_zombie', x: 1550 }, { id: 'redmoon_spider', x: 1650, y: -15 },
     { id: 'boss_twinhead_kong', x: 2700 },
     { id: 'boss_twinhead_blood', x: 3380 } ] }
 ];
 /** 侧线层（不在通关顺序里，清完回城） */
-export const SIDE_FLOORS: readonly number[] = [23, 24, 25, 26];
+export const SIDE_FLOORS: readonly number[] = [23, 24, 32, 33, 34, 35, 36];
 /** 通关顺序：兽人古墓一层(白骨墓穴)→二层→三层→洞穴一层→二层→沃玛自然洞穴一→二→尸王殿…（按 21cq 进出表连通） */
-export const FLOOR_ORDER = [0, 1, 2, 3, 4, 13, 14, 15, 16, 17, 18, 5, 6, 7, 8, 9, 10, 11, 12, 19, 20, 21, 22];
+export const FLOOR_ORDER = [0, 1, 2, 3, 4, 13, 14, 15, 16, 17, 18, 27, 28, 29, 30, 31, 5, 6, 7, 25, 26, 8, 9, 10, 11, 12, 19, 20, 21, 22];
 /** 图群：白骨墓穴（下标 4）作为兽人古墓一层 */
-export const FLOOR_GROUP: Record<number, { group: string; depth: number }> = { 4: { group: 'shouren', depth: 1 } };
+export const FLOOR_GROUP: Record<number, { group: string; depth: number }> = { 4: { group: 'shouren', depth: 1 }, 5: { group: 'bq_mine', depth: 6 }, 8: { group: 'woma', depth: 4 } };
 export const groupOf = (i: number, floors: Floor[] = FLOORS) => floors[i]?.group ?? (floors === FLOORS ? FLOOR_GROUP[i]?.group : undefined);
 /** 同图群上一层下标（无则 -1），用于「上一层」入口 */
 export const prevLayerOf = (i: number, floors: Floor[] = FLOORS) => { const g = groupOf(i, floors); if (!g || floors !== FLOORS) return -1; const k = FLOOR_ORDER.indexOf(i); const p = FLOOR_ORDER[k - 1]; return p !== undefined && groupOf(p) === g ? p : -1; };

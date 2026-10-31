@@ -31,8 +31,7 @@ const cum = (f: (l: number) => number, a: number, b: number) => { let s = 0; for
 export const FLOOR_LEVEL_ANCHORS: readonly number[] = [1, 3, 7, 12, 15, 18, 22, 25, 29, 32, 36, 40, 45, 48];
 /** [适配] 合击版 #8 四层（下标 19–22，合并 main 后排在洞穴群之后）：进入等级锚点 48→49→50→51，通关 52（≥43 合击 / ≥47 卧龙·雷炎） */
 /** 阶段 B：追加下标 23 魔龙血域（侧线）52→53 [适配]；前四层倍率不变 */
-// M4 [适配]：侧线层 24–26 追加锚点 54–56（只在末尾追加，前面各层倍率不变）
-export const HJ_FLOOR_ANCHORS: readonly number[] = [48, 49, 50, 51, 52, 53, 54, 55, 56];
+export const HJ_FLOOR_ANCHORS: readonly number[] = [48, 49, 50, 51, 52, 53];
 /** 每层怪物/悬赏经验倍率 = 该层目标等级段的新曲线累计经验 ÷ 旧曲线累计经验（同一比例缩放，保持每层升级节奏） */
 export const floorExpMult = (anchors: readonly number[]): number[] => anchors.slice(0, -1).map((a, i) =>
   cum(EXP_PER_LEVEL, a, anchors[i + 1]) / cum(EXP_PER_LEVEL_V1, a, anchors[i + 1]));
@@ -41,7 +40,11 @@ const BASE_MULT = floorExpMult(FLOOR_LEVEL_ANCHORS);
 /** [适配] 新层经验衰减：多 6 张图会让角色整体超前升级（模拟 9 种子死亡全 0），故新层经验 ×此值 */
 export const NEW_FLOOR_EXP_DAMP = 0.3;
 export const NEW_FLOOR_MULT_NEIGHBORS: readonly [number, number][] = [[4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5]];
-export const FLOOR_EXP_MULT: number[] = [...BASE_MULT, ...NEW_FLOOR_MULT_NEIGHBORS.map(([a, b]) => NEW_FLOOR_EXP_DAMP * Math.sqrt(BASE_MULT[a] * BASE_MULT[b])), ...floorExpMult(HJ_FLOOR_ANCHORS)];
+/** [适配] feat/maps-batch2 下标 24–33：沃玛寺庙 3 层取 原第7/8 层（石墓/沃玛），矿区 5 层与山谷矿区 2 层取 原第4/5 层（白骨墓穴/尸王殿）几何平均 ×衰减 */
+export const BATCH2_MULT_NEIGHBORS: readonly [number, number][] = [[7, 8], [7, 8], [7, 8], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5]];
+/** M4 [适配]：侧线层 34–36（雪域/骨魔洞五层/恶魔祭坛）锚点 53→54→55→56，追加在 batch2 之后（前面各层倍率不变） */
+export const M4_FLOOR_ANCHORS: readonly number[] = [53, 54, 55, 56];
+export const FLOOR_EXP_MULT: number[] = [...BASE_MULT, ...NEW_FLOOR_MULT_NEIGHBORS.map(([a, b]) => NEW_FLOOR_EXP_DAMP * Math.sqrt(BASE_MULT[a] * BASE_MULT[b])), ...floorExpMult(HJ_FLOOR_ANCHORS), ...BATCH2_MULT_NEIGHBORS.map(([a, b]) => NEW_FLOOR_EXP_DAMP * Math.sqrt(BASE_MULT[a] * BASE_MULT[b])), ...floorExpMult(M4_FLOOR_ANCHORS)];
 /** 第 floor 层获得的经验（怪物 def.exp / 悬赏 exp 为旧曲线下的基准值） */
 export const scaledExp = (base: number, floor: number): number => {
   if (base <= 0) return 0;

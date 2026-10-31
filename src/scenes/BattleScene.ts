@@ -465,10 +465,12 @@ export class BattleScene extends Phaser.Scene {
   comboFx(e: Extract<BattleEvent, { type: 'combo' }>) {
     const t = this.views.get(e.target), a = this.views.get(e.source), b = this.views.get(e.partner); this.sfx('swing_crit', 0.6);
     a?.windup?.(a.unit.facing); b?.swing?.(b.unit.facing);
-    if (!t) return; if (playFx(this, 'fx_combo_' + e.id, t.cx, t.cy)) return;
+    if (!t) return;
+    if (!playFx(this, 'fx_combo_' + e.id, t.cx, t.cy)) {
     const g = this.add.graphics().setDepth(60).setBlendMode(Phaser.BlendModes.ADD);
     g.lineStyle(10, 0xffc040, 0.9).strokeCircle(t.cx, t.cy, 40); g.fillStyle(0xff8020, 0.35).fillCircle(t.cx, t.cy, 60);
     this.tweens.add({ targets: g, scale: { from: 0.4, to: 1.4 }, alpha: { from: 1, to: 0 }, duration: 600, onComplete: () => g.destroy() });
+    }
     fx.floatNumber(this, t.cx, t.cy - t.h * 0.5, t.h, e.name, '#ffd24a', 1.1);
     if (!FxQuality.low) this.cameras.main.shake(160, 0.006);
   }
