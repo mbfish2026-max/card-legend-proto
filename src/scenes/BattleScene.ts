@@ -245,7 +245,7 @@ export class BattleScene extends Phaser.Scene {
     const tv = targets.map(id => this.views.get(id)).filter((v): v is CardView => !!v);
     const sk = this.world.skills.find(s => s.id === skill); this.sfx(sk?.sfx ?? skill);
     const done = () => this.handle(evs), dir = hv.unit.facing, flip = dir < 0;
-    const dur = (sk?.duration ?? 8) + (sk?.durPerLv ?? 0) * Math.max(0, sk ? this.world.skillLevel(sk) : 0);
+    const dur = sk ? this.world.buffDuration(sk) : 8;
     // R12：优先播放图集特效（ui/FxPlayer），素材缺失/超上限时回落到 Fx.ts 的 Graphics 特效
     switch (skill) {
       case 'fire_sword': hv.lunge(dir, 34); if (tv[0] && !playFx(this, 'fx_fire_sword_hit', tv[0].cx, tv[0].cy, { flip })) fx.bloodBlade(this, tv[0].cx, tv[0].cy, tv[0].h); return done();
@@ -330,6 +330,19 @@ export class BattleScene extends Phaser.Scene {
         if (!flyFx(this, 'fx_poison_fly', x0, y0, t.cx, t.cy, hit)) fx.projectile(this, x0, y0, t.cx, t.cy, 'poison', hit);
         return;
       } return done();
+      // #12 道士：幽灵盾/神圣战甲术 复用魔法盾图集着色（蓝紫/金），无素材走 Graphics 兜底；群疗 复用治愈光柱 ×每个目标
+      case 'ghost_shield': case 'holy_armor': {
+        const tint = skill === 'ghost_shield' ? 0xb08cff : 0xffd860, ms = dur * 1000, name = skill === 'ghost_shield' ? '幽灵盾' : '神圣战甲术';
+        const startLoop = () => { const l = playFx(this, 'fx_magic_shield_loop', hv.cx, hv.cy, { tint, ms, decorative: true }); if (l) follow(this, l, () => hv.active ? { x: hv.cx, y: hv.cy } : null); return !!l; };
+        const c = playFx(this, 'fx_magic_shield_cast', hv.cx, hv.cy, { tint, onDone: () => { startLoop(); } });
+        if (!c) fx.holyLight(this, hv.cx, hv.cy, hv.h);
+        fx.floatNumber(this, hv.cx, hv.cy - hv.h * 0.2, hv.h, name, skill === 'ghost_shield' ? '#c8a8ff' : '#ffe080', 0.7); return done();
+      }
+      case 'mass_heal': {
+        const all = [hv, ...tv.filter(v => v !== hv)];
+        all.forEach((v, i) => this.time.delayedCall(i * 80, () => { if (v.active && !playFx(this, 'fx_heal_pillar', v.cx, v.y)) fx.holyLight(this, v.cx, v.cy, v.h); }));
+        fx.floatNumber(this, hv.cx, hv.cy - hv.h * 0.2, hv.h, '群体治愈术', '#80ff90', 0.7); return done();
+      }
       case 'heal': if (!playFx(this, 'fx_heal_pillar', hv.cx, hv.y)) fx.holyLight(this, hv.cx, hv.cy, hv.h); fx.floatNumber(this, hv.cx, hv.cy - hv.h * 0.2, hv.h, '治愈术', '#80ff90', 0.7); return done();
       default: return done();
     }

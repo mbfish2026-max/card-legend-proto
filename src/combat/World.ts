@@ -44,6 +44,15 @@ export const OIL_PRICE = 400;
 export { IRON_PRICE } from '../data/items';
 export type CastResult = { ok: true; targets: number[]; skill: string; kind: string } | { ok: false; reason: string };
 /** R13 官方 BOSS 机制（来源见 docs/combat-official.md）：沃玛教主/祖玛教主/赤月恶魔由 bossStep 接管攻击 */
+/** #12：已在 BOOKS 但尚未接入获取途径的书（S9 沃玛教主表含群疗，接入前不掉）；接入时从此表删除即可 */
+export const PENDING_BOOKS: Record<string, true> = { ghost_shield: true, holy_armor: true, mass_heal: true };
+/**
+ * #12 幽灵盾/神圣战甲术（docs/skills-official.md #12）：
+ * 增益 官方（新浪 2003 实测）= 0~(2 + ⌊目标等级/7⌋) 加在上限；[适配] 取区间中值 ×3（同装备防/魔御系数）= round(1.5 × (2 + ⌊等级/7⌋))
+ * 持续 官方（21cq 盛大火炬引擎）= 30 + 10×技能等级 + 5×道术下限 + 随机；[适配] 道术单值 ÷10 当下限、去随机：30 + 10×slv + 5×⌊道术/10⌋ 秒
+ */
+export const taoBuffValue = (level: number) => Math.round(1.5 * (2 + Math.floor(level / 7)));
+export const taoBuffDur = (slv: number, tao: number) => 30 + 10 * Math.max(0, slv) + 5 * Math.floor(tao / 10);
 export const BOSS_MECH = new Set(['boss_woma', 'boss_zuma', 'boss_redmoon']);
 /** R13 官方参数 */
 export const OFFICIAL = {
@@ -382,7 +391,7 @@ export class World {
     if (!target.alive) return 0;
     const crit = canCrit && this.rng() < (source?.isHero ? this.critChance() : CRIT_CHANCE);
     if (crit) amount *= CRIT_MULT;
-    if (!ignoreDef) amount = mitigate(amount, target.def ?? 0, target.mdef ?? target.def ?? 0, magic);
+    if (!ignoreDef) { const up = (u?: number, v?: number) => u && u > this.time ? v ?? 0 : 0; amount = mitigate(amount, (target.def ?? 0) + up(target.defUpUntil, target.defUp), (target.mdef ?? target.def ?? 0) + up(target.mdefUpUntil, target.mdefUp), magic); }
     if (target.redUntil && target.redUntil > this.time) amount *= 1 + OFFICIAL.redAmp; // R13 红毒
     if (target.armorUntil && target.armorUntil > this.time) amount *= 1 - (target.armorReduce ?? 0.5);
     amount = Math.max(1, Math.round(amount));
@@ -458,7 +467,7 @@ export class World {
     const extra: { id: string; purity?: number }[] = [];
     if (u.tier === 'boss' || this.lootRng() < (u.oilChance ?? 0)) extra.push({ id: 'bless_oil' });
     // R11 技能书掉落（本职业、未学、背包里也没有）
-    { const pool = Object.values(BOOKS).filter(b => b.cls === this.cls && (u.id in BOOK_RATES ? (BOOK_RATES[u.id][b.skill] ?? 0) > 0 : b.drops.includes(u.id)) && !this.learned.has(b.skill) && !this.bag.some(x => x.item === bookItemId(b.skill)));
+    { const pool = Object.values(BOOKS).filter(b => b.cls === this.cls && (b.shop || b.drops.length || !(b.skill in PENDING_BOOKS)) && (u.id in BOOK_RATES ? (BOOK_RATES[u.id][b.skill] ?? 0) > 0 : b.drops.includes(u.id)) && !this.learned.has(b.skill) && !this.bag.some(x => x.item === bookItemId(b.skill)));
       // R13：有资料的怪逐本按资料爆率（1/N）独立判定；无资料的怪沿用 [适配] 首领/普通几率随机一本
       if (u.id in BOOK_RATES) { for (const b of pool) if (this.lootRng() < BOOK_RATES[u.id][b.skill]) { extra.push({ id: bookItemId(b.skill) }); break; } }
       else if (pool.length && this.lootRng() < (u.tier === 'boss' ? BOOK_DROP.boss : BOOK_DROP.normal)) extra.push({ id: bookItemId(pool[Math.floor(this.lootRng() * pool.length)].skill) }); }
@@ -656,6 +665,8 @@ export class World {
     this.skillOrder = ids; this.events.push({ type: 'learned', skill: id });
   }
 
+  /** buff 持续秒数（#12 幽灵盾/神甲按道术；其余沿用 duration + durPerLv×等级） */
+  buffDuration(s: SkillDef) { const slv = Math.max(0, this.skillLevel(s)); return s.buffStat ? taoBuffDur(slv, this.hero?.tao ?? 0) : (s.duration ?? 8) + (s.durPerLv ?? 0) * slv; }
   // ---------- 技能 ----------
   cast(i: number, cds: number[]): CastResult {
     const s = this.skills[i], h = this.hero;
@@ -695,6 +706,8 @@ export class World {
       if (!targets.length) return { ok: false, reason: '附近没有等级低于自己的目标' };
     }
     if (s.kind === 'buff' && s.reduce && (h.armorUntil ?? 0) > this.time) return { ok: false, reason: `${s.name}持续中（官方：持续期间重复开启无效）` };
+    if (s.buffStat && ((s.buffStat === 'def' ? h.defUpUntil : h.mdefUpUntil) ?? 0) > this.time) return { ok: false, reason: `${s.name}持续中（沿用魔法盾：持续期间重复开启无效）` };
+    if (s.area) targets = [h, ...this.units.filter(u => u.summon && u.alive && Math.abs(u.x - h.x) <= s.area!)];
     h.mp = (h.mp ?? 0) - s.mana; cds[i] = s.cooldown;
     this.events.push({ type: 'attack', source: h.uid, target: targets[0]?.uid ?? h.uid, skill: s.id });
     this.addTrain(s, 100);
@@ -705,7 +718,13 @@ export class World {
         h.armorUntil = this.time + dur; h.armorReduce = OFFICIAL.shieldReduce[Math.min(3, slv)];
         this.events.push({ type: 'log', text: `${s.name}：受到伤害降低 ${Math.round(h.armorReduce * 100)}%，持续 ${dur} 秒` });
       }
-      if (s.heal) this.heal(h, pw * s.heal);
+      if (s.buffStat) {
+        // #12 官方说明「5×5 友方」；21cq 资料称宝宝不受益 → 只作用于主角
+        const v = taoBuffValue(this.level), d = this.buffDuration(s);
+        if (s.buffStat === 'def') { h.defUpUntil = this.time + d; h.defUp = v; } else { h.mdefUpUntil = this.time + d; h.mdefUp = v; }
+        this.events.push({ type: 'log', text: `${s.name}：${s.buffStat === 'def' ? '防御' : '魔御'} +${v}，持续 ${d} 秒` });
+      }
+      if (s.heal) { if (s.area) for (const t of targets) this.heal(t, pw * s.heal); else this.heal(h, pw * s.heal); }
     } else if (s.kind === 'summon') {
       const beast = s.id === 'summon_beast';
       const base = beast ? SUMMON_BEAST : SUMMON;

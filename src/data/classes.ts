@@ -24,6 +24,10 @@ export interface SkillDef {
   durPerLv?: number;
   /** blast：以首个目标为中心的半径（px）[适配] */
   splash?: number;
+  /** #12 幽灵盾/神圣战甲术：增益属性（mdef 魔御 / def 防御） */
+  buffStat?: 'def' | 'mdef';
+  /** #12 群体治愈术：以主角为中心的治疗半径（px）[适配] */
+  area?: number;
 }
 export interface ClassDef {
   id: ClassId; name: string; art: string; bg: number; artFacing: 1 | -1; atkInterval: number;
@@ -69,7 +73,7 @@ export const CLASSES: Record<ClassId, ClassDef> = {
     id: 'taoist', name: '道士', art: 'taoist', bg: 0x7a5c14, artFacing: 1, atkInterval: 1.2, autoStat: 'tao',
     // [适配] 技能扩充后保模拟死亡 1–4：基础 HP 278（官方无对应基础血量）
     base: { hp: 380, mp: 190, atk: 16, mag: 0, tao: 28, def: 8 }, grow: { hp: 28, mp: 15, atk: 2, mag: 0, tao: 4.2, def: 1 },
-    desc: '召唤协战，施毒持续伤害\n精神力被动 · 治愈·施毒·火符·骷髅·神兽',
+    desc: '召唤协战，施毒持续伤害\n精神力被动 · 治愈·施毒·火符·骷髅·神兽\n幽灵盾·神圣战甲·群疗',
     skills: [
       { key: 'P', id: 'spirit_force', name: '精神力战法', kind: 'melee', stat: 'tao', mana: 0, cooldown: 0, passive: true, learn: [9, 9, 13, 19], train: [1000, 4000, 8000], accBonus: [3, 5, 8], icon: S + 'skill_spirit_force.png', sfx: 'heal', desc: '被动：准确 +3/+5/+8（官方）；[适配] 转为暴击率' },
       { key: 'F1', id: 'heal', name: '治愈术', kind: 'buff', stat: 'tao', mana: 12, cooldown: 4, heal: 2.5, learn: [7, 7, 11, 16], train: [500, 1500, 3000], icon: S + 'skill_heal.png', sfx: 'heal', desc: '恢复自身生命（随修炼等级提升）' },
@@ -77,6 +81,10 @@ export const CLASSES: Record<ClassId, ClassDef> = {
       { key: 'F3', id: 'soul_fire', name: '灵魂火符', kind: 'ranged', stat: 'tao', mana: 15, cooldown: 1.5, mult: 2.0, range: 500, learn: [18, 18, 21, 24], train: [2000, 4000, 6000], icon: S + 'skill_soul_fire.png', sfx: 'fireball_cast', desc: '驱使护身符远程攻击' },
       { key: 'F4', id: 'summon_skeleton', name: '召唤骷髅', kind: 'summon', stat: 'tao', mana: 50, cooldown: 12, unlock: 1, learn: [1, 19, 23, 26], train: [2000, 4000, 8000], icon: S + 'skill_summon_skeleton.png', sfx: 'summon', desc: '召唤骷髅协同作战（已存在则治疗）；骷髅随技能等级变强' },
       { key: 'F5', id: 'summon_beast', name: '召唤神兽', kind: 'summon', stat: 'tao', mana: 48, cooldown: 15, learn: [35, 35, 37, 40], train: [2000, 4000, 8000], icon: S + 'skill_summon_beast.png', sfx: 'summon', desc: '召唤 1/2/3 级神兽（官方 C）；[适配] 属性随道术与技能等级；与骷髅互斥只保留一只' },
+      // #12 道士 3 技能：学习等级/修炼点 = 官方 C（21cq），耗魔 = D 私服 Spell ×3 [适配]；增益/持续公式见 World.taoBuff（docs/skills-official.md #12）
+      { key: 'F6', id: 'ghost_shield', name: '幽灵盾', kind: 'buff', stat: 'tao', mana: 45, cooldown: 10, buffStat: 'mdef', learn: [22, 22, 24, 26], train: [5000, 10000, 15000], icon: S + 'skill_magic_shield.png', sfx: 'heal2', desc: '提高魔御，持续随技能等级与道术（官方）；持续中重复施放无效' },
+      { key: 'F7', id: 'holy_armor', name: '神圣战甲术', kind: 'buff', stat: 'tao', mana: 45, cooldown: 10, buffStat: 'def', learn: [25, 25, 27, 29], train: [5000, 10000, 15000], icon: S + 'Ability_Warrior_DefensiveStance.png', sfx: 'heal2', desc: '提高防御，持续随技能等级与道术（官方）；持续中重复施放无效' },
+      { key: 'F8', id: 'mass_heal', name: '群体治愈术', kind: 'buff', stat: 'tao', mana: 36, cooldown: 6, heal: 2.5, area: 170, learn: [33, 33, 35, 38], train: [4000, 8000, 12000], icon: S + 'Spell_Holy_Renew.png', sfx: 'heal', desc: '3×3 范围治疗（官方）；[适配] 主角与 1 卡内召唤物' },
     ],
   },
 };
