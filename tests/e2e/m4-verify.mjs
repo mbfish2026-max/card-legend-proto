@@ -20,6 +20,8 @@ try {
     const t = await findPos(p, 'Title', '继'); await p.mouse.click(t.x, t.y);
     await p.waitForFunction(() => window.__game.scene.getScene('Battle')?.world?.hero && window.__game.scene.getScene('Battle')?.hud, { timeout: 30000 }); await sleep(1200);
     await p.evaluate(f => { const W = window.__game.scene.getScene('Battle').world; W.hero.hp = W.hero.maxHp = 1e9; W.loadFloor(f); }, fl); await sleep(2500);
+    // 立绘为后台懒加载（未到先剪影、到了自动替换）；楼层多了队列更长 → 等本层立绘纹理到齐再判定（最多 30s）
+    await p.waitForFunction(ks => ks.every(k => window.__game.textures.exists(k)), { timeout: 30000 }, Object.values(want)); await sleep(500);
     for (const id of Object.keys(want)) {
       // 把目标拉到主角前方（镜头内）截图看立绘
       const r = await p.evaluate((id, art) => { const B = window.__game.scene.getScene('Battle'), W = B.world, h = W.hero;
