@@ -423,6 +423,17 @@ export class World {
   /** feat/maps-more：刷怪并按子层深度加成（官方第 d 层 攻/血 ×(1+DEPTH_STEP×(d−1))，原有层 depth 缺省=1 不变） */
   spawnFoe(id: string, x: number, y: number) { const u = this.spawn(ENEMIES[id], 'enemy', x, y), d = this.floor.depth ?? 1;
     if (d > 1) { const k = 1 + DEPTH_STEP * (d - 1); u.hp = u.maxHp = Math.round(u.hp * k); u.atk = Math.round(u.atk * k); }
+    // feat/balance-battle：BOSS 攻击 = 同层普通怪均值 ×1.6（取 max，不削弱已更强的 BOSS）、血 = 均值 ×4（取 min）[适配]；攻击间隔 1.5→1.2s。首图豁免
+    if (u.tier === 'boss' && !this.newbieFloor) {
+      const kd = d > 1 ? 1 + DEPTH_STEP * (d - 1) : 1;
+      const ns = this.floor.spawns.map(s => ENEMIES[s.id]).filter(e => e && e.tier !== 'boss');
+      if (ns.length) {
+        u.atk = Math.max(u.atk, Math.round(WORLD.bossAtkVsNormal * kd * ns.reduce((a, e) => a + e.atk, 0) / ns.length));
+        // 血 = 同层普通怪均值 ×4（plan I：现约 ×5；只下调不上调）
+        u.hp = u.maxHp = Math.min(u.maxHp, Math.round(WORLD.bossHpVsNormal * kd * ns.reduce((a, e) => a + e.hp, 0) / ns.length));
+      }
+      u.atkInterval = Math.min(u.atkInterval, WORLD.bossAtkInterval);
+    }
     return u; }
   /** 子层：返回同图群上一层（仅非战斗、已到达过该层时可用），出生在起点 */
   upLayer(): string { const p = prevLayerOf(this.floorIndex, this.floors); if (p < 0) return '没有上一层';
@@ -467,6 +478,7 @@ export class World {
     const crit = canCrit && this.rng() < (source?.isHero ? this.critChance() : CRIT_CHANCE);
     if (crit) amount *= CRIT_MULT;
     const nb = this.newbieFloor;
+    if (source?.boss?.enrageUntil && source.boss.enrageUntil > this.time) amount *= 1 + WORLD.bossEnrageAtk; // BOSS 狂暴 +30%
     if (!ignoreDef) { const up = (u?: number, v?: number) => u && u > this.time ? v ?? 0 : 0; amount = mitigate(amount, (target.def ?? 0) + up(target.defUpUntil, target.defUp), (target.mdef ?? target.def ?? 0) + up(target.mdefUpUntil, target.mdefUp), magic, nb ? WORLD.legacyDmgFloor : WORLD.dmgFloor, nb ? WORLD.legacyDefFactor : WORLD.defFactor); }
     // 等级差修正：仅「怪物 → 主角/英雄」（balance-plan B 只定义了主角受伤）；首图豁免
     if (!nb && source && source.team === 'enemy' && (target.isHero || target.companion)) amount *= lvDiffMult(source.level ?? 1, target.isHero ? this.level : this.companion?.level ?? this.level);
@@ -1236,7 +1248,7 @@ export class World {
       } else if (u.ai === 'chase' && (!h || Math.abs(u.x - h.x) > WORLD.leashRange || Math.abs(u.x - u.homeX) > WORLD.leashRange * 1.5)) {
         u.ai = 'return'; this.events.push({ type: 'leash', uid: u.uid });
         // BOSS 脱战：清除发呆/狂暴/飞身/地刺预警等计时残留；阶段 stage 随保留的血量保留，不会重复触发
-        if (u.boss) Object.assign(u.boss, { dazeUntil: 0, crazyUntil: 0, crazyOn: false, flyT: 0, spikeX: undefined, spikeT: OFFICIAL.spikeEvery });
+        if (u.boss) Object.assign(u.boss, { dazeUntil: 0, crazyUntil: 0, crazyOn: false, flyT: 0, spikeX: undefined, spikeT: OFFICIAL.spikeEvery, enrageUntil: 0, aoeX: undefined, aoeT: WORLD.bossAoeEvery });
       }
     }
     if (h) for (const side of [1, -1]) {
@@ -1350,10 +1362,46 @@ export class World {
       else this.loadFloor(nextFloorOf(this.floorIndex, this.floors));
     }
   }
+  /**
+   * feat/balance-battle 通用 BOSS 机制（balance-plan I，全部 [适配]；官方无统一机制，各 BOSS 官方机制优先）：
+   * - 狂暴：血量 ≤50% 触发一次，8 秒内攻击 +30%（沃玛教主已有官方发呆/狂暴，不叠加）
+   * - AOE：每 12 秒在主角当前位置预警 1 秒，半径 260 内受 18% 最大生命（无视防御，走开可躲；仅无官方机制的 BOSS）
+   * - 召唤：血量 ≤50% 召唤 2 只同层普通怪（0 经验/掉落；仅无官方机制的 BOSS，祖玛教主保留官方召唤）
+   */
+  bossGeneric(dt: number, h: Unit) {
+    for (const b of this.alive('enemy')) {
+      if (b.tier !== 'boss' || b.ai !== 'chase' || b.pet) continue;
+      const m = b.boss ??= { stage: 0, dazeUntil: 0, crazyUntil: 0, crazyOn: false, flyT: 0, summonT: 0, spikeT: OFFICIAL.spikeEvery, minions: [] };
+      const half = b.hp <= b.maxHp * WORLD.bossEnrageAt, official = BOSS_MECH.has(b.id);
+      if (half && !m.enraged && b.id !== 'boss_woma') {
+        m.enraged = true; m.enrageUntil = this.time + WORLD.bossEnrageSec;
+        this.events.push({ type: 'bossfx', uid: b.uid, kind: 'enrage', x: b.x }, { type: 'log', text: `${b.name}狂暴了！攻击 +30%（8 秒）` });
+      }
+      if (official) continue;
+      if (half && !m.called) {
+        m.called = true; const pool = this.floor.spawns.map(s => s.id).filter(id => ENEMIES[id] && ENEMIES[id].tier !== 'boss');
+        for (let k = 0; k < WORLD.bossCallN && pool.length; k++) {
+          const base = ENEMIES[pool[k % pool.length]];
+          const u = this.spawn({ ...base, exp: 0, drops: [], setDrop: undefined, oilChance: 0 }, 'enemy', b.x + (k ? -1 : 1) * 90, b.y);
+          u.ai = 'chase'; m.minions.push(u.uid);
+          this.events.push({ type: 'summon', uid: u.uid }, { type: 'bossfx', uid: b.uid, kind: 'call', x: u.x }, { type: 'log', text: `${b.name}召唤了${base.name}` });
+        }
+      }
+      if (m.aoeX === undefined) {
+        m.aoeT = (m.aoeT ?? WORLD.bossAoeEvery) - dt;
+        if (m.aoeT <= 0) { m.aoeX = h.x; m.aoeAt = this.time + WORLD.bossAoeWarn; m.aoeT = WORLD.bossAoeEvery; this.events.push({ type: 'bossfx', uid: b.uid, kind: 'aoe_warn', x: h.x }, { type: 'log', text: `${b.name}正在蓄力范围攻击，快走开！` }); }
+      } else if (this.time >= (m.aoeAt ?? 0)) {
+        const x = m.aoeX; m.aoeX = undefined;
+        this.events.push({ type: 'bossfx', uid: b.uid, kind: 'aoe', x });
+        for (const t of [h, this.companionUnit, ...this.units.filter(u => u.summon && u.alive)]) if (t && t.alive && Math.abs(t.x - x) <= WORLD.bossAoeRadius) this.damage(t, t.maxHp * WORLD.bossAoePct / lvDiffMult(b.level ?? 1, t.isHero ? this.level : t.level ?? this.level) / (m.enrageUntil && m.enrageUntil > this.time ? 1 + WORLD.bossEnrageAtk : 1), b, false, true, true); // 精确 18%：抵消等级差/狂暴乘区
+      }
+    }
+  }
   /** R13 官方 BOSS 机制（沃玛教主 / 祖玛教主 / 赤月恶魔），来源与 [适配] 说明见 docs/combat-official.md */
   /** 首图（主线 FLOORS 第 0 层 幽暗森林）：balance-plan 不变量，战斗系数全部保持改前值 */
   get newbieFloor(): boolean { return this.floors === FLOORS && this.floorIndex === 0 && !this.town; }
   bossStep(dt: number, h: Unit) {
+    if (!this.newbieFloor) this.bossGeneric(dt, h);
     for (const b of this.alive('enemy')) {
       if (!BOSS_MECH.has(b.id) || b.ai !== 'chase') continue;
       const m = b.boss ??= { stage: 0, dazeUntil: 0, crazyUntil: 0, crazyOn: false, flyT: 0, summonT: 0, spikeT: OFFICIAL.spikeEvery, minions: [] };

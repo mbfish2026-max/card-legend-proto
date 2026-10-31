@@ -497,6 +497,17 @@ export class BattleScene extends Phaser.Scene {
       case 'crazy': tip('狂暴！', '#ff4040'); break;
       case 'fly': tip('飞！', '#ffd080'); break;
       case 'call': tip('召唤', '#ffd080'); break;
+      // feat/balance-battle 通用 BOSS 机制表现 [适配]
+      case 'enrage': tip('狂暴！攻击+30%', '#ff4040'); if (v) this.tweens.add({ targets: v, scale: 1.08, duration: 160, yoyo: true, repeat: 2 }); break;
+      case 'aoe_warn': {
+        const r = WORLD.bossAoeRadius, g = this.add.ellipse(e.x, gy, r * 2, r * 0.45, 0xff6020, 0.25).setStrokeStyle(3, 0xffa040).setDepth(8);
+        this.tweens.add({ targets: g, alpha: 0.85, duration: WORLD.bossAoeWarn * 250, yoyo: true, repeat: 1, onComplete: () => g.destroy() }); break;
+      }
+      case 'aoe': {
+        const r = WORLD.bossAoeRadius, g = this.add.ellipse(e.x, gy, r * 0.4, r * 0.1, 0xff3010, 0.8).setDepth(57);
+        this.tweens.add({ targets: g, scaleX: 5, scaleY: 4.5, alpha: 0, duration: 380, onComplete: () => g.destroy() });
+        if (!FxQuality.low) this.cameras.main.shake(140, 0.006); break;
+      }
     }
   }
   useNext = false; fading = false; portalHint!: Phaser.GameObjects.Text;

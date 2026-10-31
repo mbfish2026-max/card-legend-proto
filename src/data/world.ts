@@ -33,6 +33,11 @@ export const WORLD = {
   /** 首图（幽暗森林）保持旧公式：balance-plan「不变量」——首图所有系数取改前值 */
   legacyDefFactor: 0.6, legacyDmgFloor: 0.2,
   /** 等级差修正（balance-plan B [适配]，官方公式未查到）：怪物每高主角 1 级伤害 +3%；每低 1 级 −2%，下限 −30% */
+  /** BOSS 调整（balance-plan I [适配]，官方数值未查到）：首图豁免 */
+  bossAtkVsNormal: 1.6, bossHpVsNormal: 4, bossAtkInterval: 1.2,
+  bossEnrageAt: 0.5, bossEnrageAtk: 0.3, bossEnrageSec: 8,
+  bossAoeEvery: 12, bossAoePct: 0.18, bossAoeWarn: 1.0, bossAoeRadius: 260,
+  bossCallAt: 0.5, bossCallN: 2,
   lvDiffUp: 0.03, lvDiffDown: 0.02, lvDiffMin: 0.7,
   rarityRoll: { magic: 0.3, rare: 0.1 },
   affix: { magic: 0.5, rare: 1.2 },
