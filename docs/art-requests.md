@@ -932,3 +932,12 @@ thunder_sword 雷霆剑、break_strike 破击剑法、shield_break 破盾斩、v
 | axe_skeleton_full.png | 526x960 | 掷斧骷髅 | 新画（取代原复用图） | 据名称：投掷手斧；红头巾为新设计（胸前斧袋画得像子弹带，存疑） |
 | cave_bat_full.png | 960x562 | 山洞蝙蝠 | 新画（取代原复用图） | 据名称：洞穴蝙蝠；棕毛、白瞳为推测 |
 | cave_maggot_full.png | 794x960 | 洞蛆 | 新画（取代原复用图） | 据名称：蛆虫；圆口利齿为推测 |
+
+
+## art/maps-sq-mir3 重画·第8组（1 张，取消复用）
+
+用户要求不再复用小怪素材，以下 id 的复制图都换成了各自的新立绘，外形和配色都与原图明显不同。路径：`public/assets/portraits/<id>_full.png`。预览：`docs/art-gap-preview/sq_mir3_redo8.jpg`。
+
+| 文件 | 尺寸 | 名称 | 状态 | 依据 |
+|---|---|---|---|---|
+| boss_evil_pincer_full.png | 960x759 | 邪恶钳虫 | 新画（取代原复用图） | 部分推测：原图与 pincer_bug 同构图仅换色，重画为直立巨钳虫后；外形细节为推测（毒液绿边可能被抠，存疑） |
