@@ -1,3 +1,4 @@
+import { REGIONS } from '../data/map';
 import { fmtExp } from '../data/expCurve';
 import { floorKeys, PreloadScene } from '../loader';
 import { playFx, flyFx, follow, SLASH_TINT } from '../ui/FxPlayer';
@@ -68,6 +69,7 @@ export class BattleScene extends Phaser.Scene {
     const lv = Number(qs.get('lv')) || 1;
     this.world = new World(Math.random, lv, FLOORS, data?.cls ?? 'warrior', data?.save);
     this.world.requireUse = true;
+    if (!data?.save && !qs.get('floor')) this.world.startInVillage(); // 新档出生在新手村
     this.cds = this.world.skills.map(() => 0);
     this.registry.set('fxCls', this.world.cls); this.registry.set('fxLearned', [...this.world.learned]);
     this.buildPortal(this.world.exitX); this.buildMerchant();
@@ -95,7 +97,7 @@ export class BattleScene extends Phaser.Scene {
     this.handle(this.world.drainEvents());
     const sk = this.world.skills.map(s => `${s.key} ${s.name}`).join('  ');
     this.log(`${this.world.classDef.name}：${sk}`);
-    this.log('本层起点有商人（按 T 交易）；B 打开背包');
+    this.log('商人只在城镇/新手村；战斗地图起点左侧是回城入口（S）；B 打开背包');
     // 截图/调试参数：?floor=N 直接进入第 N 层；?demo=1 把怪物排到主角附近
     const fl = Number(qs.get('floor'));
     if (fl >= 1 && fl <= this.world.floors.length && !data?.save) { this.world.loadFloor(fl - 1); this.handle(this.world.drainEvents()); }
@@ -203,14 +205,20 @@ export class BattleScene extends Phaser.Scene {
     g.lineStyle(2, 0xd4a64a).strokeRect(-60, -10, 120, 70);
     c.add(g);
     if (this.textures.exists('merchant')) c.add(this.add.image(0, 22, 'merchant').setDisplaySize(52, 52));
-    c.add(this.add.text(0, -92, '商人 [T]', { fontFamily: FONT, fontSize: '16px', color: '#ffe8a0', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5));
-    g.setInteractive(new Phaser.Geom.Rectangle(-75, -70, 150, 130), Phaser.Geom.Rectangle.Contains).on('pointerdown', () => this.openPanel('shop'));
+    this.gateLabel = this.add.text(0, -92, '回城 [S]', { fontFamily: FONT, fontSize: '16px', color: '#ffe8a0', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5); c.add(this.gateLabel);
+    g.setInteractive(new Phaser.Geom.Rectangle(-75, -70, 150, 130), Phaser.Geom.Rectangle.Contains).on('pointerdown', () => this.goBackTown());
     this.merchant = c;
+  }
+  gateLabel?: Phaser.GameObjects.Text;
+  /** 回城/回村入口（原「商人」位置，战斗地图不再有商人） */
+  goBackTown() {
+    if (this.state !== 'play' || this.paused) return; const w = this.world;
+    const e = w.returnToTown(); if (e) this.log(e === '回城入口在本层起点（左侧）' ? `走回本层起点左侧的入口，回到 ${w.returnTownName()}` : e); else this.sfx('click');
   }
   nearMerchant() { const h = this.world.hero; return !!h && h.x - MERCHANT_X < SHOP_RANGE; }
   openPanel(m: PanelMode) {
     if (this.state !== 'play') return;
-    if (m === 'shop' && !this.nearMerchant() && !this.ui.panel.open) { this.log('商人在本层起点，请走回左侧商人处（T）'); return; }
+    if (m === 'shop' && !this.world.town && !this.ui.panel.open) { this.log(`战斗地图没有商人：从起点回城入口（S）回 ${this.world.returnTownName()} 补给`); return; }
     this.sfx('click'); this.ui.panel.toggle(m);
   }
   saveGame() { if (this.state !== 'win' && this.world.hero) SaveStore.write(this.world.toSave()); }
@@ -227,7 +235,8 @@ export class BattleScene extends Phaser.Scene {
     if (k === 'Q') return this.openPanel('quests');
     if (this.paused || this.state !== 'play') return;
     if (k === ' ' || k === 'W') { if (this.world.town) this.townUse(); else this.usePortal(); return; }
-    if (k === 'S') { if (!this.fading && this.world.hero && this.world.floorIndex > 0 && this.world.hero.x <= WORLD.heroStartX + 150) { this.fading = true; this.cameras.main.fadeOut(400, 0, 0, 0); this.cameras.main.once('camerafadeoutcomplete', () => { this.fading = false; this.world.prevFloor(); }); } else this.log('在本层起点按 S 返回上一层'); return; }
+    if (k === 'S' && !this.world.town && this.world.atReturnGate() && (this.world.floorIndex === 0 || REGIONS.some(r => r.floors[0] === this.world.floorIndex))) { this.goBackTown(); return; }
+    if (k === 'S') { if (!this.fading && this.world.hero && this.world.floorIndex > 0 && this.world.hero.x <= WORLD.heroStartX + 150) { this.fading = true; this.cameras.main.fadeOut(400, 0, 0, 0); this.cameras.main.once('camerafadeoutcomplete', () => { this.fading = false; this.world.prevFloor(); }); } else this.log('在本层起点按 S 返回上一层，或点左侧入口回城'); return; }
     const h = this.world.hero; if (!h) return;
     const si = this.world.skills.findIndex(s => s.key === k);
     if (si >= 0) {
@@ -390,7 +399,7 @@ export class BattleScene extends Phaser.Scene {
       } else if (e.type === 'aggro') this.views.get(e.uid)?.alert(WORLD.alertSec);
       else if (e.type === 'leap') this.views.get(e.uid)?.leap(WORLD.leapSec * 1000);
       else if (e.type === 'leash') { const v = this.views.get(e.uid); if (v) fx.floatNumber(this, v.cx, v.cy - v.h * 0.3, v.h, '脱离战斗', FX.statusColor, 0.6); }
-      else if (e.type === 'floor') this.enterFloor(e.index, e.name);
+      else if (e.type === 'floor') { this.enterFloor(e.index, e.name); this.gateLabel?.setText(`回${this.world.returnTownName().replace(/（.*）/, '')} [S]`); }
       else if (e.type === 'town') this.buildStreet(e.id);
       else if (e.type === 'cleared') this.log('首领已被击败！出口已开启，向右前往下一层');
       else if (e.type === 'win') this.end();
