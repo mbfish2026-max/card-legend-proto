@@ -37,37 +37,37 @@ export const ENEMIES: Record<string, UnitDef> = {
   // 第5层 尸王殿
   boss_lich: b('boss_lich', 'boss_lich', '尸王', 22, 8000, 68, 20, 3000, [{ item: 'dragon_sword', chance: 1 }, { item: 'armor', chance: 1 }, { item: 'gold_ring', chance: 0.7 }, { item: 'pearl', chance: 0.7 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1)], { deathSfx: 'lich_death' }),
   // R3 第6层 沃玛寺庙（参考传奇沃玛寺庙；怪物/数值为本作重新设计）
-  woma_warrior: n('woma_warrior', '沃玛战士', 20, 1000, 40, 14, 230, [G(0.6), { item: 'hp_mid', chance: 0.3 }, { item: 'armor', chance: 0.04 }], { art: 'orc', deathSfx: 'death2', oilChance: 0.02 }),
+  woma_warrior: n('woma_warrior', '沃玛战士', 20, 1000, 40, 14, 230, [G(0.6), { item: 'hp_mid', chance: 0.3 }, { item: 'armor', chance: 0.04 }], { art: 'woma_warrior', deathSfx: 'death2', oilChance: 0.02 }),
   woma_guard: n('woma_guard', '沃玛卫士', 21, 1200, 44, 16, 260, [G(0.6), { item: 'mp_mid', chance: 0.3 }, { item: 'gold_ring', chance: 0.04 }], { deathSfx: 'death2', oilChance: 0.02 }),
   boss_woma: b('boss_woma', 'boss_woma', '沃玛教主', 24, 9000, 72, 22, 3500, [{ item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'death2', setDrop: ['set_woma_helm', 'set_woma_necklace', 'set_woma_bracelet'] }),
   // R3 第7层 祖玛阁
   zuma_statue: n('zuma_statue', '祖玛雕像', 24, 1300, 58, 18, 320, [G(0.6), { item: 'hp_mid', chance: 0.3 }, { item: 'bone_helm', chance: 0.04 }], { deathSfx: 'skeleton_death', speed: 85, oilChance: 0.02 }),
-  zuma_guard: n('zuma_guard', '祖玛卫士', 25, 1500, 62, 20, 360, [G(0.6), { item: 'mp_mid', chance: 0.3 }, { item: 'pearl', chance: 0.04 }], { art: 'orc', deathSfx: 'death2', oilChance: 0.02 }),
+  zuma_guard: n('zuma_guard', '祖玛卫士', 25, 1500, 62, 20, 360, [G(0.6), { item: 'mp_mid', chance: 0.3 }, { item: 'pearl', chance: 0.04 }], { art: 'zuma_guard', deathSfx: 'death2', oilChance: 0.02 }),
   boss_zuma: b('boss_zuma', 'boss_zuma', '祖玛教主', 28, 12000, 88, 24, 4500, [{ item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'skeleton_death', setDrop: ['set_zuma_helm', 'set_zuma_ring', 'set_zuma_boots'] }),
   // R3 第8层 赤月魔穴
   blood_zombie: n('blood_zombie', '血僵尸', 28, 1700, 68, 22, 420, [G(0.6), { item: 'hp_mid', chance: 0.35 }], { deathSfx: 'ghoul_death', speed: 75, atkInterval: 1.5, oilChance: 0.02 }),
-  redmoon_spider: n('redmoon_spider', '赤月蜘蛛', 29, 1400, 75, 18, 440, [G(0.6), { item: 'mp_mid', chance: 0.3 }], { art: 'spider', deathSfx: 'death', oilChance: 0.02 }),
+  redmoon_spider: n('redmoon_spider', '赤月蜘蛛', 29, 1400, 75, 18, 440, [G(0.6), { item: 'mp_mid', chance: 0.3 }], { art: 'redmoon_spider', deathSfx: 'death', oilChance: 0.02 }),
   boss_redmoon: b('boss_redmoon', 'boss_redmoon', '赤月恶魔', 32, 15000, 95, 26, 6000, [{ item: 'dragon_sword', chance: 0.5 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'lich_death', setDrop: ['set_chiyue_necklace', 'set_chiyue_ring', 'set_chiyue_bracelet'] }),
   // R13 新增地图（原版怪名/BOSS 见 docs/maps-research.md；数值按本作层位 [适配]，非原版数值）
-  red_snake: n('red_snake', '红蛇', 10, 420, 28, 8, 110, [G(0.5), { item: 'hp_small', chance: 0.3 }, { item: 'bracelet', chance: 0.08 }], { art: 'spider', deathSfx: 'death' }),
-  tiger_snake: n('tiger_snake', '虎蛇', 11, 460, 30, 8, 120, [G(0.5), { item: 'mp_small', chance: 0.3 }, { item: 'boots', chance: 0.08 }], { art: 'spider', deathSfx: 'death' }),
-  scorpion: n('scorpion', '蝎子', 11, 440, 31, 9, 125, [G(0.5), { item: 'hp_small', chance: 0.3 }, { item: 'iron_ring', chance: 0.08 }], { art: 'spider', deathSfx: 'death' }),
-  tree_demon: b('tree_demon', 'boss_spider_queen', '万年树妖', 14, 3800, 48, 13, 1100, [{ item: 'magic_staff', chance: 0.6 }, { item: 'pearl', chance: 0.6 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1)], { deathSfx: 'death' }),
-  centipede: n('centipede', '蜈蚣', 15, 760, 38, 12, 200, [G(0.6), { item: 'hp_mid', chance: 0.3 }, { item: 'helmet', chance: 0.06 }], { art: 'spider', deathSfx: 'death' }),
-  jump_bee: n('jump_bee', '跳跳蜂', 16, 700, 40, 11, 210, [G(0.6), { item: 'mp_mid', chance: 0.3 }, { item: 'bracelet', chance: 0.06 }], { art: 'bat', deathSfx: 'death', card: card({ figureScale: 1.0 }) }),
-  black_maggot: n('black_maggot', '黑色恶蛆', 17, 820, 40, 13, 220, [G(0.6), { item: 'hp_mid', chance: 0.3 }], { art: 'zombie', speed: 80, deathSfx: 'ghoul_death' }),
-  boss_chulong: b('boss_chulong', 'boss_spider_queen', '触龙神', 19, 6000, 60, 18, 2200, [{ item: 'gold_ring', chance: 0.8 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'death' }),
-  red_boar: n('red_boar', '红野猪', 18, 880, 40, 13, 230, [G(0.6), { item: 'hp_mid', chance: 0.3 }, { item: 'armor', chance: 0.04 }], { art: 'wolf', deathSfx: 'death2' }),
-  black_boar: n('black_boar', '黑野猪', 19, 950, 42, 14, 245, [G(0.6), { item: 'mp_mid', chance: 0.3 }, { item: 'helmet', chance: 0.05 }], { art: 'wolf', deathSfx: 'death2' }),
-  scorpion_snake: n('scorpion_snake', '蝎蛇', 19, 900, 44, 13, 245, [G(0.6), { item: 'hp_mid', chance: 0.3 }, { item: 'gold_ring', chance: 0.03 }], { art: 'spider', deathSfx: 'death' }),
-  boss_white_boar: b('boss_white_boar', 'boss_wolf_king', '白野猪', 21, 7500, 66, 20, 2800, [{ item: 'armor', chance: 1 }, { item: 'pearl', chance: 0.6 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'death2' }),
-  bull_warrior: n('bull_warrior', '牛魔战士', 25, 1400, 60, 19, 380, [G(0.6), { item: 'hp_mid', chance: 0.3 }, { item: 'bone_helm', chance: 0.04 }], { art: 'orc', deathSfx: 'death2', oilChance: 0.02 }),
-  bull_mage: n('bull_mage', '牛魔法师', 26, 1300, 66, 17, 400, [G(0.6), { item: 'mp_mid', chance: 0.3 }, { item: 'pearl', chance: 0.04 }], { art: 'darkmage', deathSfx: 'death', atkInterval: 1.6, oilChance: 0.02 }),
-  bull_guard: n('bull_guard', '牛魔侍卫', 26, 1500, 62, 20, 410, [G(0.6), { item: 'hp_mid', chance: 0.3 }, { item: 'gold_ring', chance: 0.04 }], { art: 'orc', deathSfx: 'death2', oilChance: 0.02 }),
-  boss_bull_king: b('boss_bull_king', 'boss_orc_chief', '牛魔王', 30, 13000, 90, 25, 5000, [{ item: 'dragon_sword', chance: 0.4 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'death2' }),
-  hongmo_pig: n('hongmo_pig', '虹魔猪卫', 27, 1550, 64, 20, 410, [G(0.6), { item: 'hp_mid', chance: 0.35 }], { art: 'orc', deathSfx: 'death2', oilChance: 0.02 }),
-  hongmo_scorpion: n('hongmo_scorpion', '虹魔蝎卫', 27, 1650, 66, 21, 420, [G(0.6), { item: 'mp_mid', chance: 0.3 }], { art: 'spider', deathSfx: 'death', oilChance: 0.02 }),
-  boss_hongmo: b('boss_hongmo', 'boss_woma', '虹魔教主', 31, 14000, 92, 25, 5500, [{ item: 'dragon_sword', chance: 0.4 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'death2' }),
+  red_snake: n('red_snake', '红蛇', 10, 420, 28, 8, 110, [G(0.5), { item: 'hp_small', chance: 0.3 }, { item: 'bracelet', chance: 0.08 }], { art: 'red_snake', deathSfx: 'death' }),
+  tiger_snake: n('tiger_snake', '虎蛇', 11, 460, 30, 8, 120, [G(0.5), { item: 'mp_small', chance: 0.3 }, { item: 'boots', chance: 0.08 }], { art: 'tiger_snake', deathSfx: 'death' }),
+  scorpion: n('scorpion', '蝎子', 11, 440, 31, 9, 125, [G(0.5), { item: 'hp_small', chance: 0.3 }, { item: 'iron_ring', chance: 0.08 }], { art: 'scorpion', deathSfx: 'death' }),
+  tree_demon: b('tree_demon', 'tree_demon', '万年树妖', 14, 3800, 48, 13, 1100, [{ item: 'magic_staff', chance: 0.6 }, { item: 'pearl', chance: 0.6 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1)], { deathSfx: 'death' }),
+  centipede: n('centipede', '蜈蚣', 15, 760, 38, 12, 200, [G(0.6), { item: 'hp_mid', chance: 0.3 }, { item: 'helmet', chance: 0.06 }], { art: 'centipede', deathSfx: 'death' }),
+  jump_bee: n('jump_bee', '跳跳蜂', 16, 700, 40, 11, 210, [G(0.6), { item: 'mp_mid', chance: 0.3 }, { item: 'bracelet', chance: 0.06 }], { art: 'jump_bee', deathSfx: 'death', card: card({ figureScale: 1.0 }) }),
+  black_maggot: n('black_maggot', '黑色恶蛆', 17, 820, 40, 13, 220, [G(0.6), { item: 'hp_mid', chance: 0.3 }], { art: 'black_maggot', speed: 80, deathSfx: 'ghoul_death' }),
+  boss_chulong: b('boss_chulong', 'boss_chulong', '触龙神', 19, 6000, 60, 18, 2200, [{ item: 'gold_ring', chance: 0.8 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'death' }),
+  red_boar: n('red_boar', '红野猪', 18, 880, 40, 13, 230, [G(0.6), { item: 'hp_mid', chance: 0.3 }, { item: 'armor', chance: 0.04 }], { art: 'red_boar', deathSfx: 'death2' }),
+  black_boar: n('black_boar', '黑野猪', 19, 950, 42, 14, 245, [G(0.6), { item: 'mp_mid', chance: 0.3 }, { item: 'helmet', chance: 0.05 }], { art: 'black_boar', deathSfx: 'death2' }),
+  scorpion_snake: n('scorpion_snake', '蝎蛇', 19, 900, 44, 13, 245, [G(0.6), { item: 'hp_mid', chance: 0.3 }, { item: 'gold_ring', chance: 0.03 }], { art: 'scorpion_snake', deathSfx: 'death' }),
+  boss_white_boar: b('boss_white_boar', 'boss_white_boar', '白野猪', 21, 7500, 66, 20, 2800, [{ item: 'armor', chance: 1 }, { item: 'pearl', chance: 0.6 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'death2' }),
+  bull_warrior: n('bull_warrior', '牛魔战士', 25, 1400, 60, 19, 380, [G(0.6), { item: 'hp_mid', chance: 0.3 }, { item: 'bone_helm', chance: 0.04 }], { art: 'bull_warrior', deathSfx: 'death2', oilChance: 0.02 }),
+  bull_mage: n('bull_mage', '牛魔法师', 26, 1300, 66, 17, 400, [G(0.6), { item: 'mp_mid', chance: 0.3 }, { item: 'pearl', chance: 0.04 }], { art: 'bull_mage', deathSfx: 'death', atkInterval: 1.6, oilChance: 0.02 }),
+  bull_guard: n('bull_guard', '牛魔侍卫', 26, 1500, 62, 20, 410, [G(0.6), { item: 'hp_mid', chance: 0.3 }, { item: 'gold_ring', chance: 0.04 }], { art: 'bull_guard', deathSfx: 'death2', oilChance: 0.02 }),
+  boss_bull_king: b('boss_bull_king', 'boss_bull_king', '牛魔王', 30, 13000, 90, 25, 5000, [{ item: 'dragon_sword', chance: 0.4 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'death2' }),
+  hongmo_pig: n('hongmo_pig', '虹魔猪卫', 27, 1550, 64, 20, 410, [G(0.6), { item: 'hp_mid', chance: 0.35 }], { art: 'hongmo_pig', deathSfx: 'death2', oilChance: 0.02 }),
+  hongmo_scorpion: n('hongmo_scorpion', '虹魔蝎卫', 27, 1650, 66, 21, 420, [G(0.6), { item: 'mp_mid', chance: 0.3 }], { art: 'hongmo_scorpion', deathSfx: 'death', oilChance: 0.02 }),
+  boss_hongmo: b('boss_hongmo', 'boss_hongmo', '虹魔教主', 31, 14000, 92, 25, 5500, [{ item: 'dragon_sword', chance: 0.4 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'death2' }),
   // feat/maps-more 新增 6 层（怪名/刷怪/BOSS 按 21cq，见 docs/map-system-full.md；数值按本作层位 [适配]，非原版数值）
   cave_skel_warrior: n('cave_skel_warrior', '骷髅战士', 14, 670, 35, 10, 170, [G(0.4), { item: 'hp_small', chance: 0.3 }], { art: 'skeleton', speed: 95, deathSfx: 'skeleton_death', card: card({ figureScale: 1.2, anchorX: 0.56 }) }),
   cave_skel_general: n('cave_skel_general', '骷髅战将', 14, 720, 37, 11, 185, [G(0.4), { item: 'mp_small', chance: 0.3 }], { art: 'skeleton', speed: 95, deathSfx: 'skeleton_death', card: card({ figureScale: 1.25, anchorX: 0.56 }) }),
@@ -89,7 +89,7 @@ ENEMIES.boss_woma.drops = [...(ENEMIES.boss_woma.drops ?? []).filter(d => d.item
 export const SUMMON: UnitDef = { id: 'summon_skeleton', art: 'skeleton', name: '骷髅', level: 1, hp: 200, atk: 10, def: 4, atkInterval: 1.3, range: 6, speed: 0, width: 120, height: 170, tier: 'player',
   card: card({ w: 120, h: 160, figureScale: 1.15, bg: 0x7a5c14 }) };
 /** 召唤神兽（官方 C：1/2/3 级神兽）；占位立绘用狼，美术见 art-requests */
-export const SUMMON_BEAST: UnitDef = { id: 'summon_beast', art: 'wolf', name: '神兽', level: 1, hp: 360, atk: 22, def: 10, atkInterval: 1.15, range: 8, speed: 0, width: 140, height: 180, tier: 'player',
+export const SUMMON_BEAST: UnitDef = { id: 'summon_beast', art: 'summon_beast', name: '神兽', level: 1, hp: 360, atk: 22, def: 10, atkInterval: 1.15, range: 8, speed: 0, width: 140, height: 180, tier: 'player',
   card: card({ w: 150, h: 190, figureScale: 1.2, bg: 0x5a4010 }) };
 /** R22：经验曲线移至 expCurve.ts（官方形状 ÷ 常数）；怪物 exp 字段为旧曲线基准值，按层由 scaledExp 同步缩放 */
 export { EXP_PER_LEVEL } from './expCurve';

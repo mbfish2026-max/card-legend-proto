@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## feat/art-integrate（接入 art/gap-fill 素材，只改图片路径/art 字段，数值未动）
+- 物品图标：99 处 icon 改指 `assets/items/eq_<id>.png` / `assets/items/<id>.png`（装备 87、药水/卷轴/杂物 12；只指向实际存在的文件）；HUD 药水 potion_0..3 同步改为 items/hp_*/mp_*。
+- 2x：新增 `itemIconUrl`，画质 >720p（Render.k>1）且存在 `@2x` 文件时加载 @2x（88 个，列表 src/data/item-icons-2x.ts）；显示尺寸不变。
+- 怪物：23 个原借用他怪贴图的单位 art 改为独立立绘（M1 Boss 5、M2 8、M3 10 含神兽），ASSETS 补对应 key。
+- 缺图回退：图标 404 → 纹理不存在 → 格子空/色块，无 JS 报错（tests/e2e/art-verify.mjs）。
+- 未接入：M4（雪人王/钉耙猫王/半兽统领/恶灵尸王/黄泉教主/鹰卫/双头金刚/双头血魔）src 中无对应单位；boots 无 eq_boots 图仍用 gen_boots。
+
 ## 地图子层框架 + 洞穴群（feat/maps-more，plan-60h 第 1 批）
 - Floor 新增 group（图群）/sub（官方子层名）/depth/src；通关按 FLOOR_ORDER，新层追加在下标 13–18，旧档下标不变、无需迁移（白骨墓穴=兽人古墓一层 D001，原样保留，不做 mapV 迁移）
 - 新子层：兽人古墓二/三层（D002/D003）、骷髅洞·洞穴一/二层（D011/D012）、沃玛自然洞穴·一/二（E001/E002），全部练级图（farm），刷怪按 21cq 刷新表
