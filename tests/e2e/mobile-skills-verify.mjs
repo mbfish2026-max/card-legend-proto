@@ -9,7 +9,7 @@ const VPS = [[932, 430], [844, 390]];
 let fail = 0; const chk = (c, m) => { console.log(c ? 'ok' : 'FAIL', m); if (!c) fail++; };
 const prep = `(() => { const B = window.__game.scene.getScene('Battle'), W = B.world, h = W.hero; h.mp = h.maxMp = 99999; h.hp = Math.floor(h.maxHp * 0.5); h.defUpUntil = h.mdefUpUntil = h.armorUntil = 0; h.poisonUntil = W.time + 30;
   for (const u of W.units) if (u.team === 'ally' && u !== h && (u.summon || u.decoy)) u.alive = false;
-  B.cds = B.cds.map(() => 0); W.units.filter(u => u.team === 'enemy' && u.alive).forEach((e, k) => { e.x = h.x + 140 + k * 40; e.hp = e.maxHp; e.ai = 'chase'; e.poisonUntil = 0; e.stunUntil = 0; if (k === 0) { e.level = 1; } }); window.__why = ''; })()`;
+  B.cds = B.cds.map(() => 0); /* 高等级主角前几次施放会清光近处怪（层宽缩放后怪分散、不刷新）→ 补到 4 只同层普通怪，保证每个技能都有目标 */ const nid = W.floor.spawns.map(s => s.id).find(id => window.__ENEMY_OK?.(id) ?? true); for (let n = W.units.filter(u => u.team === 'enemy' && u.alive && u.tier !== 'boss').length; n < 4; n++) W.spawnFoe(nid, h.x + 200, h.y ?? 0); W.units.filter(u => u.team === 'enemy' && u.alive).forEach((e, k) => { e.x = h.x + 140 + k * 40; e.homeX = e.x; e.hp = e.maxHp; e.ai = 'chase'; e.poisonUntil = 0; e.stunUntil = 0; if (k === 0) { e.level = 1; } }); window.__why = ''; })()`;
 const sv = await startPreview(), b = await launch();
 try {
   for (const [VW, VH] of VPS) for (const cls of (process.env.ONLY ?? 'warrior,mage,taoist').split(',')) {

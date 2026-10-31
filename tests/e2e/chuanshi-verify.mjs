@@ -47,7 +47,7 @@ try {
     // 自动释放：与 BattleScene 同一入口 world.autoCast(列表, cds)，逐个技能单独列表
     const auto = await page.evaluate(ids => { const B = window.__game.scene.getScene('Battle'), W = B.world, h = W.hero, res = {};
       for (const id of ids) { if (id === 'clear_mind') continue; h.mp = 99999; h.hp = id === 'decoy_talisman' || id === 'cleanse' ? Math.floor(h.maxHp * 0.5) : h.maxHp; h.defUpUntil = 0; h.mdefUpUntil = 0; for (const u of W.units) if (u.team === 'ally' && u !== h && (u.summon || u.decoy)) { u.alive = false; } B.cds = B.cds.map(() => 0);
-        const e = W.units.find(u => u.team === 'enemy' && u.alive); if (e) { h.x = e.x - 120; e.hp = e.maxHp; } const a = W.autoCast([id], B.cds); B.handle(W.drainEvents()); res[id] = a?.id === id; }
+        for (const u of W.units) if (u.team === 'enemy') u.stunUntil = 0; const e = W.units.find(u => u.team === 'enemy' && u.alive); if (e) { h.x = e.x - 120; e.hp = e.maxHp; } const a = W.autoCast([id], B.cds); B.handle(W.drainEvents()); res[id] = a?.id === id; }
       return res; }, CS[cls]);
     await sleep(800); await page.screenshot({ path: `${dir}/${cls}-6-autocast.png` });
     let golden = null;
