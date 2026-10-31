@@ -3,7 +3,7 @@ const NPC_VIS = 7;
 import { COMPANION_MODE_NAME } from '../data/companion';
 import { COMPANION_UNLOCK_LEVEL, comboFor, BOOK_PAGE, BRM_BOOK, GOLD_BAR, PAGES_PER_BOOK, COMBO_LEVEL, heartFeedValue, RAGE_MAX, HEART_STORE_MAX, RECRUIT_DIALOG } from '../data/companion';
 import { toLogic, toLogicX, MAX_LW } from '../render';
-import { compareLines } from './equipCompare';
+import { compareRows, diffText, CmpData } from './equipCompare';
 import { RING_MIN_LEVEL, IDENT_PRICE, IDENT_MIN_LEVEL } from '../data/r14b';
 import { fmtExp, scaledExp } from '../data/expCurve';
 import Phaser from 'phaser';
@@ -515,14 +515,13 @@ export class Panel {
     if (sd) { const n = w.setCounts()[sd.id] ?? 0; lines.push([`【${sd.name}套装】已穿 ${n}/${sd.pieces.length}`, '#ffb040']);
       for (const b of sd.bonus) lines.push([`  ${b.n}件：${b.text}`, n >= b.n ? '#7aff7a' : '#777']); }
     if (it.slot) {
-      const ts = w.targetSlot(it), cur = ts ? w.equip[ts] : undefined;
-      void cur; lines.push(...compareLines(it, w.equip));
       lines.push([`需要等级 ${it.req}`, w.level >= it.req ? '#fff' : '#ff4040']);
       const cl = ITEMS[it.item]?.cls;
       if (cl?.length) lines.push([`职业：${cl.map(c => CLASSES[c].name).join('/')}`, cl.includes(w.cls) ? '#fff' : '#ff4040']);
     }
     lines.push([`售价 ${it.price} 金币`, '#ffd24a']);
     if (touch) lines.push([this.mode === 'shop' ? '再点一次：出售' : it.slot && this.sel?.startsWith('eq_') ? '再点一次：卸下' : it.slot ? '再点一次：装备' : '不可装备', '#9fd']);
+    { const cd = it.slot ? compareRows(it, w.equip) : null; if (cd) { this.showCompare(it, cd, lines.slice(2).filter(([t]) => !/^需要等级|^(生命|魔法值|攻击|魔法|道术|防御|魔御) \+/.test(t)), x, y, touch); return; } }
     const c = this.tip = s.add.container(Math.min(x, 1280 - 230), Math.max(10, Math.min(y, 720 - lines.length * 20 - 20))).setDepth(300);
     const bg = s.add.rectangle(0, 0, 220, lines.length * 20 + 16, 0x05060c, 0.95).setOrigin(0).setStrokeStyle(2, 0x9a9aa8);
     // 背包预览：悬停/选中背包里的衣服或武器时，在提示框旁显示「试穿」效果（不改真实装备）
@@ -537,6 +536,37 @@ export class Panel {
       }
     }
     c.add(bg); lines.forEach(([t, col], i) => c.add(txt(s, 10, 8 + i * 20, t, i === 0 ? 16 : 14, col, { strokeThickness: 2, fontStyle: i === 0 ? 'bold' : '' })));
+  }
+  /** 装备对比改版：左右并排（左=身上同部位，右=查看中的装备），属性逐行对齐，差值涨绿降红。docs/equip-compare.md */
+  private showCompare(it: InvItem, cd: CmpData, extra: [string, string][], x: number, y: number, touch: boolean) {
+    const s = this.s, M = IS_MOBILE, fs = M ? 26 : 14, lh = M ? 34 : 20, cw = M ? 320 : 210, gap = 12, pad = 10, icon = M ? 56 : 40, W = cw * 2 + gap + pad * 2;
+    const head = lh + icon + 10, H = pad * 2 + head + cd.rows.length * lh + 8 + extra.length * lh + (cd.other ? lh : 0);
+    const px = M ? 640 - W / 2 : Math.max(10, Math.min(x, 1280 - W - 10)), py = M ? Math.max(4, 360 - H / 2) : Math.max(10, Math.min(y, 720 - H - 10));
+    const c = this.tip = s.add.container(px, py).setDepth(300).setName('equipCompare');
+    c.add(s.add.rectangle(0, 0, W, H, 0x05060c, 0.96).setOrigin(0).setStrokeStyle(2, 0x9a9aa8));
+    const col = (cx: number, item: InvItem | null, title: string) => {
+      c.add(txt(s, cx, pad, title, fs - 2, '#9fd', { strokeThickness: 2 }));
+      const iy = pad + lh; c.add(s.add.rectangle(cx + icon / 2, iy + icon / 2, icon, icon, 0x0a0806).setStrokeStyle(2, item ? RARITY_NUM[item.rarity] : 0x4a3a28));
+      if (item && s.textures.exists('item_' + item.item)) c.add(s.add.image(cx + icon / 2, iy + icon / 2, 'item_' + item.item).setDisplaySize(icon - 6, icon - 6));
+      const nm = item ? item.name + (item.enhance ? ` +${item.enhance}` : '') : '空';
+      c.add(txt(s, cx + icon + 8, iy, nm, fs, item ? RARITY_HEX[item.rarity] : '#888', { strokeThickness: 2, fontStyle: 'bold' }).setName(title === '身上' ? 'cmpLeftName' : 'cmpRightName'));
+      c.add(txt(s, cx + icon + 8, iy + lh, item ? `${RARITY_CN[item.rarity]} · ${SLOT_NAMES[item.slot!]}` : '未穿戴', fs - 2, '#aaa', { strokeThickness: 2 }));
+    };
+    col(pad, cd.left, '身上'); col(pad + cw + gap, it, '查看中');
+    c.add(s.add.rectangle(pad + cw + gap / 2, pad, 1, H - pad * 2 - extra.length * lh, 0x555566).setOrigin(0.5, 0));
+    let yy = pad + head;
+    cd.rows.forEach((r, i) => {
+      if (i % 2 === 0) c.add(s.add.rectangle(pad, yy - 2, W - pad * 2, lh, 0xffffff, 0.04).setOrigin(0));
+      c.add(txt(s, pad, yy, r.label, fs, '#ccc', { strokeThickness: 2 }));
+      c.add(txt(s, pad + cw - 4, yy, r.left, fs, '#fff', { strokeThickness: 2 }).setOrigin(1, 0));
+      c.add(txt(s, pad + cw + gap, yy, r.label, fs, '#ccc', { strokeThickness: 2 }));
+      const d = diffText(r);
+      c.add(txt(s, pad + cw * 2 + gap - (M ? 80 : 54), yy, r.right, fs, r.key === 'req' && +r.right > this.world().level ? '#ff4040' : '#fff', { strokeThickness: 2 }).setOrigin(1, 0));
+      c.add(txt(s, pad + cw * 2 + gap, yy, d || '新', fs, r.color, { strokeThickness: 2, fontStyle: 'bold' }).setOrigin(1, 0).setName('cmpDiff_' + r.key));
+      yy += lh;
+    });
+    if (cd.other) { c.add(txt(s, pad, yy, `另一件：${cd.other.name}（较强，保留）`, fs - 2, '#999', { strokeThickness: 2 })); yy += lh; }
+    yy += 8; extra.forEach(([t, cl]) => { c.add(txt(s, pad, yy, t, fs - 2, cl, { strokeThickness: 2 })); yy += lh; });
   }
   hideTip() { this.tip?.destroy(true); this.tip = undefined; }
 }

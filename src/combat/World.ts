@@ -1,3 +1,4 @@
+import { compareSlot } from '../ui/equipCompare';
 import { CompanionState, migrateCompanion, companionGainExp, COMPANION_BAG, COMPANION_UNLOCK_LEVEL, newCompanion, feedHeart, heartFeedValue, HEART_STORE_MAX, RAGE_MAX, COMBO_LEVEL, COMBO_GOLD_BARS, BRM_BOOK, BOOK_PAGE, GOLD_BAR, PAGES_PER_BOOK, comboFor, HEART_ITEM, COMPANION_UNIT_ID, COMPANION_RECALL_CD, COMPANION_MODES, COMPANION_MODE_NAME, CompanionMode, companionStats, rageTick, unleash, canUnleash, comboEffect, COMBO_RANGE, pickPotion, COMPANION_POT_HP, COMPANION_POT_MP } from '../data/companion';
 import { BOOKS, BookDef, BOOK_DROP, BOOK_RATES, STARTER, bookItemId } from '../data/books';
 import { sortBag } from './bagSort';
@@ -663,7 +664,7 @@ export class World {
   targetSlot(it: InvItem, target?: EquipSlot): EquipSlot | null {
     if (!it.slot) return null; const c = equipSlotsFor(it.slot);
     if (target) return c.includes(target) ? target : null;
-    return c.find(sl => !this.equip[sl]) ?? c[0];
+    return compareSlot(it, this.equip) ?? c[0]; // 双槽位都穿时替换较弱一件（与对比面板左侧一致）
   }
   equipItem(bagIdx: number, target?: EquipSlot): string | null {
     const it = this.bag[bagIdx]; if (!it) return '没有物品';

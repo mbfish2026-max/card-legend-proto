@@ -1,4 +1,9 @@
 # CHANGELOG
+## 装备对比改版：左右并排（feat/balance-sys）
+- 左=身上同部位、右=查看中；属性并集逐行对齐，缺项 0/「—」；差值涨绿降红，需要等级按「越低越好」反向；空部位右侧全绿。
+- 戒指/手镯只列较弱一件（新 `cmpScore`），另一件注明；穿戴时同样替换较弱一件。
+- 手机 844×390 字≥12px 不溢出；桌面 1280×720。单测 tests/equip-compare.test.ts（重写，14 项）；截图 equip-cmp-*.png。详见 docs/equip-compare.md。
+
 
 ## feat/balance-sys 技能书 extraDrops 钩子
 - drop-plan.ts 新增空表 `BOSS_EXTRA_DROPS` + `applyExtraDrops`（只认 BOSS、已存在物品，几率夹 0–1，不重复）；数据归战斗开发，不断言具体技能书。tests/extra-drops.test.ts。
