@@ -341,16 +341,19 @@ export class BattleScene extends Phaser.Scene {
         if (!flyFx(this, 'fx_poison_fly', x0, y0, t.cx, t.cy, hit)) fx.projectile(this, x0, y0, t.cx, t.cy, 'poison', hit);
         return;
       } return done();
-      // #12 道士：幽灵盾/神圣战甲术 复用魔法盾图集着色（蓝紫/金），无素材走 Graphics 兜底；群疗 复用治愈光柱 ×每个目标
+      // #12 道士：专属图集（docs/fx-requests.md #12 / v4）；缺图回落魔法盾图集着色 / 每目标治愈光柱 / Graphics
       case 'ghost_shield': case 'holy_armor': {
-        const tint = skill === 'ghost_shield' ? 0xb08cff : 0xffd860, ms = dur * 1000, name = skill === 'ghost_shield' ? '幽灵盾' : '神圣战甲术';
-        const startLoop = () => { const l = playFx(this, 'fx_magic_shield_loop', hv.cx, hv.cy, { tint, ms, decorative: true }); if (l) follow(this, l, () => hv.active ? { x: hv.cx, y: hv.cy } : null); return !!l; };
-        const c = playFx(this, 'fx_magic_shield_cast', hv.cx, hv.cy, { tint, onDone: () => { startLoop(); } });
+        const gs = skill === 'ghost_shield', tint = gs ? 0xb08cff : 0xffd860, ms = dur * 1000, name = gs ? '幽灵盾' : '神圣战甲术';
+        const kc = gs ? 'fx_ghost_shield_cast' : 'fx_holy_armor_cast', kl = gs ? 'fx_ghost_shield_loop' : 'fx_holy_armor_loop';
+        const own = this.textures.exists(kc);
+        const startLoop = () => { const l = this.textures.exists(kl) ? playFx(this, kl, hv.cx, hv.cy, { ms, decorative: true }) : playFx(this, 'fx_magic_shield_loop', hv.cx, hv.cy, { tint, ms, decorative: true }); if (l) follow(this, l, () => hv.active ? { x: hv.cx, y: hv.cy } : null); return !!l; };
+        const c = own ? playFx(this, kc, hv.cx, hv.cy, { onDone: () => { startLoop(); } }) : playFx(this, 'fx_magic_shield_cast', hv.cx, hv.cy, { tint, onDone: () => { startLoop(); } });
         if (!c) fx.holyLight(this, hv.cx, hv.cy, hv.h);
-        fx.floatNumber(this, hv.cx, hv.cy - hv.h * 0.2, hv.h, name, skill === 'ghost_shield' ? '#c8a8ff' : '#ffe080', 0.7); return done();
+        fx.floatNumber(this, hv.cx, hv.cy - hv.h * 0.2, hv.h, name, gs ? '#c8a8ff' : '#ffe080', 0.7); return done();
       }
       case 'mass_heal': {
         const all = [hv, ...tv.filter(v => v !== hv)];
+        playFx(this, 'fx_mass_heal_burst', hv.cx, hv.y);
         all.forEach((v, i) => this.time.delayedCall(i * 80, () => { if (v.active && !playFx(this, 'fx_heal_pillar', v.cx, v.y)) fx.holyLight(this, v.cx, v.cy, v.h); }));
         fx.floatNumber(this, hv.cx, hv.cy - hv.h * 0.2, hv.h, '群体治愈术', '#80ff90', 0.7); return done();
       }
