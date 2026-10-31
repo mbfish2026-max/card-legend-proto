@@ -95,6 +95,15 @@ export const Settings = {
     const cur = [...this.skillsFor(cls)];
     const i = cur.indexOf(id);
     if (i >= 0) cur.splice(i, 1); else cur.push(id);
+    this.setAutoFor(cls, cur);
+  },
+  /** R14 自动技能优先级：在本职业勾选列表里上移(-1)/下移(+1) */
+  moveAutoSkill(id: string, dir: number, cls: ClassId) {
+    const cur = [...this.skillsFor(cls)], i = cur.indexOf(id), j = i + dir;
+    if (i < 0 || j < 0 || j >= cur.length) return;
+    [cur[i], cur[j]] = [cur[j], cur[i]]; this.setAutoFor(cls, cur);
+  },
+  setAutoFor(cls: ClassId, cur: string[]) {
     // 按职业分别保存：保留其他职业已改过的勾选，本职业写成显式列表（可为空）
     const mine = new Set(DEFAULT_AUTO_SKILLS[cls]);
     const touched = this.autoTouched ?? [];

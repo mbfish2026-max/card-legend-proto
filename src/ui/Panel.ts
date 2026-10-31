@@ -17,9 +17,12 @@ import { ENEMIES } from '../data/units';
 import { FLOORS } from '../data/world';
 import { World as WorldCls } from '../combat/World';
 import { BOOKS } from '../data/books';
+import { TOWNS, NODE_TOWN, STORAGE_SIZE, NPC_ART } from '../data/towns';
+import { CONSUMABLE } from '../data/items-town';
+import { Settings, DEFAULT_AUTO_SKILLS } from '../settings';
 import { equipLook } from './EquipLayers';
 
-export type PanelMode = 'bag' | 'shop' | 'skills' | 'settings' | 'map' | 'quests';
+export type PanelMode = 'bag' | 'shop' | 'skills' | 'settings' | 'map' | 'quests' | 'town';
 export const RARITY_HEX: Record<string, string> = { common: '#ffffff', magic: '#5aa8ff', rare: '#ffb020' };
 const RARITY_NUM: Record<string, number> = { common: 0x8a8a8a, magic: 0x3a7aff, rare: 0xffa020 };
 const RARITY_CN: Record<string, string> = { common: '普通', magic: '精良', rare: '极品' };
@@ -34,10 +37,17 @@ export class Panel {
   /** 商店分页：杂货 / 书店（R11 技能书） */
   shopTab: 'goods' | 'books' = 'goods';
   onTeleport?: () => void;
+  /** R14 城镇：当前选中的 NPC id */
+  npc: string | null = null;
   constructor(public s: Phaser.Scene, public world: () => World, public onChange: (msg?: string, green?: boolean) => void, public onTitle: () => void) {}
+  /** 长街门口进店：打开该 NPC 的商店/功能界面 */
+  openNpc(id: string) { this.mode = 'town'; this.npc = id; this.sel = null; this.region = null; this.render(); }
   get open() { return this.mode !== null; }
   toggle(m: PanelMode) { if (this.mode === m) this.close(); else { this.mode = m; this.sel = null; this.region = null; this.render(); } }
-  close() { this.clearMapInput(); this.sel = null; this.ironIdx = null; this.mode = null; this.root?.destroy(true); this.root = undefined; this.hideTip(); }
+  close() {
+    // R14 横版长街：关闭店铺界面 = 回到街上（出城走西端城门）
+    if (this.mode === 'town') this.npc = null;
+    this.clearMapInput(); this.sel = null; this.ironIdx = null; this.mode = null; this.root?.destroy(true); this.root = undefined; this.hideTip(); }
   /** #11 修复：面板打开时升级/得经验不刷新。render 时记录快照，UIScene.update 每帧比对 */
   private snap = '';
   statSnap() { const w = this.world(); return `${w.level}:${w.exp}:${JSON.stringify(w.skillTrain)}:${w.learned.size}`; }
@@ -56,13 +66,14 @@ export class Panel {
     const W = this.mode === 'settings' ? 640 : 1000, H = this.mode === 'settings' ? 580 : 500, top = Math.max(40, 360 - H / 2);
     // 边框与内容对齐：非设置面板内容从 top 起排到 top+478，边框覆盖 top-20 ~ top+480
     R.add(s.add.rectangle(640, this.mode === 'settings' ? 300 : top + H / 2 - 20, W, H, 0x15100b, 0.97).setStrokeStyle(3, 0xd4a64a));
-    const titles = { bag: '角色 / 背包', shop: '商人 · 杂货铺', skills: '技能', settings: '设置', map: '世界地图', quests: '悬赏 / 成就' };
+    const titles = { bag: '角色 / 背包', shop: '商人 · 杂货铺', skills: '技能', settings: '设置', map: '世界地图', quests: '悬赏 / 成就', town: `${TOWNS[this.world().town ?? 'bichi']?.name ?? '城镇'} · 安全区` };
     R.add(txt(s, 640, top + 22, titles[this.mode], 24, '#ffd24a', { fontStyle: 'bold' }).setOrigin(0.5));
     R.add([...button(s, 640 + W / 2 - 26, top + 22, 36, 32, '✕', () => this.close(), 18)]);
     if (this.mode === 'settings') return this.renderSettings(R, top);
     if (this.mode === 'skills') return this.renderSkills(R, top);
     if (this.mode === 'map') return this.renderMap(R, top);
     if (this.mode === 'quests') return this.renderQuests(R, top);
+    if (this.mode === 'town') { this.renderTown(R, top); if (this.npcNeedsBag()) this.renderBag(R, top); return; }
     if (this.mode === 'bag') this.renderEquip(R, top); else this.renderShop(R, top);
     this.renderBag(R, top);
   }
@@ -168,7 +179,9 @@ export class Panel {
     for (let i = 0; i < WORLD.bagSize; i++) {
       const it = w.bag[i], x = x0 + (i % cols) * (size + 6), y = y0 + Math.floor(i / cols) * (size + 6);
       this.slotBox(R, x, y, size, it, '', right => {
-        if (this.mode === 'shop') { const g = w.sellItem(i); sfx(s, 'coin'); this.onChange(`出售 ${it!.name} 获得 ${g} 金币`, true); }
+        if (this.mode === 'shop' || this.npcKind() && this.npcKind() !== 'storage') { const g = w.sellItem(i); sfx(s, 'coin'); this.onChange(`出售 ${it!.name} 获得 ${g} 金币`, true); }
+        else if (this.npcKind() === 'storage') { const e = w.deposit(i); this.onChange(e ?? `存入 ${it!.name}`, !e); }
+        else if (CONSUMABLE[it!.item]) { const m = w.useConsumable(i); sfx(s, 'loot', 0.5); if (w.town) { this.mode = 'town'; this.npc = null; } this.onChange(m, m.startsWith('使用')); }
         else if (right) { w.dropItem(i); this.onChange(`丢弃 ${it!.name}`); }
         else if (it!.slot) { const e = w.equipItem(i); if (!e) sfx(s, 'loot', 0.5); this.onChange(e ?? `装备 ${it!.name}`, !e); }
         else if (ITEMS[it!.item]?.book) { const m = w.learnBook(i); const ok = m.startsWith('学会'); if (ok) sfx(s, 'loot', 0.6); this.onChange(m, ok); }
@@ -190,29 +203,89 @@ export class Panel {
     if (IS_MOBILE && this.mode === 'bag' && this.sel?.startsWith('bag_')) { const i = Number(this.sel.slice(4)), it = w.bag[i]; if (it) R.add([...button(s, x0 + 5 * (size + 6), top + 470, 80, 34, '丢弃', () => { w.dropItem(i); this.sel = null; this.onChange(`丢弃 ${it.name}`); this.render(); }, 16)]); }
     R.add(txt(s, x0 - size / 2, top + 452, this.ironIdx != null ? '黑铁已选：点击左侧武器/头盔/衣服/靴子强化；再点同纯度矿提纯' : IS_MOBILE ? (this.mode === 'shop' ? '点一下查看属性，再点一下出售' : '点一下查看属性，再点一下装备；选中后可「丢弃」') : this.mode === 'shop' ? '左键出售' : '左键装备   右键丢弃   悬停查看属性', 12, this.ironIdx != null ? '#9fd' : '#999'));
   }
+  /** R14 技能页：查看（详情/各级数值/耗魔/冷却）· 升级（官方修炼规则）· 放置（拖放排快捷栏）· 自动（勾选+优先级） */
   private renderSkills(R: Phaser.GameObjects.Container, top: number) {
     const s = this.s, w = this.world();
-    // 面板展示全部技能（含被动）；快捷栏仅主动技能 F1..Fn
-    const bar = new Map(w.skills.map(k => [k.id, k.key]));
-    const list = w.skillPool;
-    // #11 法师 10 技能：>6 时两列各 5 行，避免溢出 500px 面板
-    const cols = list.length > 6 ? 2 : 1, rows = Math.ceil(list.length / cols);
-    const gap = cols > 1 ? 80 : list.length > 5 ? 62 : 78;
+    const bar = w.skills, barIdx = new Map(bar.map((k, i) => [k.id, i]));
+    const list = [...bar, ...w.skillPool.filter(k => !barIdx.has(k.id))];
+    const autoList = Settings.skillsFor(w.cls), autoable = new Set(DEFAULT_AUTO_SKILLS[w.cls]);
+    const rowH = Math.min(70, Math.floor(400 / Math.max(1, list.length))), y0 = top + 48 + rowH / 2, fs = rowH < 56 ? 12 : 13;
     list.forEach((k, i) => {
-      const y = top + 70 + (i % rows) * gap, dx = cols > 1 ? Math.floor(i / rows) * 480 - 40 : 0;
-      const fk = bar.get(k.id) ?? (k.passive ? '被动' : '');
-      if (s.textures.exists('sk_' + k.id)) R.add(s.add.image(200 + dx, y, 'sk_' + k.id).setDisplaySize(list.length > 5 ? 48 : 56, list.length > 5 ? 48 : 56));
+      const y = y0 + i * rowH, inBar = barIdx.has(k.id);
       const need = w.needLevel(k), lv = w.skillLevel(k), locked = lv < 0, pts = w.skillTrain[k.id] ?? 0, learned = w.learned.has(k.id), bk = BOOKS[k.id];
-      const nextNeed = lv >= 0 && lv < 3 && k.learn && k.train ? `  下一级：人物 Lv${k.learn[lv + 1]} + 修炼点 ${k.train[lv]}` : lv === 3 ? '  已满级' : '';
-      R.add(txt(s, 245 + dx, y - 26, `[${fk}] ${k.name}${!learned ? `（未学：${bk?.shop ? '书店购买' : bk?.drops.length ? '打怪掉落' : '暂未开放获取'}技能书 · 需 Lv${need}）` : locked ? `（需人物 Lv${need}）` : `  ${lv} 级`}${k.passive ? '  被动' : ''}`, cols > 1 ? 15 : list.length > 5 ? 17 : 19, locked ? '#888' : '#ffd24a', { fontStyle: 'bold' }));
-      const eff = k.lvMult ? `  本级倍率 ${Math.round(k.lvMult[Math.max(0, lv)] * 100)}%`
-        : k.lvBonus ? `  本级 +${k.lvBonus[Math.max(0, lv)]} 伤害 / 几率 1/${Math.round(1 / k.lvChance![Math.max(0, lv)])}`
-        : k.accBonus ? `  准确 +${k.accBonus[Math.max(0, lv)]}（[适配]暴击+${k.accBonus[Math.max(0, lv)]}%）`
-        : `  等级加成 +${Math.max(0, lv) * 10}%`;
-      R.add(txt(s, 245 + dx, y - 4, cols > 1 ? `${k.desc.slice(0, 26)}${eff}` : `${k.desc}${eff}`, cols > 1 ? 12 : 13, locked ? '#777' : '#ddd', { strokeThickness: 2 }));
-      R.add(txt(s, 245 + dx, y + 16, `${k.passive ? '无需施放' : `消耗 ${k.mana} 魔法  冷却 ${k.cooldown}s`}   修炼点 ${pts}${k.train ? '/' + k.train[2] : ''}${nextNeed}`, 12, locked ? '#666' : '#9fd', { strokeThickness: 2 }));
+      R.add(s.add.rectangle(560, y, 820, rowH - 4, 0x0a0806, 0.9).setStrokeStyle(1, 0x3a2a18));
+      if (s.textures.exists('sk_' + k.id)) R.add(s.add.image(178, y, 'sk_' + k.id).setDisplaySize(rowH - 14, rowH - 14));
+      const fk = inBar ? `F${barIdx.get(k.id)! + 1}` : k.passive ? '被动' : '未上栏';
+      R.add(txt(s, 212, y - rowH / 2 + 4, `[${fk}] ${k.name}${!learned ? `（未学：${bk?.shop ? '书店购买' : bk?.drops.length ? '打怪掉落' : '暂未开放获取'}技能书 · 需 Lv${need}）` : locked ? `（需人物 Lv${need}）` : `  ${lv} 级`}`, fs + 2, locked ? '#888' : '#ffe8a0', { strokeThickness: 2 }));
+      const lvVals = k.lvMult ? k.lvMult.map(m => Math.round(m * 100) + '%') : k.lvBonus ? k.lvBonus.map(b => '+' + b) : k.accBonus ? k.accBonus.map(b => '准确+' + b) : [0, 1, 2, 3].map(l => `+${l * 10}%`);
+      // #11：10 技能时行高 40，压成两行（简述 + 耗魔/冷却/修炼），避免与下一行重叠、挤到右侧按钮
+      const compact = rowH < 50;
+      if (!compact) R.add(txt(s, 212, y - rowH / 2 + 4 + fs + 5, `${k.desc}  各级：${lvVals.map((v, l) => `${l}级${v}`).join(' ')}`.slice(0, 64), fs, locked ? '#777' : '#ddd', { strokeThickness: 2 }));
+      const up = lv >= 0 && lv < 3 && k.learn && k.train ? `升级：人物Lv${k.learn[lv + 1]} + 修炼点${k.train[lv]}` : lv === 3 ? '已满级' : '';
+      if (compact) R.add(txt(s, 212, y - rowH / 2 + 4 + fs + 5, `${k.passive ? '无需施放' : `耗魔${k.mana} 冷却${k.cooldown}s`} 修炼${pts}${k.train ? '/' + k.train[2] : ''} ${up}  ${k.desc}`.slice(0, 46), fs, locked ? '#777' : '#9fd', { strokeThickness: 2 }));
+      else R.add(txt(s, 212, y - rowH / 2 + 4 + (fs + 5) * 2, `${k.passive ? '无需施放' : `耗魔 ${k.mana}  冷却 ${k.cooldown}s`}  修炼点 ${pts}${k.train ? '/' + k.train[2] : ''}  ${up}`, fs, locked ? '#666' : '#9fd', { strokeThickness: 2 }));
+      // 修炼进度条（官方：修炼点达到下一级要求 + 人物等级达到即自动升级）
+      if (k.train && lv >= 0 && lv < 3) { const p = Math.min(1, pts / k.train[lv]); R.add(s.add.rectangle(212, y + rowH / 2 - 6, 220, 4, 0x333333).setOrigin(0, 0.5)); R.add(s.add.rectangle(212, y + rowH / 2 - 6, 220 * p, 4, 0x55cc77).setOrigin(0, 0.5)); }
+      if (inBar) {
+        const bi = barIdx.get(k.id)!;
+        R.add([...button(s, 800, y, 36, rowH - 18, '▲', () => { w.moveSkill(k.id, bi - 1); this.render(); }, 14, bi > 0)]);
+        R.add([...button(s, 840, y, 36, rowH - 18, '▼', () => { w.moveSkill(k.id, bi + 1); this.render(); }, 14, bi < bar.length - 1)]);
+        // 拖放：按住 ≡ 上下拖到目标行松开
+        const hd = s.add.rectangle(890, y, 44, rowH - 12, 0x3a2a14).setStrokeStyle(1, 0xd4a64a).setInteractive({ draggable: true, useHandCursor: true });
+        const ht = txt(s, 890, y, '≡', 22, '#ffd24a').setOrigin(0.5); R.add([hd, ht]); s.input.setDraggable(hd);
+        hd.on('drag', (_p: Phaser.Input.Pointer, _x: number, dy: number) => { hd.y = dy; ht.y = dy; });
+        hd.on('dragend', () => { const to = Math.max(0, Math.min(bar.length - 1, Math.round((hd.y - y0) / rowH))); if (to !== bi) { w.moveSkill(k.id, to); this.onChange(`${k.name} 移到 F${to + 1}`, true); } this.render(); });
+        if (autoable.has(k.id)) {
+          const on = autoList.includes(k.id), pr = autoList.indexOf(k.id);
+          R.add([...button(s, 975, y, 96, rowH - 18, `${on ? '☑' : '☐'} 自动${on ? ' #' + (pr + 1) : ''}`, () => { Settings.toggleAutoSkill(k.id, w.cls); this.render(); }, 13)]);
+          R.add([...button(s, 1045, y, 32, rowH - 18, '↑', () => { Settings.moveAutoSkill(k.id, -1, w.cls); this.render(); }, 13, on && pr > 0)]);
+          R.add([...button(s, 1081, y, 32, rowH - 18, '↓', () => { Settings.moveAutoSkill(k.id, 1, w.cls); this.render(); }, 13, on && pr < autoList.length - 1)]);
+        } else R.add(txt(s, 975, y, '手动', 12, '#888').setOrigin(0.5));
+      }
     });
-    R.add(txt(s, 180, top + 430, `学习等级/修炼点/战士倍率取自 1.76 官方；耗魔×3、冷却、火墙灼烧、野蛮伤害、准确→暴击为卡牌适配。人物等级加成 ×${w.skillScale().toFixed(2)}`, 12, '#aaa'));
+    R.add(txt(s, 160, top + 452, `▲▼/拖动≡ 调整快捷栏；☑自动 与设置页同一份，#n 为自动优先级。学习等级/修炼点取自 1.76 官方，修炼满足后自动升级；耗魔×3、冷却为卡牌适配。等级加成 ×${w.skillScale().toFixed(2)}`, 12, '#aaa', { wordWrap: { width: 960 } }));
+  }
+  // ---------- R14 城镇 ----------
+  private npcDef() { const t = TOWNS[this.world().town ?? '']; return t?.npcs.find(n => n.id === this.npc); }
+  npcKind() { return this.mode === 'town' ? this.npcDef()?.kind : undefined; }
+  private npcNeedsBag() { const k = this.npcKind(); return !!k && k !== 'teleport' && k !== 'book' && k !== 'veteran'; }
+  private renderTown(R: Phaser.GameObjects.Container, top: number) {
+    const s = this.s, w = this.world(), t = TOWNS[w.town ?? ''];
+    if (!t) { R.add(txt(s, 640, top + 200, '不在城内', 20, '#fff').setOrigin(0.5)); return; }
+    if (s.textures.exists('bg_town')) R.add(s.add.image(640, top + 240, 'bg_town').setDisplaySize(996, 460).setAlpha(0.35));
+    R.add(txt(s, 160, top + 14, `金币 ${w.gold}   安全区`, 14, '#ffd24a'));
+    const cur = this.npcDef(), art = cur && 'npc_' + NPC_ART[cur.kind];
+    if (art && s.textures.exists(art)) R.add(s.add.image(240, top + 400, art).setOrigin(0.5, 1).setDisplaySize(200, 250));
+    else if (cur) { R.add(s.add.rectangle(240, top + 275, 200, 250, 0x2a2018).setStrokeStyle(2, 0x6a5a28)); R.add(txt(s, 240, top + 275, cur.name.replace(/（.*）/, ''), 16, '#ffe8a0').setOrigin(0.5)); }
+    R.add([...button(s, 240, top + 448, 170, 36, '回到街上', () => this.close(), 16)]);
+    const n = this.npcDef(), X = 340;
+    if (!n) { R.add(txt(s, X, top + 90, `${t.name}\n选择左侧 NPC。\n来源：${t.src}`, 14, '#ddd', { wordWrap: { width: 600 } })); return; }
+    R.add(txt(s, X - 180, top + 44, `${n.name}${n.pos ? `  原版坐标 ${n.pos}` : ''}${n.note ? `  ${n.note}` : ''}`, 13, '#ffe8a0', { wordWrap: { width: this.npcNeedsBag() ? 400 : 700 } }));
+    const row = (i: number, name: string, sub: string, label: string, fn: () => void, ok: boolean, icon?: string) => {
+      const y = top + 100 + i * 50;
+      R.add(s.add.rectangle(X + 110, y, 230, 44, 0x0a0806).setStrokeStyle(1, 0x4a3a28));
+      if (icon && s.textures.exists('item_' + icon)) R.add(s.add.image(X + 16, y, 'item_' + icon).setDisplaySize(36, 36));
+      R.add(txt(s, X + 40, y - 17, name, 14, '#fff')); R.add(txt(s, X + 40, y + 2, sub, 11, '#ccc', { strokeThickness: 2 }));
+      R.add([...button(s, X + 196, y, 50, 30, label, fn, 13, ok)]);
+    };
+    const buy = (e: string | null, nm: string) => { if (!e) sfx(s, 'coin'); this.onChange(e ?? `购买 ${nm}`, !e); this.render(); };
+    if (n.kind === 'potion') POTIONS.forEach((p, i) => row(i, ITEMS[p.item].name, `${p.price} 金 · 原版 ${i % 2 ? 242 : 88}（S14）持有 ${w.pots[i]}`, '购买', () => buy(w.buyPotion(i), ITEMS[p.item].name), w.gold >= p.price, p.item));
+    else if (n.goods) n.goods.forEach((gd, i) => { const d = ITEMS[gd.item]; row(i, d.name + (d.req ? ` 需Lv${d.req}` : ''), `${gd.price} 金 · 原版 ${gd.official ?? '未查到'}${gd.official ? '×0.25' : ' [适配]'}`, '购买', () => buy(w.buyGoods(n.id, gd.item), d.name), w.gold >= gd.price, gd.item); });
+    if (n.kind === 'general') { const sold = w.oilBoughtFloor === w.floorIndex, k = n.goods?.length ?? 0;
+      row(k, '祝福油', `${OIL_PRICE} 金 · 每层限购 1`, '购买', () => buy(w.buyOil(), '祝福油'), !sold && w.gold >= OIL_PRICE, 'bless_oil'); }
+    if (n.kind === 'smith') { row(0, '黑铁矿石[+1]', `${IRON_PRICE} 金 · 强化装备`, '购买', () => buy(w.buyIron(), '黑铁矿石'), w.gold >= IRON_PRICE, 'black_iron');
+      R.add(txt(s, X, top + 160, '修理：本作装备无持久度 [适配]，无需修理。\n强化：背包点黑铁矿石，再点装备栏。', 13, '#9fd')); }
+    if (n.kind === 'book') { R.add(txt(s, X, top + 74, '书店：本职业有售技能书', 13, '#9fd')); w.shopBooks().forEach((b, i) => { const id = 'book_' + b.skill, learned = w.learned.has(b.skill);
+      row(i, ITEMS[id].name, `${b.price} 金 ${learned ? '已学会' : ''}`, '购买', () => buy(w.buyBook(b.skill), ITEMS[id].name), !learned && w.gold >= b.price, id); }); }
+    if (n.kind === 'jewelry') R.add(txt(s, X, top + 90, '首饰店存货：未查到（原版只能买到别人卖的）。\n点击右侧背包物品出售。', 13, '#9fd'));
+    if (n.kind === 'veteran') R.add(txt(s, X, top + 66, '老兵：城里安全，西门出城；要去哪我送你。', 13, '#9fd'));
+    if (n.kind === 'teleport' || n.kind === 'veteran') { const fl = [...w.reached].sort((a, b) => a - b).slice(0, 8);
+      fl.forEach((f, i) => row(i, w.floors[f].name, `${w.teleportCost(f)} 金 · 冷却 ${WorldCls.TELEPORT_CD}s`, '传送', () => { const e = w.townTeleport(f); this.onChange(e ?? `传送到 ${w.floors[f].name}`, !e); if (!e) { this.mode = null; this.close(); this.onTeleport?.(); } else this.render(); }, w.gold >= w.teleportCost(f))); }
+    if (n.kind === 'storage') {
+      R.add(txt(s, X, top + 74, `仓库 ${w.storage.length}/${STORAGE_SIZE}：点仓库取回，点背包存入`, 13, '#9fd'));
+      for (let i = 0; i < STORAGE_SIZE; i++) { const it = w.storage[i], x = X + 20 + (i % 5) * 46, y = top + 116 + Math.floor(i / 5) * 46;
+        this.slotBox(R, x, y, 42, it, '', () => { const e = w.withdraw(i); this.onChange(e ?? `取回 ${it!.name}`, !e); }, 'st_' + i); }
+    } else if (this.npcNeedsBag()) R.add(txt(s, X, top + 420, '点右侧背包物品\n→ 卖给该 NPC', 13, '#9fd'));
   }
   /** 世界地图视口（拖动/缩放状态，跨重绘保留） */
   view: View | null = null;
@@ -300,7 +373,8 @@ export class Panel {
       c.on('pointerdown', () => {
         sfx(s, 'click', 0.4);
         if (n.kind === 'exit' && n.to) { this.region = n.to; this.render(); return; }
-        if (f === undefined) { this.onChange(n.kind === 'town' ? `${n.name}：城镇功能稍后开放` : `${n.name}：暂未开放`); return; }
+        if (n.kind === 'town' && NODE_TOWN[n.id]) { const e = w.enterTown(NODE_TOWN[n.id]); if (e) { this.onChange(e); return; } this.clearMapInput(); this.mode = null; this.close(); this.onTeleport?.(); this.onChange(`进入 ${n.name}`, true); return; }
+        if (f === undefined) { this.onChange(`${n.name}：暂未开放`); return; }
         if (here) { this.onChange('你已在此地图'); return; }
         if (!reached) { this.onChange('到达该层后解锁传送'); return; }
         this.doTeleport(f);
@@ -346,6 +420,7 @@ export class Panel {
     const lines: [string, string][] = [[it.name, RARITY_HEX[it.rarity]], [`${it.slot ? SLOT_NAMES[it.slot] : '杂物'} · ${RARITY_CN[it.rarity]}`, '#aaa']];
     for (const [k, v] of Object.entries(it.stats)) if (v) lines.push([`${STAT_NAMES[k as keyof typeof STAT_NAMES]} +${v}`, '#7aff7a']);
     if (it.luck) lines.push([it.luck > 0 ? `幸运 +${it.luck}` : `诅咒 ${-it.luck}`, it.luck > 0 ? '#ffd24a' : '#ff4040']);
+    { const cl = ITEMS[it.item]?.cls; if (cl?.length && !cl.includes(w.cls)) lines.push([`职业不符：${cl.map(c => CLASSES[c].name).join('/')}专用，无法装备`, '#f66']); }
     if (ITEMS[it.item]?.book) { const sk = w.skillPool.find(x => x.id === ITEMS[it.item].book); lines.push([sk ? (w.learned.has(sk.id) ? '已学会（可出售）' : `点击学习（需 Lv${w.needLevel(sk)}）`) : '非本职业技能书', '#9fd']); }
     if (it.item === 'bless_oil') lines.push(['点击：作用于当前武器（幸运+1，上限7，可能诅咒）', '#9fd']);
     if (it.item === 'black_iron') lines.push([`纯度 ${it.purity ?? 1} ×${it.qty ?? 1}：点装备栏强化；再点可提纯`, '#9fd']);

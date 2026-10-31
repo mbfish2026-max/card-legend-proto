@@ -1,6 +1,7 @@
 import { ClassId } from './classes';
 import { OFFICIAL_DROPS } from './drops-official';
 import { officialBookRates } from './drops';
+import { WOMA_S9_BOOKS } from './drops-s9';
 /**
  * 技能书（R11）：参考原版——新角色仅 1 个初始技能，其余技能需获得技能书并达到等级后在背包中使用学会。
  * 来源与分歧见 docs/skills-official.md「技能书来源」。
@@ -42,3 +43,5 @@ export const BOOK_DROP = { boss: 0.25, normal: 0.02 };
 export const bookItemId = (skill: string) => 'book_' + skill;
 /** R13：有掉落资料的怪 → 技能书逐本爆率（21cq 1.76 资料 1/N）；不在此表的怪才用 BOOK_DROP [适配] */
 export const BOOK_RATES: Record<string, Record<string, number>> = Object.fromEntries(Object.keys(OFFICIAL_DROPS).map(id => [id, officialBookRates(id)!]));
+/** R14 #7：沃玛教主书爆率改用 S9 */
+BOOK_RATES.boss_woma = { ...WOMA_S9_BOOKS };
