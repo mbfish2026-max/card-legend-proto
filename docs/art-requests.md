@@ -1175,12 +1175,13 @@ public/assets/ui/UI-Tooltip-Border.png
 | public/assets/town/npc_brm_guide.png | 768×960 透明 | 向导（外观推测）|
 | public/assets/town/npc_brm_mystic_book.png | 768×960 透明 | 神秘书商（外观推测）|
 | public/assets/town/npc_brm_mystic_smith.png | 768×960 透明 | 神秘铁匠（外观推测）|
+| public/assets/town/npc_brm_dragon.png | 768×960 透明 | 龙人 brm_dragon（外观推测）|
 | docs/town-preview/bairimen_preview.jpg | 2880×540 | 摆位预览（半尺寸；白线是屏分隔，黄框是龙人占位）|
 
 说明：
 - 门面同 L-P1，采用 3:4（540×720），底边贴画布底，水平居中，门头上方有空白木招牌，店名由游戏绘制。
 - 文件名 shop_brm_* / npc_brm_* 是本分支自定的，第 L 章没有给出具体文件名。
-- 龙人沿用现有的 brm_dragon，本次没有重画。本分支（基于 main）里没有找到 brm_dragon 文件，预览中用黄框占位。
+- 龙人：brm_dragon 原来只是 src/data/towns.ts 里的 NPC id，没有对应的图。现已出图：public/assets/town/npc_brm_dragon.png（768×960 透明，与 npc_brm_* 同风格；龙首人身、红金长袍、持珠杖，外观推测）。预览里的黄框就是它的位置（x=5300）。
 
 ### 摆位表（背景坐标，x 为中心点）
 
@@ -1197,7 +1198,7 @@ public/assets/ui/UI-Tooltip-Border.png
 | 2 | | shop_brm_jewelry | 3550 |
 | 3 | 3840–5760 | shop_brm_clothes | 4150 |
 | 3 | | shop_brm_mystic_smith + npc_brm_mystic_smith | 4800 / 5050 |
-| 3 | | 龙人 brm_dragon（已有素材）| 5300 |
+| 3 | | npc_brm_dragon（龙人）| 5300 |
 | 3 | | 远景龙形古祠（背景自带）| 约 5400 |
 
 顺序依据 towns-plan：城门·向导 → 神秘书商·武器 → 仓库·药店 → 首饰·服装 → 神秘铁匠·龙人。原计划是两两一组，这里按 3 屏重新分配，每屏最多 3 间店。
