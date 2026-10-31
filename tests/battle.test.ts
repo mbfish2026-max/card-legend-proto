@@ -250,7 +250,7 @@ const free = (w: World) => w.skills.map(() => 0);
       if (h.hp < h.maxHp * 0.4 && w.usePotion(w.pots[1] > 0 ? 1 : 0)) potUsed++;
       if ((h.mp ?? 0) < 40) w.usePotion(w.pots[3] > 0 ? 3 : 2);
       for (let i = 0; i < w.skills.length; i++) w.cast(i, cds);
-      for (let i = w.bag.length - 1; i >= 0; i--) { const it = w.bag[i]; if (it.slot && it.req <= w.level && !w.equip[it.slot]) w.equipItem(i); }
+      for (let i = w.bag.length - 1; i >= 0; i--) { const it = w.bag[i]; if (it.slot && it.req <= w.level && !w.equip[w.targetSlot(it)!]) w.equipItem(i); }
       // 黑铁：模拟脚本卖掉（避免碎装干扰难度基线；玩家可手动强化）
       for (let i = w.bag.length - 1; i >= 0; i--) if (w.bag[i]?.item === 'black_iron') w.sellItem(i);
       // 黑铁：模拟脚本卖掉（避免碎装干扰难度基线；玩家可手动强化）
@@ -508,7 +508,7 @@ const free = (w: World) => w.skills.map(() => 0);
   wear('set_woma_necklace'); ok(w.setCounts().woma === 2 && w.stats().hp === base.hp + 10 * 0 + 60 + 60 + 0, `沃玛 2 件：生命+60 激活（hp ${w.stats().hp}）`);
   wear('set_woma_bracelet'); const s3 = w.stats(); ok(w.setBonuses().length === 2 && s3.def === base.def + 10 + 5 + 5, `沃玛 3 件：防御+5 激活（def ${s3.def}）`);
   ok(w.hero!.maxHp === s3.hp, '套装加成同步到主角属性');
-  w.unequip('bracelet'); ok(w.setBonuses().length === 1 && w.stats().def === base.def + 10, '卸下 1 件：3 件加成失效');
+  w.unequip('bracelet1'); ok(w.setBonuses().length === 1 && w.stats().def === base.def + 10, '卸下 1 件：3 件加成失效');
   const c = mk([], [], 'mage', 25); for (const id of SETS.chiyue.pieces) { c.bag.push(c.makeItem(id)); c.equipItem(c.bag.length - 1); }
   ok(c.luck() === 1, '赤月 3 件：幸运+1');
   ok(Object.values(SETS).every(st => st.pieces.every(id => ENEMIES && id.startsWith('set_'))), '套装物品 ID 规范');
@@ -545,7 +545,7 @@ const free = (w: World) => w.skills.map(() => 0);
   w.bag.push(w.makeItem('black_iron')); ok(w.enhanceWithIron(0, 'weapon').includes('上限'), '达上限不可再强化');
   // 首饰不可强化
   w.bag.push(w.makeItem('iron_ring')); w.equipItem(w.bag.length - 1);
-  w.bag.push(w.makeItem('black_iron')); ok(w.enhanceWithIron(w.bag.length - 1, 'ring').includes('不能'), '首饰不可强化');
+  w.bag.push(w.makeItem('black_iron')); ok(w.enhanceWithIron(w.bag.length - 1, 'ring1').includes('不能'), '首饰不可强化');
   // 提纯
   const r = mk([]); r.bag.push(r.makeItem('black_iron', 'common', { purity: 2 }), r.makeItem('black_iron', 'common', { purity: 2 }));
   ok(r.refineIron(0, 1).includes('[+3]') && r.bag.length === 1 && r.bag[0].purity === 3, '两块+2 提纯 → +3');
@@ -630,4 +630,29 @@ const free = (w: World) => w.skills.map(() => 0);
   { const a = comboKey('warrior', resolveLayers('warrior', w2.equip)); w2.equipItem(wi); const b = comboKey('warrior', resolveLayers('warrior', w2.equip)); w2.unequip('weapon'); const c2 = comboKey('warrior', resolveLayers('warrior', w2.equip)); ok(a !== b && c2 === a, '穿/脱武器后组合签名刷新并可还原'); }
 }
 
+{ // 5.1 双戒双镯 + 存档迁移
+  const w = mk([], [], 'warrior', 20); const base = w.stats();
+  const wear = (id: string) => { w.bag.push(w.makeItem(id)); return w.equipItem(w.bag.length - 1); };
+  wear('gold_ring'); const r1 = w.equip.ring1!; ok(!!r1 && !w.equip.ring2, '第一枚戒指 → ring1');
+  wear('gold_ring'); const r2 = w.equip.ring2!; ok(!!r2 && w.equip.ring1 === r1, '第二枚戒指 → 空位 ring2');
+  ok(w.stats().atk === base.atk + (r1.stats.atk ?? 0) + (r2.stats.atk ?? 0), `双戒攻击叠加（${w.stats().atk}）`);
+  const n = w.bag.length; wear('iron_ring'); ok(w.equip.ring1?.item === 'iron_ring' && w.equip.ring2 === r2 && w.bag.includes(r1) && w.bag.length === n + 1, '两位都满 → 替换 ring1，旧戒回包');
+  w.bag.push(w.makeItem('gold_ring')); ok(w.equipItem(w.bag.length - 1, 'ring2') === null && w.bag.includes(r2), '指定 ring2 替换');
+  w.bag.push(w.makeItem('iron_sword')); ok(w.equipItem(w.bag.length - 1, 'ring1') === '部位不符', '武器不能放戒指位');
+  ok(w.unequip('ring2') === null && !w.equip.ring2 && w.unequip('ring2') === '该栏位为空', '卸下 ring2');
+  wear('bracelet'); wear('bracelet'); ok(!!w.equip.bracelet1 && !!w.equip.bracelet2, '双手镯');
+  ok(w.stats().def === base.def + (w.equip.bracelet1!.stats.def ?? 0) + (w.equip.bracelet2!.stats.def ?? 0) + (w.equip.ring1!.stats.def ?? 0), '双镯防御叠加');
+  const lo = mk([], [], 'warrior', 1); lo.bag.push(lo.makeItem('gold_ring')); ok(lo.equipItem(0)!.includes('等级'), '戒指仍检查需求等级');
+  // 旧档：单戒/单镯
+  const old = mk([], [], 'taoist', 15); old.bag.push(old.makeItem('gold_ring'), old.makeItem('bracelet')); old.equipItem(1); old.equipItem(0);
+  const sv: any = JSON.parse(JSON.stringify(old.toSave())); sv.equip = { ring: sv.equip.ring1, bracelet: sv.equip.bracelet1, weapon: sv.equip.weapon }; delete sv.eqV;
+  const before = old.stats(), bagN = sv.bag.length;
+  const nw = new World(seeded(1), 1, FLOORS, 'taoist', sv as SaveData);
+  ok(nw.equip.ring1?.item === 'gold_ring' && !nw.equip.ring2 && !(nw.equip as any).ring, '旧档单戒 → ring1，ring2 空');
+  ok(nw.equip.bracelet1?.item === 'bracelet' && !nw.equip.bracelet2 && !(nw.equip as any).bracelet, '旧档单镯 → bracelet1');
+  ok(JSON.stringify(nw.stats()) === JSON.stringify(before) && nw.bag.length === bagN, '迁移后属性一致、不丢物品');
+  ok(nw.toSave().eqV === 2 && !('ring' in nw.toSave().equip), '新档写入 eqV=2');
+  const re = new World(seeded(1), 1, FLOORS, 'taoist', JSON.parse(JSON.stringify(nw.toSave())));
+  ok(re.equip.ring1?.item === 'gold_ring' && JSON.stringify(re.stats()) === JSON.stringify(before), '新档往返一致');
+}
 console.log(`全部通过 ${pass} 项`);
