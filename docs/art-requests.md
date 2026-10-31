@@ -953,3 +953,121 @@ thunder_sword 雷霆剑、break_strike 破击剑法、shield_break 破盾斩、v
 上文 art/maps-sq-mir3 第2–7批中标为「复用」的行，已由「重画·第1–8组」各章取代。所有 sq_/m3_ 小怪、9 个借用他怪 art 的单位，以及 boss_evil_pincer（原图与 pincer_bug 同构图、只换了颜色），现在都是独立新画。src 里的 `art` 字段仍指向旧图，本分支不改 src，需要开发把它们改成各自的 id。
 
 需改 `art` 的单位：hj_guard、wolong_guard、fire_dragon_guard、leiyan_spider、cave_skel_warrior、cave_skel_general、axe_skeleton、cave_bat、cave_maggot，以及 dark_warrior、dung_beetle、fire_woma、giant_worm、horn_fly、mine_zombie、pincer_bug、wedge_moth、woma_brave、woma_general。SQMIR3_BOSS 元组的第 4/5 字段也引用了其他 BOSS 的图（例如蚂蚁将军→boss_evil_pincer），但这些 BOSS 都已有自己的 `<id>_full.png`，建议一并改为自身 id。
+
+## 替换魔兽头像图标（art/replace-wow-heads，2026-10-31）
+
+原创重画 public/assets/portraits/ 下全部 13 个魔兽来源图标，卡通粗描边，同名覆盖，尺寸与原图一致：64x64 RGBA PNG，代码零改动。对比图：docs/wow-heads-preview/wow_heads_old_vs_new.jpg
+
+| 文件（旧→新同名） | 尺寸 | 新内容 | 用途 |
+|---|---|---|---|
+| portraits/INV_Misc_Head_Human_01.png | 64x64 | 人类战士头像 | 主菜单 menu_0（assets-manifest.ts:46） |
+| portraits/INV_Misc_Head_Scourge_01.png | 64x64 | 亡灵骷髅头（兜帽+鬼火） | 未引用 |
+| portraits/INV_Misc_Head_Human_02.png | 64x64 | 女商人头像 | 商人 merchant（assets-manifest.ts:29） |
+| portraits/INV_Misc_Bone_HumanSkull_01.png | 64x64 | 枯骨头骨 | 未引用 |
+| portraits/INV_Misc_Head_Dragon_Black.png | 64x64 | 黑龙头 | 未引用 |
+| portraits/INV_Misc_Head_Gnoll_01.png | 64x64 | 鬣狗兽人头像 | 未引用 |
+| portraits/INV_Misc_Head_Kobold_01.png | 64x64 | 矿工鼠人（蜡烛盔） | 未引用 |
+| portraits/INV_Misc_Head_Murloc_01.png | 64x64 | 鱼人头像 | 未引用 |
+| portraits/INV_Misc_Head_Undead_01.png | 64x64 | 亡灵男子头像 | 未引用 |
+| portraits/INV_Misc_Head_Undead_02.png | 64x64 | 亡灵女术士头像 | 未引用 |
+| portraits/Ability_Hunter_Pet_Wolf.png | 64x64 | 灰狼头 | 未引用 |
+| portraits/INV_Misc_MonsterHead_01.png | 64x64 | 独眼黄蜥怪头 | 未引用 |
+| portraits/Ability_Druid_TravelForm.png | 64x64 | 风灵雄鹿 | 未引用 |
+
+注：Scourge_01 原图其实是带血的人头，这里按要求画成了亡灵骷髅。
+
+### 仓库里剩下的魔兽素材（只列出，本次没替换）
+
+共 81 个：
+- items：25 个
+- potions：20 个
+- skills：22 个
+- ui：14 个
+
+完整路径：
+
+```
+public/assets/items/INV_Chest_Plate01.png
+public/assets/items/INV_Chest_Plate02.png
+public/assets/items/INV_Chest_Plate03.png
+public/assets/items/INV_Helmet_01.png
+public/assets/items/INV_Helmet_02.png
+public/assets/items/INV_Helmet_03.png
+public/assets/items/INV_Helmet_04.png
+public/assets/items/INV_Helmet_05.png
+public/assets/items/INV_Jewelry_Ring_01.png
+public/assets/items/INV_Jewelry_Ring_02.png
+public/assets/items/INV_Jewelry_Ring_03.png
+public/assets/items/INV_Jewelry_Ring_04.png
+public/assets/items/INV_Jewelry_Ring_05.png
+public/assets/items/INV_Misc_Bag_08.png
+public/assets/items/INV_Misc_Bone_01.png
+public/assets/items/INV_Misc_Book_09.png
+public/assets/items/INV_Misc_Coin_01.png
+public/assets/items/INV_Misc_Food_14.png
+public/assets/items/INV_Misc_Food_15.png
+public/assets/items/INV_Misc_Gem_Pearl_01.png
+public/assets/items/INV_Sword_01.png
+public/assets/items/INV_Sword_02.png
+public/assets/items/INV_Sword_03.png
+public/assets/items/INV_Sword_04.png
+public/assets/items/INV_Sword_05.png
+public/assets/potions/INV_Potion_50.png
+public/assets/potions/INV_Potion_51.png
+public/assets/potions/INV_Potion_52.png
+public/assets/potions/INV_Potion_53.png
+public/assets/potions/INV_Potion_54.png
+public/assets/potions/INV_Potion_55.png
+public/assets/potions/INV_Potion_56.png
+public/assets/potions/INV_Potion_57.png
+public/assets/potions/INV_Potion_58.png
+public/assets/potions/INV_Potion_59.png
+public/assets/potions/INV_Potion_70.png
+public/assets/potions/INV_Potion_71.png
+public/assets/potions/INV_Potion_72.png
+public/assets/potions/INV_Potion_73.png
+public/assets/potions/INV_Potion_74.png
+public/assets/potions/INV_Potion_75.png
+public/assets/potions/INV_Potion_76.png
+public/assets/potions/INV_Potion_77.png
+public/assets/potions/INV_Potion_78.png
+public/assets/potions/INV_Potion_79.png
+public/assets/skills/Ability_Warrior_BattleShout.png
+public/assets/skills/Ability_Warrior_Charge.png
+public/assets/skills/Ability_Warrior_Cleave.png
+public/assets/skills/Ability_Warrior_DefensiveStance.png
+public/assets/skills/Ability_Warrior_Revenge.png
+public/assets/skills/Ability_Warrior_SavageBlow.png
+public/assets/skills/Ability_Warrior_ShieldWall.png
+public/assets/skills/Ability_Warrior_Sunder.png
+public/assets/skills/Ability_Warrior_WarCry.png
+public/assets/skills/Ability_Whirlwind.png
+public/assets/skills/Spell_Fire_Fireball.png
+public/assets/skills/Spell_Fire_FlameBolt.png
+public/assets/skills/Spell_Frost_FrostNova.png
+public/assets/skills/Spell_Holy_FlashHeal.png
+public/assets/skills/Spell_Holy_Heal.png
+public/assets/skills/Spell_Holy_HolyBolt.png
+public/assets/skills/Spell_Holy_Renew.png
+public/assets/skills/Spell_Nature_Lightning.png
+public/assets/skills/Spell_Nature_ThunderClap.png
+public/assets/skills/Spell_Shadow_AnimateDead.png
+public/assets/skills/Spell_Shadow_RaiseDead.png
+public/assets/skills/Spell_Shadow_ShadowBolt.png
+public/assets/ui/LoadScreenCave.png
+public/assets/ui/UI-Backpack-EmptySlot.png
+public/assets/ui/UI-DialogBox-Background.png
+public/assets/ui/UI-DialogBox-Border-9slice.png
+public/assets/ui/UI-DialogBox-Border.png
+public/assets/ui/UI-DialogBox-Gold-Border-9slice.png
+public/assets/ui/UI-DialogBox-Gold-Border.png
+public/assets/ui/UI-DialogBox-Header.png
+public/assets/ui/UI-EmptySlot.png
+public/assets/ui/UI-Panel-Button-Up.png
+public/assets/ui/UI-Quickslot2.png
+public/assets/ui/UI-Tooltip-Background.png
+public/assets/ui/UI-Tooltip-Border-9slice.png
+public/assets/ui/UI-Tooltip-Border.png
+```
+
+另外 src/assets-manifest.ts 第 2 行还留着魔兽来源的版权注释，以后全部替换完再删。音效有没有魔兽来源：未查到/推测，本次没核查。
