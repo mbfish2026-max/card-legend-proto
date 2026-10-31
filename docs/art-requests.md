@@ -941,3 +941,9 @@ thunder_sword 雷霆剑、break_strike 破击剑法、shield_break 破盾斩、v
 | 文件 | 尺寸 | 名称 | 状态 | 依据 |
 |---|---|---|---|---|
 | boss_evil_pincer_full.png | 960x759 | 邪恶钳虫 | 新画（取代原复用图） | 部分推测：原图与 pincer_bug 同构图仅换色，重画为直立巨钳虫后；外形细节为推测（毒液绿边可能被抠，存疑） |
+
+## 说明：旧「复用」记录作废
+
+上文 art/maps-sq-mir3 第2–7批中标为「复用」的行，已由「重画·第1–8组」各章取代。所有 sq_/m3_ 小怪、9 个借用他怪 art 的单位，以及 boss_evil_pincer（原图与 pincer_bug 同构图、只换了颜色），现在都是独立新画。src 里的 `art` 字段仍指向旧图，本分支不改 src，需要开发把它们改成各自的 id。
+
+需改 `art` 的单位：hj_guard、wolong_guard、fire_dragon_guard、leiyan_spider、cave_skel_warrior、cave_skel_general、axe_skeleton、cave_bat、cave_maggot，以及 dark_warrior、dung_beetle、fire_woma、giant_worm、horn_fly、mine_zombie、pincer_bug、wedge_moth、woma_brave、woma_general。SQMIR3_BOSS 元组的第 4/5 字段也引用了其他 BOSS 的图（例如蚂蚁将军→boss_evil_pincer），但这些 BOSS 都已有自己的 `<id>_full.png`，建议一并改为自身 id。
