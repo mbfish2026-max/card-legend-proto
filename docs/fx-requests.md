@@ -53,3 +53,12 @@
 | fx_hell_fire_line.png | hell_fire | hit | 10 | 512×192 | 20 | 否 | caster | 0,160 | ADD | 500 | 地狱火：从施法者前沿向前喷出的地面火浪，长约 425px（5 格≈2.5 卡），可 flipX；触发：前摇结束；命中点：沿途每个目标脚下（逐个延迟 60ms）；现用 fx_fire_wall_loop 500ms |
 | fx_lightning_flash_beam.png | lightning_flash | hit | 8 | 768×128 | 24 | 否 | caster | 0,64 | ADD | 333 | 疾光电影：水平白蓝闪电光束，长约 680px（4 卡）贯穿前方，可 flipX、scaleX 适配；触发：前摇结束；命中点：光束经过的全部目标中心；现用每目标 fx_thunder_strike |
 | fx_hell_thunder_burst.png | hell_thunder | hit | 10 | 1024×384 | 20 | 否 | caster | 512,320 | ADD | 500 | 地狱雷光：以自身为中心 5×5（左右各约 425px）的蓝紫雷暴环+落雷；触发：前摇结束；命中点：范围内每个目标再叠 thunder_strike（逐个延迟 50ms）；现用每目标 fx_thunder_strike + Graphics 圆环 |
+
+## #12 道士新技能特效需求（2026-10-31，当前复用魔法盾图集着色 / 治愈光柱 + Graphics 兜底，素材到位后在 FX_DEFS 注册即可）
+| 文件名 | 技能id | 阶段 | 帧数 | 帧尺寸 | 帧率 | 循环 | 锚点类型 | pivot px | 混合模式 | 时长ms | 说明 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| fx_ghost_shield_cast.png | ghost_shield | cast | 16 | 256×256 | 20 | 否 | caster | 128,128 | ADD | 800 | 幽灵盾施放：蓝紫幽光符印自脚下升起包裹主角；触发：施法即刻；命中点：主角卡中心；现用 fx_magic_shield_cast 着色 0xb08cff，缺图 fx.holyLight |
+| fx_ghost_shield_loop.png | ghost_shield | loop | 12 | 256×256 | 11 | 是 | caster | 128,128 | ADD | 持续时间（30+10×技能等级+5×⌊道术/10⌋ 秒） | 幽灵盾持续：淡紫半透明护罩，跟随主角；现用 fx_magic_shield_loop 着色 |
+| fx_holy_armor_cast.png | holy_armor | cast | 16 | 256×256 | 20 | 否 | caster | 128,128 | ADD | 800 | 神圣战甲术施放：金色甲片光环合拢；触发：施法即刻；命中点：主角卡中心；现用 fx_magic_shield_cast 着色 0xffd860，缺图 fx.holyLight |
+| fx_holy_armor_loop.png | holy_armor | loop | 12 | 256×256 | 11 | 是 | caster | 128,128 | ADD | 持续时间（同上公式） | 神圣战甲术持续：金色护甲微光，跟随主角；现用 fx_magic_shield_loop 着色 |
+| fx_mass_heal_burst.png | mass_heal | hit | 12 | 512×256 | 20 | 否 | caster | 256,220 | ADD | 600 | 群体治愈术：以主角为中心绿色治愈光环，横向覆盖 ±170px（1 卡）；触发：施法即刻；命中点：主角及范围内每个召唤物叠治愈光柱（逐个延迟 80ms）；现用每目标 fx_heal_pillar，缺图 fx.holyLight |

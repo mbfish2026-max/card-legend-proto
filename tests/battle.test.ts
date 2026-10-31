@@ -884,12 +884,12 @@ const free = (w: World) => w.skills.map(() => 0);
   for (const [id, f, u] of [['ghost_shield', 'mdefUp', 'mdefUpUntil'], ['holy_armor', 'defUp', 'defUpUntil']] as const) {
     const w = mk([{ id: 'orc', x: 3000 }], [], 'taoist', 30); tough(w); const h = w.hero!; h.tao = 100;
     const cds = free(w); ok(w.cast(idx(w, id), cds).ok && h[f] === taoBuffValue(30) && Math.abs(h[u]! - w.time - taoBuffDur(w.skillLevel(pool(w, id)), 100)) < 1e-6, `${id} 增益 ${h[f]}、持续 ${h[u]! - w.time}s（按道术）`);
-    ok(w.summons?.every?.((s: any) => !s[f]) ?? true, `${id} 不作用于召唤物`);
+    ok(w.units.filter(x => x.summon).every(x => !x[f]), `${id} 不作用于召唤物`);
     const mp = h.mp!; const again = w.cast(idx(w, id), free(w)); ok(!again.ok && h.mp === mp, `${id} 持续中重复开启无效且不扣魔`);
     w.time = h[u]! + 0.01; ok(w.cast(idx(w, id), free(w)).ok, `${id} 结束后可再开`);
   }
   // 减伤：防御 / 魔御 加成在结算中生效
-  const hit = (id: string | null, magic: boolean) => { const w = mk([{ id: 'orc', x: 3000 }], [], 'taoist', 40); tough(w); const h = w.hero!; if (id) w.cast(idx(w, id), free(w)); const hp = h.hp; (w as any).damage(h, 60, magic, w.alive('enemy')[0]); return hp - h.hp; };
+  const hit = (id: string | null, magic: boolean) => { const w = mk([{ id: 'orc', x: 3000 }], [], 'taoist', 40); tough(w); const h = w.hero!; if (id) w.cast(idx(w, id), free(w)); const hp = h.hp; w.rng = () => 0.5; w.damage(h, 60, w.alive('enemy')[0], false, false, false, magic ? 1 : 0); return hp - h.hp; };
   ok(hit('holy_armor', false) < hit(null, false) && hit('ghost_shield', true) < hit(null, true), '神甲减物伤，幽灵盾减魔伤');
   // 群疗范围与回复量
   { const w = mk([{ id: 'orc', x: 3000 }], [], 'taoist', 40); tough(w); const h = w.hero!; h.x = 600;
