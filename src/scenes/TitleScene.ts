@@ -4,6 +4,7 @@ import { ITEMS } from '../data/items';
 import { CLASSES, CLASS_IDS, ClassId } from '../data/classes';
 import { FONT } from '../data/fx';
 import { Settings, SaveStore } from '../settings';
+import { STARTER } from '../data/books';
 import { renderSettingsView } from '../ui/SettingsView';
 import { queueCritical, queueImages, floorKeys, PreloadScene } from '../loader';
 import { FLOORS } from '../data/world';
@@ -83,7 +84,7 @@ export class TitleScene extends Phaser.Scene {
     L.add(this.add.rectangle(640, 300, 640, H, 0x15100b, 0.97).setStrokeStyle(3, 0xd4a64a));
     L.add(txt(this, 640, top + 10, '设置', 24, '#ffd24a', { fontStyle: 'bold' }).setOrigin(0.5).setY(top + 22));
     renderSettingsView(this, L, top, {
-      cls: this.setCls, rerender: () => this.settings(), onPickClass: c => { this.setCls = c; this.settings(); },
+      cls: this.setCls, learned: (() => { const sv = SaveStore.load(); if (sv?.cls === this.setCls) return sv.learned ? new Set([...sv.learned, STARTER[this.setCls]]) : undefined; return new Set([STARTER[this.setCls]]); })(), rerender: () => this.settings(), onPickClass: c => { this.setCls = c; this.settings(); },
       footer: [{ label: '返回', w: 200, fn: () => this.mainMenu() }],
     });
   }

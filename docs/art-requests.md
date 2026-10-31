@@ -86,3 +86,9 @@
 | skills/skill_spirit_force.png | 精神力战法（道士被动） |
 | skills/skill_summon_beast.png | 召唤神兽（道士） |
 | portraits 复用 | 神兽暂用狼立绘占位；若做专用神兽立绘请交 `portraits/summon_beast_full.png`（朝左，透明底） |
+
+## R11 技能书图标（2026-10-31）
+目前技能书道具图标直接复用对应技能图标（`item_book_<skill>` 未单独提供时用 `sk_<skill>` 占位）。需要：
+| 文件 | 说明 |
+|---|---|
+| items/item_book.png | 通用技能书底图（古旧线装书，128×128 透明底），可按职业三色：`item_book_warrior.png` / `item_book_mage.png` / `item_book_taoist.png` |

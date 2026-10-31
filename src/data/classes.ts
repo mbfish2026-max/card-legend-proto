@@ -58,7 +58,7 @@ export const CLASSES: Record<ClassId, ClassDef> = {
   taoist: {
     id: 'taoist', name: '道士', art: 'taoist', bg: 0x7a5c14, artFacing: 1, atkInterval: 1.2, autoStat: 'tao',
     // [适配] 技能扩充后保模拟死亡 1–4：基础 HP 278（官方无对应基础血量）
-    base: { hp: 278, mp: 190, atk: 16, mag: 0, tao: 28, def: 4 }, grow: { hp: 28, mp: 15, atk: 2, mag: 0, tao: 4.5, def: 1 },
+    base: { hp: 278, mp: 190, atk: 16, mag: 0, tao: 28, def: 4 }, grow: { hp: 28, mp: 15, atk: 2, mag: 0, tao: 4.2, def: 1 },
     desc: '召唤协战，施毒持续伤害\n精神力被动 · 治愈·施毒·火符·骷髅·神兽',
     skills: [
       { key: 'P', id: 'spirit_force', name: '精神力战法', kind: 'melee', stat: 'tao', mana: 0, cooldown: 0, passive: true, learn: [9, 9, 13, 19], train: [1000, 4000, 8000], accBonus: [3, 5, 8], icon: S + 'skill_spirit_force.png', sfx: 'heal', desc: '被动：准确 +3/+5/+8（官方）；[适配] 转为暴击率' },

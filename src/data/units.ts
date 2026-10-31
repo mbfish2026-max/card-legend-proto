@@ -20,23 +20,23 @@ export const ENEMIES: Record<string, UnitDef> = {
   bat: n('bat', '蝙蝠', 2, 80, 9, 1, 28, [G(0.5), { item: 'hp_small', chance: 0.25 }, { item: 'boots', chance: 0.08 }], { deathSfx: 'death', card: card({ figureScale: 1.0 }) }),
   wolf: n('wolf', '狼', 3, 140, 12, 2, 40, [{ item: 'chicken', chance: 0.4 }, { item: 'hp_small', chance: 0.3 }, { item: 'iron_ring', chance: 0.12 }, { item: 'wood_sword', chance: 0.1 }], { deathSfx: 'death2', card: card({ anchorX: 0.56 }) }),
   wolf_king: b('wolf_king', 'boss_wolf_king', '狼王', 6, 900, 20, 5, 260, [{ item: 'iron_sword', chance: 1 }, { item: 'helmet', chance: 0.8 }, { item: 'hp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'death2' }),
-  // 第2层 蛛网晶洞
-  spider: n('spider', '洞穴蜘蛛', 6, 240, 18, 4, 60, [G(0.5), { item: 'mp_small', chance: 0.3 }, { item: 'bracelet', chance: 0.1 }, { item: 'boots', chance: 0.08 }], { deathSfx: 'death' }),
-  spider_queen: b('spider_queen', 'boss_spider_queen', '蜘蛛女王', 9, 1800, 30, 8, 520, [{ item: 'magic_staff', chance: 1 }, { item: 'tao_sword', chance: 1 }, { item: 'pearl', chance: 0.8 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1)], { deathSfx: 'death' }),
-  // 第3层 白骨墓穴
-  skeleton: n('skeleton', '骷髅', 9, 380, 26, 7, 90, [{ item: 'bone', chance: 0.5 }, { item: 'mp_small', chance: 0.3 }, { item: 'iron_sword', chance: 0.08 }, G(0.4)], { speed: 95, deathSfx: 'skeleton_death', card: card({ figureScale: 1.2, anchorX: 0.56 }) }),
-  zombie: n('zombie', '僵尸', 11, 620, 32, 9, 130, [{ item: 'hp_mid', chance: 0.3 }, { item: 'helmet', chance: 0.12 }, G(0.6)], { speed: 75, atkInterval: 1.5, width: 135, deathSfx: 'ghoul_death', card: card({ anchorX: 0.58 }) }),
-  skeleton_lord: b('skeleton_lord', 'boss_skeleton_lord', '骷髅精灵', 13, 3200, 44, 12, 900, [{ item: 'bone_helm', chance: 1 }, { item: 'gold_ring', chance: 0.8 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'skeleton_death' }),
-  // 第4层 兽人要塞
-  orc: n('orc', '兽人战士', 13, 800, 40, 12, 170, [G(0.6), { item: 'hp_mid', chance: 0.3 }, { item: 'armor', chance: 0.05 }, { item: 'bracelet', chance: 0.1 }], { deathSfx: 'death2' }),
-  darkmage: n('darkmage', '黑暗法师', 14, 600, 50, 8, 190, [G(0.6), { item: 'mp_mid', chance: 0.3 }, { item: 'magic_staff', chance: 0.08 }, { item: 'pearl', chance: 0.08 }], { deathSfx: 'death', atkInterval: 1.6, oilChance: 0.03 }),
-  orc_chief: b('orc_chief', 'boss_orc_chief', '兽人酋长', 17, 5200, 60, 16, 1400, [{ item: 'armor', chance: 1 }, { item: 'gold_ring', chance: 1 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'death2' }),
+  // R11 第3层 蛛网晶洞（数值随层位调整：沿用原第 3 层强度）
+  spider: n('spider', '洞穴蜘蛛', 9, 380, 26, 7, 90, [G(0.5), { item: 'mp_small', chance: 0.3 }, { item: 'bracelet', chance: 0.1 }, { item: 'boots', chance: 0.08 }], { deathSfx: 'death' }),
+  spider_queen: b('spider_queen', 'boss_spider_queen', '蜘蛛女王', 13, 3200, 44, 12, 900, [{ item: 'magic_staff', chance: 1 }, { item: 'tao_sword', chance: 1 }, { item: 'pearl', chance: 0.8 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1)], { deathSfx: 'death' }),
+  // R11 第4层 白骨墓穴（沿用原第 4 层强度）
+  skeleton: n('skeleton', '骷髅', 12, 650, 34, 10, 160, [{ item: 'bone', chance: 0.5 }, { item: 'mp_small', chance: 0.3 }, { item: 'iron_sword', chance: 0.08 }, G(0.4)], { speed: 95, deathSfx: 'skeleton_death', card: card({ figureScale: 1.2, anchorX: 0.56 }) }),
+  zombie: n('zombie', '僵尸', 14, 700, 36, 11, 180, [{ item: 'hp_mid', chance: 0.3 }, { item: 'helmet', chance: 0.12 }, G(0.6)], { speed: 75, atkInterval: 1.5, width: 135, deathSfx: 'ghoul_death', card: card({ anchorX: 0.58 }) }),
+  skeleton_lord: b('skeleton_lord', 'boss_skeleton_lord', '骷髅精灵', 16, 4600, 54, 15, 1300, [{ item: 'bone_helm', chance: 1 }, { item: 'gold_ring', chance: 0.8 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'skeleton_death' }),
+  // R11 第2层 兽人要塞（原版半兽人为 8–14 级沃玛森林怪，提前；沿用原第 2 层强度）
+  orc: n('orc', '兽人战士', 6, 240, 18, 4, 60, [G(0.6), { item: 'hp_mid', chance: 0.3 }, { item: 'armor', chance: 0.05 }, { item: 'bracelet', chance: 0.1 }], { deathSfx: 'death2' }),
+  darkmage: n('darkmage', '黑暗法师', 7, 220, 30, 3, 70, [G(0.6), { item: 'mp_mid', chance: 0.3 }, { item: 'magic_staff', chance: 0.08 }, { item: 'pearl', chance: 0.08 }], { deathSfx: 'death', atkInterval: 1.6, oilChance: 0.03 }),
+  orc_chief: b('orc_chief', 'boss_orc_chief', '兽人酋长', 9, 1800, 30, 8, 520, [{ item: 'armor', chance: 1 }, { item: 'gold_ring', chance: 1 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'death2' }),
   // 第5层 尸王殿
-  boss_lich: b('boss_lich', 'boss_lich', '尸王', 22, 9000, 75, 20, 3000, [{ item: 'dragon_sword', chance: 1 }, { item: 'armor', chance: 1 }, { item: 'gold_ring', chance: 0.7 }, { item: 'pearl', chance: 0.7 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1)], { deathSfx: 'lich_death' }),
+  boss_lich: b('boss_lich', 'boss_lich', '尸王', 22, 8000, 68, 20, 3000, [{ item: 'dragon_sword', chance: 1 }, { item: 'armor', chance: 1 }, { item: 'gold_ring', chance: 0.7 }, { item: 'pearl', chance: 0.7 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1)], { deathSfx: 'lich_death' }),
   // R3 第6层 沃玛寺庙（参考传奇沃玛寺庙；怪物/数值为本作重新设计）
-  woma_warrior: n('woma_warrior', '沃玛战士', 20, 1000, 48, 14, 230, [G(0.6), { item: 'hp_mid', chance: 0.3 }, { item: 'armor', chance: 0.04 }], { art: 'orc', deathSfx: 'death2', oilChance: 0.02 }),
-  woma_guard: n('woma_guard', '沃玛卫士', 21, 1200, 52, 16, 260, [G(0.6), { item: 'mp_mid', chance: 0.3 }, { item: 'gold_ring', chance: 0.04 }], { deathSfx: 'death2', oilChance: 0.02 }),
-  boss_woma: b('boss_woma', 'boss_woma', '沃玛教主', 24, 10000, 80, 22, 3500, [{ item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'death2', setDrop: ['set_woma_helm', 'set_woma_necklace', 'set_woma_bracelet'] }),
+  woma_warrior: n('woma_warrior', '沃玛战士', 20, 1000, 40, 14, 230, [G(0.6), { item: 'hp_mid', chance: 0.3 }, { item: 'armor', chance: 0.04 }], { art: 'orc', deathSfx: 'death2', oilChance: 0.02 }),
+  woma_guard: n('woma_guard', '沃玛卫士', 21, 1200, 44, 16, 260, [G(0.6), { item: 'mp_mid', chance: 0.3 }, { item: 'gold_ring', chance: 0.04 }], { deathSfx: 'death2', oilChance: 0.02 }),
+  boss_woma: b('boss_woma', 'boss_woma', '沃玛教主', 24, 9000, 72, 22, 3500, [{ item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'death2', setDrop: ['set_woma_helm', 'set_woma_necklace', 'set_woma_bracelet'] }),
   // R3 第7层 祖玛阁
   zuma_statue: n('zuma_statue', '祖玛雕像', 24, 1300, 58, 18, 320, [G(0.6), { item: 'hp_mid', chance: 0.3 }, { item: 'bone_helm', chance: 0.04 }], { deathSfx: 'skeleton_death', speed: 85, oilChance: 0.02 }),
   zuma_guard: n('zuma_guard', '祖玛卫士', 25, 1500, 62, 20, 360, [G(0.6), { item: 'mp_mid', chance: 0.3 }, { item: 'pearl', chance: 0.04 }], { art: 'orc', deathSfx: 'death2', oilChance: 0.02 }),

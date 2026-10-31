@@ -39,6 +39,8 @@ export class BattleScene extends Phaser.Scene {
   attachHud(h: Hud) { this.hud = h; this.pendingLogs.forEach(([t, g]) => h.log(t, g)); this.pendingLogs = []; }
   floorIcons() { return this.world.floor.spawns.map(s => this.world.units.find(u => u.id === s.id)?.art ?? s.id); }
   get ui() { return this.scene.get('UI') as UIScene; }
+  /** R11 学会新技能：面板关闭后重建快捷栏/手机技能键 */
+  skillsDirty = false;
   get paused() { return !!this.ui?.panel?.open; }
 
   create(data: { cls?: ClassId; save?: SaveData }) {
@@ -259,6 +261,7 @@ export class BattleScene extends Phaser.Scene {
       else if (e.type === 'cleared') this.log('首领已被击败！出口已开启，向右前往下一层');
       else if (e.type === 'win') this.end();
       else if (e.type === 'exp') { this.expTotal += e.amount; this.log(`获得 经验 ${e.amount}`, true); }
+      else if (e.type === 'learned') { this.skillsDirty = true; this.saveGame(); }
       else if (e.type === 'levelup') {
         this.sfx('levelup'); this.log(`等级提升到 ${e.level}！属性提升`, true);
         const hv = this.world.hero && this.views.get(this.world.hero.uid);
@@ -392,6 +395,7 @@ export class BattleScene extends Phaser.Scene {
   }
   update(time: number, dms: number) {
     const dt = Math.min(0.05, dms / 1000), k = this.keys;
+    if (this.skillsDirty && !this.paused) { this.skillsDirty = false; this.cds = this.world.skills.map(() => 0); this.scene.stop('UI'); this.scene.launch('UI'); }
     if (this.state !== 'win' && !this.paused) {
       const pad = this.ui?.pad;
       const dx = this.state === 'play' ? (this.hold.dir(performance.now()) || (pad?.dx ?? 0)) : 0;

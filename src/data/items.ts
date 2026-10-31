@@ -1,4 +1,6 @@
 import { ItemDef, Slot } from '../combat/types';
+import { CLASSES } from './classes';
+import { BOOKS, bookItemId } from './books';
 // 物品表：中文名 + 图标。equip=基础属性；req=需求等级；price=出售价（商人收购价）
 const I = 'assets/items/';
 export const SLOTS: Slot[] = ['weapon', 'helmet', 'armor', 'necklace', 'ring', 'bracelet', 'boots'];
@@ -71,4 +73,10 @@ export function enhanceChance(curEnhance: number, purity: number): number {
 /** 适配：当前强化 ≥5 失败时有破碎概率（参考《不正经的卡牌传说》武器强化可破碎；官方手游失败不掉级不破碎） */
 export function shatterChance(curEnhance: number): number {
   return curEnhance >= 5 ? 0.12 * (curEnhance - 4) : 0;
+}
+
+// R11 技能书：图标暂用技能图标占位（专用书本图标见 docs/art-requests.md）
+for (const b of Object.values(BOOKS)) {
+  const sk = CLASSES[b.cls].skills.find(x => x.id === b.skill)!;
+  ITEMS[bookItemId(b.skill)] = { id: bookItemId(b.skill), name: `${sk.name}（技能书）`, icon: sk.icon, price: Math.round(b.price / 2), book: b.skill };
 }

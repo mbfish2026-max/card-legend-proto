@@ -117,7 +117,7 @@ export class Hud {
     // 雷达式冷却：剩余比例的扇形，从 12 点开始顺时针被扫除
     const g = this.radar; g.clear(); g.fillStyle(0x000000, 0.62);
     cds.forEach((c, i) => {
-      const max = this.skills[i].cooldown; if (!max || c <= 0) return;
+      const max = this.skills[i]?.cooldown; if (!max || c <= 0) return;
       const ratio = Math.min(1, c / max), p = this.skillPos[i];
       const start = -Math.PI / 2 + (1 - ratio) * Math.PI * 2;
       const sk = (this as any)._skSize ?? Hud.SK;

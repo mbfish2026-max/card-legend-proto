@@ -1,5 +1,6 @@
+declare const process: { env: Record<string, string | undefined> };
 import { World, SaveData, OIL_PRICE, IRON_PRICE } from '../src/combat/World';
-import { SETS, ENHANCE_MAX, enhanceChance, shatterChance } from '../src/data/items';
+import { ITEMS, SETS, ENHANCE_MAX, enhanceChance, shatterChance } from '../src/data/items';
 import { WORLD, Floor, FLOORS } from '../src/data/world';
 import { CLASSES, ClassId } from '../src/data/classes';
 import { ENEMIES, DIFF } from '../src/data/units';
@@ -10,7 +11,9 @@ import { POTIONS } from '../src/data/skills';
 import { Settings, DEFAULT_AUTO_SKILLS, ZOOM_MIN, ZOOM_MAX, ZOOM_STEP, fitScale } from '../src/settings';
 let pass = 0; const ok = (c: boolean, m: string) => { if (!c) { console.error('FAIL', m); throw new Error(m); } pass++; console.log('ok', m); };
 function seeded(s: number) { return () => (s = (s * 16807) % 2147483647) / 2147483647; }
-const mk = (spawns: Floor['spawns'], extra: Floor[] = [], cls: ClassId = 'warrior', lv = 20, seed = 1) => new World(seeded(seed), lv, [{ name: '测试层', spawns }, ...extra], cls);
+/** 旧用例默认学会全部技能（R11 技能书用例单独测） */
+const learnAll = (w: World) => { w.learned = new Set(CLASSES[w.cls].skills.map(s => s.id)); return w; };
+const mk = (spawns: Floor['spawns'], extra: Floor[] = [], cls: ClassId = 'warrior', lv = 20, seed = 1) => learnAll(new World(seeded(seed), lv, [{ name: '测试层', spawns }, ...extra], cls));
 const run = (w: World, sec: number, dx = 0, dy = 0) => { for (let t = 0; t < sec; t += 0.05) w.step(0.05, { dx, dy }); };
 const tough = (w: World) => w.alive('enemy').forEach(e => (e.hp = e.maxHp = 1e9));
 const idx = (w: World, id: string) => w.skills.findIndex(s => s.id === id);
@@ -167,12 +170,42 @@ const free = (w: World) => w.skills.map(() => 0);
   const json = JSON.stringify(w1.toSave()); const w2 = new World(seeded(6), 1, FLOORS, 'warrior', JSON.parse(json) as SaveData);
   ok(w2.cls === 'taoist' && w2.level === 7 && w2.gold === 321 && w2.floorIndex === 2 && w2.equip.weapon?.name.includes('极品') === true && w2.hero!.tao === w1.hero!.tao, '存档 JSON 往返：职业/等级/金币/层数/装备一致');
 }
+{ // R11 技能书：新角色只有 1 个初始技能，买书/用书学会后才进快捷栏
+  const m = new World(seeded(3), 1, FLOORS, 'mage');
+  ok([...m.learned].join() === 'fireball' && m.skills.map(s => s.id).join() === 'fireball' && m.skills[0].key === 'F1', '法师新角色只有火球术（F1）');
+  ok(m.cast(0, [0]).ok !== undefined && m.needLevel(m.skillPool.find(s => s.id === 'fireball')!) === 1, '初始技能 1 级可用');
+  m.gold = 10000; ok(m.buyBook('thunder') === null && m.bag.some(x => x.item === 'book_thunder'), '书店买雷电术书');
+  ok(m.learnBook(m.bag.findIndex(x => x.item === 'book_thunder')).includes('需等级 17') && !m.learned.has('thunder'), '等级不足不能学');
+  m.level = 17; const ev0 = m.drainEvents().length; void ev0;
+  ok(m.learnBook(m.bag.findIndex(x => x.item === 'book_thunder')) === '学会了 雷电术' && m.skills.map(s => s.id).join() === 'fireball,thunder' && !m.bag.some(x => x.item === 'book_thunder'), '学会后出现在 F2，书被消耗');
+  ok(m.drainEvents().some(e => e.type === 'learned'), '学会事件（UI 刷新快捷栏）');
+  ok(m.buyBook('fire_wall') !== null, '掉落书（火墙）书店不卖');
+  const t = new World(seeded(3), 1, FLOORS, 'taoist'); t.gold = 100;
+  ok(t.skills.map(s => s.id).join() === 'heal' && t.buyBook('summon_skeleton') === null && t.learnBook(0) === '学会了 召唤骷髅' && t.skills.some(s => s.id === 'summon_skeleton'), '道士：开局只有治愈术；召唤骷髅书 100 金，1 级即可学');
+  const wr = new World(seeded(3), 1, FLOORS, 'warrior');
+  ok([...wr.learned].join() === 'basic_sword' && wr.skills.length === 0, '战士开局只有被动基本剑术（快捷栏为空，原版亦然）');
+  ok(m.toSave().learned!.includes('thunder') && new World(seeded(3), 1, FLOORS, 'mage', m.toSave()).skills.length === 2, '存档记录已学技能');
+  const legacy = { ...m.toSave(), level: 25, learned: undefined, mapV: undefined, floorIndex: 1, reached: [0, 1], bossKilled: [0] } as SaveData;
+  const lw = new World(seeded(3), 1, FLOORS, 'mage', legacy);
+  ok(['fireball', 'thunder', 'fire_wall'].every(id => lw.learned.has(id)) && !lw.learned.has('magic_shield'), '旧存档兼容：已达等级的技能视为已学');
+  ok(lw.floorIndex === 2 && lw.reached.has(2) && lw.bossKilled.has(0) && !lw.reached.has(1), '旧存档层号迁移（蛛网晶洞 1→2）');
+  const bw = new World(seeded(3), 30, FLOORS, 'warrior'); let got = 0;
+  for (let k = 0; k < 40; k++) { const u = bw.spawn(ENEMIES.boss_lich, 'enemy', 1000); bw.kill(u); }
+  got = bw.ground.filter(g => g.item.startsWith('book_')).length;
+  ok(got > 0 && bw.ground.every(g => !g.item.startsWith('book_') || ['book_half_moon', 'book_rush', 'book_fire_sword'].includes(g.item)), `尸王掉落战士技能书（40 次掉 ${got} 本）`);
+}
+{ // R11 地图按原版递进
+  ok(FLOORS.map(f => f.name).join() === '幽暗森林,兽人要塞,蛛网晶洞,白骨墓穴,尸王殿,沃玛寺庙,祖玛阁,赤月魔穴', '层序：新手村→沃玛森林(兽人/蛛洞)→兽人古墓→比奇矿区尸王殿→沃玛寺庙→祖玛→赤月');
+  ok(QUESTS.find(q => q.target === 'orc')!.floor === 1 && QUESTS.find(q => q.target === 'spider')!.floor === 2 && QUESTS.find(q => q.target === 'skeleton')!.floor === 3, '悬赏随层移动');
+  const lv = FLOORS.map(f => Math.max(...f.spawns.map(sp => ENEMIES[sp.id].tier === 'boss' ? 0 : ENEMIES[sp.id].level)));
+  ok(lv.every((v, i) => i === 0 || v >= lv[i - 1]), `各层普通怪最高等级递增 ${lv.join('/')}`);
+}
 { // 平衡：每个职业的自动脚本能打通全部 5 层（允许死亡复活）
   for (const c of ['warrior', 'mage', 'taoist'] as ClassId[]) {
-    const w = new World(seeded(11), 1, FLOORS, c); const cds = w.skills.map(() => 0); let t = 0, potUsed = 0;
+    const w = (process.env.ALL ? learnAll : (x: World) => x)(new World(seeded(11), 1, FLOORS, c)); let cds = w.skills.map(() => 0); let t = 0, potUsed = 0; const learnLog: string[] = [];
     while (!w.done && t < 3600) {
       const h = w.hero;
-      if (!h) { w.respawn(); continue; }
+      if (!h) { learnLog.push(`死@${w.floorIndex + 1}层Lv${w.level}`); w.respawn(); continue; }
       if (h.hp < h.maxHp * 0.4 && w.usePotion(w.pots[1] > 0 ? 1 : 0)) potUsed++;
       if ((h.mp ?? 0) < 40) w.usePotion(w.pots[3] > 0 ? 3 : 2);
       for (let i = 0; i < w.skills.length; i++) w.cast(i, cds);
@@ -181,12 +214,19 @@ const free = (w: World) => w.skills.map(() => 0);
       for (let i = w.bag.length - 1; i >= 0; i--) if (w.bag[i]?.item === 'black_iron') w.sellItem(i);
       // 黑铁：模拟脚本卖掉（避免碎装干扰难度基线；玩家可手动强化）
       for (let i = w.bag.length - 1; i >= 0; i--) if (w.bag[i]?.item === 'black_iron') w.sellItem(i);
+      if (process.env.SIM && Math.round(t * 20) % 2000 === 0) console.log("   t", Math.round(t), "lv", w.level, "gold", w.gold, "floor", w.floorIndex + 1, "deaths", w.deaths);
+      // R11 技能书：达到等级且金币有余就买，背包里的书能学就学（学会后快捷栏重排，冷却重置）
+      for (const b of w.shopBooks()) { const sk = w.skillPool.find(x => x.id === b.skill)!; if (!w.learned.has(b.skill) && w.level >= w.needLevel(sk) && w.gold >= b.price && !w.bag.some(x => ITEMS[x.item]?.book === b.skill)) w.buyBook(b.skill); }
+      for (let i = w.bag.length - 1; i >= 0; i--) if (ITEMS[w.bag[i].item]?.book && w.learnBook(i).startsWith('学会')) { cds = w.skills.map(() => 0); learnLog.push(`${w.level}级${w.skillPool.find(x => x.id === [...w.learned].pop())!.name}@${w.floorIndex + 1}层`); }
       // 去城镇商人补药（简化：金币够就买）
-      while (w.gold >= 60 && w.pots[1] < 3) w.buyPotion(1);
-      while (w.gold >= 60 && w.pots[3] < 3) w.buyPotion(3);
+      // 有可学的书店技能书时攒钱（药只补到 1 瓶）
+      const saving = w.shopBooks().some(b => !w.learned.has(b.skill) && w.level >= w.needLevel(w.skillPool.find(x => x.id === b.skill)!)); const cap = saving ? 1 : 3;
+      while (w.gold >= 60 && w.pots[1] < cap) w.buyPotion(1);
+      while (w.gold >= 60 && w.pots[3] < cap) w.buyPotion(3);
       w.step(0.05, { dx: (() => { const f = w.queue(1)[0]; return f && w.inMelee(h, f) ? 0 : 1; })(), dy: 0 }); w.drainEvents(); t += 0.05; /* 玩家：前方接战时站定输出（可穿怪） */ for (let i = 0; i < cds.length; i++) cds[i] = Math.max(0, cds[i] - 0.05);
     }
-    ok(w.deaths >= 1 && w.deaths <= 4, `${CLASSES[c].name} 难度适中：模拟通关死亡 1–4 次（实际 ${w.deaths}）`);
+    console.log(`  ${CLASSES[c].name}: 通关=${w.done} 等级 ${w.level} 死亡 ${w.deaths} 学书 ${learnLog.join(' ')}`);
+    if (!process.env.SIM) ok(w.deaths >= 1 && w.deaths <= 4, `${CLASSES[c].name} 难度适中：模拟通关死亡 1–4 次（实际 ${w.deaths}）`);
     console.log(`  ${CLASSES[c].name}: 通关=${w.done} 用时 ${Math.round(t)}s 等级 ${w.level} 死亡 ${w.deaths} 次 层 ${w.floorIndex + 1} 红药 ${potUsed} 瓶`);
     ok(potUsed >= 3, `${CLASSES[c].name} 通关需要吃药（${potUsed} 瓶，难度不再过于简单）`);
     ok(w.done && w.deaths <= 6, `${CLASSES[c].name} 可通关 8 层（死亡 ${w.deaths} 次）`);

@@ -1,3 +1,4 @@
+import { BOOKS, BookDef, BOOK_DROP, STARTER, bookItemId } from '../data/books';
 // 纯逻辑世界模块（无 Phaser 依赖，可在 node 中单测）：职业/等级成长、分层横版地图、怪物 AI、
 // 自动战斗与技能、召唤物、掉落/背包/装备/商店、死亡复活、存档序列化。
 import { BattleEvent, GroundItem, InvItem, Rarity, Slot, Stats, Team, Unit, UnitDef } from './types';
@@ -19,7 +20,13 @@ export interface SaveData {
   reached?: number[]; bossKilled?: number[];
   /** 悬赏进度 / 已完成悬赏 / 已解锁成就 */
   questProg?: Record<string, number>; questDone?: string[]; achieves?: string[];
+  /** R11 已学技能 id；缺省 = 旧存档（按等级视为全部已学） */
+  learned?: string[];
+  /** R11 地图顺序版本：缺省 = 旧顺序，读档时迁移层号 */
+  mapV?: 2;
 }
+/** R11 旧层号 → 新层号（按原版递进重排：兽人要塞提前到第 2 层） */
+export const FLOOR_MIGRATE = [0, 2, 3, 1, 4, 5, 6, 7];
 /** 商店祝福油价格（较贵，每层限购 1） */
 export const OIL_PRICE = 400;
 export { IRON_PRICE } from '../data/items';
@@ -49,10 +56,15 @@ export class World {
   skillTrain: Record<string, number> = {};
   reached = new Set<number>(); bossKilled = new Set<number>();
   questProg: Record<string, number> = {}; questDone = new Set<string>(); achieves = new Set<string>();
+  /** R11 已学技能（新角色只有初始技能，其余用技能书学习） */
+  learned = new Set<string>();
+  get starter() { return STARTER[this.cls]; }
+  /** 技能可用等级：初始技能 [适配] 1 级；其余按原版学习等级 */
+  needLevel(s: SkillDef) { return s.id === this.starter ? 1 : (s.unlock ?? s.learn?.[0] ?? 1); }
   /** 技能等级 0..3：Lv k 需人物等级 ≥ learn[k] 且修炼点 ≥ train[k-1]（官方）；未学会返回 -1 */
   skillLevel(s: SkillDef): number {
     const learn = s.learn ?? [s.unlock ?? 1];
-    if (this.level < (s.unlock ?? learn[0])) return -1;
+    if (!this.learned.has(s.id) || this.level < this.needLevel(s)) return -1;
     const pts = this.skillTrain[s.id] ?? 0; let lv = 0;
     for (let k = 1; k <= 3 && s.train; k++) if (this.level >= (learn[k] ?? 999) && pts >= s.train[k - 1]) lv = k; else break;
     return lv;
@@ -68,7 +80,14 @@ export class World {
       this.equip = { ...save.equip }; this.bag = [...save.bag]; this.kills = save.kills; this.nextItem = save.nextUid;
       this.skillTrain = { ...(save.skillTrain ?? {}) }; this.reached = new Set(save.reached ?? []); this.bossKilled = new Set(save.bossKilled ?? []);
       this.questProg = { ...(save.questProg ?? {}) }; this.questDone = new Set(save.questDone ?? []); this.achieves = new Set(save.achieves ?? []);
+      if (save.mapV !== 2 && this.floors === FLOORS) {
+        const m = (i: number) => FLOOR_MIGRATE[i] ?? i;
+        save = { ...save, floorIndex: m(save.floorIndex) }; this.reached = new Set([...this.reached].map(m)); this.bossKilled = new Set([...this.bossKilled].map(m));
+      }
+      // 旧存档兼容：已达到学习等级的技能视为已学
+      this.learned = new Set(save.learned ?? this.skillPool.filter(s => this.level >= (s.unlock ?? s.learn?.[0] ?? 1)).map(s => s.id));
     }
+    this.learned.add(this.starter);
     this.expNext = EXP_PER_LEVEL(this.level);
     this.spawnHero();
     this.loadFloor(save ? Math.min(save.floorIndex, this.floors.length - 1) : 0);
@@ -80,7 +99,7 @@ export class World {
   get skillPool(): SkillDef[] { return this.classDef.skills; }
   /** 快捷栏主动技能：去掉被动后按顺序重标 F1..Fn */
   get skills(): SkillDef[] {
-    return this.skillPool.filter(s => !s.passive).map((s, i) => ({ ...s, key: `F${i + 1}` }));
+    return this.skillPool.filter(s => !s.passive && this.learned.has(s.id)).map((s, i) => ({ ...s, key: `F${i + 1}` }));
   }
   get floor() { return this.floors[this.floorIndex]; }
   get exitX() { return WORLD.mapWidth - WORLD.exitMargin; }
@@ -378,6 +397,9 @@ export class World {
     if (u.tier === 'boss') this.bossKilled.add(this.floorIndex);
     const extra: { id: string; purity?: number }[] = [];
     if (u.tier === 'boss' || this.lootRng() < (u.oilChance ?? 0)) extra.push({ id: 'bless_oil' });
+    // R11 技能书掉落（本职业、未学、背包里也没有）
+    { const pool = Object.values(BOOKS).filter(b => b.cls === this.cls && b.drops.includes(u.id) && !this.learned.has(b.skill) && !this.bag.some(x => x.item === bookItemId(b.skill)));
+      if (pool.length && this.lootRng() < (u.tier === 'boss' ? BOOK_DROP.boss : BOOK_DROP.normal)) extra.push({ id: bookItemId(pool[Math.floor(this.lootRng() * pool.length)].skill) }); }
     if (u.setDrop?.length && this.lootRng() < (u.setChance ?? 1)) extra.push({ id: u.setDrop[Math.floor(this.lootRng() * u.setDrop.length)] });
     // 黑铁：Boss 必掉 1 块纯度 1–3；普通怪 8% 掉纯度 1（lootRng，不影响平衡模拟主序列）
     if (u.tier === 'boss') extra.push({ id: 'black_iron', purity: 1 + Math.floor(this.lootRng() * 3) });
@@ -442,6 +464,24 @@ export class World {
     if (this.gold < p.price) return '金币不足';
     this.gold -= p.price; this.pots[i]++; return null;
   }
+  /** R11 书店：本职业 shop 书 */
+  shopBooks(): BookDef[] { return Object.values(BOOKS).filter(b => b.cls === this.cls && b.shop); }
+  buyBook(skill: string): string | null {
+    const b = BOOKS[skill]; if (!b || !b.shop || b.cls !== this.cls) return '书店没有这本书';
+    if (this.gold < b.price) return `金币不足（需 ${b.price}）`;
+    if (this.bag.length >= WORLD.bagSize) return '背包已满';
+    this.gold -= b.price; this.bag.push(this.makeItem(bookItemId(skill))); this.events.push({ type: 'inventory' }); return null;
+  }
+  /** 使用技能书：职业/等级/是否已学 校验；成功后技能出现在快捷栏 */
+  learnBook(bagIdx: number): string {
+    const it = this.bag[bagIdx], sid = it && ITEMS[it.item]?.book; if (!sid) return '这不是技能书';
+    const s = this.skillPool.find(x => x.id === sid); if (!s) return '职业不符，无法学习';
+    if (this.learned.has(sid)) return `已学会 ${s.name}`;
+    const need = this.needLevel(s); if (this.level < need) return `${s.name} 需等级 ${need}`;
+    this.bag.splice(bagIdx, 1); this.learned.add(sid);
+    this.events.push({ type: 'inventory' }, { type: 'learned', skill: sid }, { type: 'log', text: `学会了 ${s.name}`, color: 'green' });
+    return `学会了 ${s.name}`;
+  }
   buyOil(): string | null {
     if (this.oilBoughtFloor === this.floorIndex) return '祝福油每层限购 1 瓶';
     if (this.gold < OIL_PRICE) return '金币不足';
@@ -474,7 +514,7 @@ export class World {
   cast(i: number, cds: number[]): CastResult {
     const s = this.skills[i], h = this.hero;
     if (!s || !h) return { ok: false, reason: '' };
-    const need = s.unlock ?? s.learn?.[0] ?? 1;
+    const need = this.needLevel(s);
     if (this.level < need) return { ok: false, reason: `${s.name} 需等级 ${need}` };
     if (s.passive) return { ok: false, reason: `${s.name} 为被动技能` };
     const slv = Math.max(0, this.skillLevel(s)), lvF = 1 + 0.1 * slv;
@@ -565,7 +605,7 @@ export class World {
 
   // ---------- 存档 ----------
   toSave(): SaveData {
-    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves] };
+    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 2 };
   }
 
   /** 点按一格：滑行中的按键全部排队（同向最多 10 格，反向则替换队列），每次按键都会走一格 */

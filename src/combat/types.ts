@@ -25,7 +25,7 @@ export interface Unit extends UnitDef {
   homeX: number; homeY: number; ai: AIState; alertT: number; facing: 1 | -1; moving: boolean;
 }
 export type Rarity = 'common' | 'magic' | 'rare';
-export interface ItemDef { id: string; name: string; icon: string; potion?: number; slot?: Slot; equip?: Partial<Stats>; req?: number; price?: number; set?: string }
+export interface ItemDef { id: string; name: string; icon: string; potion?: number; slot?: Slot; equip?: Partial<Stats>; req?: number; price?: number; set?: string; /** 技能书：对应技能 id */ book?: string }
 /** 背包/装备栏里的一件物品 */
 export interface InvItem { uid: number; item: string; name: string; rarity: Rarity; slot?: Slot; stats: Partial<Stats>; req: number; price: number; luck?: number; /** 强化等级 0..7 */ enhance?: number; /** 黑铁矿石纯度 1..5 */ purity?: number; /** 堆叠数量（黑铁等） */ qty?: number }
 export interface GroundItem { gid: number; item: string; name: string; rarity: Rarity; x: number; y: number; landAt: number; atk: number; hp: number; amount: number; inv?: InvItem }
@@ -33,6 +33,7 @@ export type BattleEvent =
   | { type: 'attack'; source: number; target: number; skill?: string }
   | { type: 'damage'; source?: number; target: number; amount: number; x: number; heal?: boolean; crit?: boolean; dot?: boolean }
   | { type: 'death'; uid: number }
+  | { type: 'learned'; skill: string }
   | { type: 'drop'; uid: number; x: number; y: number; items: GroundItem[] }
   | { type: 'pickup'; gid: number; name: string; item: string }
   | { type: 'aggro'; uid: number }

@@ -20,9 +20,9 @@ export interface AchieveDef {
 /** 每层 1 个悬赏：击杀本层常见怪 */
 export const QUESTS: QuestDef[] = [
   { id: 'q0', floor: 0, target: 'wolf', need: 3, name: '清剿野狼', gold: 40, exp: 60 },
-  { id: 'q1', floor: 1, target: 'spider', need: 4, name: '清剿毒蛛', gold: 60, exp: 90 },
-  { id: 'q2', floor: 2, target: 'skeleton', need: 4, name: '镇压骷髅', gold: 80, exp: 120 },
-  { id: 'q3', floor: 3, target: 'orc', need: 4, name: '击退兽人', gold: 100, exp: 160 },
+  { id: 'q1', floor: 2, target: 'spider', need: 4, name: '清剿毒蛛', gold: 80, exp: 120 },
+  { id: 'q2', floor: 3, target: 'skeleton', need: 4, name: '镇压骷髅', gold: 100, exp: 160 },
+  { id: 'q3', floor: 1, target: 'orc', need: 4, name: '击退兽人', gold: 60, exp: 90 },
   { id: 'q4', floor: 4, target: 'zombie', need: 3, name: '净化尸潮', gold: 120, exp: 200 },
   { id: 'q5', floor: 5, target: 'woma_warrior', need: 4, name: '讨伐沃玛', gold: 150, exp: 260 },
   { id: 'q6', floor: 6, target: 'zuma_statue', need: 3, name: '击碎祖玛', gold: 180, exp: 320 },

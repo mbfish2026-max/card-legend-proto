@@ -15,6 +15,7 @@ import { QUESTS, ACHIEVES } from '../data/quests';
 import { ENEMIES } from '../data/units';
 import { FLOORS } from '../data/world';
 import { World as WorldCls } from '../combat/World';
+import { BOOKS } from '../data/books';
 
 export type PanelMode = 'bag' | 'shop' | 'skills' | 'settings' | 'map' | 'quests';
 export const RARITY_HEX: Record<string, string> = { common: '#ffffff', magic: '#5aa8ff', rare: '#ffb020' };
@@ -28,6 +29,8 @@ export class Panel {
   region: string | null = null;
   /** 背包选中的黑铁矿石下标：下一次点装备栏即强化 */
   ironIdx: number | null = null;
+  /** 商店分页：杂货 / 书店（R11 技能书） */
+  shopTab: 'goods' | 'books' = 'goods';
   onTeleport?: () => void;
   constructor(public s: Phaser.Scene, public world: () => World, public onChange: (msg?: string, green?: boolean) => void, public onTitle: () => void) {}
   get open() { return this.mode !== null; }
@@ -103,6 +106,8 @@ export class Panel {
   private renderShop(R: Phaser.GameObjects.Container, top: number) {
     const s = this.s, w = this.world();
     R.add(txt(s, 175, top + 60, `金币：${w.gold}`, 20, '#ffd24a'));
+    (['goods', 'books'] as const).forEach((t, i) => R.add([...button(s, 395 + i * 84, top + 72, 76, 32, `${this.shopTab === t ? '▶' : ''}${t === 'goods' ? '杂货' : '书店'}`, () => { this.shopTab = t; this.render(); }, 15)]));
+    if (this.shopTab === 'books') return this.renderBooks(R, top);
     POTIONS.forEach((p, i) => {
       const y = top + 112 + i * 62, it = ITEMS[p.item];
       R.add(s.add.rectangle(330, y, 320, 56, 0x0a0806).setStrokeStyle(1, 0x4a3a28));
@@ -126,6 +131,21 @@ export class Panel {
       R.add([...button(s, 448, y, 64, 34, '购买', () => { const e = w.buyIron(); if (!e) sfx(s, 'coin'); this.onChange(e ?? '购买 黑铁矿石', !e); this.render(); }, 16, left > 0 && w.gold >= IRON_PRICE)]); }
     R.add(txt(s, 175, top + 430, '点击右侧背包物品出售（按售价）', 14, '#9fd'));
   }
+  /** 书店：本职业有售的技能书（原版比奇书店；掉落书不卖） */
+  private renderBooks(R: Phaser.GameObjects.Container, top: number) {
+    const s = this.s, w = this.world();
+    w.shopBooks().forEach((b, i) => {
+      const y = top + 130 + i * 62, sk = w.skillPool.find(x => x.id === b.skill)!, id = 'book_' + b.skill, learned = w.learned.has(b.skill), need = w.needLevel(sk);
+      R.add(s.add.rectangle(330, y, 320, 56, 0x0a0806).setStrokeStyle(1, 0x6a5a28));
+      if (s.textures.exists('item_' + id)) R.add(s.add.image(200, y, 'item_' + id).setDisplaySize(46, 46));
+      R.add(txt(s, 232, y - 20, ITEMS[id].name, 15, learned ? '#888' : '#ffd24a'));
+      R.add(txt(s, 232, y + 2, `${learned ? '已学会' : `需 Lv${need}`}   ${b.price} 金`, 13, w.level >= need ? '#ccc' : '#f99', { strokeThickness: 2 }));
+      R.add([...button(s, 448, y, 64, 34, '购买', () => { const e = w.buyBook(b.skill); if (!e) sfx(s, 'coin'); this.onChange(e ?? `购买 ${ITEMS[id].name}（背包中点击学习）`, !e); this.render(); }, 15, !learned && w.gold >= b.price)]);
+    });
+    const drops = Object.values(BOOKS).filter(b => b.cls === w.cls && !b.shop).map(b => w.skillPool.find(x => x.id === b.skill)!.name);
+    R.add(txt(s, 175, top + 130 + w.shopBooks().length * 62 - 10, `打怪掉落（书店不卖）：${drops.join('、')}`, 13, '#c9a'));
+    R.add(txt(s, 175, top + 430, '买书后在背包里点击技能书学习（需达到等级）', 14, '#9fd'));
+  }
   private renderBag(R: Phaser.GameObjects.Container, top: number) {
     const s = this.s, w = this.world(), cols = 6, size = 56, x0 = 600, y0 = top + 100;
     R.add(txt(s, x0 - size / 2, top + 50, `背包 ${w.bag.length}/${WORLD.bagSize}`, 15, '#ffe8a0'));
@@ -135,6 +155,7 @@ export class Panel {
         if (this.mode === 'shop') { const g = w.sellItem(i); sfx(s, 'coin'); this.onChange(`出售 ${it!.name} 获得 ${g} 金币`, true); }
         else if (right) { w.dropItem(i); this.onChange(`丢弃 ${it!.name}`); }
         else if (it!.slot) { const e = w.equipItem(i); if (!e) sfx(s, 'loot', 0.5); this.onChange(e ?? `装备 ${it!.name}`, !e); }
+        else if (ITEMS[it!.item]?.book) { const m = w.learnBook(i); const ok = m.startsWith('学会'); if (ok) sfx(s, 'loot', 0.6); this.onChange(m, ok); }
         else if (it!.item === 'bless_oil') { const m = w.useOil(i); sfx(s, 'loot', 0.5); this.onChange(m, m.includes('+1') || m.includes('减轻')); }
         else if (it!.item === 'black_iron') {
           // 堆叠≥2 或另有同纯度：再点一次提纯；否则进入强化选位
@@ -163,9 +184,9 @@ export class Panel {
       const y = top + 70 + i * gap;
       const fk = bar.get(k.id) ?? (k.passive ? '被动' : '');
       if (s.textures.exists('sk_' + k.id)) R.add(s.add.image(200, y, 'sk_' + k.id).setDisplaySize(list.length > 5 ? 48 : 56, list.length > 5 ? 48 : 56));
-      const need = k.unlock ?? k.learn?.[0] ?? 1, lv = w.skillLevel(k), locked = lv < 0, pts = w.skillTrain[k.id] ?? 0;
+      const need = w.needLevel(k), lv = w.skillLevel(k), locked = lv < 0, pts = w.skillTrain[k.id] ?? 0, learned = w.learned.has(k.id), bk = BOOKS[k.id];
       const nextNeed = lv >= 0 && lv < 3 && k.learn && k.train ? `  下一级：人物 Lv${k.learn[lv + 1]} + 修炼点 ${k.train[lv]}` : lv === 3 ? '  已满级' : '';
-      R.add(txt(s, 245, y - 26, `[${fk}] ${k.name}${locked ? `（需人物 Lv${need}）` : `  ${lv} 级`}${k.passive ? '  被动' : ''}`, list.length > 5 ? 17 : 19, locked ? '#888' : '#ffd24a', { fontStyle: 'bold' }));
+      R.add(txt(s, 245, y - 26, `[${fk}] ${k.name}${!learned ? `（未学：${bk?.shop ? '书店购买' : '打怪掉落'}技能书 · 需 Lv${need}）` : locked ? `（需人物 Lv${need}）` : `  ${lv} 级`}${k.passive ? '  被动' : ''}`, list.length > 5 ? 17 : 19, locked ? '#888' : '#ffd24a', { fontStyle: 'bold' }));
       const eff = k.lvMult ? `  本级倍率 ${Math.round(k.lvMult[Math.max(0, lv)] * 100)}%`
         : k.lvBonus ? `  本级 +${k.lvBonus[Math.max(0, lv)]} 伤害 / 几率 1/${Math.round(1 / k.lvChance![Math.max(0, lv)])}`
         : k.accBonus ? `  准确 +${k.accBonus[Math.max(0, lv)]}（[适配]暴击+${k.accBonus[Math.max(0, lv)]}%）`
@@ -202,6 +223,7 @@ export class Panel {
       R.add(s.add.rectangle(640, y, 880, 84, here ? 0x1c2a14 : 0x0a0806).setStrokeStyle(2, here ? 0x66ff66 : reached ? 0x6a5030 : 0x333333));
       if (s.textures.exists(fl.bg ?? '')) R.add(s.add.image(250, y, fl.bg!).setDisplaySize(140, 76).setAlpha(reached ? 1 : 0.3));
       R.add(txt(s, 340, y - 30, `第 ${f + 1} 层  ${fl.name}${here ? '  ← 当前位置' : ''}${reached ? '' : '  （未到达）'}`, 18, reached ? '#ffd24a' : '#777', { fontStyle: 'bold' }));
+      if (fl.zone) R.add(txt(s, 1060, y - 30, `原版：${fl.zone}`, 12, '#b9a').setOrigin(1, 0));
       if (b) R.add(txt(s, 340, y + 2, `BOSS：${b.name}   建议等级 Lv${b.level}   ${w.bossKilled.has(f) ? '已击杀（重新进入该层会刷新）' : '未击杀'}`, 14, w.bossKilled.has(f) ? '#9f9' : '#f99', { strokeThickness: 2 }));
       if (!here) {
         const why = w.canTeleport(f);
@@ -243,7 +265,7 @@ export class Panel {
   private renderSettings(R: Phaser.GameObjects.Container, top: number) {
     const w = this.world();
     renderSettingsView(this.s, R, top, {
-      cls: w.cls, rerender: () => this.render(),
+      cls: w.cls, learned: w.learned, rerender: () => this.render(),
       footer: [{ label: '保存并返回标题', w: 200, fn: () => { this.close(); this.onTitle(); } }, { label: '继续游戏', w: 160, fn: () => this.close() }],
     });
   }
@@ -252,6 +274,7 @@ export class Panel {
     const lines: [string, string][] = [[it.name, RARITY_HEX[it.rarity]], [`${it.slot ? SLOT_NAMES[it.slot] : '杂物'} · ${RARITY_CN[it.rarity]}`, '#aaa']];
     for (const [k, v] of Object.entries(it.stats)) if (v) lines.push([`${STAT_NAMES[k as keyof typeof STAT_NAMES]} +${v}`, '#7aff7a']);
     if (it.luck) lines.push([it.luck > 0 ? `幸运 +${it.luck}` : `诅咒 ${-it.luck}`, it.luck > 0 ? '#ffd24a' : '#ff4040']);
+    if (ITEMS[it.item]?.book) { const sk = w.skillPool.find(x => x.id === ITEMS[it.item].book); lines.push([sk ? (w.learned.has(sk.id) ? '已学会（可出售）' : `点击学习（需 Lv${w.needLevel(sk)}）`) : '非本职业技能书', '#9fd']); }
     if (it.item === 'bless_oil') lines.push(['点击：作用于当前武器（幸运+1，上限7，可能诅咒）', '#9fd']);
     if (it.item === 'black_iron') lines.push([`纯度 ${it.purity ?? 1} ×${it.qty ?? 1}：点装备栏强化；再点可提纯`, '#9fd']);
     if (it.enhance) lines.push([`强化 +${it.enhance}（上限 +${ENHANCE_MAX}）`, '#c8c8ff']);

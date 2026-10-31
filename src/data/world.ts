@@ -35,46 +35,46 @@ export const WORLD = {
   summonLane: -36,             // 召唤物站位（纵深偏后）
 };
 export interface Spawn { id: string; x: number; y?: number }
-export interface Floor { name: string; spawns: Spawn[]; boss?: boolean; bg?: string }
+export interface Floor { name: string; spawns: Spawn[]; boss?: boolean; bg?: string; /** R11 对应原版区域（docs/legend-research.md「地图递进」） */ zone?: string }
 export const FLOORS: Floor[] = [
-  { name: '幽暗森林', bg: 'bg_floor1', boss: true, spawns: [
+  { name: '幽暗森林', bg: 'bg_floor1', boss: true, zone: '比奇省·新手村周边（原版 1–7 级）', spawns: [
     { id: 'deer', x: 800 }, { id: 'deer', x: 900, y: 20 },
     { id: 'bat', x: 1500 }, { id: 'wolf', x: 1620, y: -15 },
     { id: 'wolf', x: 2300 }, { id: 'bat', x: 2400, y: -20 }, { id: 'deer', x: 2480, y: 15 },
     { id: 'wolf_king', x: 3350 } ] },
-  { name: '蛛网晶洞', bg: 'bg_floor2', boss: true, spawns: [
-    { id: 'spider', x: 800 }, { id: 'bat', x: 880, y: 20 },
-    { id: 'spider', x: 1500 }, { id: 'spider', x: 1610, y: -15 },
-    { id: 'wolf', x: 2200 }, { id: 'spider', x: 2300 }, { id: 'bat', x: 2400, y: 15 },
-    { id: 'spider_queen', x: 3350 } ] },
-  { name: '白骨墓穴', bg: 'bg_floor3', boss: true, spawns: [
-    { id: 'skeleton', x: 800 }, { id: 'skeleton', x: 900, y: 20 },
-    { id: 'zombie', x: 1550 }, { id: 'skeleton', x: 1650, y: -15 },
-    { id: 'zombie', x: 2250 }, { id: 'zombie', x: 2360, y: 15 }, { id: 'skeleton', x: 2460 },
-    { id: 'skeleton_lord', x: 3350 } ] },
-  { name: '兽人要塞', bg: 'bg_floor4', boss: true, spawns: [
+  { name: '兽人要塞', bg: 'bg_floor4', boss: true, zone: '沃玛森林·半兽人出没（原版 8–14 级）', spawns: [
     { id: 'orc', x: 800 }, { id: 'orc', x: 910, y: 20 },
     { id: 'darkmage', x: 1550 }, { id: 'orc', x: 1650, y: -15 },
     { id: 'orc', x: 2250 }, { id: 'darkmage', x: 2350, y: 15 }, { id: 'orc', x: 2450 },
     { id: 'orc_chief', x: 3350 } ] },
-  { name: '尸王殿', bg: 'bg_floor5', boss: true, spawns: [
+  { name: '蛛网晶洞', bg: 'bg_floor2', boss: true, zone: '沃玛森林深处（原版 8–14 级）', spawns: [
+    { id: 'spider', x: 800 }, { id: 'bat', x: 880, y: 20 },
+    { id: 'spider', x: 1500 }, { id: 'spider', x: 1610, y: -15 },
+    { id: 'wolf', x: 2200 }, { id: 'spider', x: 2300 }, { id: 'bat', x: 2400, y: 15 },
+    { id: 'spider_queen', x: 3350 } ] },
+  { name: '白骨墓穴', bg: 'bg_floor3', boss: true, zone: '比奇省·半兽人古墓/骷髅洞（原版 15–21 级）', spawns: [
+    { id: 'skeleton', x: 800 }, { id: 'skeleton', x: 900, y: 20 },
+    { id: 'zombie', x: 1550 }, { id: 'skeleton', x: 1650, y: -15 },
+    { id: 'zombie', x: 2250 }, { id: 'zombie', x: 2360, y: 15 }, { id: 'skeleton', x: 2460 },
+    { id: 'skeleton_lord', x: 3350 } ] },
+  { name: '尸王殿', bg: 'bg_floor5', boss: true, zone: '比奇矿区·尸王殿（原版 18 级起）', spawns: [
     { id: 'skeleton', x: 750 }, { id: 'zombie', x: 850, y: 20 },
     { id: 'darkmage', x: 1450 }, { id: 'zombie', x: 1550, y: -15 }, { id: 'skeleton', x: 1650 },
     { id: 'darkmage', x: 2250 }, { id: 'darkmage', x: 2350, y: 15 },
     { id: 'skeleton', x: 3150, y: -20 }, { id: 'boss_lich', x: 3380 } ] },
-  { name: '沃玛寺庙', bg: 'bg_floor6', boss: true, spawns: [
+  { name: '沃玛寺庙', bg: 'bg_floor6', boss: true, zone: '沃玛寺庙（经沃玛森林进入）', spawns: [
     { id: 'woma_warrior', x: 800 }, { id: 'woma_warrior', x: 910, y: 20 },
     { id: 'woma_guard', x: 1550 }, { id: 'woma_warrior', x: 1650, y: -15 },
     { id: 'woma_guard', x: 2300 }, { id: 'woma_warrior', x: 2400, y: 15 },
     { id: 'boss_woma', x: 3350 } ] },
-  { name: '祖玛阁', bg: 'bg_floor7', boss: true, spawns: [
+  { name: '祖玛阁', bg: 'bg_floor7', boss: true, zone: '盟重省·祖玛寺庙', spawns: [
     { id: 'zuma_statue', x: 800 }, { id: 'zuma_statue', x: 910, y: 20 },
     { id: 'zuma_guard', x: 1550 }, { id: 'zuma_statue', x: 1650, y: -15 },
     { id: 'zuma_guard', x: 2300 }, { id: 'zuma_statue', x: 2400, y: 15 },
     { id: 'boss_zuma', x: 3350 } ] },
-  { name: '赤月魔穴', bg: 'bg_floor8', boss: true, spawns: [
+  { name: '赤月魔穴', bg: 'bg_floor8', boss: true, zone: '白日门·赤月峡谷', spawns: [
     { id: 'blood_zombie', x: 800 }, { id: 'redmoon_spider', x: 910, y: 20 },
     { id: 'blood_zombie', x: 1550 }, { id: 'redmoon_spider', x: 1650, y: -15 },
     { id: 'blood_zombie', x: 2300 }, { id: 'redmoon_spider', x: 2400, y: 15 },
-    { id: 'boss_redmoon', x: 3380 } ] },
+    { id: 'boss_redmoon', x: 3380 } ] }
 ];

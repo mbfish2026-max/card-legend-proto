@@ -7,14 +7,16 @@ import { FxQuality } from './Fx';
 
 export interface SettingsViewOpts {
   cls: ClassId;
+  /** R11 已学技能：自动技能勾选只列已学的（缺省 = 全部） */
+  learned?: Set<string>;
   rerender: () => void;
   /** 标题界面：可切换为哪个职业设置自动技能 */
   onPickClass?: (c: ClassId) => void;
   footer: { label: string; w: number; fn: () => void }[];
 }
 /** 设置面板唯一实现：标题（进入前）与游戏内共用，同一份 Settings 数据 */
-export function autoSkillList(cls: ClassId) {
-  return CLASSES[cls].skills.filter(s => !s.passive).map((s, i) => ({ ...s, key: `F${i + 1}` }));
+export function autoSkillList(cls: ClassId, learned?: Set<string>) {
+  return CLASSES[cls].skills.filter(s => !s.passive && (!learned || learned.has(s.id))).map((s, i) => ({ ...s, key: `F${i + 1}` }));
 }
 export function renderSettingsView(s: Phaser.Scene, R: Phaser.GameObjects.Container, top: number, o: SettingsViewOpts) {
   const cls = o.cls;
@@ -41,7 +43,7 @@ export function renderSettingsView(s: Phaser.Scene, R: Phaser.GameObjects.Contai
     R.add([...button(s, 770 + i * 64, top + 22, 60, 30, `${c === cls ? '▶' : ''}${CLASSES[c].name}`, () => o.onPickClass!(c), 13)]);
   });
   const selected = new Set(Settings.skillsFor(cls));
-  autoSkillList(cls).forEach((sk, i) => {
+  autoSkillList(cls, o.learned).forEach((sk, i) => {
     const on = selected.has(sk.id);
     const x = 280 + (i % 4) * 180, y = top + 288 + Math.floor(i / 4) * 40;
     R.add([...button(s, x, y, 168, 34, `${on ? '✓' : '○'} ${sk.key} ${sk.name}`, () => {
