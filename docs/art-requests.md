@@ -252,3 +252,11 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 | E1 | tianzun_necklace | 天尊项链 | `public/assets/items/eq_tianzun_necklace.png` | ITEMS.tianzun_necklace.icon → `items/eq_tianzun_necklace.png` | 参考原作 |
 | E1 | tianzun_ring | 天尊戒指 | `public/assets/items/eq_tianzun_ring.png` | ITEMS.tianzun_ring.icon → `items/eq_tianzun_ring.png` | 参考原作 |
 | E1 | tianzun_bracelet | 天尊手镯 | `public/assets/items/eq_tianzun_bracelet.png` | ITEMS.tianzun_bracelet.icon → `items/eq_tianzun_bracelet.png` | 参考原作 |
+| M2 | woma_warrior | 沃玛战士 | `public/assets/portraits/woma_warrior_full.png` | ASSETS 加 `woma_warrior`，units 中 art 指向 `woma_warrior` | 参考原作 |
+| M2 | zuma_guard | 祖玛卫士 | `public/assets/portraits/zuma_guard_full.png` | ASSETS 加 `zuma_guard`，units 中 art 指向 `zuma_guard` | 参考原作 |
+| M2 | bull_warrior | 牛魔战士 | `public/assets/portraits/bull_warrior_full.png` | ASSETS 加 `bull_warrior`，units 中 art 指向 `bull_warrior` | 参考原作 |
+| M2 | bull_mage | 牛魔法师 | `public/assets/portraits/bull_mage_full.png` | ASSETS 加 `bull_mage`，units 中 art 指向 `bull_mage` | 参考原作 |
+| M2 | bull_guard | 牛魔侍卫 | `public/assets/portraits/bull_guard_full.png` | ASSETS 加 `bull_guard`，units 中 art 指向 `bull_guard` | 参考原作 |
+| M2 | hongmo_pig | 虹魔猪卫 | `public/assets/portraits/hongmo_pig_full.png` | ASSETS 加 `hongmo_pig`，units 中 art 指向 `hongmo_pig` | 参考原作 |
+| M2 | hongmo_scorpion | 虹魔蝎卫 | `public/assets/portraits/hongmo_scorpion_full.png` | ASSETS 加 `hongmo_scorpion`，units 中 art 指向 `hongmo_scorpion` | 参考原作 |
+| M2 | redmoon_spider | 赤月蜘蛛 | `public/assets/portraits/redmoon_spider_full.png` | ASSETS 加 `redmoon_spider`，units 中 art 指向 `redmoon_spider` | 推测 |

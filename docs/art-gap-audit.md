@@ -167,7 +167,7 @@
 | M1 | boss_chulong | 触龙神 | `public/assets/portraits/boss_chulong_full.png` | 727×960 | 参考原作 |
 | M1 | boss_white_boar | 白野猪 | `public/assets/portraits/boss_white_boar_full.png` | 744×960 | 参考原作 |
 | M1 | boss_bull_king | 牛魔王 | `public/assets/portraits/boss_bull_king_full.png` | 721×960 | 参考原作 |
-| M1 | boss_hongmo | 虹魔教主 | `public/assets/portraits/boss_hongmo_full.png` | 714×960 | 参考原作 |
+| M1 | boss_hongmo | 虹魔教主 | `public/assets/portraits/boss_hongmo_full.png` | 712×960 | 参考原作：M2 批按原作墨绿色恶魔重做替换 |
 | E1 | xiangmo | 降魔 | `public/assets/items/eq_xiangmo.png`（+@2x） | 64×64 | 参考原作 |
 | E1 | yanyue | 偃月 | `public/assets/items/eq_yanyue.png`（+@2x） | 64×64 | 参考原作 |
 | E1 | xiuluo | 修罗 | `public/assets/items/eq_xiuluo.png`（+@2x） | 64×64 | 参考原作 |
@@ -205,3 +205,11 @@
 | E1 | tianzun_necklace | 天尊项链 | `public/assets/items/eq_tianzun_necklace.png`（+@2x） | 64×64 | 参考原作 |
 | E1 | tianzun_ring | 天尊戒指 | `public/assets/items/eq_tianzun_ring.png`（+@2x） | 64×64 | 参考原作 |
 | E1 | tianzun_bracelet | 天尊手镯 | `public/assets/items/eq_tianzun_bracelet.png`（+@2x） | 64×64 | 参考原作 |
+| M2 | woma_warrior | 沃玛战士 | `public/assets/portraits/woma_warrior_full.png` | 741×960 | 参考原作 |
+| M2 | zuma_guard | 祖玛卫士 | `public/assets/portraits/zuma_guard_full.png` | 719×960 | 参考原作 |
+| M2 | bull_warrior | 牛魔战士 | `public/assets/portraits/bull_warrior_full.png` | 762×960 | 参考原作 |
+| M2 | bull_mage | 牛魔法师 | `public/assets/portraits/bull_mage_full.png` | 713×960 | 参考原作 |
+| M2 | bull_guard | 牛魔侍卫 | `public/assets/portraits/bull_guard_full.png` | 705×960 | 参考原作 |
+| M2 | hongmo_pig | 虹魔猪卫 | `public/assets/portraits/hongmo_pig_full.png` | 716×960 | 参考原作 |
+| M2 | hongmo_scorpion | 虹魔蝎卫 | `public/assets/portraits/hongmo_scorpion_full.png` | 960×869 | 参考原作 |
+| M2 | redmoon_spider | 赤月蜘蛛 | `public/assets/portraits/redmoon_spider_full.png` | 960×782 | 推测：原版无此怪，参照天狼蜘蛛 |
