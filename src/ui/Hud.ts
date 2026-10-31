@@ -1,3 +1,4 @@
+import { fmtExp } from '../data/expCurve';
 import Phaser from 'phaser';
 import { POTIONS, SkillDef } from '../data/skills';
 import { FX, FONT } from '../data/fx';
@@ -38,7 +39,7 @@ export class Hud {
   potT: Phaser.GameObjects.Text[] = []; dots: Phaser.GameObjects.Rectangle[] = [];
   logT: Phaser.GameObjects.Text[] = []; lines: { t: string; c: string; at: number }[] = []; logBg?: Phaser.GameObjects.Rectangle;
   expFill!: Phaser.GameObjects.Rectangle; expT!: Phaser.GameObjects.Text;
-  setExp(lv: number, cur: number, next: number) { this.expFill.width = 480 * Math.max(0, Math.min(1, cur / Math.max(1, next))); this.expT.setText(`Lv${lv}  经验 ${cur}/${next}`); } info: Phaser.GameObjects.Text;
+  setExp(lv: number, cur: number, next: number) { this.expFill.width = 480 * Math.max(0, Math.min(1, cur / Math.max(1, next))); this.expT.setText(`Lv${lv}  经验 ${fmtExp(cur)}/${fmtExp(next)}`); } info: Phaser.GameObjects.Text;
   bagPos = { x: 0, y: 0 }; plaque!: Phaser.GameObjects.Text; dotObjs: Phaser.GameObjects.GameObject[] = [];
   setFloor(name: string, icons: string[]) {
     this.plaque?.setText(name); this.dotObjs.forEach(o => o.destroy()); this.dotObjs = []; this.dots = [];

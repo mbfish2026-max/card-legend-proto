@@ -1,3 +1,4 @@
+import { fmtExp } from '../data/expCurve';
 import { floorKeys, PreloadScene } from '../loader';
 import { playFx, flyFx, follow, SLASH_TINT } from '../ui/FxPlayer';
 import Phaser from 'phaser';
@@ -308,7 +309,7 @@ export class BattleScene extends Phaser.Scene {
       else if (e.type === 'floor') this.enterFloor(e.index, e.name);
       else if (e.type === 'cleared') this.log('首领已被击败！出口已开启，向右前往下一层');
       else if (e.type === 'win') this.end();
-      else if (e.type === 'exp') { this.expTotal += e.amount; this.log(`获得 经验 ${e.amount}`, true); }
+      else if (e.type === 'exp') { this.expTotal += e.amount; this.log(`获得 经验 ${fmtExp(e.amount)}`, true); }
       else if (e.type === 'learned') { this.skillsDirty = true; this.saveGame(); this.registry.set('fxLearned', [...this.world.learned]); }
       else if (e.type === 'proc') { const v = this.views.get(e.target); if (v) { if (e.skill === 'slaying') playFx(this, 'fx_slaying_proc', v.cx, v.cy); else playFx(this, 'fx_passive_glint', v.cx, v.y, { tint: e.skill === 'spirit_force' ? 0xc0f070 : 0xffd080, decorative: true }); } }
       else if (e.type === 'levelup') {
@@ -495,7 +496,7 @@ export class BattleScene extends Phaser.Scene {
     const w = this.world, h = w.hero, st = w.stats();
     const dead = this.floorUids.map(id => !w.units.some(u => u.uid === id && u.alive));
     const pw = { atk: '攻击', mag: '魔法', tao: '道术' }[w.classDef.autoStat];
-    const info = `${w.classDef.name} Lv${w.level}   经验 ${w.exp}/${w.expNext}   金币 ${w.gold}   ${pw} ${st[w.classDef.autoStat]}  防御 ${Math.round(st.def)}   第 ${w.floorIndex + 1}/${w.floors.length} 层`;
+    const info = `${w.classDef.name} Lv${w.level}   经验 ${fmtExp(w.exp)}/${fmtExp(w.expNext)}   金币 ${w.gold}   ${pw} ${st[w.classDef.autoStat]}  防御 ${Math.round(st.def)}   第 ${w.floorIndex + 1}/${w.floors.length} 层`;
     this.hud?.update(dt, h?.hp ?? 0, h?.maxHp ?? st.hp, h?.mp ?? 0, h?.maxMp ?? st.mp, this.cds, dead, w.pots, info);
   }
   end() {

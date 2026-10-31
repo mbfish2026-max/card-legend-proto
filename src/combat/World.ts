@@ -5,7 +5,8 @@ import { BattleEvent, EquipSlot, GroundItem, InvItem, Rarity, Slot, Stats, Team,
 import { POTIONS } from '../data/skills';
 import { CLASSES, ClassId, SkillDef } from '../data/classes';
 import { ITEMS, SLOTS, SETS, equipSlotsFor, EQUIP_VERSION, ENHANCE_SLOTS, ENHANCE_MAX, ENHANCE_STAT, IRON_PRICE, IRON_MAX_PURITY, enhanceChance, shatterChance } from '../data/items';
-import { HERO, ENEMIES, EXP_PER_LEVEL, SUMMON, SUMMON_BEAST } from '../data/units';
+import { HERO, ENEMIES, SUMMON, SUMMON_BEAST } from '../data/units';
+import { EXP_PER_LEVEL, EXP_VERSION, migrateExp, scaledExp, fmtExp } from '../data/expCurve';
 import { WORLD, FLOORS, Floor } from '../data/world';
 import { QUESTS, ACHIEVES, QuestDef, AchieveDef } from '../data/quests';
 
@@ -26,6 +27,8 @@ export interface SaveData {
   mapV?: 2 | 3;
   /** 装备结构版本：缺省/1 = 单戒单镯旧档，2 = 双戒双镯 */
   eqV?: number;
+  /** R22 经验曲线版本：缺省=1（旧线性），2=官方形状 */
+  expV?: number;
 }
 /** R11 旧层号 → 新层号（按原版递进重排：兽人要塞提前到第 2 层） */
 export const FLOOR_MIGRATE = [0, 2, 3, 1, 4, 5, 6, 7];
@@ -94,7 +97,7 @@ export class World {
   }
   constructor(public rng: () => number = Math.random, public level = 1, public floors: Floor[] = FLOORS, public cls: ClassId = 'warrior', save?: SaveData) {
     if (save) {
-      this.cls = save.cls; this.level = save.level; this.exp = save.exp; this.gold = save.gold; this.pots = [...save.pots];
+      this.cls = save.cls; this.level = save.level; this.exp = migrateExp(save.level, save.exp, save.expV); this.gold = save.gold; this.pots = [...save.pots];
       this.equip = migrateEquip(save); this.bag = [...save.bag]; this.kills = save.kills; this.nextItem = save.nextUid;
       this.skillTrain = { ...(save.skillTrain ?? {}) }; this.reached = new Set(save.reached ?? []); this.bossKilled = new Set(save.bossKilled ?? []);
       this.questProg = { ...(save.questProg ?? {}) }; this.questDone = new Set(save.questDone ?? []); this.achieves = new Set(save.achieves ?? []);
@@ -270,9 +273,9 @@ export class World {
     const q = QUESTS.find(x => x.id === id); if (!q) return '无此悬赏';
     if (this.questDone.has(id)) return '已完成';
     if ((this.questProg[id] ?? 0) < q.need) return `进度 ${(this.questProg[id] ?? 0)}/${q.need}`;
-    this.questDone.add(id); this.gold += q.gold; this.gainExp(q.exp);
-    this.checkAchieves(); this.events.push({ type: 'log', text: `完成悬赏 ${q.name}，获得 ${q.gold} 金 / ${q.exp} 经验`, color: 'green' });
-    return `完成 ${q.name}！+${q.gold} 金 +${q.exp} 经验`;
+    const qe = scaledExp(q.exp, q.floor); this.questDone.add(id); this.gold += q.gold; this.gainExp(qe);
+    this.checkAchieves(); this.events.push({ type: 'log', text: `完成悬赏 ${q.name}，获得 ${q.gold} 金 / ${fmtExp(qe)} 经验`, color: 'green' });
+    return `完成 ${q.name}！+${q.gold} 金 +${fmtExp(qe)} 经验`;
   }
   checkAchieves() {
     const maxEnh = Math.max(0, ...Object.values(this.equip).map(it => it?.enhance ?? 0), ...this.bag.map(it => it.enhance ?? 0));
@@ -439,7 +442,7 @@ export class World {
       });
       this.ground.push(...items); this.events.push({ type: 'drop', uid: u.uid, x: u.x, y: u.y, items });
     }
-    this.gainExp(u.exp ?? 10);
+    this.gainExp(scaledExp(u.exp ?? 10, this.floorIndex));
     if (!this.alive('enemy').length && !this.cleared) { this.cleared = true; this.events.push({ type: 'cleared' }); }
   }
   gainExp(n: number) {
@@ -647,7 +650,7 @@ export class World {
 
   // ---------- 存档 ----------
   toSave(): SaveData {
-    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, eqV: EQUIP_VERSION };
+    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, eqV: EQUIP_VERSION, expV: EXP_VERSION };
   }
 
   /** 点按一格：滑行中的按键全部排队（同向最多 10 格，反向则替换队列），每次按键都会走一格 */
