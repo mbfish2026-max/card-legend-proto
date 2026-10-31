@@ -1087,3 +1087,17 @@ public/assets/ui/UI-Tooltip-Border.png
 - 羊：21cq 怪物 ID 1–40 里没有，未查到，所以没画。
 - 本作数值曲线和原版不同，表里的"建议层位"是推测；这次只加了立绘，units.ts 没改。
 - 预览拼图：docs/art-gap-preview/novice_monsters.jpg
+
+## 传送门（替换地图「回城小房子」入口，art/portal，2026-10-31）
+
+原创 Legend of Mir 风格的蓝紫发光椭圆光圈漩涡，没有用 WoW 素材。先在纯黑底上生成一张基础图，再按亮度换算透明度（发光边缘自然淡出，不会留下抠底色边），漩涡内部保留约 85% 不透明。4 帧由脚本 docs/art-gap-preview/portal_gen.py 生成：内部漩涡转 0°/+6°/0°/-6°，整体缩放 0.97→1.0、亮度 1.0→1.13 脉动，首尾衔接可循环，外圈位置不动、不抖。
+
+| 文件 | 尺寸 | 帧数 | 说明 |
+|---|---|---|---|
+| public/assets/portal_exit.png | 256x384，透明底 | 1 | 静态图（第 1 帧） |
+| public/assets/portal_exit_sheet.png | 1024x384，透明底 | 4，横向排列，每帧 256x384 | 循环动画精灵表 |
+
+- 帧率建议 8fps，循环播放。
+- 锚点建议底部中心 (0.5, 1)。光圈下沿离底边约 4px，需要贴地时可以把 y 往下偏一点。
+- 用途：替换地图里的回城/出口入口「小房子」。只加了素材，src 没改，接入要另外改代码。
+- 预览：docs/art-gap-preview/portal_preview.jpg（上排深色底，下排棋盘格底，用来检查边缘）
