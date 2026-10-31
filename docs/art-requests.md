@@ -854,3 +854,18 @@ thunder_sword 雷霆剑、break_strike 破击剑法、shield_break 破盾斩、v
 | sq_magic_beetle_full.png | 960x785 | 魔甲虫 | 新画（取代原复用图） | 据描述：石化魔法；石纹壳、灰雾为新设计 |
 | sq_termite_full.png | 960x588 | 白蚁 | 新画（取代原复用图） | 据描述：小生物；兵蚁大头、朽木为新设计 |
 | sq_three_snake_full.png | 696x960 | 三头蛇 | 新画（取代原复用图） | 据描述：三头 |
+
+
+## art/maps-sq-mir3 重画·第3组（7 张，取消复用）
+
+用户要求不再复用小怪素材，以下 id 的复制图都换成了各自的新立绘，外形和配色都与原图明显不同。路径：`public/assets/portraits/<id>_full.png`。预览：`docs/art-gap-preview/sq_mir3_redo3.jpg`。
+
+| 文件 | 尺寸 | 名称 | 状态 | 依据 |
+|---|---|---|---|---|
+| m3_skel_wujiang_full.png | 728x960 | 骷髅武将 | 新画（取代原复用图） | 据描述：骨骼变异成巨躯；骨刺、劈刀为新设计 |
+| sq_white_snake_yao_full.png | 629x960 | 白蛇妖 | 新画（取代原复用图） | 据描述：蛇魔军团长、高大、利爪 |
+| sq_imp_full.png | 780x960 | 地下小鬼 | 新画（取代原复用图） | 据描述：一尺高、持石锤（弯柄改直柄，存疑） |
+| sq_nimo_archer_full.png | 628x960 | 逆魔弓箭手 | 新画（取代原复用图） | 部分推测：大漠善射民族被侵蚀；头巾面纱为新设计 |
+| sq_nimo_shiwei_full.png | 697x960 | 逆魔侍卫 | 新画（取代原复用图） | 据描述：身后箭型巨尾；蜥蜴形、盾矛为推测 |
+| sq_nimo_guard_full.png | 687x960 | 逆魔卫士 | 新画（取代原复用图） | 部分推测：迅猛近战卫士；双弯刀为新设计 |
+| sq_nimo_statue_full.png | 653x960 | 逆魔雕像 | 新画（取代原复用图） | 据描述："死神"、巨镰；砂岩活化为新设计 |
