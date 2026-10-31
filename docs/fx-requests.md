@@ -110,6 +110,13 @@
 | summon_skeleton_atk / summon_beast_atk | 立绘攻击姿势单帧（与现立绘同尺寸、同脚底锚点） | 同立绘，1 帧 | NORMAL |
 | summon_skeleton_hurt / summon_beast_hurt | 立绘受击后仰单帧 | 同立绘，1 帧 | NORMAL |
 
+
+## 合击英雄（feat/hj-battle 阶段 A，2026-10-31）
+当前为 Graphics 占位，素材到位后在 FX_DEFS 注册即可：
+- `fx_combo_<id>`：6 种合击各一套（id：pohun/huolong/shihun 等，见 src/data/companion.ts COMBOS）；占位 = 金色光环 + 「合击名」飘字 + 震屏
+- 英雄召唤/收回光效（占位：复用 summon 事件）
+- 怒槽「爆发中」闪烁 UI（占位：面板文字）
+- 英雄立绘×3 职业（现复用主角职业卡面）
 ## 召唤物动作 产出记录（特效 Bot，2026-10-31，分支 fx/summon-fx）
 | 文件 | 帧 | 帧尺寸 | pivot | fps | 混合 | 触发 / 位置 |
 |---|---|---|---|---|---|---|

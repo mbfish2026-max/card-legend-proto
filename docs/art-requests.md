@@ -180,6 +180,20 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 - 游戏画布 1280×720，素材整体按 2/3 缩放使用；已用 bg_far / ground_strip / street_near_1-3 / npc_<id>；shop_<id> 作为缺 street_near 时的后备。
 - 仍缺：其它城镇（银杏村/沃玛村等）长街素材、西端城门/出城牌美术（当前为文字「◀出城」占位）。
 
+## 合击版 #5（feat/hj-rage）
+- 火龙之心图标（暂用 INV_Misc_Gem_Pearl_01）
+- 蝎尾/鹿茸/阴阳仙草/九花玉露/九花雪露/元神丹/回气糕/补气丹 图标 ×8（暂用 INV_Misc_Food_15）
+- 黄色怒槽 HUD 条（暂为老兵面板文字）
+
+## 合击版 #7（feat/hj-books）
+- 龙人立绘/店面（暂用首饰店位与立绘）
+- 白日门技能书、书页、金条图标（暂用 Pearl）
+
+## 合击版 #8（feat/hj-maps）
+- 背景 bg_floor20–23（保卫家园/卧龙山庄/雷炎洞穴/火龙神殿），现回退为通用 bg
+- 怪物立绘：家园守卫、卧龙护卫、火龙守卫（暂用 orc）、雷炎蜘蛛（暂用 spider）
+- BOSS 立绘：魔龙守将（暂用 boss_woma）、卧龙名将（暂用 boss_orc_chief）、雷炎蛛王/火龙（暂用 boss_redmoon）
+- 世界地图节点图标 map_node_hejiban（暂用 mengzhong）
 ## R14 阶段 B
 - 圣战/法神/天尊 套 12 件图标（item_shengzhan_* / item_fashen_* / item_tianzun_*）：若缺图当前回退通用图标
 - 沃玛教主之家大门（woma_door，x=2850，横版 256×384，可开/关两帧）

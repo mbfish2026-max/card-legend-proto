@@ -118,10 +118,31 @@ export const FLOORS: Floor[] = [
   { name: '沃玛自然洞穴·一', bg: 'bg_floor18', boss: false, farm: true, group: 'woma_cave', sub: '沃玛自然洞穴 E001', depth: 1, zone: '沃玛自然洞穴 E001（21cq：骷髅系/山洞蝙蝠/洞蛆 23 分钟，无 BOSS；连通兽人古墓三层）', src: 'https://www.21cq.com/mir/Map.aspx?id=1506', spawns: [
     { id: 'skeleton', x: 800 }, { id: 'cave_skel_warrior', x: 900, y: 20 }, { id: 'axe_skeleton', x: 1500 }, { id: 'cave_bat', x: 1600, y: -15 }, { id: 'cave_skel_general', x: 1700 }, { id: 'cave_maggot', x: 2300 }, { id: 'cave_skel_general', x: 2400, y: 15 }, { id: 'cave_skel_warrior', x: 2500 } ] },
   { name: '沃玛自然洞穴·二', bg: 'bg_floor19', boss: false, farm: true, group: 'woma_cave', sub: '沃玛自然洞穴 E002', depth: 2, zone: '沃玛自然洞穴 E002（21cq：同 E001，无 BOSS；连通洞穴二层）', src: 'https://www.21cq.com/mir/Map.aspx?id=1507', spawns: [
-    { id: 'cave_skel_warrior', x: 800 }, { id: 'axe_skeleton', x: 900, y: 20 }, { id: 'cave_skel_general', x: 1500 }, { id: 'cave_bat', x: 1600, y: -15 }, { id: 'cave_maggot', x: 1700 }, { id: 'skeleton', x: 2300 }, { id: 'cave_skel_general', x: 2400, y: 15 }, { id: 'axe_skeleton', x: 2500 } ] }
+    { id: 'cave_skel_warrior', x: 800 }, { id: 'axe_skeleton', x: 900, y: 20 }, { id: 'cave_skel_general', x: 1500 }, { id: 'cave_bat', x: 1600, y: -15 }, { id: 'cave_maggot', x: 1700 }, { id: 'skeleton', x: 2300 }, { id: 'cave_skel_general', x: 2400, y: 15 }, { id: 'axe_skeleton', x: 2500 } ] },
+  // 合击版 #8（合并 main 后下标 19–22，排在洞穴群 13–18 之后）（docs/hejiban-official.md §4）：追加在末尾，旧存档层号不变
+  { name: '保卫家园', bg: 'bg_floor20', boss: true, zone: '合击·英雄地（保卫家园四连本合为一层 [适配]，官方 40 级）', spawns: [
+    { id: 'hj_guard', x: 800 }, { id: 'redmoon_spider', x: 910, y: 20 },
+    { id: 'hj_guard', x: 1550 }, { id: 'redmoon_spider', x: 1650, y: -15 },
+    { id: 'hj_guard', x: 2300 }, { id: 'redmoon_spider', x: 2400, y: 15 },
+    { id: 'boss_hj_home', x: 3380 } ] },
+  { name: '卧龙山庄', bg: 'bg_floor21', boss: true, zone: '盟重卧龙笔记(330,340)·卧龙山庄（官方 47 级）', spawns: [
+    { id: 'wolong_guard', x: 800 }, { id: 'hj_guard', x: 910, y: 20 },
+    { id: 'wolong_guard', x: 1550 }, { id: 'hj_guard', x: 1650, y: -15 },
+    { id: 'wolong_guard', x: 2300 }, { id: 'hj_guard', x: 2400, y: 15 },
+    { id: 'boss_wolong', x: 3380 } ] },
+  { name: '雷炎洞穴', bg: 'bg_floor22', boss: true, zone: '盟重店小二(382,308)·雷炎洞穴（官方 47 级，2 层合 1 [适配]）', spawns: [
+    { id: 'leiyan_spider', x: 800 }, { id: 'wolong_guard', x: 910, y: 20 },
+    { id: 'leiyan_spider', x: 1550 }, { id: 'wolong_guard', x: 1650, y: -15 },
+    { id: 'leiyan_spider', x: 2300 }, { id: 'wolong_guard', x: 2400, y: 15 },
+    { id: 'boss_leiyan', x: 3380 } ] },
+  { name: '火龙神殿', bg: 'bg_floor23', boss: true, zone: '火龙神殿（1.90 终章，入口/等级未查到）', spawns: [
+    { id: 'fire_dragon_guard', x: 800 }, { id: 'leiyan_spider', x: 910, y: 20 },
+    { id: 'fire_dragon_guard', x: 1550 }, { id: 'leiyan_spider', x: 1650, y: -15 },
+    { id: 'fire_dragon_guard', x: 2300 }, { id: 'leiyan_spider', x: 2400, y: 15 },
+    { id: 'boss_fire_dragon', x: 3380 } ] }
 ];
 /** 通关顺序：兽人古墓一层(白骨墓穴)→二层→三层→洞穴一层→二层→沃玛自然洞穴一→二→尸王殿…（按 21cq 进出表连通） */
-export const FLOOR_ORDER = [0, 1, 2, 3, 4, 13, 14, 15, 16, 17, 18, 5, 6, 7, 8, 9, 10, 11, 12];
+export const FLOOR_ORDER = [0, 1, 2, 3, 4, 13, 14, 15, 16, 17, 18, 5, 6, 7, 8, 9, 10, 11, 12, 19, 20, 21, 22];
 /** 图群：白骨墓穴（下标 4）作为兽人古墓一层 */
 export const FLOOR_GROUP: Record<number, { group: string; depth: number }> = { 4: { group: 'shouren', depth: 1 } };
 export const groupOf = (i: number, floors: Floor[] = FLOORS) => floors[i]?.group ?? (floors === FLOORS ? FLOOR_GROUP[i]?.group : undefined);
