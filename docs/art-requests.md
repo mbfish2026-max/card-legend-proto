@@ -260,3 +260,26 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 | M2 | hongmo_pig | 虹魔猪卫 | `public/assets/portraits/hongmo_pig_full.png` | ASSETS 加 `hongmo_pig`，units 中 art 指向 `hongmo_pig` | 参考原作 |
 | M2 | hongmo_scorpion | 虹魔蝎卫 | `public/assets/portraits/hongmo_scorpion_full.png` | ASSETS 加 `hongmo_scorpion`，units 中 art 指向 `hongmo_scorpion` | 参考原作 |
 | M2 | redmoon_spider | 赤月蜘蛛 | `public/assets/portraits/redmoon_spider_full.png` | ASSETS 加 `redmoon_spider`，units 中 art 指向 `redmoon_spider` | 推测 |
+| E2 | wood_sword | 木剑 | `public/assets/items/eq_wood_sword.png` | ITEMS.wood_sword.icon → `items/eq_wood_sword.png` | 参考原作 |
+| E2 | iron_sword | 铁剑 | `public/assets/items/eq_iron_sword.png` | ITEMS.iron_sword.icon → `items/eq_iron_sword.png` | 参考原作 |
+| E2 | magic_staff | 魔杖 | `public/assets/items/eq_magic_staff.png` | ITEMS.magic_staff.icon → `items/eq_magic_staff.png` | 参考原作 |
+| E2 | tao_sword | 银蛇剑 | `public/assets/items/eq_tao_sword.png` | ITEMS.tao_sword.icon → `items/eq_tao_sword.png` | 参考原作 |
+| E2 | dragon_sword | 屠龙刀 | `public/assets/items/eq_dragon_sword.png` | ITEMS.dragon_sword.icon → `items/eq_dragon_sword.png` | 参考原作 |
+| E2 | short_sword | 短剑 | `public/assets/items/eq_short_sword.png` | ITEMS.short_sword.icon → `items/eq_short_sword.png` | 参考原作 |
+| E2 | bronze_sword | 青铜剑 | `public/assets/items/eq_bronze_sword.png` | ITEMS.bronze_sword.icon → `items/eq_bronze_sword.png` | 参考原作 |
+| E2 | dagger | 匕首 | `public/assets/items/eq_dagger.png` | ITEMS.dagger.icon → `items/eq_dagger.png` | 参考原作 |
+| E2 | ebony_sword | 乌木剑 | `public/assets/items/eq_ebony_sword.png` | ITEMS.ebony_sword.icon → `items/eq_ebony_sword.png` | 参考原作 |
+| E2 | bronze_axe | 青铜斧 | `public/assets/items/eq_bronze_axe.png` | ITEMS.bronze_axe.icon → `items/eq_bronze_axe.png` | 参考原作 |
+| E2 | bahuang | 八荒 | `public/assets/items/eq_bahuang.png` | ITEMS.bahuang.icon → `items/eq_bahuang.png` | 参考原作 |
+| E2 | banyue | 半月 | `public/assets/items/eq_banyue.png` | ITEMS.banyue.icon → `items/eq_banyue.png` | 参考原作 |
+| E2 | haihun | 海魂 | `public/assets/items/eq_haihun.png` | ITEMS.haihun.icon → `items/eq_haihun.png` | 参考原作 |
+| E2 | lingfeng | 凌风 | `public/assets/items/eq_lingfeng.png` | ITEMS.lingfeng.icon → `items/eq_lingfeng.png` | 参考原作 |
+| E2 | ghost_necklace | 幽灵项链 | `public/assets/items/eq_ghost_necklace.png` | ITEMS.ghost_necklace.icon → `items/eq_ghost_necklace.png` | 参考原作 |
+| E2 | dragon_ring | 龙之戒指 | `public/assets/items/eq_dragon_ring.png` | ITEMS.dragon_ring.icon → `items/eq_dragon_ring.png` | 参考原作 |
+| E2 | ghost_glove | 幽灵手套 | `public/assets/items/eq_ghost_glove.png` | ITEMS.ghost_glove.icon → `items/eq_ghost_glove.png` | 参考原作 |
+| E2 | life_necklace | 生命项链 | `public/assets/items/eq_life_necklace.png` | ITEMS.life_necklace.icon → `items/eq_life_necklace.png` | 参考原作 |
+| E2 | ruby_ring | 红宝石戒指 | `public/assets/items/eq_ruby_ring.png` | ITEMS.ruby_ring.icon → `items/eq_ruby_ring.png` | 参考原作 |
+| E2 | sibeier_bracelet | 思贝儿手镯 | `public/assets/items/eq_sibeier_bracelet.png` | ITEMS.sibeier_bracelet.icon → `items/eq_sibeier_bracelet.png` | 参考原作 |
+| E2 | tianzhu_necklace | 天珠项链 | `public/assets/items/eq_tianzhu_necklace.png` | ITEMS.tianzhu_necklace.icon → `items/eq_tianzhu_necklace.png` | 参考原作 |
+| E2 | platinum_ring | 铂金戒指 | `public/assets/items/eq_platinum_ring.png` | ITEMS.platinum_ring.icon → `items/eq_platinum_ring.png` | 参考原作 |
+| E2 | heart_bracelet | 心灵手镯 | `public/assets/items/eq_heart_bracelet.png` | ITEMS.heart_bracelet.icon → `items/eq_heart_bracelet.png` | 参考原作 |
