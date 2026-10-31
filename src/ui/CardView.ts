@@ -27,7 +27,7 @@ const DEFAULT_CARD = { w: 140, h: 190, figureScale: 1.15, anchorX: 0.5, footSink
  */
 export class CardView extends Phaser.GameObjects.Container {
   inner: Phaser.GameObjects.Container; art: Phaser.GameObjects.Image; figH0 = 0; maxW = 0;
-  hpFill: Phaser.GameObjects.Rectangle; hpText: Phaser.GameObjects.Text; lvlText: Phaser.GameObjects.Text;
+  hpFill: Phaser.GameObjects.Rectangle; hpText: Phaser.GameObjects.Text; lvlText: Phaser.GameObjects.Text; nameText!: Phaser.GameObjects.Text;
   flash: Phaser.GameObjects.Rectangle;
   /** w = 卡框宽；h = 视觉高度（立绘顶到地面），供特效定位 */
   w: number; h: number; cardH: number; barW: number; artX: number; artY: number; artSX = 1; artSY = 1; artFacing: 1 | -1; dying = false;
@@ -93,7 +93,7 @@ export class CardView extends Phaser.GameObjects.Container {
         g.fillTriangle(cx + sx * 10, cy + sy * 10, cx - sx * 6, cy + sy * 10, cx + sx * 10, cy - sy * 6);
       g.fillTriangle(-10, -ch - 5, 10, -ch - 5, 0, -ch - 20);
     }
-    const name = scene.add.text(w / 2 - 4, -barH + 3, unit.name, { fontFamily: FONT, fontSize: '12px', color: '#fff', fontStyle: 'bold', stroke: '#000', strokeThickness: 2 }).setOrigin(1, 0);
+    const name = this.nameText = scene.add.text(w / 2 - 4, -barH + 3, unit.name, { fontFamily: FONT, fontSize: '12px', color: unit.nameColor ?? '#fff', fontStyle: 'bold', stroke: '#000', strokeThickness: 2 }).setOrigin(1, 0);
     this.hpText = scene.add.text(0, hpY, '', { fontFamily: FONT, fontSize: '8px', color: '#fff', stroke: '#000', strokeThickness: 2 }).setOrigin(0.5).setVisible(!!unit.isHero);
     this.flash = scene.add.rectangle(0, -ch / 2, w, ch, 0xffffff, 0);
     this.inner.add([g, this.flash, this.art, bar, hpBg, this.hpFill, lv, this.lvlText, name, this.hpText]);
@@ -127,6 +127,8 @@ export class CardView extends Phaser.GameObjects.Container {
     this.x += (this.unit.x + this.dispOff - this.x) * (Math.abs(this.unit.x + this.dispOff - this.x) > 300 ? 1 : 0.25); this.y = GROUND_Y + this.unit.y;
     if (this.art instanceof Phaser.GameObjects.Image) this.art.setFlipX(this.unit.facing !== this.artFacing);
     this.lvlText.setText(String(this.unit.level));
+    // 召唤物升级：名字带等级、颜色蓝色逐级加深
+    if (this.unit.summon && this.nameText.text !== this.unit.name) this.nameText.setText(this.unit.name).setColor(this.unit.nameColor ?? '#fff');
     this.statusTint();
     this.hpText.setText(`${Math.max(0, Math.ceil(this.unit.hp))}/${this.unit.maxHp}`);
     this.hpFill.width = Math.max(0, this.barW * Math.max(0, this.unit.hp) / this.unit.maxHp);

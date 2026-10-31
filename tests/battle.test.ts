@@ -1,5 +1,5 @@
 declare const process: { env: Record<string, string | undefined> };
-import { World, SaveData, OIL_PRICE, IRON_PRICE, OFFICIAL, mitigate, taoBuffValue, taoBuffDur } from '../src/combat/World';
+import { World, SaveData, OIL_PRICE, IRON_PRICE, OFFICIAL, mitigate, taoBuffValue, taoBuffDur, SKELETON_OFFICIAL, SUMMON_NAME_COLORS, SUMMON_MAX_LV, SUMMON_LV_KILLS } from '../src/combat/World';
 import { ITEMS, SETS, ENHANCE_MAX, enhanceChance, shatterChance } from '../src/data/items';
 import { WORLD, CARD, Floor, FLOORS } from '../src/data/world';
 import { CLASSES, ClassId, CAST_GAP, COOLDOWN_BEFORE, REBALANCE, MANA_BEFORE } from '../src/data/classes';
@@ -283,6 +283,21 @@ const free = (w: World) => w.skills.map(() => 0);
   h.hp = h.maxHp; sm.hp = 10; sm.x = h.x + 400; cds = free(w); const r0 = w.cast(hi, cds) as any; ok(!r0.ok, '召唤物超出 170px：不施放');
   sm.x = h.x + 100; sm.hp = sm.maxHp; h.hp = h.maxHp; cds = free(w); const mp1 = h.mp; const r = w.cast(hi, cds) as any;
   ok(!r.ok && r.reason === '主角与召唤物生命已满' && h.mp === mp1 && Math.max(...cds) === 0, '都满血：不施放、不耗蓝、不占公共间隔');
+}
+{ // 召唤物等级 [适配]：初始=技能等级(≤3)；主角+召唤物总击杀累计阈值升级，最高 7；名字带等级、蓝色逐级加深；重新召唤从初始等级重启
+  const w = mk([{ id: 'orc', x: 3000 }], [], 'taoist', 30); const h = w.hero!; h.mp = h.maxMp = 9999;
+  const k = idx(w, 'summon_skeleton'); w.cast(k, free(w)); const sm = w.summon!; const L0 = sm.sLv!;
+  ok(L0 === Math.min(3, w.skillLevel(w.skills[k])) && sm.name === `骷髅·${L0}级` && sm.nameColor === SUMMON_NAME_COLORS[L0], `初始等级=技能等级（${L0}），名字「${sm.name}」颜色 ${sm.nameColor}`);
+  const hp0 = sm.maxHp, atk0 = sm.atk; const colors = [sm.nameColor];
+  for (let i = 0; i < 300; i++) { const e = w.spawn({ ...w.alive('enemy')[0] } as any, 'enemy', 2000, 0); w.kill(e); if (colors[colors.length - 1] !== sm.nameColor) colors.push(sm.nameColor); }
+  ok(sm.sLv === SUMMON_MAX_LV && sm.name === '骷髅·7级', `击杀 300 → 7 级封顶（${sm.name}）`);
+  ok(sm.maxHp === Math.round(hp0 * 480 / SKELETON_OFFICIAL.hp[L0]) && sm.atk > atk0, `7 级属性按官方比例：HP ${hp0}→${sm.maxHp}，攻击 ${atk0}→${sm.atk}`);
+  ok(colors.length === 8 - L0 && new Set(colors).size === colors.length, `每升一级换色：${colors.join(' ')}`);
+  w.kill(sm); w.cast(k, free(w)); const s2 = w.summon!; ok(s2.sLv === L0 && s2.sKills === 0, '重新召唤从技能等级对应初始等级重启（不继承 7 级）');
+  const w0 = mk([{ id: 'orc', x: 3000 }], [], 'taoist', 30); w0.skillTrain.summon_skeleton = 0; w0.cast(idx(w0, 'summon_skeleton'), free(w0)); const z = w0.summon!;
+  for (let i = 0; i < 9; i++) w0.kill(w0.spawn({ ...w0.alive('enemy')[0] } as any, 'enemy', 2000, 0)); const a = z.sLv; w0.kill(w0.spawn({ ...w0.alive('enemy')[0] } as any, 'enemy', 2000, 0));
+  ok(z.sBase!.start === 0 && a === 0 && z.sLv === 1, `技能 0 级召出 0 级（白名），召出后第 10 次击杀升 1 级（${a}→${z.sLv}）`);
+  ok(!('sLv' in (w.toSave() as any)) && !JSON.stringify(w.toSave()).includes('sKills'), '召唤物等级/击杀不存档');
 }
 { // 平衡：多种子自动脚本（单种子对随机序列太敏感，任何改动 RNG 消耗顺序的提交都会让结果漂移）
   const SEEDS = [3, 7, 11, 19, 23, 42, 57, 88, 101];

@@ -57,7 +57,14 @@ export const taoBuffValue = (level: number) => Math.round(1.5 * (2 + Math.floor(
 export const taoBuffDur = (slv: number, tao: number) => 30 + 10 * Math.max(0, slv) + 5 * Math.floor(tao / 10);
 /** 热血传奇 1.76 变异骷髅（召唤骷髅）官方成长，按技能等级 0–3：HP=(L×0.1+0.3)×60×L+60；攻击上限=(L×0.1+0.3)×3×L+25，下限 10。
  *  来源 https://www.21cq.com/chuanqi/325.html 、https://www.cqtieba.com/thread-19128-1-1.html ；防御 未查到 */
-export const SKELETON_OFFICIAL = { hp: [60, 84, 120, 168], atkMin: 10, atkMax: [25, 26, 28, 30.4] };
+export const SKELETON_OFFICIAL = { hp: [60, 84, 120, 168, 228, 300, 384, 480], atkMin: 10, atkMax: [25, 26, 28, 30.4, 33.4, 37, 41.2, 46] };
+/** 召唤物等级（0–7）：官方 宝宝最高 7 级、技能 3 级召出即 3 级、杀怪升级、每级名字颜色加深（https://zhidao.baidu.com/question/36876719.html 、https://www.21cq.com/chuanqi/554.html ）；
+ *  4–7 级 HP 168/228/300/384/480 与上式一致，攻击上限按同式外推 [适配]。
+ *  [适配] 升级按「召出后主角+召唤物总击杀数」（官方按击杀怪物等级总和，神兽 0→1 级需 600，各级阈值 未查到）；累计阈值见 SUMMON_LV_KILLS。 */
+export const SUMMON_MAX_LV = 7;
+export const SUMMON_LV_KILLS = [0, 10, 25, 45, 75, 115, 165, 225];
+/** [适配] 名字颜色：0 级白（官方白名），1–7 级蓝色逐级加深 */
+export const SUMMON_NAME_COLORS = ['#ffffff', '#a8d8ff', '#7cc0ff', '#4fa3ff', '#2f86f5', '#1f68e0', '#1a4cc4', '#1a33a6'];
 /** [适配] 治愈术主角满血时治疗召唤物的范围：官方未查到，沿用群体治愈术 170px */
 export const HEAL_SUMMON_RANGE = 170;
 export const BOSS_MECH = new Set(['boss_woma', 'boss_zuma', 'boss_redmoon']);
@@ -463,11 +470,26 @@ export class World {
     if (item === 'gold') name = `金币×${amount}`;
     return { gid: this.nextGid++, item, name, rarity, x, y, landAt: this.time + WORLD.dropLandSec, atk: inv?.stats.atk ?? 0, hp: inv?.stats.hp ?? 0, amount, inv };
   }
+  /** 召唤物等级 → 属性（相对初始等级按官方 HP/攻击上限比例放大）、名字「骷髅·3级」、名字颜色 */
+  applySummonLv(u: Unit) {
+    const b = u.sBase!, L = u.sLv ?? 0, O = SKELETON_OFFICIAL, r = u.maxHp > 0 ? u.hp / u.maxHp : 1;
+    u.maxHp = u.hp = Math.round(b.hp * O.hp[L] / O.hp[b.start]); u.hp = Math.round(u.maxHp * r); u.atk = Math.round(b.atk * O.atkMax[L] / O.atkMax[b.start]);
+    u.name = `${b.name}·${L}级`; u.nameColor = SUMMON_NAME_COLORS[L];
+  }
+  private summonKill() {
+    for (const sm of this.units) if (sm.summon && sm.alive && sm.sBase) {
+      sm.sKills = (sm.sKills ?? 0) + 1;
+      while ((sm.sLv ?? 0) < SUMMON_MAX_LV && sm.sKills >= SUMMON_LV_KILLS[(sm.sLv ?? 0) + 1]) {
+        sm.sLv = (sm.sLv ?? 0) + 1; this.applySummonLv(sm);
+        this.events.push({ type: 'log', text: `${sm.sBase.name}升到 ${sm.sLv} 级`, color: 'green' });
+      }
+    }
+  }
   kill(u: Unit) {
     u.hp = 0; u.alive = false;
     this.events.push({ type: 'death', uid: u.uid });
     if (u.team !== 'enemy') return;
-    this.kills++;
+    this.kills++; this.summonKill();
     this.onKillQuest(u.id);
     this.checkAchieves();
     const entries = (u.drops ?? []).filter(d => this.rng() < d.chance);
@@ -769,6 +791,8 @@ export class World {
         const L = Math.min(3, slv), hpF = beast ? lvF : SKELETON_OFFICIAL.hp[L] / SKELETON_OFFICIAL.hp[0], atkF = beast ? lvF : SKELETON_OFFICIAL.atkMax[L] / SKELETON_OFFICIAL.atkMax[0];
         const def: UnitDef = { ...base, level: this.level + (beast ? slv : 0), hp: Math.round(hp0 * hpF), atk: Math.round(atk0 * atkF), def: Math.round(def0) };
         const u = this.spawn(def, 'ally', h.x - h.facing * 110, WORLD.summonLane); u.summon = true; u.facing = h.facing; u.ai = 'chase';
+        // 召唤物等级：初始 = 技能等级（最高 3）；「重启」= 重新召唤从技能等级对应初始等级开始，不继承上一只已升等级
+        u.sLv = L; u.sKills = 0; u.sBase = { hp: def.hp, atk: def.atk, start: L, name: base.name }; this.applySummonLv(u);
         this.events.push({ type: 'summon', uid: u.uid });
       }
     } else if (s.kind === 'dot') {
