@@ -708,7 +708,8 @@ export class World {
   /** buff 持续秒数（#12 幽灵盾/神甲按道术；其余沿用 duration + durPerLv×等级） */
   buffDuration(s: SkillDef) { const slv = Math.max(0, this.skillLevel(s)); return s.buffStat ? taoBuffDur(slv, this.hero?.tao ?? 0) : (s.duration ?? 8) + (s.durPerLv ?? 0) * slv; }
   // ---------- 技能 ----------
-  cast(i: number, cds: number[]): CastResult {
+  /** opts.auto：自动施法（施毒术跳过已中毒的怪，无未中毒目标则不施放）；手动释放不受限 */
+  cast(i: number, cds: number[], opts: { auto?: boolean } = {}): CastResult {
     const s = this.skills[i], h = this.hero;
     if (!s || !h) return { ok: false, reason: '' };
     const need = this.needLevel(s);
@@ -722,6 +723,11 @@ export class World {
       const side = this.meleeSide(); if (side === null) return { ok: false, reason: '没有可攻击的目标' };
       const q = this.queue(side); h.facing = side as 1 | -1;
       targets = s.kind === 'pierce' ? q.slice(0, s.pierce ?? 3) : [q[0]];
+    } else if (s.kind === 'dot' && opts.auto) {
+      // 自动施毒：射程内最近的未中毒（绿毒未结束 = 已中毒）敌人；全部已中毒 → 不施放、不耗蓝、不占公共间隔
+      const t = this.alive('enemy').filter(e => (e.poisonUntil ?? 0) <= this.time && this.gap(h, e) <= (s.range ?? 500)).sort((a, b) => this.gap(h, a) - this.gap(h, b))[0];
+      if (!t) return { ok: false, reason: '射程内敌人均已中毒' };
+      h.facing = (t.x >= h.x ? 1 : -1); targets = [t];
     } else if (s.kind === 'ranged' || s.kind === 'dot' || s.kind === 'zone') {
       const side = this.rangedSide(s.range ?? 500); if (side === null) return { ok: false, reason: '射程内没有目标' };
       h.facing = side as 1 | -1; targets = [this.queue(side)[0]];

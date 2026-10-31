@@ -571,7 +571,7 @@ export class BattleScene extends Phaser.Scene {
     for (const id of list) {
       const si = this.world.skills.findIndex(s => s.id === id);
       if (si < 0 || this.cds[si] > 0) continue;
-      const r = this.world.cast(si, this.cds);
+      const r = this.world.cast(si, this.cds, { auto: true });
       if (!r.ok) continue;
       const evs = this.world.drainEvents();
       const hv = this.views.get(h.uid);

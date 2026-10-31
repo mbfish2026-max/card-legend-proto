@@ -299,6 +299,15 @@ const free = (w: World) => w.skills.map(() => 0);
   ok(z.sBase!.start === 0 && a === 0 && z.sLv === 1, `技能 0 级召出 0 级（白名），召出后第 10 次击杀升 1 级（${a}→${z.sLv}）`);
   ok(!('sLv' in (w.toSave() as any)) && !JSON.stringify(w.toSave()).includes('sKills'), '召唤物等级/击杀不存档');
 }
+{ // 自动施毒：跳过已中毒的怪；全部中毒则不施放（不耗蓝、不占公共间隔）；手动不受限
+  const w = mk([{ id: 'orc', x: 1300 }, { id: 'orc', x: 1500 }], [], 'taoist', 30); tough(w); const h = w.hero!; h.x = 1000; h.mp = h.maxMp = 9999;
+  const p = idx(w, 'poison'), [a, b] = w.alive('enemy').sort((x, y) => x.x - y.x);
+  let cds = free(w); let r = w.cast(p, cds, { auto: true }); ok(r.ok && (a.poisonUntil ?? 0) > w.time, '自动施毒：先毒最近的未中毒怪');
+  cds = free(w); r = w.cast(p, cds, { auto: true }); ok(r.ok && (b.poisonUntil ?? 0) > w.time, '自动施毒：跳过已中毒的怪，毒下一只');
+  cds = free(w); const mp0 = h.mp; const r2 = w.cast(p, cds, { auto: true }) as any;
+  ok(!r2.ok && r2.reason === '射程内敌人均已中毒' && h.mp === mp0 && Math.max(...cds) === 0, '全部已中毒：自动不施放、不耗蓝、不占公共间隔');
+  cds = free(w); ok(w.cast(p, cds).ok && h.mp < mp0, '手动施毒不受限（可重复施放）');
+}
 { // 平衡：多种子自动脚本（单种子对随机序列太敏感，任何改动 RNG 消耗顺序的提交都会让结果漂移）
   const SEEDS = [3, 7, 11, 19, 23, 42, 57, 88, 101];
   const NEW_BOOKS = ['big_fireball', 'burst_fire', 'hell_fire', 'lightning_flash', 'hell_thunder', 'ghost_shield', 'holy_armor', 'mass_heal'];
@@ -311,7 +320,7 @@ const free = (w: World) => w.skills.map(() => 0);
       if (!h) { learnLog.push(`死@${w.floorIndex + 1}层Lv${w.level}`); w.respawn(); continue; }
       if (h.hp < h.maxHp * 0.4 && w.usePotion(w.pots[1] > 0 ? 1 : 0)) potUsed++;
       if ((h.mp ?? 0) < 40) w.usePotion(w.pots[3] > 0 ? 3 : 2);
-      for (let i = 0; i < w.skills.length; i++) w.cast(i, cds);
+      for (let i = 0; i < w.skills.length; i++) w.cast(i, cds, { auto: true }); // 模拟 = 自动施法（施毒跳过已中毒）
       for (let i = w.bag.length - 1; i >= 0; i--) { const it = w.bag[i]; if (it.slot && it.req <= w.level && !w.equip[w.targetSlot(it)!]) w.equipItem(i); }
       // 黑铁：模拟脚本卖掉（避免碎装干扰难度基线；玩家可手动强化）
       for (let i = w.bag.length - 1; i >= 0; i--) if (w.bag[i]?.item === 'black_iron') w.sellItem(i);
