@@ -297,6 +297,10 @@ const free = (w: World) => w.skills.map(() => 0);
   const w0 = mk([{ id: 'orc', x: 3000 }], [], 'taoist', 30); w0.skillTrain.summon_skeleton = 0; w0.cast(idx(w0, 'summon_skeleton'), free(w0)); const z = w0.summon!;
   for (let i = 0; i < 9; i++) w0.kill(w0.spawn({ ...w0.alive('enemy')[0] } as any, 'enemy', 2000, 0)); const a = z.sLv; w0.kill(w0.spawn({ ...w0.alive('enemy')[0] } as any, 'enemy', 2000, 0));
   ok(z.sBase!.start === 0 && a === 0 && z.sLv === 1, `技能 0 级召出 0 级（白名），召出后第 10 次击杀升 1 级（${a}→${z.sLv}）`);
+  for (const n of [1, 2, 3]) { const wn = mk([{ id: 'orc', x: 3000 }], [], 'taoist', 30); (wn as any).skillLevel = () => n; const kk = idx(wn, 'summon_skeleton');
+    wn.cast(kk, free(wn)); const x = wn.summon!; ok(x.sLv === n && x.name === `骷髅·${n}级`, `技能 ${n} 级 → 召出 ${n} 级`);
+    for (let i = 0; i < 300; i++) wn.kill(wn.spawn({ ...wn.alive('enemy')[0] } as any, 'enemy', 2000, 0)); ok(x.sLv === 7, `技能 ${n} 级召出后按总击杀成长到 7 级`);
+    wn.kill(x); wn.cast(kk, free(wn)); ok(wn.summon!.sLv === n && wn.summon!.sKills === 0, `重新召唤重置为技能等级 ${n}（不继承 7 级）`); }
   ok(!('sLv' in (w.toSave() as any)) && !JSON.stringify(w.toSave()).includes('sKills'), '召唤物等级/击杀不存档');
 }
 { // 自动施毒：跳过已中毒的怪；全部中毒则不施放（不耗蓝、不占公共间隔）；手动不受限
