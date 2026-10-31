@@ -59,7 +59,7 @@ export class Hud {
     s.add.rectangle(1130, 36, 258, 34).setStrokeStyle(1, 0xffe8a0, 0.6).setDepth(20);
     this.plaque = txt(s, 1130, 36, levelName, 22, '#ffe8a0', { fontStyle: 'bold' }).setOrigin(0.5).setDepth(21);
     this.setFloor(levelName, waveIcons);
-    if (!mobile) txt(s, 640, 574, '移动 ←→/AD  纵深 ↑↓  技能 QWER  药水 1-4  背包 B/C  商人 F  设置 Esc  静音 M', 13, '#cccccc', { strokeThickness: 2 }).setOrigin(0.5).setDepth(30);
+    if (!mobile) txt(s, 640, 574, '移动 A/D ←→(可后退)  纵深 ↑↓  W/空格 传送门  S 回上层  技能 F1-F4  药水 1-4  背包 B/C  商人 T  设置 Esc  静音 M', 13, '#cccccc', { strokeThickness: 2 }).setOrigin(0.5).setDepth(30);
     // 底部栏
     // Diablo 式紧凑底栏：红球 | 技能+药水 | 蓝球，中间上方经验条
     s.add.rectangle(640, 664, 760, 112, 0x140f0a, 0.92).setStrokeStyle(2, 0x6a5030).setDepth(19);
@@ -74,7 +74,7 @@ export class Hud {
       s.add.rectangle(x, y, SK, SK, 0x1a1a1a).setStrokeStyle(2, 0xbbaa77).setDepth(20);
       if (s.textures.exists('sk_' + k.id)) s.add.image(x, y, 'sk_' + k.id).setDisplaySize(SK - 4, SK - 4).setDepth(20);
       else if (k.name) txt(s, x, y, k.name, 12).setOrigin(0.5).setDepth(20);
-      txt(s, x - SK / 2 + 3, y - SK / 2 + 1, k.key, 13, '#ffff66').setDepth(24);
+      txt(s, x - SK / 2 + 2, y - SK / 2 + 1, k.key, 11, '#ffff66').setDepth(24);
     });
     this.radar = s.add.graphics().setDepth(23);
     const m = s.make.graphics({}, false); m.fillStyle(0xffffff); this.skillPos.forEach(p => m.fillRect(p.x - SK / 2, p.y - SK / 2, SK, SK));

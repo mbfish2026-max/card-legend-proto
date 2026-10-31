@@ -4,6 +4,7 @@ import { CLASSES, ClassId } from '../src/data/classes';
 import { ENEMIES, DIFF } from '../src/data/units';
 import { detectMobile } from '../src/mobile';
 import { POTIONS } from '../src/data/skills';
+import { Settings } from '../src/settings';
 let pass = 0; const ok = (c: boolean, m: string) => { if (!c) { console.error('FAIL', m); throw new Error(m); } pass++; console.log('ok', m); };
 function seeded(s: number) { return () => (s = (s * 16807) % 2147483647) / 2147483647; }
 const mk = (spawns: Floor['spawns'], extra: Floor[] = [], cls: ClassId = 'warrior', lv = 20, seed = 1) => new World(seeded(seed), lv, [{ name: '测试层', spawns }, ...extra], cls);
@@ -165,5 +166,29 @@ const free = (w: World) => w.skills.map(() => 0);
   z.ai = 'chase'; h.x = 600; z.x = 1100; let leaps = 0; const x0 = z.x;
   for (let i = 0; i < 6; i++) { w.step(0.05); for (const e of w.drainEvents()) if (e.type === 'leap') leaps++; }
   ok(leaps >= 1 && x0 - z.x > WORLD.heroSpeed * WORLD.chaseSpeedRatio * 0.3 * 1.5, `距离拉开时近战怪跳跃补位（leap ${leaps} 次，位移 ${Math.round(x0 - z.x)}）`);
+}
+{ // 后退：怪在前方时按 A 向后走，朝向保持面对怪物，速度正常
+  const w = mk([{ id: 'wolf', x: 700 }]); tough(w); const h = w.hero!; h.x = 450; const x0 = h.x;
+  w.alive('enemy').forEach(e => (e.ai = 'idle', e.atk = 0));
+  for (let i = 0; i < 10; i++) w.step(0.05, { dx: -1, dy: 0 });
+  ok(h.facing === 1 && x0 - h.x > WORLD.heroSpeed * 0.5 * 0.9, `后退时仍面向怪物（facing ${h.facing}，后退 ${Math.round(x0 - h.x)}px）`);
+  const w2 = mk([]); const h2 = w2.hero!; w2.step(0.05, { dx: -1, dy: 0 }); ok(h2.facing === -1, '附近无怪时向左走会转身');
+}
+{ // 技能键 F1~F4，且不占用 W/A/S/D
+  const keys = (Object.keys(CLASSES) as ClassId[]).flatMap(c => CLASSES[c].skills.map(s => s.key));
+  ok(keys.every(k => /^F[1-4]$/.test(k)) && !keys.some(k => 'WASD'.includes(k)), `三职业技能键均为 F1~F4（${[...new Set(keys)].join(',')}）`);
+  ok(POTIONS.every(p => !keys.includes(p.key)), '药水 1-4 与技能键不冲突');
+}
+{ // S 键：起点返回上一层
+  const w = mk([], [{ name: '二层', spawns: [] }]); w.loadFloor(1); const h = w.hero!;
+  ok(w.prevFloor() && w.floorIndex === 0 && h.x > WORLD.heroStartX + 150, '在起点按 S 返回上一层（出生在出口前）');
+  ok(!w.prevFloor(), '第一层按 S 无效');
+}
+{ // 虚拟按键：手机默认开，电脑关；与电脑设置隔离
+  Settings.showPadMobile = null;
+  ok(Settings.wantPad(true) && !Settings.wantPad(false), '手机默认开、电脑关');
+  Settings.showPadMobile = false; ok(!Settings.wantPad(true), '手机可手动关');
+  Settings.showPadMobile = true; ok(Settings.wantPad(true), '手机可手动开');
+  Settings.showPadMobile = null;
 }
 console.log(`全部通过 ${pass} 项`);

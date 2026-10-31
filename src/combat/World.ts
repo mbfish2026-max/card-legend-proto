@@ -278,7 +278,9 @@ export class World {
     const dx = Math.sign(inp.dx), dy = Math.sign(inp.dy);
     h.moving = !!(dx || dy);
     if (dx) {
-      h.facing = dx as 1 | -1;
+      // 后退：附近有怪在身后（与移动方向相反）时保持面向怪物，速度不变
+      const near = this.alive('enemy').filter(u => Math.abs(u.x - h.x) <= WORLD.aggroRange).sort((a, b) => Math.abs(a.x - h.x) - Math.abs(b.x - h.x))[0];
+      h.facing = (near && Math.sign(near.x - h.x) === -dx ? -dx : dx) as 1 | -1;
       let nx = h.x + dx * WORLD.heroSpeed * dt;
       for (const u of this.alive('enemy')) if (Math.sign(u.x - h.x || dx) === dx) {
         const limit = u.x - dx * (h.width + u.width) / 2;
@@ -381,7 +383,7 @@ export class World {
     for (const g of [...this.ground]) if (g.landAt <= this.time && Math.hypot(g.x - hh.x, (g.y - hh.y) * 0.5) <= WORLD.pickupRadius) this.pickup(g);
     this.atExit = Math.abs(hh.x - this.exitX) <= WORLD.exitRadius || hh.x >= this.exitX;
     if (this.atExit && this.requireUse && !inp.use) {
-      if (!(this.floor.boss && this.alive('enemy').some(u => u.tier === 'boss')) && this.time - this.exitHintT > 4) { this.exitHintT = this.time; this.events.push({ type: 'log', text: '到达传送门：按 空格 进入下一层' }); }
+      if (!(this.floor.boss && this.alive('enemy').some(u => u.tier === 'boss')) && this.time - this.exitHintT > 4) { this.exitHintT = this.time; this.events.push({ type: 'log', text: '到达传送门：按 W/空格 进入下一层' }); }
     } else if (this.atExit) {
       const boss = this.alive('enemy').find(u => u.tier === 'boss');
       if (this.floor.boss && boss) {
@@ -389,6 +391,11 @@ export class World {
       } else if (this.floorIndex >= this.floors.length - 1) { this.done = true; this.events.push({ type: 'win' }); }
       else this.loadFloor(this.floorIndex + 1);
     }
+  }
+  /** S 键：在本层起点附近返回上一层（出生在上一层出口前） */
+  prevFloor(): boolean {
+    const h = this.hero; if (!h || this.floorIndex <= 0 || h.x > WORLD.heroStartX + 150) return false;
+    this.loadFloor(this.floorIndex - 1); h.x = this.exitX - WORLD.exitRadius - 80; return true;
   }
   drainEvents() { const e = this.events; this.events = []; return e; }
 }

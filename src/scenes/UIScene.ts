@@ -19,7 +19,7 @@ export class UIScene extends Phaser.Scene {
   }
   update() {
     const b = this.scene.get('Battle') as BattleScene; if (!this.pad || !b.world) return;
-    this.pad.setVisible(Settings.showPad !== false && !this.panel.open && b.state === 'play');
+    this.pad.setVisible(Settings.wantPad(IS_MOBILE) && !this.panel.open && b.state === 'play');
     this.pad.update(b.cds, b.world.skills);
   }
 }

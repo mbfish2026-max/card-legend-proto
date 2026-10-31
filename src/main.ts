@@ -6,7 +6,7 @@ import { IS_MOBILE, setupMobile } from './mobile';
 import { Settings } from './settings';
 import { FxQuality } from './ui/Fx';
 Settings.load();
-if (Settings.showPad === null) Settings.showPad = IS_MOBILE;
+// 虚拟按键：手机端 showPadMobile===null 即默认开（Settings.wantPad），不写死进存档，避免电脑设置污染手机
 if (Settings.lowFx === null) Settings.lowFx = IS_MOBILE;
 FxQuality.low = !!Settings.lowFx;
 setupMobile();

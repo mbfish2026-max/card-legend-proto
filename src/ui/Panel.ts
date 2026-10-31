@@ -117,11 +117,18 @@ export class Panel {
     R.add([...button(s, 500, top + 90, 50, 40, '－', () => { Settings.volume = Math.max(0, +(Settings.volume - 0.1).toFixed(1)); refresh(); })]);
     R.add([...button(s, 780, top + 90, 50, 40, '＋', () => { Settings.volume = Math.min(1, +(Settings.volume + 0.1).toFixed(1)); refresh(); })]);
     R.add([...button(s, 640, top + 150, 220, 42, '静音开/关 (M)', () => { Settings.muted = !Settings.muted; refresh(); }, 18)]);
-    R.add([...button(s, 520, top + 210, 230, 42, `虚拟按键：${Settings.showPad ? '开' : '关'}`, () => { Settings.showPad = !Settings.showPad; Settings.save(); this.render(); }, 17)]);
-    R.add([...button(s, 760, top + 210, 230, 42, `低特效：${Settings.lowFx ? '开' : '关'}`, () => { Settings.lowFx = !Settings.lowFx; FxQuality.low = Settings.lowFx; Settings.save(); this.render(); }, 17)]);
+    if (IS_MOBILE) {
+      const on = Settings.wantPad(true);
+      R.add([...button(s, 520, top + 210, 230, 42, `虚拟按键：${on ? '开' : '关'}`, () => {
+        Settings.showPadMobile = !Settings.wantPad(true); Settings.save(); this.render();
+      }, 17)]);
+    } else {
+      R.add(txt(s, 520, top + 210, '虚拟按键：电脑默认关', 14, '#888').setOrigin(0.5));
+    }
+    R.add([...button(s, 760, top + 210, 230, 42, `低特效：${Settings.lowFx ? '开' : '关'}`, () => { Settings.lowFx = !Settings.lowFx; FxQuality.low = !!Settings.lowFx; Settings.save(); this.render(); }, 17)]);
     R.add([...button(s, 640, top + 270, 220, 42, '保存并返回标题', () => { this.close(); this.onTitle(); }, 18)]);
     R.add([...button(s, 640, top + 328, 220, 42, '继续游戏', () => this.close(), 18)]);
-    R.add(txt(s, 640, top + 380, IS_MOBILE ? '手机：竖屏会提示旋转；虚拟按键可在此关闭' : '虚拟按键仅在手机/触屏上显示', 13, '#999').setOrigin(0.5));
+    R.add(txt(s, 640, top + 380, IS_MOBILE ? '手机/平板：虚拟按键默认开启，可在此关闭；竖屏会提示旋转' : '电脑不显示虚拟按键；手机浏览器打开会默认开启', 13, '#999').setOrigin(0.5));
     refresh();
   }
   showTip(it: InvItem, x: number, y: number, touch = false) {

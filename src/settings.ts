@@ -3,9 +3,33 @@ import type { SaveData } from './combat/World';
 const SET_KEY = 'fcl_settings_v1', SAVE_KEY = 'fcl_save_v1';
 const ls = () => { try { return globalThis.localStorage; } catch { return undefined; } };
 export const Settings = {
-  volume: 0.7, muted: false, music: 0.5, showPad: null as boolean | null, lowFx: null as boolean | null,
-  load() { try { Object.assign(this, JSON.parse(ls()?.getItem(SET_KEY) ?? '{}')); } catch { /* ignore */ } return this; },
-  save() { ls()?.setItem(SET_KEY, JSON.stringify({ volume: this.volume, muted: this.muted, music: this.music, showPad: this.showPad, lowFx: this.lowFx })); },
+  volume: 0.7, muted: false, music: 0.5,
+  /** 手机端虚拟按键：null=默认开；电脑端从不创建 pad，此字段仅在手机生效，与电脑设置互不影响 */
+  showPadMobile: null as boolean | null,
+  /** @deprecated 旧字段，加载时若 showPadMobile 未写入则忽略（避免电脑关按键影响手机） */
+  showPad: undefined as boolean | null | undefined,
+  lowFx: null as boolean | null,
+  load() {
+    try {
+      const raw = JSON.parse(ls()?.getItem(SET_KEY) ?? '{}') as Record<string, unknown>;
+      if (typeof raw.volume === 'number') this.volume = raw.volume;
+      if (typeof raw.muted === 'boolean') this.muted = raw.muted;
+      if (typeof raw.music === 'number') this.music = raw.music;
+      if (typeof raw.lowFx === 'boolean' || raw.lowFx === null) this.lowFx = raw.lowFx as boolean | null;
+      // 仅认 showPadMobile；旧 showPad 不迁移到手机，避免电脑关掉后手机也没按键
+      if (typeof raw.showPadMobile === 'boolean' || raw.showPadMobile === null) this.showPadMobile = raw.showPadMobile as boolean | null;
+      else this.showPadMobile = null;
+    } catch { /* ignore */ }
+    return this;
+  },
+  save() {
+    ls()?.setItem(SET_KEY, JSON.stringify({
+      volume: this.volume, muted: this.muted, music: this.music,
+      showPadMobile: this.showPadMobile, lowFx: this.lowFx,
+    }));
+  },
+  /** 手机/触屏：null 或 true → 显示虚拟按键；电脑永远 false */
+  wantPad(isMobile: boolean) { return isMobile && this.showPadMobile !== false; },
   apply(sound: { volume: number; mute: boolean }) { sound.volume = this.volume; sound.mute = this.muted; },
 };
 export const SaveStore = {

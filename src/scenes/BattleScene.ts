@@ -67,11 +67,13 @@ export class BattleScene extends Phaser.Scene {
     this.views.set(h.uid, new CardView(this, h));
     this.cameras.main.setBounds(0, 0, W, 720).startFollow(this.views.get(h.uid)!, true, 0.12, 0.12, 0, 120);
     this.keys = this.input.keyboard!.addKeys('LEFT,RIGHT,UP,DOWN,A,D') as any;
-    this.input.keyboard!.on('keydown', (e: KeyboardEvent) => this.onKey(e.key.toUpperCase()));
+    // F1~F4 技能：阻止浏览器默认行为（F1 帮助等）；不占用 F5 等其它功能键
+    this.input.keyboard!.on('keydown', (e: KeyboardEvent) => { if (/^F[1-4]$/.test(e.key)) e.preventDefault(); this.onKey(e.key.toUpperCase()); });
+    this.input.keyboard!.addCapture('F1,F2,F3,F4');
     this.handle(this.world.drainEvents());
     const sk = this.world.skills.map(s => `${s.key} ${s.name}`).join('  ');
     this.log(`${this.world.classDef.name}：${sk}`);
-    this.log('本层起点有商人（按 F 交易）；B 打开背包');
+    this.log('本层起点有商人（按 T 交易）；B 打开背包');
     // 截图/调试参数：?floor=N 直接进入第 N 层；?demo=1 把怪物排到主角附近
     const fl = Number(qs.get('floor'));
     if (fl >= 1 && fl <= this.world.floors.length && !data?.save) { this.world.loadFloor(fl - 1); this.handle(this.world.drainEvents()); }
@@ -116,7 +118,7 @@ export class BattleScene extends Phaser.Scene {
     for (let i = -3; i <= 3; i++) { const a = Math.PI * (1 + (i + 3) / 6); arch.fillStyle(0x6a7080, 1).fillRect(Math.cos(a) * 85 - 7, -100 + Math.sin(a) * 85 - 7, 14, 14); }
     const motes = this.add.particles(0, 0, '__WHITE', { x: { min: -60, max: 60 }, y: { min: 60, max: 110 }, speedY: { min: -60, max: -25 }, lifespan: 1800, scale: { start: 3, end: 0 }, alpha: { start: 0.8, end: 0 }, tint: [0xd090ff, 0xaa66ff], frequency: 120 });
     const t = this.add.text(0, -205, '下一层', { fontFamily: FONT, fontSize: '22px', color: '#e0c8ff', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5);
-    this.portalHint = this.add.text(0, -235, IS_MOBILE ? '点「传送」进入' : '按 空格 进入', { fontFamily: FONT, fontSize: '18px', color: '#ffffff', fontStyle: 'bold', stroke: '#2a0a5a', strokeThickness: 5 }).setOrigin(0.5).setVisible(false);
+    this.portalHint = this.add.text(0, -235, IS_MOBILE ? '点「传送」进入' : '按 W/空格 进入', { fontFamily: FONT, fontSize: '18px', color: '#ffffff', fontStyle: 'bold', stroke: '#2a0a5a', strokeThickness: 5 }).setOrigin(0.5).setVisible(false);
     this.tweens.add({ targets: this.portalHint, y: -242, duration: 500, yoyo: true, repeat: -1 });
     c.add([arch, core, swirl, ...rings, motes, t, this.portalHint]); this.portal = c;
   }
@@ -128,14 +130,14 @@ export class BattleScene extends Phaser.Scene {
     g.lineStyle(2, 0xd4a64a).strokeRect(-60, -10, 120, 70);
     c.add(g);
     if (this.textures.exists('merchant')) c.add(this.add.image(0, 22, 'merchant').setDisplaySize(52, 52));
-    c.add(this.add.text(0, -92, '商人 [F]', { fontFamily: FONT, fontSize: '16px', color: '#ffe8a0', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5));
+    c.add(this.add.text(0, -92, '商人 [T]', { fontFamily: FONT, fontSize: '16px', color: '#ffe8a0', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5));
     g.setInteractive(new Phaser.Geom.Rectangle(-75, -70, 150, 130), Phaser.Geom.Rectangle.Contains).on('pointerdown', () => this.openPanel('shop'));
     this.merchant = c;
   }
   nearMerchant() { const h = this.world.hero; return !!h && h.x - MERCHANT_X < SHOP_RANGE; }
   openPanel(m: PanelMode) {
     if (this.state !== 'play') return;
-    if (m === 'shop' && !this.nearMerchant() && !this.ui.panel.open) { this.log('商人在本层起点，请走回左侧商人处（F）'); return; }
+    if (m === 'shop' && !this.nearMerchant() && !this.ui.panel.open) { this.log('商人在本层起点，请走回左侧商人处（T）'); return; }
     this.sfx('click'); this.ui.panel.toggle(m);
   }
   saveGame() { if (this.state !== 'win' && this.world.hero) SaveStore.write(this.world.toSave()); }
@@ -146,10 +148,11 @@ export class BattleScene extends Phaser.Scene {
     if (this.state === 'win') { if (k === ' ') { this.sfx('click'); this.toTitle(); } return; }
     if (k === 'ESCAPE') { if (this.paused) this.ui.panel.close(); else this.openPanel('settings'); return; }
     if (k === 'B' || k === 'C' || k === 'I') return this.openPanel('bag');
-    if (k === 'F') return this.openPanel('shop');
+    if (k === 'T') return this.openPanel('shop');
     if (k === 'K') return this.openPanel('skills');
     if (this.paused || this.state !== 'play') return;
-    if (k === ' ') { this.usePortal(); return; }
+    if (k === ' ' || k === 'W') { this.usePortal(); return; }
+    if (k === 'S') { if (!this.fading && this.world.hero && this.world.floorIndex > 0 && this.world.hero.x <= WORLD.heroStartX + 150) { this.fading = true; this.cameras.main.fadeOut(400, 0, 0, 0); this.cameras.main.once('camerafadeoutcomplete', () => { this.fading = false; this.world.prevFloor(); }); } else this.log('在本层起点按 S 返回上一层'); return; }
     const h = this.world.hero; if (!h) return;
     const si = this.world.skills.findIndex(s => s.key === k);
     if (si >= 0) {
