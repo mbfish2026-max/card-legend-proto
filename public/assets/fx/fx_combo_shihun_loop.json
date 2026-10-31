@@ -1,0 +1,223 @@
+{
+ "frames": {
+  "fx_combo_shihun_loop_00": {
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 640,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 640,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 640,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.375
+   }
+  },
+  "fx_combo_shihun_loop_01": {
+   "frame": {
+    "x": 0,
+    "y": 192,
+    "w": 640,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 640,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 640,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.375
+   }
+  },
+  "fx_combo_shihun_loop_02": {
+   "frame": {
+    "x": 0,
+    "y": 384,
+    "w": 640,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 640,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 640,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.375
+   }
+  },
+  "fx_combo_shihun_loop_03": {
+   "frame": {
+    "x": 0,
+    "y": 576,
+    "w": 640,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 640,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 640,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.375
+   }
+  },
+  "fx_combo_shihun_loop_04": {
+   "frame": {
+    "x": 0,
+    "y": 768,
+    "w": 640,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 640,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 640,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.375
+   }
+  },
+  "fx_combo_shihun_loop_05": {
+   "frame": {
+    "x": 0,
+    "y": 960,
+    "w": 640,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 640,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 640,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.375
+   }
+  },
+  "fx_combo_shihun_loop_06": {
+   "frame": {
+    "x": 0,
+    "y": 1152,
+    "w": 640,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 640,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 640,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.375
+   }
+  },
+  "fx_combo_shihun_loop_07": {
+   "frame": {
+    "x": 0,
+    "y": 1344,
+    "w": 640,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 640,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 640,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.375
+   }
+  }
+ },
+ "meta": {
+  "app": "card-legend fx proc (python numpy/Pillow)",
+  "image": "fx_combo_shihun_loop.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 640,
+   "h": 1536
+  },
+  "scale": "1",
+  "fx": {
+   "w": 640,
+   "h": 192,
+   "n": 8,
+   "fps": 12,
+   "loop": true,
+   "pivot": [
+    320,
+    72
+   ],
+   "anchor": "target",
+   "skill": "combo_shihun",
+   "phase": "loop",
+   "blend": "ADD",
+   "ms": 667,
+   "cols": 1
+  }
+ }
+}
