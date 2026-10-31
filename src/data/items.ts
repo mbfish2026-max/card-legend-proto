@@ -1,10 +1,17 @@
-import { ItemDef, Slot } from '../combat/types';
+import { EquipSlot, ItemDef, Slot } from '../combat/types';
 import { CLASSES } from './classes';
 import { BOOKS, bookItemId } from './books';
 // 物品表：中文名 + 图标。equip=基础属性；req=需求等级；price=出售价（商人收购价）
 const I = 'assets/items/';
 export const SLOTS: Slot[] = ['weapon', 'helmet', 'armor', 'necklace', 'ring', 'bracelet', 'boots'];
 export const SLOT_NAMES: Record<Slot, string> = { weapon: '武器', helmet: '头盔', armor: '衣服', necklace: '项链', ring: '戒指', bracelet: '手镯', boots: '靴子' };
+/** 穿戴位：戒指×2、手镯×2（热血传奇官方穿戴位） */
+export const EQUIP_SLOTS: EquipSlot[] = ['weapon', 'helmet', 'armor', 'necklace', 'ring1', 'ring2', 'bracelet1', 'bracelet2', 'boots'];
+export const EQUIP_SLOT_NAMES: Record<EquipSlot, string> = { weapon: '武器', helmet: '头盔', armor: '衣服', necklace: '项链', ring1: '左戒指', ring2: '右戒指', bracelet1: '左手镯', bracelet2: '右手镯', boots: '靴子' };
+/** 物品部位 → 可放入的穿戴位（按优先顺序） */
+export function equipSlotsFor(k: Slot): EquipSlot[] { return k === 'ring' ? ['ring1', 'ring2'] : k === 'bracelet' ? ['bracelet1', 'bracelet2'] : [k]; }
+/** 存档装备结构版本：2 = 双戒双镯 */
+export const EQUIP_VERSION = 2;
 export const STAT_NAMES: Record<string, string> = { hp: '生命', mp: '魔法值', atk: '攻击', mag: '魔法', tao: '道术', def: '防御' };
 export const ITEMS: Record<string, ItemDef> = {
   hp_small: { id: 'hp_small', name: '金创药(小量)', icon: 'assets/potions/INV_Potion_51.png', potion: 0 },
@@ -90,7 +97,7 @@ export const SETS: Record<string, SetDef> = {
 };
 
 /** 可黑铁强化的部位：手机版为武器/头盔/衣服/腰带/鞋；本作无腰带 → 适配四部位。首饰不可强化（官方）。 */
-export const ENHANCE_SLOTS: Slot[] = ['weapon', 'helmet', 'armor', 'boots'];
+export const ENHANCE_SLOTS: (Slot & EquipSlot)[] = ['weapon', 'helmet', 'armor', 'boots'];
 export const ENHANCE_MAX = 7;
 export const ENHANCE_STAT = 0.08; // 适配：每 +1 该件基础属性 +8%
 export const IRON_PRICE = 80; // 商店纯度 1 售价（适配）

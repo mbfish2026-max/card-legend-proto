@@ -1,5 +1,5 @@
 // 回归单测（纯逻辑，无浏览器）：存档迁移 / 技能书 / 世界地图传送 / 设置存取。由 tests/regress.mjs 调用，输出 JSON 行。
-import { World, SaveData, FLOOR_MIGRATE } from '../src/combat/World';
+import { World, SaveData, FLOOR_MIGRATE, FLOOR_MIGRATE_V3 } from '../src/combat/World';
 import { FLOORS } from '../src/data/world';
 import { CLASSES, ClassId } from '../src/data/classes';
 import { BOOKS, bookItemId } from '../src/data/books';
@@ -17,11 +17,11 @@ base.bag.push(base.makeItem('hp_small'), base.makeItem(bookItemId('poison')));
 base.checkAchieves(); // 直接改 kills 后补算成就，否则读档时才补发
 const cur = base.toSave();
 const legacy = (o: Partial<SaveData> = {}) => JSON.parse(JSON.stringify({ ...cur, learned: undefined, mapV: undefined, ...o })) as SaveData;
-t('存档迁移', '当前版本 toSave 带 mapV=2 / v=1', () => cur.mapV === 2 && cur.v === 1);
-for (let old = 0; old < FLOOR_MIGRATE.length && old < FLOORS.length; old++) t('存档迁移', `旧层号 ${old} → ${FLOOR_MIGRATE[old]}`, () => {
+t('存档迁移', '当前版本 toSave 带 mapV=3 / v=1', () => cur.mapV === 3 && cur.v === 1);
+for (let old = 0; old < FLOOR_MIGRATE.length && old < FLOORS.length; old++) { const e = FLOOR_MIGRATE_V3[FLOOR_MIGRATE[old]] ?? FLOOR_MIGRATE[old]; t('存档迁移', `旧层号 ${old} → ${e}（mapV1→2→3）`, () => {
   const w = new World(seeded(1), 1, FLOORS, 'taoist', legacy({ floorIndex: old, reached: [0, old], bossKilled: [old] }));
-  return w.floorIndex === FLOOR_MIGRATE[old] && w.reached.has(FLOOR_MIGRATE[old]) && w.bossKilled.has(FLOOR_MIGRATE[old]) || `got floor ${w.floorIndex}`;
-});
+  return w.floorIndex === e && w.reached.has(e) && w.bossKilled.has(e) || `got floor ${w.floorIndex}`;
+}); }
 t('存档迁移', '旧存档升级不丢数据（职业/等级/经验/金币/击杀/背包/装备/药/悬赏/成就/修炼）', () => {
   const l = legacy({ skillTrain: { heal: 345 }, questProg: { q0: 3 }, questDone: ['q1'], achieves: ['a0'] });
   const s = new World(seeded(1), 1, FLOORS, 'taoist', l).toSave();
