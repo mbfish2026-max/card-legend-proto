@@ -116,7 +116,10 @@ export class BattleScene extends Phaser.Scene {
       for (const [id, r] of [['dragon_sword', 'rare'], ['bone_helm', 'magic'], ['armor', 'common'], ['pearl', 'magic'], ['gold_ring', 'rare'], ['boots', 'common'], ['bracelet', 'magic'], ['iron_sword', 'common'], ['magic_staff', 'magic'], ['meat', 'common'], ['bone', 'common'], ['helmet', 'rare']] as const) w.bag.push(w.makeItem(id, r));
       w.gold += 860; w.equipItem(1); w.equipItem(2); w.equipItem(4);
     }
-    this.handle(w.drainEvents()); this.views.forEach(v => { v.x = v.unit.x; v.sync(); });
+    this.handle(w.drainEvents());
+    // 号角召出的沃玛教主、第一张图的刷新怪不发 summon 事件：补建缺失的视图，避免「有怪无图」
+    if (!w.town) for (const u of w.alive('enemy')) if (!this.views.has(u.uid)) { const v = new CardView(this, u); v.setAlpha(0); this.tweens.add({ targets: v, alpha: 1, duration: 400 }); this.views.set(u.uid, v); }
+    this.views.forEach(v => { v.x = v.unit.x; v.sync(); });
     const last = es.filter(e => e.tier !== 'boss').pop();
     if (last && !qs.has('nodrop')) { last.drops = [{ item: 'gold', chance: 1 }, { item: 'hp_small', chance: 1 }, { item: 'iron_sword', chance: 1, rarity: 'rare' }]; w.kill(last); this.handle(w.drainEvents()); }
     const cast = qs.get('cast');
