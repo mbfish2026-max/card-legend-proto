@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## feat/art-integrate（接入 art/gap-fill 素材，只改图片路径/art 字段，数值未动）
+- 物品图标：99 处 icon 改指 `assets/items/eq_<id>.png` / `assets/items/<id>.png`（装备 87、药水/卷轴/杂物 12；只指向实际存在的文件）；HUD 药水 potion_0..3 同步改为 items/hp_*/mp_*。
+- 2x：新增 `itemIconUrl`，画质 >720p（Render.k>1）且存在 `@2x` 文件时加载 @2x（88 个，列表 src/data/item-icons-2x.ts）；显示尺寸不变。
+- 怪物：23 个原借用他怪贴图的单位 art 改为独立立绘（M1 Boss 5、M2 8、M3 10 含神兽），ASSETS 补对应 key。
+- 缺图回退：图标 404 → 纹理不存在 → 格子空/色块，无 JS 报错（tests/e2e/art-verify.mjs）。
+- 召唤物姿态帧（L.2）：ASSETS 加 summon_skeleton_atk/hurt、summon_beast_atk/hurt；CardView.showPose 在召唤物攻击/受击时临时换帧（260/220ms）后切回原立绘，缺帧不换（保留原动画）。SUMMON_BEAST art=summon_beast。
+- 未接入：M4（雪人王/钉耙猫王/半兽统领/恶灵尸王/黄泉教主/鹰卫/双头金刚/双头血魔）src 中无对应单位；boots 无 eq_boots 图仍用 gen_boots。
 ## 装备对比（feat/equip-compare）
 - 物品提示新增与身上同部位装备的属性差：涨绿降红，属性相同显示「属性相同」；戒指/手镯分别对比左右两位；空位显示「未穿戴」；已穿的那件自身不对比
 - 背包、商店、仓库共用同一提示，均生效；触屏点选即显示（沿用选中显示提示）

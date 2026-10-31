@@ -118,6 +118,15 @@ export class CardView extends Phaser.GameObjects.Container {
     if (!this.scene.textures.exists(look.key) || this.art.texture.key === look.key) return;
     const ang = this.art.angle; this.art.setTexture(look.key); this.fitArt(); this.art.setAngle(ang);
   }
+  private poseBase?: string; private poseTimer?: Phaser.Time.TimerEvent;
+  /** 召唤物姿态单帧（art-requests L.2）：临时换纹理，ms 后切回原立绘；帧与原立绘同尺寸同锚点，故不重算缩放。缺帧 → 不做任何事（保留原动画） */
+  showPose(key: string, ms = 260) {
+    const a = this.art; if (!(a instanceof Phaser.GameObjects.Image) || this.dying || !this.active || !this.scene.textures.exists(key)) return false;
+    if (!this.poseBase) this.poseBase = a.texture.key;
+    a.setTexture(key); this.poseTimer?.remove();
+    this.poseTimer = this.scene.time.delayedCall(ms, () => { const b = this.poseBase; this.poseBase = undefined; if (b && a.active && this.scene.textures.exists(b)) a.setTexture(b); });
+    return true;
+  }
   /** 按卡面高度/最大宽度缩放立绘，返回实际图高 */
   private fitArt() {
     const im = this.art; let s = this.figH0 / im.height, figH = this.figH0;

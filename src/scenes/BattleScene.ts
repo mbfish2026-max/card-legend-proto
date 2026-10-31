@@ -395,6 +395,7 @@ export class BattleScene extends Phaser.Scene {
         else {
           // 召唤物专属攻击特效（docs/fx-requests.md 召唤物动作 / v5）；缺图退回原 Graphics 挥砍
           const u = sv.unit, fx0 = sv.x + dir * (sv.w / 2 + 6);
+          if (u.summon) sv.showPose(u.id + '_atk'); // 姿态帧（art-requests L.2），缺帧保留原动画
           const ok = u.pet ? !!playFx(this, 'fx_pet_hit_pink', tv.cx, tv.cy)
             : u.summon && u.id === 'summon_skeleton' ? !!playFx(this, 'fx_skeleton_claw', fx0, sv.cy - 10, { flip: dir < 0 })
             : u.summon && u.id === 'summon_beast' ? !!playFx(this, 'fx_beast_bite', tv.cx, tv.cy) : false;
@@ -405,6 +406,7 @@ export class BattleScene extends Phaser.Scene {
         const y = v.cy - v.h * 0.15;
         if (e.heal) { fx.floatNumber(this, v.cx, y, v.h, '+' + e.amount, FX.healColor, 0.8); continue; }
         playCombatAnim(e, uid => this.views.get(uid)); // 受击动作（主角/怪物/召唤物同一套）
+        if (v.unit.summon) (v as CardView).showPose?.(v.unit.id + '_hurt', 220);
         if (e.dot) { fx.floatNumber(this, v.cx + 20, y, v.h, '-' + e.amount, '#5aff3a', 0.7); continue; }
         if (!playFx(this, 'fx_common_hitspark', v.cx, v.cy)) fx.hitSpark(this, v.cx, v.cy);
         fx.floatNumber(this, v.cx, y, v.h, '-' + e.amount + (e.crit ? '!' : ''), e.crit ? '#ff5a1a' : FX.dmgColor, e.crit ? FX.critScale : 1);
