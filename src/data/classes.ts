@@ -4,7 +4,7 @@ import { Stats } from '../combat/types';
 /** 职业基础/成长：魔御官方职业成长未查到 → 可省略（按 0） */
 type ClassStats = Omit<Stats, 'mdef'> & { mdef?: number };
 export type ClassId = 'warrior' | 'mage' | 'taoist';
-export type SkillKind = 'melee' | 'pierce' | 'ranged' | 'aoe' | 'dot' | 'buff' | 'summon' | 'zone' | 'rush';
+export type SkillKind = 'melee' | 'pierce' | 'ranged' | 'aoe' | 'dot' | 'buff' | 'summon' | 'zone' | 'rush' | 'line' | 'blast';
 export interface SkillDef {
   key: string; id: string; name: string; kind: SkillKind; stat: 'atk' | 'mag' | 'tao';
   mana: number; cooldown: number; mult?: number; pierce?: number; range?: number;
@@ -22,6 +22,8 @@ export interface SkillDef {
   passive?: boolean;
   /** 每级持续时间增量 [适配] */
   durPerLv?: number;
+  /** blast：以首个目标为中心的半径（px）[适配] */
+  splash?: number;
 }
 export interface ClassDef {
   id: ClassId; name: string; art: string; bg: number; artFacing: 1 | -1; atkInterval: number;
@@ -48,13 +50,19 @@ export const CLASSES: Record<ClassId, ClassDef> = {
     id: 'mage', name: '法师', art: 'mage', bg: 0x1c3a7a, artFacing: 1, atkInterval: 1.3, autoStat: 'mag',
     // [适配] 法师 7 级前无技能，同上提高基础/成长（R4 技能轮）
     base: { hp: 300, mp: 240, atk: 10, mag: 90, tao: 0, def: 6 }, grow: { hp: 33, mp: 20, atk: 1, mag: 7, tao: 0, def: 1.2 },
-    desc: '远程法术，高爆发低血量\n火球·雷电·火墙·魔法盾·冰咆哮',
+    desc: '远程法术，高爆发低血量\n火球·雷电·火墙·魔法盾·冰咆哮\n大火球·爆裂·地狱火·疾光·雷光',
     skills: [
       { key: 'F1', id: 'fireball', name: '火球术', kind: 'ranged', stat: 'mag', mana: 12, cooldown: 1.6, mult: 2.2, range: 520, learn: [7, 7, 11, 16], train: [500, 1500, 3000], icon: S + 'skill_fireball.png', sfx: 'fireball_cast', desc: '远程火球，杀伤随修炼等级提升' },
       { key: 'F2', id: 'thunder', name: '雷电术', kind: 'ranged', stat: 'mag', mana: 36, cooldown: 4, mult: 3.6, range: 560, learn: [17, 17, 20, 23], train: [1200, 3000, 5000], icon: S + 'skill_thunder.png', sfx: 'shockwave', desc: '天雷落下，单体高伤' },
       { key: 'F3', id: 'fire_wall', name: '火墙', kind: 'zone', stat: 'mag', mana: 60, cooldown: 8, mult: 0.8, range: 420, duration: 6, durPerLv: 2, learn: [24, 24, 29, 33], train: [4000, 12000, 24000], icon: S + 'skill_fire_wall.png', sfx: 'fireball_impact', desc: '2×2 火墙持续燃烧（官方 A）；[适配] 落在目标脚下，每秒灼烧' },
       { key: 'F4', id: 'magic_shield', name: '魔法盾', kind: 'buff', stat: 'mag', mana: 60, cooldown: 20, duration: 12, durPerLv: 4, reduce: 0.4, learn: [31, 31, 34, 38], train: [4000, 8000, 12000], icon: S + 'skill_magic_shield.png', sfx: 'heal2', desc: '减低受到的伤害 40%，等级越高持续越久' },
       { key: 'F5', id: 'ice_roar', name: '冰咆哮', kind: 'aoe', stat: 'mag', mana: 36, cooldown: 7, mult: 1.6, range: 420, duration: 4, slow: 0.5, learn: [35, 35, 37, 40], train: [4000, 8000, 12000], icon: S + 'skill_ice_roar.png', sfx: 'shockwave2', desc: '暴风雪攻击范围内全部敌人并减速' },
+      // #11 法师 5 技能：学习等级/修炼点 = 官方 C（21cq），耗魔 = D 私服 Spell ×3 [适配]，倍率/冷却/范围 [适配]（docs/skills-official.md #11）
+      { key: 'F6', id: 'big_fireball', name: '大火球', kind: 'ranged', stat: 'mag', mana: 9, cooldown: 2, mult: 3.0, range: 560, learn: [19, 19, 23, 25], train: [8000, 14000, 25000], icon: S + 'skill_fireball.png', sfx: 'fireball_cast', desc: '远程单体大火球（官方）；[适配] 倍率 3.0' },
+      { key: 'F7', id: 'burst_fire', name: '爆裂火焰', kind: 'blast', stat: 'mag', mana: 45, cooldown: 5, mult: 1.8, range: 520, splash: 170, learn: [22, 22, 27, 31], train: [3000, 6000, 18000], icon: S + 'skill_fireball.png', sfx: 'fireball_impact', desc: '3×3 爆炸（官方）；[适配] 目标及其左右 1 卡' },
+      { key: 'F8', id: 'hell_fire', name: '地狱火', kind: 'line', stat: 'mag', mana: 30, cooldown: 3, mult: 1.5, range: 425, learn: [16, 16, 21, 26], train: [1000, 4000, 8000], icon: S + 'skill_fire_wall.png', sfx: 'fireball_impact', desc: '向前 5 格火焰（官方）；[适配] 前方 2.5 卡内全部敌人' },
+      { key: 'F9', id: 'lightning_flash', name: '疾光电影', kind: 'line', stat: 'mag', mana: 75, cooldown: 5, mult: 2.4, range: 680, learn: [26, 26, 29, 32], train: [3000, 6000, 12000], icon: S + 'skill_thunder.png', sfx: 'shockwave', desc: '直线穿透光电（官方）；[适配] 前方 4 卡内全部敌人' },
+      { key: 'F10', id: 'hell_thunder', name: '地狱雷光', kind: 'aoe', stat: 'mag', mana: 105, cooldown: 6, mult: 2.2, range: 425, learn: [30, 30, 32, 34], train: [4000, 8000, 12000], icon: S + 'skill_thunder.png', sfx: 'shockwave2', desc: '以自身为中心 5×5 雷暴（官方）；[适配] 左右各 2.5 卡' },
     ],
   },
   taoist: {

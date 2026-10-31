@@ -85,8 +85,8 @@ export class BattleScene extends Phaser.Scene {
     this.events.once('shutdown', () => window.removeEventListener('keydown', onWinKey, true));
     // 其它键（F1~F4 技能等）：阻止 F1 帮助等默认行为；不占用 F5 等其它功能键
     this.input.keyboard!.on('keydown', (e: KeyboardEvent) => {
-      if (stepDir(e)) return; if (/^F[1-5]$/.test(e.key)) e.preventDefault(); this.onKey(e.key.toUpperCase()); });
-    this.input.keyboard!.addCapture('F1,F2,F3,F4,F5');
+      if (stepDir(e)) return; if (/^F([1-9]|10)$/.test(e.key)) e.preventDefault(); this.onKey(e.key.toUpperCase()); });
+    this.input.keyboard!.addCapture('F1,F2,F3,F4,F5,F6,F7,F8,F9,F10');
     // 失焦/切后台时清空按键状态，避免 keyup 丢失导致方向键"卡住"或失灵
     const reset = () => { hold.reset(); this.input.keyboard?.resetKeys(); this.ui?.pad?.reset?.(); };
     window.addEventListener('blur', reset); document.addEventListener('visibilitychange', reset); this.game.events.on('blur', reset);
@@ -234,6 +234,25 @@ export class BattleScene extends Phaser.Scene {
         if (fb && this.textures.exists('fx_fireball_cast')) this.time.delayedCall(150, go); else go();
         return;
       } return done();
+      // #11 法师新技能：专属特效待美术（docs/fx-requests.md #11），暂复用现有图集，缺图回落 Graphics
+      case 'big_fireball': if (tv[0]) {
+        const t = tv[0], x0 = hv.cx + dir * hv.w * 0.4, y0 = hv.cy - 20;
+        const hit = () => { this.sfx('fireball_impact', 0.7); if (!playFx(this, 'fx_fireball_hit', t.cx, t.cy, { scale: 1.4 })) fx.explosion(this, t.cx, t.cy, t.h * 0.5); done(); };
+        if (!flyFx(this, 'fx_fireball_fly', x0, y0, t.cx, t.cy, hit)) fx.projectile(this, x0, y0, t.cx, t.cy, 'fire', hit);
+        return;
+      } return done();
+      case 'burst_fire': if (tv[0]) {
+        const t = tv[0]; if (!playFx(this, 'fx_common_explosion', t.cx, t.cy, { scale: 1.6 })) fx.explosion(this, t.cx, t.cy, 170, 0xffdd55, 0xff4400);
+        tv.forEach(v => fx.hitSpark(this, v.cx, v.cy));
+      } return done();
+      case 'hell_fire': tv.forEach((v, i) => this.time.delayedCall(i * 60, () => { if (!v.active) return; if (!playFx(this, 'fx_fire_wall_loop', v.cx, v.y, { ms: 500 })) fx.fireWall(this, v.cx, v.cy + 40); }));
+        return done();
+      case 'lightning_flash': case 'hell_thunder': {
+        const shake = () => { if (!FxQuality.low) this.cameras.main.shake(140, 0.005); };
+        tv.forEach((v, i) => this.time.delayedCall(i * (skill === 'hell_thunder' ? 50 : 30), () => { if (v.active && !playFx(this, 'fx_thunder_strike', v.cx, v.y)) fx.lightning(this, v.cx, v.y - 600, v.cy); }));
+        if (skill === 'hell_thunder') fx.explosion(this, hv.cx, hv.cy, sk?.range ?? 425, 0xbfe4ff, 0x4a7dff);
+        shake(); return done();
+      }
       case 'thunder': if (tv[0]) {
         const t = tv[0], shake = () => { if (!FxQuality.low) this.cameras.main.shake(120, 0.004); };
         if (playFx(this, 'fx_thunder_strike', t.cx, t.y, { onFrame: [1, () => { shake(); done(); }] })) return;

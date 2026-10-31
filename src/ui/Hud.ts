@@ -69,11 +69,13 @@ export class Hud {
     s.add.rectangle(640, 601, 480, 10, 0x000000, 0.9).setStrokeStyle(1, 0x8a7040).setDepth(20);
     this.expFill = s.add.rectangle(400, 601, 0, 8, 0xc8a020).setOrigin(0, 0.5).setDepth(21);
     this.expT = txt(s, 640, 601, '', 10, '#fff', { strokeThickness: 2 }).setOrigin(0.5).setDepth(22);
-    const SK = skills.length > 4 ? 52 : Hud.SK;
-    const gap = skills.length > 4 ? SK + 4 : SK + 8;
-    const x0 = skills.length > 4 ? 400 : 420;
+    // #11 法师最多 10 技能：>5 时两行各 5 格，缩小格子不挤占药水栏
+    const two = skills.length > 5;
+    const SK = two ? 40 : skills.length > 4 ? 52 : Hud.SK;
+    const gap = two ? 44 : skills.length > 4 ? SK + 4 : SK + 8;
+    const x0 = two ? 410 : skills.length > 4 ? 400 : 420;
     skills.forEach((k, i) => {
-      const x = x0 + i * gap, y = 646; this.skillPos.push({ x, y });
+      const x = x0 + (two ? i % 5 : i) * gap, y = two ? (i < 5 ? 628 : 673) : 646; this.skillPos.push({ x, y });
       s.add.rectangle(x, y, SK, SK, 0x1a1a1a).setStrokeStyle(2, 0xbbaa77).setDepth(20);
       if (s.textures.exists('sk_' + k.id)) s.add.image(x, y, 'sk_' + k.id).setDisplaySize(SK - 4, SK - 4).setDepth(20);
       else if (k.name) txt(s, x, y, k.name, 12).setOrigin(0.5).setDepth(20);

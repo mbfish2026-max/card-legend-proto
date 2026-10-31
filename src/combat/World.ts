@@ -586,6 +586,15 @@ export class World {
     } else if (s.kind === 'ranged' || s.kind === 'dot' || s.kind === 'zone') {
       const side = this.rangedSide(s.range ?? 500); if (side === null) return { ok: false, reason: '射程内没有目标' };
       h.facing = side as 1 | -1; targets = [this.queue(side)[0]];
+    } else if (s.kind === 'line') {
+      // 地狱火/疾光电影：直线 [适配] 选边后命中该方向射程内全部敌人（穿透）
+      const side = this.rangedSide(s.range ?? 500); if (side === null) return { ok: false, reason: '射程内没有目标' };
+      h.facing = side as 1 | -1; targets = this.queue(side).filter(e => this.gap(h, e) <= (s.range ?? 500));
+    } else if (s.kind === 'blast') {
+      // 爆裂火焰：3×3 [适配] 以首个目标为中心，左右 splash 像素内敌人一并命中
+      const side = this.rangedSide(s.range ?? 500); if (side === null) return { ok: false, reason: '射程内没有目标' };
+      h.facing = side as 1 | -1; const t0 = this.queue(side)[0];
+      targets = [t0, ...this.alive('enemy').filter(e => e !== t0 && Math.abs(e.x - t0.x) <= (s.splash ?? 170))];
     } else if (s.kind === 'aoe') {
       targets = this.alive('enemy').filter(e => Math.max(0, this.gap(h, e)) <= (s.range ?? 400));
       if (!targets.length) return { ok: false, reason: '范围内没有目标' };
