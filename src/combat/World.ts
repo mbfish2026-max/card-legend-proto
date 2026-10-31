@@ -1,3 +1,4 @@
+import { CompanionState, migrateCompanion, companionGainExp, COMPANION_BAG } from '../data/companion';
 import { BOOKS, BookDef, BOOK_DROP, BOOK_RATES, STARTER, bookItemId } from '../data/books';
 // 纯逻辑世界模块（无 Phaser 依赖，可在 node 中单测）：职业/等级成长、分层横版地图、怪物 AI、
 // 自动战斗与技能、召唤物、掉落/背包/装备/商店、死亡复活、存档序列化。
@@ -29,6 +30,8 @@ export interface SaveData {
   mapV?: 2 | 3;
   /** R14 仓库物品 / 快捷栏技能顺序 */
   storage?: InvItem[]; skillOrder?: string[];
+  /** 合击版 #1 英雄（伙伴）；缺省 = 旧档/未领取 */
+  companion?: CompanionState | null;
   /** 装备结构版本：缺省/1 = 单戒单镯旧档，2 = 双戒双镯 */
   eqV?: number;
   /** R22 经验曲线版本：缺省=1（旧线性），2=官方形状 */
@@ -124,7 +127,7 @@ export class World {
         save = { ...save, floorIndex: m(save.floorIndex ?? 0) }; this.reached = new Set([...this.reached].map(m)); this.bossKilled = new Set([...this.bossKilled].map(m));
       }
       // 旧存档兼容：已达到学习等级的技能视为已学
-      this.storage = [...(save.storage ?? [])]; this.skillOrder = [...(save.skillOrder ?? [])];
+      this.storage = [...(save.storage ?? [])]; this.skillOrder = [...(save.skillOrder ?? [])]; this.companion = migrateCompanion(save.companion);
       this.learned = new Set(save.learned ?? this.skillPool.filter(s => this.level >= (s.unlock ?? s.learn?.[0] ?? 1)).map(s => s.id));
     }
     this.learned.add(this.starter);
@@ -479,6 +482,7 @@ export class World {
     if (!this.alive('enemy').length && !this.cleared) { this.cleared = true; this.events.push({ type: 'cleared' }); }
   }
   gainExp(n: number) {
+    if (this.companion?.out && companionGainExp(this.companion, n, this.level)) this.events.push({ type: 'log', text: `英雄 ${this.companion.name} 升到 ${this.companion.level} 级`, color: 'green' });
     this.exp += n; this.events.push({ type: 'exp', amount: n });
     let up = false;
     while (this.exp >= this.expNext) { this.exp -= this.expNext; this.level++; this.expNext = EXP_PER_LEVEL(this.level); up = true; this.events.push({ type: 'levelup', level: this.level }); }
@@ -755,8 +759,18 @@ export class World {
   }
 
   // ---------- 存档 ----------
+  // ===== 合击版 #1 英雄包裹：主角包裹 ↔ 英雄包裹（H5：物品须先放入英雄包裹） =====
+  companion: CompanionState | null = null;
+  giveToCompanion(bagIdx: number): string | null {
+    const c = this.companion; if (!c) return '还没有英雄'; const it = this.bag[bagIdx]; if (!it) return '没有物品';
+    if (c.bag.length >= COMPANION_BAG) return '英雄包裹已满'; this.bag.splice(bagIdx, 1); c.bag.push(it); this.events.push({ type: 'inventory' }); return null;
+  }
+  takeFromCompanion(idx: number): string | null {
+    const c = this.companion; if (!c) return '还没有英雄'; const it = c.bag[idx]; if (!it) return '没有物品';
+    if (this.bag.length >= WORLD.bagSize) return '背包已满'; c.bag.splice(idx, 1); this.bag.push(it); this.events.push({ type: 'inventory' }); return null;
+  }
   toSave(): SaveData {
-    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], eqV: EQUIP_VERSION, expV: EXP_VERSION };
+    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], eqV: EQUIP_VERSION, expV: EXP_VERSION , companion: this.companion ? JSON.parse(JSON.stringify(this.companion)) : null };
   }
 
   /** 点按一格：滑行中的按键全部排队（同向最多 10 格，反向则替换队列），每次按键都会走一格 */
