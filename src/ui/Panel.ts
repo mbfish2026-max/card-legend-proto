@@ -1,3 +1,4 @@
+import { toLogic } from '../render';
 import { RING_MIN_LEVEL, IDENT_PRICE, IDENT_MIN_LEVEL } from '../data/r14b';
 import { fmtExp, scaledExp } from '../data/expCurve';
 import Phaser from 'phaser';
@@ -333,10 +334,10 @@ export class Panel {
       });
       apply();
       // 拖动 / 双指缩放 / 滚轮缩放（桌面与手机通用）
-      const inV = (p: Phaser.Input.Pointer) => p.x >= VX && p.x <= VX + VW && p.y >= VY && p.y <= VY + VH;
+      const inV = (p: Phaser.Input.Pointer) => toLogic(p.x) >= VX && toLogic(p.x) <= VX + VW && toLogic(p.y) >= VY && toLogic(p.y) <= VY + VH;
       s.input.addPointer(1);
       let pinch = 0;
-      const onDown = (p: Phaser.Input.Pointer) => { if (inV(p)) { downAt = { x: p.x, y: p.y }; moved = 0; } };
+      const onDown = (p: Phaser.Input.Pointer) => { if (inV(p)) { downAt = { x: toLogic(p.x), y: toLogic(p.y) }; moved = 0; } };
       const onMove = (p: Phaser.Input.Pointer) => {
         const p1 = s.input.pointer1, p2 = s.input.pointer2;
         if (p1?.isDown && p2?.isDown) {
@@ -346,11 +347,11 @@ export class Panel {
         }
         pinch = 0;
         if (!downAt || !p.isDown) return;
-        const dx = p.x - p.prevPosition.x, dy = p.y - p.prevPosition.y; moved += Math.abs(dx) + Math.abs(dy);
+        const dx = toLogic(p.x) - toLogic(p.prevPosition.x), dy = toLogic(p.y) - toLogic(p.prevPosition.y); moved += Math.abs(dx) + Math.abs(dy);
         this.view = clampView({ ...this.view!, x: this.view!.x + dx, y: this.view!.y + dy }, VW, VH); apply();
       };
       const onUp = () => { downAt = null; pinch = 0; s.time.delayedCall(0, () => { moved = 0; }); };
-      const onWheel = (p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => { if (!inV(p)) return; this.view = zoomAt(this.view!, p.x - VX, p.y - VY, dy > 0 ? 0.9 : 1.1, VW, VH); apply(); };
+      const onWheel = (p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => { if (!inV(p)) return; this.view = zoomAt(this.view!, toLogic(p.x) - VX, toLogic(p.y) - VY, dy > 0 ? 0.9 : 1.1, VW, VH); apply(); };
       s.input.on('pointerdown', onDown); s.input.on('pointermove', onMove); s.input.on('pointerup', onUp); s.input.on('wheel', onWheel);
       this.mapOff.push(() => { s.input.off('pointerdown', onDown); s.input.off('pointermove', onMove); s.input.off('pointerup', onUp); s.input.off('wheel', onWheel); mk.destroy(); });
       const zb = (f: number) => { this.view = zoomAt(this.view!, VW / 2, VH / 2, f, VW, VH); apply(); };
