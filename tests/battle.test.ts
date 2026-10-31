@@ -55,7 +55,7 @@ const free = (w: World) => w.skills.map(() => 0);
   run(w, 20); ok(z.ai === 'idle' && z.x === 3500, '回到原位');
 }
 { // 脱战规则：距离阈值、保留血量、缓慢回血、BOSS 一致、不卡死
-  ok(WORLD.leashRange === 10 * CARD && WORLD.leashRange > WORLD.screenW && WORLD.leashRange * 1.5 < WORLD.mapWidth, '脱战距离 10 卡宽（> 屏宽，离家上限 < 地图宽）');
+  ok(WORLD.leashRange === 6 * CARD && WORLD.leashRange * 1.5 < WORLD.mapWidth, '脱战距离 6 卡宽（用户反馈 10 卡宽太长跑不掉），离家上限 < 地图宽');
   for (const id of ['zombie', 'boss_woma']) {
     const w = mk([{ id, x: 3000 }]); const h = w.hero!, z = w.alive('enemy')[0]; h.hp = h.maxHp = 1e9;
     z.ai = 'chase'; h.x = z.x - WORLD.leashRange + 20; w.step(0.05); ok(z.ai === 'chase', `${id} 阈值内不脱战`);
