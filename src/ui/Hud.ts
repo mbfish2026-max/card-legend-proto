@@ -54,7 +54,7 @@ export class Hud {
     });
   }
   static SK = 60; gold = 0;
-  constructor(public s: Phaser.Scene, levelName: string, waveIcons: string[], public skills: SkillDef[], onMenu: (i: number) => void, mobile = false) {
+  constructor(public s: Phaser.Scene, levelName: string, waveIcons: string[], public skills: SkillDef[], onMenu: (i: number) => void, mobile = false, onSkill?: (key: string) => void) {
     // 右上角牌匾（层名）+ 本层怪物进度小图标
     s.add.rectangle(1130, 36, 270, 46, 0x8a1010).setStrokeStyle(3, 0xd4a64a).setDepth(20);
     s.add.rectangle(1130, 36, 258, 34).setStrokeStyle(1, 0xffe8a0, 0.6).setDepth(20);
@@ -80,6 +80,9 @@ export class Hud {
       if (s.textures.exists('sk_' + k.id)) s.add.image(x, y, 'sk_' + k.id).setDisplaySize(SK - 4, SK - 4).setDepth(20);
       else if (k.name) txt(s, x, y, k.name, 12).setOrigin(0.5).setDepth(20);
       txt(s, x - SK / 2 + 2, y - SK / 2 + 1, k.key, 11, '#ffff66').setDepth(24);
+      // 鼠标/触屏点击释放：与 F 键同走 onKey（公共间隔/耗魔/被动/魔不足提示一致）；stopPropagation 防止穿透到战斗场景的点地行走
+      if (onSkill) s.add.rectangle(x, y, SK, SK, 0, 0.001).setDepth(25).setInteractive({ useHandCursor: true })
+        .on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); onSkill(k.key); });
     });
     this.radar = s.add.graphics().setDepth(23);
     const m = s.make.graphics({}, false); m.fillStyle(0xffffff); this.skillPos.forEach(p => m.fillRect(p.x - SK / 2, p.y - SK / 2, SK, SK));
