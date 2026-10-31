@@ -32,7 +32,12 @@ export const FLOOR_LEVEL_ANCHORS: readonly number[] = [1, 3, 7, 12, 15, 18, 22, 
 /** 每层怪物/悬赏经验倍率 = 该层目标等级段的新曲线累计经验 ÷ 旧曲线累计经验（同一比例缩放，保持每层升级节奏） */
 export const floorExpMult = (anchors: readonly number[]): number[] => anchors.slice(0, -1).map((a, i) =>
   cum(EXP_PER_LEVEL, a, anchors[i + 1]) / cum(EXP_PER_LEVEL_V1, a, anchors[i + 1]));
-export const FLOOR_EXP_MULT: number[] = floorExpMult(FLOOR_LEVEL_ANCHORS);
+const BASE_MULT = floorExpMult(FLOOR_LEVEL_ANCHORS);
+/** [适配] feat/maps-more 追加层 13–18 的倍率 = 通关顺序中前后两张原有图倍率的几何平均（下标 13–23 依次对应 world.ts 新层） */
+/** [适配] 新层经验衰减：多 6 张图会让角色整体超前升级（模拟 9 种子死亡全 0），故新层经验 ×此值 */
+export const NEW_FLOOR_EXP_DAMP = 0.3;
+export const NEW_FLOOR_MULT_NEIGHBORS: readonly [number, number][] = [[4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5]];
+export const FLOOR_EXP_MULT: number[] = [...BASE_MULT, ...NEW_FLOOR_MULT_NEIGHBORS.map(([a, b]) => NEW_FLOOR_EXP_DAMP * Math.sqrt(BASE_MULT[a] * BASE_MULT[b]))];
 /** 第 floor 层获得的经验（怪物 def.exp / 悬赏 exp 为旧曲线下的基准值） */
 export const scaledExp = (base: number, floor: number): number => {
   if (base <= 0) return 0;
