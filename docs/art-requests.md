@@ -792,3 +792,25 @@ thunder_sword 雷霆剑、break_strike 破击剑法、shield_break 破盾斩、v
 | m3_panye_left_full.png | 712x960 | 潘夜左护卫 | 复用 art/sq-mir3 的 panye_left_guard_full.png |
 | m3_panye_right_full.png | 722x960 | 潘夜右护卫 | 复用 art/sq-mir3 的 panye_right_guard_full.png |
 | m3_panye_ghost_full.png | 708x960 | 潘夜鬼将 | 复用 art/sq-mir3 的 panye_ghost_general_full.png |
+
+
+## art/maps-sq-mir3 交付·第 8 批（背景 10 张，全部新画）
+
+路径：`public/assets/bg/<id>.jpg`，1920x1080，JPG 质量 90，底部约 40% 留空地面。预览：`docs/art-gap-preview/sq_mir3_batch8_bg.jpg`。
+
+**合层方案**（每组同一张图，文件以首层命名；需要分层时，代码可直接用首层图，或者 copy 出 bg_floorNN.jpg）：
+
+| 文件 | 覆盖楼层 | 场景 |
+|---|---|---|
+| bg_floor57.jpg | 57–58 | 将军坟东一/二层：石棺、武将石像、火盆 |
+| bg_floor59.jpg | 59 | 蚂蚁洞穴：土洞、琥珀、蚁卵 |
+| bg_floor60.jpg | 60–61 | 机关道一、中枢大殿：青铜齿轮、锁链、青色晶石 |
+| bg_floor62.jpg | 62–66 | 蛇魔谷、地穴入口、环道、百虫穴、五蛇殿：缠蛇石柱、绿色毒雾 |
+| bg_floor67.jpg | 67 | 潘夜石窟：骨堆、残旗、蓝火 |
+| bg_floor68.jpg | 68 | 沙漠：沙丘、残垣、枯树 |
+| bg_floor69.jpg | 69–73 | 逆魔古刹一~四层、逆魔大殿：朱漆残柱、倒塌石像、红烛 |
+| bg_floor74.jpg | 74–75 | 禁地之门、冰石之地：巨石门、冰晶 |
+| bg_floor76.jpg | 76–79 | 青玉宫、生死门、尸上行、魔穴：青玉残殿、血红裂纹 |
+| bg_floor80.jpg | 80 | 潘夜神殿：牛角石柱、牛魔石像王座、熔岩裂缝 |
+
+存疑：场景细节由地图名推测（未查到/推测）。沙漠图比其他图亮。潘夜神殿石柱上的牛头浮雕为原创图形。
