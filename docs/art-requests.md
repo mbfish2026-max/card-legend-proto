@@ -571,3 +571,21 @@ thunder_sword 雷霆剑、break_strike 破击剑法、shield_break 破盾斩、v
 | bg/bg_floor54.jpg 香石墓穴（54–56） | 1920×1080 | 未查到/推测 |
 
 存疑：钳虫/邪恶钳虫腿数画成约 8 条（原作描述六足）；楔蛾、角蝇、邪恶毒蛇、石墓尸王外观均为推测。
+
+## art/maps-sq-mir3 交付·第 1 批（9 BOSS）
+
+原创绘制，透明底 PNG 最长边 960。预览：docs/art-gap-preview/sq_mir3_batch1.jpg。外观依据：传奇3 资料取自中华网《传奇3》怪物介绍（game.china.com/zh_cn/hotspot/mir3/monster/10.html、11.html），传奇世界 BOSS 外观官方描述未查到。
+
+| 文件 | 尺寸 | 外观依据 |
+|---|---|---|
+| boss_sq_shiba_full.png 尸霸 | 901×960 | 未查到/推测（尸卫首领：腐尸巨汉+角盔巨剑） |
+| boss_m3_ant_general_full.png 蚂蚁将军 | 818×960 | 未查到/推测（人立巨蚁持弯刃，六肢） |
+| boss_sq_jiguan_full.png 机关巨兽 | 960×930 | 未查到/推测（青铜机关狮兽） |
+| boss_sq_snake_king_full.png 三头蛇王 | 960×941 | 名称即三头；配色推测（白绿，呼应白蛇妖） |
+| boss_m3_skel_master_full.png 骷髅教主 | 936×960 | 中华网：控制潘夜洞的魔王，魔杖由含冤骷髅聚成；其余推测 |
+| boss_m3_great_pharaoh_full.png 大法老 | 942×960 | 未查到/推测（沙漠木乃伊法老） |
+| boss_sq_nimo_full.png 逆魔 | 929×960 | 未查到/推测（红肤双角魔将） |
+| boss_sq_jindi_full.png 禁地魔王 | 801×960 | 未查到/推测（灰蓝四角魔王，青玉晶体呼应青玉宫） |
+| boss_m3_panye_bull_full.png 潘夜牛魔王 | 960×958 | 中华网/百度百科：牛面牛身的畜界魔王；装备推测 |
+
+存疑：机关巨兽腿甲有类似「2/9」的螺旋装饰纹（非文字，第一版有类字母刻纹已重做）；机关巨兽蒸汽、禁地魔王雾气边缘略带粉色残边；逆魔武器为斧而非扇；骷髅教主首版偏紫已改绿底重做。
