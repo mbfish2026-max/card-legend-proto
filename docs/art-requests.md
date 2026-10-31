@@ -22,10 +22,11 @@
 ## C. 物品图标（64×64 PNG）
 | 文件名 | 用途 | 当前占位 |
 |---|---|---|
-| items/bless_oil.png | R1 祝福油（小瓶金色油） | potions/INV_Potion_45 风格 → 暂用 INV_Misc_Gem_Pearl_01 |
-| items/set_bone_*.png（helm/ring/bracelet） | R2 骷髅套 3 件 | 现有头盔/戒指/手镯 |
-| items/set_orc_*.png（armor/necklace/boots） | R2 兽人套 3 件 | 现有 |
-| items/set_lich_*.png（weapon/ring/necklace） | R2 尸王套 3 件 | 现有 |
+| items/bless_oil.png | R1 祝福油（小瓶金色油） | 已放同名占位（复制自 INV_Misc_Gem_Pearl_01） |
+| items/set_woma_helm.png / set_woma_necklace.png / set_woma_bracelet.png | R2 沃玛套（青铜+兽骨） | 已放同名占位（复制自现有图标） |
+| items/set_zuma_helm.png / set_zuma_ring.png / set_zuma_boots.png | R2 祖玛套（金石+宝石） | 已放同名占位 |
+| items/set_chiyue_necklace.png / set_chiyue_ring.png / set_chiyue_bracelet.png | R2 赤月套（暗红血玉） | 已放同名占位 |
+> v2 变更：套装改为沃玛/祖玛/赤月，原 v1 的 set_bone_* / set_orc_* / set_lich_* 作废，请按上表文件名出图。
 | items/black_iron.png | R4 黑铁矿石 | INV_Misc_Bone_01 |
 
 ## D. UI

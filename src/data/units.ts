@@ -29,10 +29,10 @@ export const ENEMIES: Record<string, UnitDef> = {
   skeleton_lord: b('skeleton_lord', 'boss_skeleton_lord', '骷髅精灵', 13, 3200, 44, 12, 900, [{ item: 'bone_helm', chance: 1 }, { item: 'gold_ring', chance: 0.8 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'skeleton_death' }),
   // 第4层 兽人要塞
   orc: n('orc', '兽人战士', 13, 800, 40, 12, 170, [G(0.6), { item: 'hp_mid', chance: 0.3 }, { item: 'armor', chance: 0.05 }, { item: 'bracelet', chance: 0.1 }], { deathSfx: 'death2' }),
-  darkmage: n('darkmage', '黑暗法师', 14, 600, 50, 8, 190, [G(0.6), { item: 'mp_mid', chance: 0.3 }, { item: 'magic_staff', chance: 0.08 }, { item: 'pearl', chance: 0.08 }], { deathSfx: 'death', atkInterval: 1.6 }),
-  orc_chief: b('orc_chief', 'boss_orc_chief', '兽人酋长', 17, 5200, 60, 16, 1400, [{ item: 'armor', chance: 1 }, { item: 'gold_ring', chance: 1 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'death2' }),
+  darkmage: n('darkmage', '黑暗法师', 14, 600, 50, 8, 190, [G(0.6), { item: 'mp_mid', chance: 0.3 }, { item: 'magic_staff', chance: 0.08 }, { item: 'pearl', chance: 0.08 }], { deathSfx: 'death', atkInterval: 1.6, oilChance: 0.03 }),
+  orc_chief: b('orc_chief', 'boss_orc_chief', '兽人酋长', 17, 5200, 60, 16, 1400, [{ item: 'armor', chance: 1 }, { item: 'gold_ring', chance: 1 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'death2', setDrop: ['set_woma_helm', 'set_woma_necklace', 'set_woma_bracelet'] }),
   // 第5层 尸王殿
-  boss_lich: b('boss_lich', 'boss_lich', '尸王', 22, 9000, 75, 20, 3000, [{ item: 'dragon_sword', chance: 1 }, { item: 'armor', chance: 1 }, { item: 'gold_ring', chance: 0.7 }, { item: 'pearl', chance: 0.7 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1)], { deathSfx: 'lich_death' }),
+  boss_lich: b('boss_lich', 'boss_lich', '尸王', 22, 9000, 75, 20, 3000, [{ item: 'dragon_sword', chance: 1 }, { item: 'armor', chance: 1 }, { item: 'gold_ring', chance: 0.7 }, { item: 'pearl', chance: 0.7 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1)], { deathSfx: 'lich_death', setDrop: ['set_zuma_helm', 'set_zuma_ring', 'set_zuma_boots'] }),
 };
 /** 道士召唤骷髅（金色卡底，友方） */
 export const SUMMON: UnitDef = { id: 'summon_skeleton', art: 'skeleton', name: '骷髅', level: 1, hp: 200, atk: 10, def: 4, atkInterval: 1.3, range: 6, speed: 0, width: 120, height: 170, tier: 'player',

@@ -1,4 +1,5 @@
-import { World, SaveData } from '../src/combat/World';
+import { World, SaveData, OIL_PRICE } from '../src/combat/World';
+import { SETS } from '../src/data/items';
 import { WORLD, Floor, FLOORS } from '../src/data/world';
 import { CLASSES, ClassId } from '../src/data/classes';
 import { ENEMIES, DIFF } from '../src/data/units';
@@ -341,6 +342,26 @@ const free = (w: World) => w.skills.map(() => 0);
   w.equip.weapon.luck = 6; w.bag.push(w.makeItem('bless_oil')); w.rng = () => 0.95; w.useOil(w.bag.length - 1);
   ok(w.equip.weapon.luck === 5, '高幸运失败有几率诅咒 -1');
   delete w.equip.weapon; w.bag.push(w.makeItem('bless_oil')); ok(w.useOil(w.bag.length - 1).includes('武器'), '无武器不能用');
+}
+
+{ // R2 套装：集齐激活、卸下失效、Boss 掉落、商店限购祝福油
+  const w = mk([], [], 'warrior', 25); const base = w.stats();
+  const wear = (id: string) => { w.bag.push(w.makeItem(id)); w.equipItem(w.bag.length - 1); };
+  wear('set_woma_helm'); ok(w.setBonuses().length === 0, '沃玛 1 件：无套装加成');
+  wear('set_woma_necklace'); ok(w.setCounts().woma === 2 && w.stats().hp === base.hp + 10 * 0 + 60 + 60 + 0, `沃玛 2 件：生命+60 激活（hp ${w.stats().hp}）`);
+  wear('set_woma_bracelet'); const s3 = w.stats(); ok(w.setBonuses().length === 2 && s3.def === base.def + 10 + 5 + 5, `沃玛 3 件：防御+5 激活（def ${s3.def}）`);
+  ok(w.hero!.maxHp === s3.hp, '套装加成同步到主角属性');
+  w.unequip('bracelet'); ok(w.setBonuses().length === 1 && w.stats().def === base.def + 10, '卸下 1 件：3 件加成失效');
+  const c = mk([], [], 'mage', 25); for (const id of SETS.chiyue.pieces) { c.bag.push(c.makeItem(id)); c.equipItem(c.bag.length - 1); }
+  ok(c.luck() === 1, '赤月 3 件：幸运+1');
+  ok(Object.values(SETS).every(st => st.pieces.every(id => ENEMIES && id.startsWith('set_'))), '套装物品 ID 规范');
+  const b = mk([{ id: 'orc_chief', x: 800 }]); const boss = b.alive('enemy')[0]; b.kill(boss);
+  const ids = b.ground.map(g => g.item);
+  ok(ids.includes('bless_oil') && ids.some(i => SETS.woma.pieces.includes(i)), `兽人酋长掉落祝福油 + 沃玛套装 1 件（${ids.join(',')}）`);
+  b.hero!.x = 800; for (let i = 0; i < 40; i++) b.step(0.05); ok(b.bag.some(x => SETS.woma.pieces.includes(x.item)), '套装可拾取进背包');
+  const shop = mk([]); shop.gold = OIL_PRICE * 2;
+  ok(shop.buyOil() === null && shop.bag.some(x => x.item === 'bless_oil') && shop.gold === OIL_PRICE, `商店可买祝福油（${OIL_PRICE} 金）`);
+  ok(shop.buyOil() !== null && shop.gold === OIL_PRICE, '同层限购 1 瓶');
 }
 
 console.log(`全部通过 ${pass} 项`);

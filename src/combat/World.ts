@@ -3,7 +3,7 @@
 import { BattleEvent, GroundItem, InvItem, Rarity, Slot, Stats, Team, Unit, UnitDef } from './types';
 import { POTIONS } from '../data/skills';
 import { CLASSES, ClassId, SkillDef } from '../data/classes';
-import { ITEMS, SLOTS } from '../data/items';
+import { ITEMS, SLOTS , SETS } from '../data/items';
 import { HERO, ENEMIES, EXP_PER_LEVEL, SUMMON } from '../data/units';
 import { WORLD, FLOORS, Floor } from '../data/world';
 
@@ -13,6 +13,8 @@ export interface SaveData {
   v: 1; cls: ClassId; level: number; exp: number; gold: number; pots: number[];
   equip: Partial<Record<Slot, InvItem>>; bag: InvItem[]; floorIndex: number; kills: number; nextUid: number;
 }
+/** 商店祝福油价格（较贵，每层限购 1） */
+export const OIL_PRICE = 400;
 export type CastResult = { ok: true; targets: number[]; skill: string; kind: string } | { ok: false; reason: string };
 const ZERO: Stats = { hp: 0, mp: 0, atk: 0, mag: 0, tao: 0, def: 0 };
 
@@ -26,6 +28,10 @@ export class World {
   requireUse = false; atExit = false; private exitHintT = -99;
   floorIndex = 0; cleared = false; done = false; private sealedLogT = -99; private bagFullLogT = -99;
   kills = 0; deaths = 0;
+  /** 额外掉落用的独立随机流（固定种子 LCG），与主 rng 隔离 */
+  lootRng = (() => { let s = 0x2f6b1d; return () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296); })();
+  /** 商店祝福油：每层限购 1 瓶 */
+  oilBoughtFloor = -1;
   constructor(public rng: () => number = Math.random, public level = 1, public floors: Floor[] = FLOORS, public cls: ClassId = 'warrior', save?: SaveData) {
     if (save) {
       this.cls = save.cls; this.level = save.level; this.exp = save.exp; this.gold = save.gold; this.pots = [...save.pots];
@@ -53,8 +59,17 @@ export class World {
   equipStats(): Stats {
     const r = { ...ZERO };
     for (const it of Object.values(this.equip)) if (it) for (const [k, v] of Object.entries(it.stats)) (r as any)[k] += v ?? 0;
+    for (const b of this.setBonuses()) for (const [k, v] of Object.entries(b.stats)) (r as any)[k] += v ?? 0;
     return r;
   }
+  /** 各套装已穿件数 */
+  setCounts(): Record<string, number> {
+    const c: Record<string, number> = {};
+    for (const it of Object.values(this.equip)) { const s = it && ITEMS[it.item]?.set; if (s) c[s] = (c[s] ?? 0) + 1; }
+    return c;
+  }
+  /** 当前激活的套装加成 */
+  setBonuses() { const c = this.setCounts(); return Object.values(SETS).flatMap(s => s.bonus.filter(b => (c[s.id] ?? 0) >= b.n)); }
   stats(): Stats { const b = this.baseStats(), e = this.equipStats(), r: any = {}; for (const k of Object.keys(ZERO)) r[k] = (b as any)[k] + (e as any)[k]; return r; }
   recompute(fill = false) {
     const h = this.hero; if (!h) return;
@@ -63,7 +78,7 @@ export class World {
     if (fill) { h.hp = h.maxHp; h.mp = h.maxMp; } else { h.hp = Math.max(1, Math.min(h.maxHp, Math.round(h.hp))); h.mp = Math.min(h.maxMp, h.mp ?? 0); }
   }
   /** 总幸运（装备 luck 之和；负数=诅咒） */
-  luck(): number { let l = 0; for (const it of Object.values(this.equip)) l += it?.luck ?? 0; return l; }
+  luck(): number { let l = 0; for (const it of Object.values(this.equip)) l += it?.luck ?? 0; for (const b of this.setBonuses()) l += b.luck ?? 0; return l; }
   /** 伤害浮动：幸运越高越易打出上限（幸运≥9 必上限），诅咒越高越易打出下限 */
   roll(lo: number, span: number): number {
     const L = this.luck();
@@ -189,11 +204,16 @@ export class World {
       this.ground.push(...items);
       this.events.push({ type: 'drop', uid: u.uid, x: u.x, y: u.y, items });
     }
-    // Boss 必掉 1 瓶祝福油（固定落点，不消耗随机数，保持平衡模拟稳定）
-    if (u.tier === 'boss') {
-      const inv = this.makeItem('bless_oil');
-      const g: GroundItem = { gid: this.nextGid++, item: 'bless_oil', name: inv.name, rarity: 'common', x: Math.max(40, Math.min(WORLD.mapWidth - 40, u.x)), y: 0, landAt: this.time + WORLD.dropLandSec, atk: 0, hp: 0, amount: 1, inv };
-      this.ground.push(g); this.events.push({ type: 'drop', uid: u.uid, x: u.x, y: u.y, items: [g] });
+    // 额外掉落：独立随机流 lootRng（不消耗主 rng，保持平衡模拟稳定）。Boss 必掉 1 瓶祝福油；setDrop 随机 1 件套装
+    const extra: string[] = [];
+    if (u.tier === 'boss' || this.lootRng() < (u.oilChance ?? 0)) extra.push('bless_oil');
+    if (u.setDrop?.length && this.lootRng() < (u.setChance ?? 1)) extra.push(u.setDrop[Math.floor(this.lootRng() * u.setDrop.length)]);
+    if (extra.length) {
+      const items = extra.map((id, i) => {
+        const inv = this.makeItem(id), x = Math.max(40, Math.min(WORLD.mapWidth - 40, u.x + (i - (extra.length - 1) / 2) * 50));
+        return { gid: this.nextGid++, item: id, name: inv.name, rarity: 'common', x, y: 0, landAt: this.time + WORLD.dropLandSec, atk: inv.stats.atk ?? 0, hp: inv.stats.hp ?? 0, amount: 1, inv } as GroundItem;
+      });
+      this.ground.push(...items); this.events.push({ type: 'drop', uid: u.uid, x: u.x, y: u.y, items });
     }
     this.gainExp(u.exp ?? 10);
     if (!this.alive('enemy').length && !this.cleared) { this.cleared = true; this.events.push({ type: 'cleared' }); }
@@ -240,6 +260,12 @@ export class World {
     const p = POTIONS[i]; if (!p) return '无效商品';
     if (this.gold < p.price) return '金币不足';
     this.gold -= p.price; this.pots[i]++; return null;
+  }
+  buyOil(): string | null {
+    if (this.oilBoughtFloor === this.floorIndex) return '祝福油每层限购 1 瓶';
+    if (this.gold < OIL_PRICE) return '金币不足';
+    if (this.bag.length >= WORLD.bagSize) return '背包已满';
+    this.gold -= OIL_PRICE; this.oilBoughtFloor = this.floorIndex; this.bag.push(this.makeItem('bless_oil')); this.events.push({ type: 'inventory' }); return null;
   }
 
   // ---------- 技能 ----------

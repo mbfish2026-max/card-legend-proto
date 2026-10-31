@@ -10,7 +10,17 @@ export const ITEMS: Record<string, ItemDef> = {
   mp_small: { id: 'mp_small', name: '魔法药(小量)', icon: 'assets/potions/INV_Potion_72.png', potion: 2 },
   mp_mid: { id: 'mp_mid', name: '魔法药(中量)', icon: 'assets/potions/INV_Potion_75.png', potion: 3 },
   // 祝福油：武器幸运 +1（上限 7），有几率诅咒（参考传奇规则，重新实现）
-  bless_oil: { id: 'bless_oil', name: '祝福油', icon: I + 'INV_Misc_Gem_Pearl_01.png', price: 50 },
+  bless_oil: { id: 'bless_oil', name: '祝福油', icon: I + 'bless_oil.png', price: 50 },
+  // 套装（R2，参考传奇沃玛/祖玛/赤月套装概念，数值为本作重新设计）。图标为占位副本，美术交付后同名替换
+  set_woma_helm: { id: 'set_woma_helm', name: '沃玛头盔', icon: I + 'set_woma_helm.png', slot: 'helmet', equip: { def: 10, hp: 60 }, req: 14, price: 90, set: 'woma' },
+  set_woma_necklace: { id: 'set_woma_necklace', name: '沃玛项链', icon: I + 'set_woma_necklace.png', slot: 'necklace', equip: { atk: 7, mag: 7, tao: 7 }, req: 14, price: 90, set: 'woma' },
+  set_woma_bracelet: { id: 'set_woma_bracelet', name: '沃玛手镯', icon: I + 'set_woma_bracelet.png', slot: 'bracelet', equip: { def: 5, hp: 50 }, req: 14, price: 90, set: 'woma' },
+  set_zuma_helm: { id: 'set_zuma_helm', name: '祖玛头盔', icon: I + 'set_zuma_helm.png', slot: 'helmet', equip: { def: 13, hp: 90 }, req: 18, price: 140, set: 'zuma' },
+  set_zuma_ring: { id: 'set_zuma_ring', name: '祖玛戒指', icon: I + 'set_zuma_ring.png', slot: 'ring', equip: { atk: 11, mag: 11, tao: 11 }, req: 18, price: 140, set: 'zuma' },
+  set_zuma_boots: { id: 'set_zuma_boots', name: '祖玛靴', icon: I + 'set_zuma_boots.png', slot: 'boots', equip: { def: 8, hp: 70 }, req: 18, price: 140, set: 'zuma' },
+  set_chiyue_necklace: { id: 'set_chiyue_necklace', name: '赤月项链', icon: I + 'set_chiyue_necklace.png', slot: 'necklace', equip: { atk: 14, mag: 14, tao: 14 }, req: 22, price: 220, set: 'chiyue' },
+  set_chiyue_ring: { id: 'set_chiyue_ring', name: '赤月戒指', icon: I + 'set_chiyue_ring.png', slot: 'ring', equip: { atk: 14, mag: 14, tao: 14 }, req: 22, price: 220, set: 'chiyue' },
+  set_chiyue_bracelet: { id: 'set_chiyue_bracelet', name: '赤月手镯', icon: I + 'set_chiyue_bracelet.png', slot: 'bracelet', equip: { def: 8, hp: 120 }, req: 22, price: 220, set: 'chiyue' },
   gold: { id: 'gold', name: '金币', icon: I + 'INV_Misc_Coin_01.png' },
   // 杂物（可卖）
   chicken: { id: 'chicken', name: '鸡肉', icon: I + 'INV_Misc_Food_15.png', price: 3 },
@@ -32,4 +42,14 @@ export const ITEMS: Record<string, ItemDef> = {
   gold_ring: { id: 'gold_ring', name: '金戒指', icon: I + 'INV_Jewelry_Ring_03.png', slot: 'ring', equip: { atk: 8, mag: 8, tao: 8 }, req: 9, price: 70 },
   bracelet: { id: 'bracelet', name: '翡翠手镯', icon: I + 'gen_bracelet.png', slot: 'bracelet', equip: { def: 3, hp: 30 }, req: 4, price: 25 },
   boots: { id: 'boots', name: '铁靴', icon: I + 'gen_boots.png', slot: 'boots', equip: { def: 4, hp: 25 }, req: 3, price: 20 },
+};
+/** 套装：集齐 n 件激活对应加成（卸下即失效） */
+export interface SetDef { id: string; name: string; pieces: string[]; bonus: { n: number; stats: Partial<Record<'hp' | 'mp' | 'atk' | 'mag' | 'tao' | 'def', number>>; luck?: number; text: string }[] }
+export const SETS: Record<string, SetDef> = {
+  woma: { id: 'woma', name: '沃玛', pieces: ['set_woma_helm', 'set_woma_necklace', 'set_woma_bracelet'], bonus: [
+    { n: 2, stats: { hp: 60 }, text: '生命+60' }, { n: 3, stats: { atk: 8, mag: 8, tao: 8, def: 5 }, text: '攻/魔/道+8 防御+5' }] },
+  zuma: { id: 'zuma', name: '祖玛', pieces: ['set_zuma_helm', 'set_zuma_ring', 'set_zuma_boots'], bonus: [
+    { n: 2, stats: { atk: 6, mag: 6, tao: 6 }, text: '攻/魔/道+6' }, { n: 3, stats: { def: 8, hp: 100 }, text: '防御+8 生命+100' }] },
+  chiyue: { id: 'chiyue', name: '赤月', pieces: ['set_chiyue_necklace', 'set_chiyue_ring', 'set_chiyue_bracelet'], bonus: [
+    { n: 2, stats: { atk: 10, mag: 10, tao: 10 }, text: '攻/魔/道+10' }, { n: 3, stats: { hp: 200 }, luck: 1, text: '生命+200 幸运+1' }] },
 };

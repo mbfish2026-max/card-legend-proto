@@ -6,7 +6,9 @@ export interface Stats { hp: number; mp: number; atk: number; mag: number; tao: 
 export interface UnitDef {
   id: string; name: string; level: number; hp: number; mp?: number; atk: number;
   atkInterval: number; range: number; speed: number; width: number; height: number;
-  tier: Tier; exp?: number; drops?: DropEntry[]; deathSfx?: string; def?: number;
+  tier: Tier; exp?: number; drops?: DropEntry[];
+  /** 额外掉落（独立随机流，不影响主随机序列）：从 setDrop 里随机 1 件，概率 setChance */
+  setDrop?: string[]; setChance?: number; oilChance?: number; deathSfx?: string; def?: number;
   /** 立绘纹理 ID（缺省 = id）；Boss 变体复用普通怪立绘 */
   art?: string;
   /** 渲染用（不影响战斗逻辑） */
@@ -23,7 +25,7 @@ export interface Unit extends UnitDef {
   homeX: number; homeY: number; ai: AIState; alertT: number; facing: 1 | -1; moving: boolean;
 }
 export type Rarity = 'common' | 'magic' | 'rare';
-export interface ItemDef { id: string; name: string; icon: string; potion?: number; slot?: Slot; equip?: Partial<Stats>; req?: number; price?: number }
+export interface ItemDef { id: string; name: string; icon: string; potion?: number; slot?: Slot; equip?: Partial<Stats>; req?: number; price?: number; set?: string }
 /** 背包/装备栏里的一件物品 */
 export interface InvItem { uid: number; item: string; name: string; rarity: Rarity; slot?: Slot; stats: Partial<Stats>; req: number; price: number; luck?: number }
 export interface GroundItem { gid: number; item: string; name: string; rarity: Rarity; x: number; y: number; landAt: number; atk: number; hp: number; amount: number; inv?: InvItem }

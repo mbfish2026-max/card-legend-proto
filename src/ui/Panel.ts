@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
 import type { World } from '../combat/World';
 import { InvItem, Slot } from '../combat/types';
-import { SLOTS, SLOT_NAMES, STAT_NAMES, ITEMS } from '../data/items';
+import { SLOTS, SLOT_NAMES, STAT_NAMES, ITEMS, SETS } from '../data/items';
+import { OIL_PRICE } from '../combat/World';
 import { POTIONS } from '../data/skills';
 import { WORLD } from '../data/world';
 import { CLASSES } from '../data/classes';
@@ -67,23 +68,31 @@ export class Panel {
       this.slotBox(R, x, y, size, w.equip[sl], SLOT_NAMES[sl], () => { const e = w.unequip(sl); this.onChange(e ?? `卸下 ${SLOT_NAMES[sl]}`); sfx(s, 'loot', 0.4); this.render(); }, 'eq_' + sl);
     }
     const st = w.stats(), h = w.hero;
-    const lines = [`${c.name}  Lv${w.level}`, `经验 ${w.exp}/${w.expNext}`, `生命 ${h ? Math.ceil(h.hp) : 0}/${st.hp}   魔法 ${h ? Math.floor(h.mp ?? 0) : 0}/${st.mp}`,
-      `攻击 ${st.atk}   魔法 ${st.mag}   道术 ${st.tao}   防御 ${Math.round(st.def)}   幸运 ${w.luck()}`, `金币 ${w.gold}   击杀 ${w.kills}`];
-    R.add(txt(s, 175, top + 345, lines.join('\n'), 15, '#ffe8a0', { lineSpacing: 6, strokeThickness: 2 }));
+    const lines = [`${c.name}  Lv${w.level}`, `经验 ${w.exp}/${w.expNext}   金币 ${w.gold}   击杀 ${w.kills}`, `生命 ${h ? Math.ceil(h.hp) : 0}/${st.hp}   魔法 ${h ? Math.floor(h.mp ?? 0) : 0}/${st.mp}`,
+      `攻击 ${st.atk}   魔法 ${st.mag}   道术 ${st.tao}   防御 ${Math.round(st.def)}   幸运 ${w.luck()}`];
+    const sc = w.setCounts(), setLine = Object.values(SETS).filter(st => sc[st.id]).map(st => `${st.name}${sc[st.id]}/${st.pieces.length}`).join('  ');
+    if (setLine) lines.push(`套装 ${setLine}`);
+    R.add(txt(s, 175, top + 345, lines.join('\n'), 15, '#ffe8a0', { lineSpacing: setLine ? 2 : 6, strokeThickness: 2 }));
     R.add(txt(s, cx + 130, top + 270, IS_MOBILE ? '点两下\n装备栏=卸下' : '点击装备栏\n= 卸下', 12, '#999', { align: 'center' }).setOrigin(0.5, 0));
   }
   private renderShop(R: Phaser.GameObjects.Container, top: number) {
     const s = this.s, w = this.world();
     R.add(txt(s, 175, top + 60, `金币：${w.gold}`, 20, '#ffd24a'));
     POTIONS.forEach((p, i) => {
-      const y = top + 120 + i * 70, it = ITEMS[p.item];
-      R.add(s.add.rectangle(330, y, 320, 60, 0x0a0806).setStrokeStyle(1, 0x4a3a28));
+      const y = top + 112 + i * 62, it = ITEMS[p.item];
+      R.add(s.add.rectangle(330, y, 320, 56, 0x0a0806).setStrokeStyle(1, 0x4a3a28));
       if (s.textures.exists('item_' + p.item)) R.add(s.add.image(200, y, 'item_' + p.item).setDisplaySize(46, 46));
       R.add(txt(s, 232, y - 20, it.name, 16, '#fff'));
       R.add(txt(s, 232, y + 2, `${p.hp ? '恢复生命 ' + p.hp : '恢复魔法 ' + p.mp}   ${p.price} 金   持有 ${w.pots[i]}`, 13, '#ccc', { strokeThickness: 2 }));
       R.add([...button(s, 448, y, 64, 34, '购买', () => { const e = w.buyPotion(i); if (!e) sfx(s, 'coin'); this.onChange(e ?? `购买 ${it.name}`, !e); this.render(); }, 16, w.gold >= p.price)]);
     });
-    R.add(txt(s, 175, top + 410, '点击右侧背包物品出售（按售价）', 14, '#9fd'));
+    { const y = top + 112 + POTIONS.length * 62, it = ITEMS.bless_oil, sold = w.oilBoughtFloor === w.floorIndex;
+      R.add(s.add.rectangle(330, y, 320, 56, 0x0a0806).setStrokeStyle(1, 0x6a5a28));
+      if (s.textures.exists('item_bless_oil')) R.add(s.add.image(200, y, 'item_bless_oil').setDisplaySize(46, 46));
+      R.add(txt(s, 232, y - 20, it.name, 16, '#ffd24a'));
+      R.add(txt(s, 232, y + 2, `武器幸运+1   ${OIL_PRICE} 金   ${sold ? '本层已购' : '每层限购 1'}`, 13, '#ccc', { strokeThickness: 2 }));
+      R.add([...button(s, 448, y, 64, 34, '购买', () => { const e = w.buyOil(); if (!e) sfx(s, 'coin'); this.onChange(e ?? '购买 祝福油', !e); this.render(); }, 16, !sold && w.gold >= OIL_PRICE)]); }
+    R.add(txt(s, 175, top + 400, '点击右侧背包物品出售（按售价）', 14, '#9fd'));
   }
   private renderBag(R: Phaser.GameObjects.Container, top: number) {
     const s = this.s, w = this.world(), cols = 6, size = 56, x0 = 600, y0 = top + 100;
@@ -163,6 +172,9 @@ export class Panel {
     for (const [k, v] of Object.entries(it.stats)) if (v) lines.push([`${STAT_NAMES[k as keyof typeof STAT_NAMES]} +${v}`, '#7aff7a']);
     if (it.luck) lines.push([it.luck > 0 ? `幸运 +${it.luck}` : `诅咒 ${-it.luck}`, it.luck > 0 ? '#ffd24a' : '#ff4040']);
     if (it.item === 'bless_oil') lines.push(['点击：作用于当前武器（幸运+1，上限7，可能诅咒）', '#9fd']);
+    const sd = ITEMS[it.item]?.set ? SETS[ITEMS[it.item].set!] : undefined;
+    if (sd) { const n = w.setCounts()[sd.id] ?? 0; lines.push([`【${sd.name}套装】已穿 ${n}/${sd.pieces.length}`, '#ffb040']);
+      for (const b of sd.bonus) lines.push([`  ${b.n}件：${b.text}`, n >= b.n ? '#7aff7a' : '#777']); }
     if (it.slot) {
       const cur = w.equip[it.slot];
       if (cur && cur !== it) lines.push([`当前：${cur.name}`, '#888']);
