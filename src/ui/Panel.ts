@@ -182,13 +182,13 @@ export class Panel {
       const ic = s.textures.exists('sk_' + b.skill) && cs ? 'sk_' + b.skill : 'item_' + id;
       if (s.textures.exists(ic)) R.add(s.add.image(200, y, ic).setDisplaySize(rh - 16, rh - 16));
       // 行高 38（>7 本）时单行显示「书名 需LvX 价格」，避免手机放大字号后两行重叠
-      if (rh < 44) R.add(txt(s, 222, y, `${be.nm} 需Lv${need} ${learned ? '已学会' : be.gap > 0 ? `差${be.gap}级` : ''} ${b.price}金`, 13, learned ? '#888' : w.level >= need ? '#ffd24a' : '#f99', { strokeThickness: 2 }).setOrigin(0, 0.5));
+      if (rh < 44) R.add(txt(s, 222, y, `${be.nm} 需Lv${need} ${learned ? '已学会' : be.gap > 0 ? `差${be.gap}级` : `${b.price}金`}`, 13, learned ? '#888' : w.level >= need ? '#ffd24a' : '#f99', { strokeThickness: 2 }).setOrigin(0, 0.5));
       else { R.add(txt(s, 232, y - (rh < 62 ? 17 : 20), be.nm, be.fs, learned ? '#888' : '#ffd24a'));
       R.add(txt(s, 232, y + (rh < 62 ? 0 : 2), be.sub, 13, w.level >= need ? '#ccc' : '#f99', { strokeThickness: 2 })); }
       R.add([...button(s, rh < 44 ? 458 : 448, y, rh < 44 ? 56 : 64, rh < 62 ? rh - 12 : 34, '购买', () => { const e = w.buyBook(b.skill); if (!e) sfx(s, 'coin'); this.onChange(e ?? `购买 ${ITEMS[id].name}（背包中点击学习）`, !e); this.render(); }, 15, be.buyable && w.gold >= b.price)]);
     });
     const drops = Object.values(BOOKS).filter(b => b.cls === w.cls && !list.includes(b)).map(b => w.skillPool.find(x => x.id === b.skill)!.name);
-    if (!cs && drops.length) R.add(txt(s, 175, top + (rh < 62 ? 128 : 130) + list.length * rh - rh / 2 + 4, `Lv>25 书店不卖，BOSS 掉落（尸王等）：${drops.join('、')}`, 13, '#c9a', { wordWrap: { width: 330 } }));
+    if (!cs && drops.length) R.add(txt(s, 175, top + (rh < 62 ? 128 : 130) + list.length * rh - rh / 2 + 4, `Lv>25 书店不卖：其余 ${drops.length} 本由 BOSS 掉落（尸王等，见技能面板来源）`, 13, '#c9a', { strokeThickness: 2 }));
     R.add(txt(s, 175, top + 448, '买书后在背包里点击技能书学习（需达到等级）', 13, '#9fd'));
   }
   private renderBag(R: Phaser.GameObjects.Container, top: number) {

@@ -7,6 +7,8 @@
 - R54 书店：只卖学习等级 ≤25 的书（覆盖之前的「传世秘籍」页，该页取消），按等级升序；书名不被「购买」按钮遮挡；每本显示「需LvXX」/「已学会」，等级不够按钮置灰并显示「差 N 级」；书店 NPC 两列先填满左列再右列，按等级连续阅读。
 - R54 >25 级技能书（含传世）改为 BOSS 掉落：26–35 级只由尸王及以上 BOSS 掉、尸王掉率最高；>35 级由层等级≈书等级的 BOSS 掉。全表见 docs/skill-book-drops.md（数据 src/data/skillBookDrops.ts）。旧存档已学技能、背包里的书不受影响。
 - R54 技能面板：按学习等级升序 + [Fn] 标签，两行不重叠，状态颜色，未学显示「需 LvX」及获取途径，全设备翻页，手机字号 ≥12。
+- R54 动画不放大：攻击/受击/蓄力/待机呼吸关键帧 scale ≤1（src/ui/cardMotion.ts），主角、怪物、全部召唤物（骷髅/神兽/尸灵/金甲/替身，含升级变色骷髅）一致；e2e 实采 scale 全为 1.0。
+- R54 快捷栏点击即用：桌面药水格新增点击（技能格原已支持），与按键同走 BattleScene.onKey/World 处理（数量不足、冷却、满血判断一致）；格子 pointerdown 即 stopPropagation。手机 HUD tap 同时拦截 touchstart/touchend/mousedown/mouseup，修复城里点药水槽导致角色走动的穿透 bug。商店书行：已学会/差 N 级时不显示价格，避免压按钮；掉落说明改单行。e2e tests/e2e/hotbar-click-verify.mjs。
 - R54 技能数字整数显示（仅显示，不改计算）：统一 src/ui/fmt.ts（fmtInt/fmtText，四舍五入）。
 
 ## 传世技能（feat/chuanshi-skills）

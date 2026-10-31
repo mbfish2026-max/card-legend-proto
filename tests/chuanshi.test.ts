@@ -142,4 +142,10 @@ for (const c of Object.keys(CS) as ClassId[]) for (const id of CS[c]) {
   const src = readFileSync('src/ui/CardView.ts', 'utf8'); ok(!/artS[XY] \* 1\.\d*[1-9]/.test(src) && !/scale(X|Y)?: \{?\s*(from: [\d.]+, )?to: 1\.\d*[1-9]/.test(src), 'CardView 无 artS×1.xx 放大');
   for (const d of [SUMMON, SUMMON_BEAST, SUMMON_CORPSE, SUMMON_GOLDEN, DECOY]) ok((d.card?.h ?? 0) <= 190 && (d.card?.figureScale ?? 1) <= 1.25, `${d.name} 静态卡面不大于常规（h ${d.card?.h} fs ${d.card?.figureScale}）`);
 }
+{ // R54 快捷栏点击 = 按键（同一处理函数），且拦截穿透
+  const hud = readFileSync('src/ui/Hud.ts', 'utf8'), mh = readFileSync('src/ui/MobileHud.ts', 'utf8');
+  ok(/'potSlot' \+ i[\s\S]{0,300}stopPropagation\(\)[\s\S]{0,80}onSkill\(p\.key\)/.test(hud), '桌面药水格点击 → stopPropagation + onSkill(同按键)');
+  ok(/stopPropagation\(\)[\s\S]{0,120}onSkill\(/.test(hud.replace(/'potSlot'[\s\S]*$/, '')) || /skSlot/.test(hud), '桌面技能格点击 → onSkill(同按键)');
+  ok(/touchstart[\s\S]{0,400}mousedown/.test(mh) && /b\.onKey\(/.test(mh), '手机 HUD tap 拦截 touch/mouse 并调用 BattleScene.onKey');
+}
 console.log(`全部通过 ${pass} 项`);

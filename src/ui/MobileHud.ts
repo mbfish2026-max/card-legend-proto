@@ -107,7 +107,12 @@ export class MobileHud {
     this.layoutSkills();
   }
   private el<K extends keyof HTMLElementTagNameMap>(t: K, p: HTMLElement, cls = '') { const e = document.createElement(t); if (cls) e.className = cls; p.appendChild(e); return e; }
-  private tap(e: HTMLElement, fn: () => void) { e.addEventListener('pointerdown', ev => { ev.preventDefault(); ev.stopPropagation(); fn(); }); }
+  private tap(e: HTMLElement, fn: () => void) {
+    e.addEventListener('pointerdown', ev => { ev.preventDefault(); ev.stopPropagation(); fn(); });
+    // R54：按下即拦截——Phaser 在 window 上监听 touchstart/mousedown（画布外事件），未 preventDefault 时会当成点地图→城内点地行走；这里吞掉，防止快捷栏点击穿透
+    const eat = (ev: Event) => { if (ev.cancelable) ev.preventDefault(); ev.stopPropagation(); };
+    e.addEventListener('touchstart', eat, { passive: false }); e.addEventListener('mousedown', eat); e.addEventListener('touchend', eat, { passive: false }); e.addEventListener('mouseup', eat);
+  }
   private btn(p: HTMLElement, html: string, fn: () => void): Btn { const e = this.el('div', p, 'b'); e.innerHTML = html; this.tap(e, fn); return e; }
   private texUrl(key: string) {
     const t = this.b.textures; if (!t.exists(key)) return '';

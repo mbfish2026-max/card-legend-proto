@@ -686,6 +686,8 @@ export class World {
   /** R54 书店：本职业 shop 书 + 所有学习等级 ≤ SHOP_BOOK_MAX_LV 的书（含原掉落/传世），按学习等级升序；掉落池不变 */
   shopBooks(): BookDef[] { return Object.values(BOOKS).filter(b => b.cls === this.cls && this.bookLv(b) <= SHOP_BOOK_MAX_LV).sort((a, b) => this.bookLv(a) - this.bookLv(b)); }
   /** 传世秘籍页（书店第二页）：本职业学习等级 > 25 的传世技能书 */
+  /** 全部召唤物定义（测试/e2e 遍历用：立绘缩放采样） */
+  readonly summonDefs = [SUMMON, SUMMON_BEAST, SUMMON_CORPSE, SUMMON_GOLDEN, DECOY];
   csBooks(): BookDef[] { return []; } // R54：>25 级（含传世）一律不进商店，改为 BOSS 掉落（src/data/skillBookDrops.ts）
   /** R54 技能面板顺序：学习等级升序（同级保持技能池顺序） */
   skillsByLevel() { return [...this.skillPool].sort((x, y) => this.needLevel(x) - this.needLevel(y)); }
