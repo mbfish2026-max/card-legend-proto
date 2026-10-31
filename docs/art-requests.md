@@ -435,3 +435,13 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 | nimo_statue_full.png | 708x960 | nimo_statue | 逆魔雕像 | 逆魔古刹（传世） | 据描述 | "死神"，巨镰 |
 | red_snake_yao_full.png | 728x960 | red_snake_yao | 红蛇妖 | 蛇魔谷（传世） | 部分推测 | 蛇妖小喽啰 |
 | black_snake_yao_full.png | 708x960 | black_snake_yao | 黑蛇妖 | 蛇魔谷（传世） | 部分推测 | 蛇王近卫军，防御极高 |
+
+## 追加：魔龙教主（第23层 魔龙血域 BOSS）
+
+- 文件：`public/assets/portraits/boss_molong_full.png`（738×960，RGBA 透明底，最长边 960，与其它 `<id>_full.png` 同规范）
+- 预览：`docs/art-gap-preview/sq_molong.jpg`
+- 美术键说明：已 merge origin/main（37469df 之后），但 main 的 `docs/fx-requests.md` 中**没有「魔龙教主」条目**（全仓仅 ROADMAP.md / legend-research.md 提及），文档未给键名/文件名，故按约定使用 `boss_molong_full.png`，键为 `boss_molong`。src 中当前占位为 `boss_woma`（沃玛教主着色），未改 src，接入由程序侧处理。
+- 卡面：文档未要求另一尺寸/文件名，故未单独出卡面，卡面沿用本立绘。
+- 外观依据（热血传奇官方背景，百度百科）：原为人们祭奠的神将，与龙共同守护人类，龙堕落后随之化为妖魔；「神所赐的双翅」「由天地灵气化成的短枪」；作为龙命令的执行者带来血与火。据此绘制：龙角头盔的堕落神将、暗红金边重甲、一对龙翼、紫红灵气短枪、血火缭绕。
+- 未查到：原作具体配色与头部造型的官方立绘描述（配色暗红/黑红为玩家资料推测）；短枪画成两端带刃，属自由发挥。
+- 原创绘制，未描摹原作素材。
