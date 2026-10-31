@@ -38,6 +38,9 @@ export class CardView extends Phaser.GameObjects.Container {
     const c = { ...DEFAULT_CARD, ...(unit.card ?? {}) };
     const w = this.w = c.w, ch = this.cardH = c.h, barH = Math.round(ch * 0.22);
     this.artFacing = c.artFacing;
+    // 合击版 A1：点击/触屏点怪物卡 = 指定英雄攻击目标（官方 Ctrl+W）。只发场景事件，不触发走位
+    if (unit.team === 'enemy') this.setSize(w, ch).setInteractive(new Phaser.Geom.Rectangle(0, 0, w, ch), Phaser.Geom.Rectangle.Contains)
+      .on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev?.stopPropagation?.(); if (this.unit.team === 'enemy' && this.unit.alive) scene.events.emit('cardTap', this.unit.uid); });
     const shadow = scene.add.ellipse(0, 2, w * 1.25, 22, 0x000000, 0.45);
     this.inner = scene.add.container(0, 0);
     // 卡框：背景色 + 窄金属边框（无粗描边）
@@ -114,6 +117,15 @@ export class CardView extends Phaser.GameObjects.Container {
     if (sig === this.eqSig) return; this.eqSig = sig; this.eqState = look.state;
     if (!this.scene.textures.exists(look.key) || this.art.texture.key === look.key) return;
     const ang = this.art.angle; this.art.setTexture(look.key); this.fitArt(); this.art.setAngle(ang);
+  }
+  private poseBase?: string; private poseTimer?: Phaser.Time.TimerEvent;
+  /** 召唤物姿态单帧（art-requests L.2）：临时换纹理，ms 后切回原立绘；帧与原立绘同尺寸同锚点，故不重算缩放。缺帧 → 不做任何事（保留原动画） */
+  showPose(key: string, ms = 260) {
+    const a = this.art; if (!(a instanceof Phaser.GameObjects.Image) || this.dying || !this.active || !this.scene.textures.exists(key)) return false;
+    if (!this.poseBase) this.poseBase = a.texture.key;
+    a.setTexture(key); this.poseTimer?.remove();
+    this.poseTimer = this.scene.time.delayedCall(ms, () => { const b = this.poseBase; this.poseBase = undefined; if (b && a.active && this.scene.textures.exists(b)) a.setTexture(b); });
+    return true;
   }
   /** 按卡面高度/最大宽度缩放立绘，返回实际图高 */
   private fitArt() {

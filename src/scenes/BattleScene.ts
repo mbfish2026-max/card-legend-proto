@@ -88,6 +88,9 @@ export class BattleScene extends Phaser.Scene {
     this.events.once('shutdown', () => window.removeEventListener('keyup', onWinUp, true));
     window.addEventListener('keydown', onWinKey, true);
     this.events.once('shutdown', () => window.removeEventListener('keydown', onWinKey, true));
+    // 合击版 A1：点怪物卡指定英雄目标（无英雄/未召唤时静默忽略，不影响原操作）
+    this.events.on('cardTap', (uid: number) => { const w = this.world; if (!w.companion?.out || this.paused) return; const e = w.setCompanionTarget(uid); if (e) this.log(e); else { const v = this.views.get(uid); if (v) fx.floatNumber(this, v.cx, v.cy - v.h * 0.45, v.h, '英雄目标', '#7fd7ff', 0.6); } this.handle(w.drainEvents()); });
+    this.events.once('shutdown', () => this.events.off('cardTap'));
     // 其它键（F1~F4 技能等）：阻止 F1 帮助等默认行为；不占用 F5 等其它功能键
     this.input.keyboard!.on('keydown', (e: KeyboardEvent) => {
       if (stepDir(e)) return; if (/^F([1-9]|10)$/.test(e.key)) e.preventDefault(); this.onKey(e.key.toUpperCase()); });
@@ -239,6 +242,9 @@ export class BattleScene extends Phaser.Scene {
     if (k === 'K') return this.openPanel('skills');
     if (k === 'Q') return this.openPanel('quests');
     if (this.paused || this.state !== 'play') return;
+    // 合击版 A2/A4 [适配] 键位：R 召唤/收回、E 切换状态（官方 Ctrl+E）、G 合击爆发（官方 Ctrl+S，本作 S 已用于回城）
+    if (k === 'R' || k === 'E' || k === 'G') { const w = this.world; const e = k === 'R' ? w.toggleCompanion() : k === 'E' ? w.cycleCompanionMode() : w.unleashCombo();
+      if (e) this.log(e); this.handle(w.drainEvents()); this.ui?.panel?.open && this.ui.panel.render(); return; }
     if (k === ' ' || k === 'W') { if (this.world.town) this.townUse(); else this.usePortal(); return; }
     if (k === 'S' && !this.world.town && this.world.atReturnGate() && (this.world.floorIndex === 0 || REGIONS.some(r => r.floors[0] === this.world.floorIndex))) { this.goBackTown(); return; }
     if (k === 'S') { if (!this.fading && this.world.hero && this.world.floorIndex > 0 && this.world.hero.x <= WORLD.heroStartX + 150) { this.fading = true; this.cameras.main.fadeOut(400, 0, 0, 0); this.cameras.main.once('camerafadeoutcomplete', () => { this.fading = false; this.world.prevFloor(); }); } else this.log('在本层起点按 S 返回上一层，或点左侧入口回城'); return; }
@@ -389,6 +395,7 @@ export class BattleScene extends Phaser.Scene {
         else {
           // 召唤物专属攻击特效（docs/fx-requests.md 召唤物动作 / v5）；缺图退回原 Graphics 挥砍
           const u = sv.unit, fx0 = sv.x + dir * (sv.w / 2 + 6);
+          if (u.summon) sv.showPose(u.id + '_atk'); // 姿态帧（art-requests L.2），缺帧保留原动画
           const ok = u.pet ? !!playFx(this, 'fx_pet_hit_pink', tv.cx, tv.cy)
             : u.summon && u.id === 'summon_skeleton' ? !!playFx(this, 'fx_skeleton_claw', fx0, sv.cy - 10, { flip: dir < 0 })
             : u.summon && u.id === 'summon_beast' ? !!playFx(this, 'fx_beast_bite', tv.cx, tv.cy) : false;
@@ -399,6 +406,7 @@ export class BattleScene extends Phaser.Scene {
         const y = v.cy - v.h * 0.15;
         if (e.heal) { fx.floatNumber(this, v.cx, y, v.h, '+' + e.amount, FX.healColor, 0.8); continue; }
         playCombatAnim(e, uid => this.views.get(uid)); // 受击动作（主角/怪物/召唤物同一套）
+        if (v.unit.summon) (v as CardView).showPose?.(v.unit.id + '_hurt', 220);
         if (e.dot) { fx.floatNumber(this, v.cx + 20, y, v.h, '-' + e.amount, '#5aff3a', 0.7); continue; }
         if (!playFx(this, 'fx_common_hitspark', v.cx, v.cy)) fx.hitSpark(this, v.cx, v.cy);
         fx.floatNumber(this, v.cx, y, v.h, '-' + e.amount + (e.crit ? '!' : ''), e.crit ? '#ff5a1a' : FX.dmgColor, e.crit ? FX.critScale : 1);
@@ -447,10 +455,22 @@ export class BattleScene extends Phaser.Scene {
         const u = this.world.units.find(x => x.uid === e.uid);
         if (u && !this.views.has(u.uid)) { const v = new CardView(this, u); v.setAlpha(0); this.tweens.add({ targets: v, alpha: 1, duration: 400 }); this.views.set(u.uid, v); this.sfx('summon2'); }
       } else if (e.type === 'respawn') this.onRespawn();
+      else if (e.type === 'combo') this.comboFx(e);
       else if (e.type === 'inventory') { this.refreshHeroLook(); if (this.ui?.panel?.open) this.ui.panel.render(); }
       else if (e.type === 'log') this.log(e.text, e.color === 'green');
       else if (e.type === 'bossfx') this.bossFx(e);
     }
+  }
+  /** 合击版 A4/A6：合击占位表现（fx_combo_<id> 素材未到 → Graphics 金色冲击环 + 飘字，不报错） */
+  comboFx(e: Extract<BattleEvent, { type: 'combo' }>) {
+    const t = this.views.get(e.target), a = this.views.get(e.source), b = this.views.get(e.partner); this.sfx('swing_crit', 0.6);
+    a?.windup?.(a.unit.facing); b?.swing?.(b.unit.facing);
+    if (!t) return; if (playFx(this, 'fx_combo_' + e.id, t.cx, t.cy)) return;
+    const g = this.add.graphics().setDepth(60).setBlendMode(Phaser.BlendModes.ADD);
+    g.lineStyle(10, 0xffc040, 0.9).strokeCircle(t.cx, t.cy, 40); g.fillStyle(0xff8020, 0.35).fillCircle(t.cx, t.cy, 60);
+    this.tweens.add({ targets: g, scale: { from: 0.4, to: 1.4 }, alpha: { from: 1, to: 0 }, duration: 600, onComplete: () => g.destroy() });
+    fx.floatNumber(this, t.cx, t.cy - t.h * 0.5, t.h, e.name, '#ffd24a', 1.1);
+    if (!FxQuality.low) this.cameras.main.shake(160, 0.006);
   }
   /** R13 官方 BOSS 机制表现：沃玛电火花、祖玛火球、赤月地刺预警/冒刺、发呆/狂暴/瞬移/召唤提示（1× 简易图形） */
   bossFx(e: Extract<BattleEvent, { type: 'bossfx' }>) {
@@ -507,7 +527,7 @@ export class BattleScene extends Phaser.Scene {
   /** 进入新一层：淡入，换背景，清掉旧怪物与地上物品，刷新本层怪物；角色/召唤物保留 */
   enterFloor(i: number, name: string) {
     this.clearStreet();
-    for (const [uid, v] of [...this.views]) if (!v.unit.isHero && !(v.unit.summon && this.world.units.includes(v.unit))) { v.destroy(); this.views.delete(uid); }
+    for (const [uid, v] of [...this.views]) if (!v.unit.isHero && !((v.unit.summon || v.unit.companion) && this.world.units.includes(v.unit))) { v.destroy(); this.views.delete(uid); }
     this.groundObjs.forEach(os => os.forEach(o => o.destroy())); this.groundObjs.clear();
     this.floorUids = this.world.alive('enemy').map(u => u.uid);
     for (const u of this.world.alive('enemy')) this.views.set(u.uid, new CardView(this, u));
