@@ -8,9 +8,9 @@ const ls = () => { try { return globalThis.localStorage; } catch { return undefi
 
 /** 各职业自动技能推荐（按优先级） */
 export const DEFAULT_AUTO_SKILLS: Record<ClassId, string[]> = {
-  warrior: ['fire_sword', 'half_moon', 'rush', 'thrust'],
-  mage: ['magic_shield', 'hell_thunder', 'ice_roar', 'lightning_flash', 'burst_fire', 'fire_wall', 'hell_fire', 'thunder', 'big_fireball', 'fireball', 'charm'],
-  taoist: ['summon_beast', 'summon_skeleton', 'holy_armor', 'ghost_shield', 'mass_heal', 'heal', 'poison', 'soul_fire'],
+  warrior: ['vajra_body', 'fire_sword', 'thunder_sword', 'shield_break', 'break_strike', 'half_moon', 'dash_slash', 'rush', 'thrust'],
+  mage: ['magic_shield', 'ice_whirl', 'hell_thunder', 'five_thunder', 'frost_blade', 'ice_roar', 'ice_dragon', 'lightning_flash', 'burst_fire', 'fire_wall', 'hell_fire', 'thunder', 'ice_arrow', 'big_fireball', 'fireball', 'charm'],
+  taoist: ['summon_golden_skeleton', 'summon_beast', 'drive_corpse', 'summon_skeleton', 'holy_armor', 'ghost_shield', 'decoy_talisman', 'cleanse', 'mass_heal', 'heal', 'soul_wall', 'poison', 'holy_light', 'soul_fire'],
 };
 export const ZOOM_MIN = 0.8, ZOOM_MAX = 1.2, ZOOM_STEP = 0.05;
 

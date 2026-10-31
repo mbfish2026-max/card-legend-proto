@@ -91,7 +91,7 @@ const free = (w: World) => w.skills.map(() => 0);
   const r = w.cast(idx(w, 'half_moon'), free(w)); ok(r.ok && r.targets.length === 3, '半月弯刀命中 3 个目标');
   const r2 = w.cast(idx(w, 'fire_sword'), free(w)); ok(r2.ok && r2.targets[0] === w.queue(1)[0].uid, '烈火剑法打前排');
   const r3 = w.cast(idx(w, 'thrust'), free(w)); ok(r3.ok && r3.targets.length === 2, '刺杀剑术命中 2 格');
-  ok(w.skills.every(k => k.mana === 0), '战士剑法不耗魔（官方）');
+  ok(w.skills.filter(k => !k.cs).every(k => k.mana === 0), '战士剑法不耗魔（官方）'); ok(w.skillPool.filter(k => k.cs && !k.passive).every(k => k.mana === ({ thunder_sword: 0, break_strike: 3, shield_break: 3, vajra_body: 6, dash_slash: 6 } as Record<string, number>)[k.id]), '传世战士技能耗魔 = DB Spell ×3（雷霆剑 0）');
   const sly = pool(w, 'slaying'); ok(!!sly && sly.passive === true, '攻杀剑术为被动且在 skillPool'); ok(idx(w, 'slaying') < 0, '攻杀不占快捷栏');
   const cds = free(w); w.cast(idx(w, 'fire_sword'), cds); const r4 = w.cast(idx(w, 'fire_sword'), cds); ok(!r4.ok && r4.reason.includes('冷却'), '冷却中不可再放');
   const fs = w.skills[idx(w, 'fire_sword')]; ok(fs.lvMult!.join() === '1.4,1.8,2.2,2.6' && fs.learn![0] === 35, '烈火剑法 35 级学习，1.4~2.6 倍（官方）');
@@ -387,7 +387,7 @@ const free = (w: World) => w.skills.map(() => 0);
         if (!cp.out && w.companionCooldown() <= 0) w.toggleCompanion(); w.unleashCombo(); }
       if (process.env.SIM && Math.round(t * 20) % 2000 === 0) console.log("   t", Math.round(t), "lv", w.level, "gold", w.gold, "floor", w.floorIndex + 1, "deaths", w.deaths);
       // R11 技能书：达到等级且金币有余就买，背包里的书能学就学（学会后快捷栏重排，冷却重置）
-      for (const b of w.shopBooks()) { const sk = w.skillPool.find(x => x.id === b.skill)!; if (!w.learned.has(b.skill) && w.level >= w.needLevel(sk) && w.gold >= b.price && !w.bag.some(x => ITEMS[x.item]?.book === b.skill)) w.buyBook(b.skill); }
+      for (const b of process.env.CS ? [...w.shopBooks(), ...w.csBooks()] : w.shopBooks()) { const sk = w.skillPool.find(x => x.id === b.skill)!; if (!w.learned.has(b.skill) && w.level >= w.needLevel(sk) && w.gold >= b.price && !w.bag.some(x => ITEMS[x.item]?.book === b.skill)) w.buyBook(b.skill); }
       for (let i = w.bag.length - 1; i >= 0; i--) if (ITEMS[w.bag[i].item]?.book && w.learnBook(i).startsWith('学会')) { cds = w.skills.map(() => 0); learnLog.push(`${w.level}级${w.skillPool.find(x => x.id === [...w.learned].pop())!.name}@${w.floorIndex + 1}层`); }
       // 可选对照（NEWBOOKS=1）：#11/#12 新书达到官方学习等级即学会（最坏情况；默认 = 已接入后的真实书店/掉落）
       if (process.env.NEWBOOKS) for (const b of Object.values(BOOKS)) if (NEW_BOOKS.includes(b.skill) &&  b.cls === w.cls && !w.learned.has(b.skill) && w.level >= w.needLevel(w.skillPool.find(x => x.id === b.skill)!)) { w.learned.add(b.skill); cds = w.skills.map(() => 0); }
@@ -471,7 +471,7 @@ const free = (w: World) => w.skills.map(() => 0);
   const w2 = mk([]); const h2 = w2.hero!; w2.step(0.05, { dx: -1, dy: 0 }); ok(h2.facing === -1, '附近无怪时向左走会转身');
 }
 { // 技能键：主动 F1~Fn，被动 P，且不占用 W/A/S/D
-  const actives = (Object.keys(CLASSES) as ClassId[]).flatMap(c => CLASSES[c].skills.filter(s => !s.passive));
+  const actives = (Object.keys(CLASSES) as ClassId[]).flatMap(c => CLASSES[c].skills.filter(s => !s.passive && !s.cs)); // 传世秘籍静态键 F12+ 仅占位，快捷栏按学会顺序重标
   const keys = actives.map(s => s.key);
   ok(keys.every(k => /^F([1-9]|1[01])$/.test(k)) && !keys.some(k => 'WASD'.includes(k)), `三职业主动技能键均为 F1~F11（${[...new Set(keys)].join(',')}）`);
   ok(CLASSES.warrior.skills.filter(s => !s.passive).length === 4 && CLASSES.mage.skills.filter(s => !s.passive).length === 11, '战士 4 主动 / 法师 11 主动（#11 + 诱惑之光）');
