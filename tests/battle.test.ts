@@ -1,5 +1,5 @@
 declare const process: { env: Record<string, string | undefined> };
-import { World, SaveData, OIL_PRICE, IRON_PRICE, OFFICIAL } from '../src/combat/World';
+import { World, SaveData, OIL_PRICE, IRON_PRICE, OFFICIAL, mitigate } from '../src/combat/World';
 import { ITEMS, SETS, ENHANCE_MAX, enhanceChance, shatterChance } from '../src/data/items';
 import { WORLD, CARD, Floor, FLOORS } from '../src/data/world';
 import { CLASSES, ClassId } from '../src/data/classes';
@@ -719,5 +719,29 @@ const free = (w: World) => w.skills.map(() => 0);
   ok(m3.level === 25 && m3.exp === need(25) - 1, '旧档异常溢出经验封顶到本级差 1，不越级');
   ok(C.migrateExp(1, 0) === 0 && C.migrateExp(48, 100) >= 0, '低/高等级迁移不出错');
   ok(C.fmtExp(123) === '123' && C.fmtExp(123456) === '12.3万' && C.fmtExp(300000000) === '3亿', '经验大数显示 万/亿');
+}
+
+{ // #10 魔防（魔御 MAC）：只减魔法伤害；装备叠加；沃玛教主混合；绿毒无视；旧档推导
+  const f = WORLD.defFactor;
+  ok(mitigate(100, 10, 0, 0) === 100 - 10 * f && mitigate(100, 10, 40, 0) === 100 - 10 * f, '魔御不减物理伤害（magic=0 只看防御）');
+  ok(mitigate(100, 0, 10, 1) === 100 - 10 * f && mitigate(100, 40, 10, 1) === 100 - 10 * f, '魔御只减魔法伤害（防御不影响魔法）');
+  ok(Math.abs(mitigate(100, 10, 0, 0.5) - (50 - 5 * f + 50)) < 1e-9, '沃玛混合：一半按防御、一半按魔御');
+  ok(mitigate(100, 12, 12, 0.5) === mitigate(100, 12, 12, 0), '防御=魔御时混合伤害与旧公式一致');
+  const w = mk([], [], 'taoist', 30); const m0 = w.stats().mdef;
+  ok(m0 === 0, `职业基础魔御 0（官方成长未查到）：${m0}`);
+  w.bag.push(w.makeItem('soul_robe')); w.equipItem(0); const m1 = w.stats().mdef;
+  ok(m1 === ITEMS.soul_robe.equip!.mdef && m1 === 9, `灵魂战衣魔御 3-3 → 中值×3 = 9（实际 ${m1}）`);
+  w.bag.push(w.makeItem('tao_helm')); w.equipItem(0); const m2 = w.stats().mdef, hm = ITEMS.tao_helm.equip!.mdef ?? 0;
+  ok(hm > 0 && m2 === m1 + hm && w.hero!.mdef === m2, `装备魔御叠加 ${m1}+${hm}=${m2}，并同步到角色`);
+  const h = w.hero!; h.def = 0; h.mdef = 30; h.hp = h.maxHp = 99999;
+  const e = w.spawn(ENEMIES.boss_woma, 'enemy', h.x + 50);
+  const hp0 = h.hp; w.rng = () => 0.5; w.damage(h, 100, e, false); const phys = hp0 - h.hp;
+  const hp1 = h.hp; w.damage(h, 100, e, false, false, false, 1); const mag = hp1 - h.hp;
+  ok(phys === 100 && mag === Math.round(100 - 30 * f), `角色魔御 30：物理 ${phys}、魔法 ${mag}`);
+  const hp2 = h.hp; w.damage(h, 100, e, false, false, false, OFFICIAL.womaMagic); ok(OFFICIAL.womaMagic === 0.5 && hp2 - h.hp === Math.round(50 + 50 - 15 * f), `沃玛教主 50% 魔法：${hp2 - h.hp}`);
+  const hp3 = h.hp; w.damage(h, 100, e, false, true, true); ok(hp3 - h.hp === 100, '绿毒（ignoreDef）不受魔御影响');
+  const sv = JSON.parse(JSON.stringify(w.toSave())); for (const it of Object.values(sv.equip ?? {}) as any[]) if (it) delete it.stats.mdef;
+  const re = new World(seeded(2), 1, FLOORS, 'taoist', sv); ok(re.stats().mdef === m2, `旧档（装备无 mdef 字段）读档后魔御推导一致：${re.stats().mdef}`);
+  ok(mitigate(50, 20, 0, 1) === 50, '怪物魔御 0 时法术不被防御减免');
 }
 console.log(`全部通过 ${pass} 项`);

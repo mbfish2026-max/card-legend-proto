@@ -1,6 +1,8 @@
 // 三职业：基础属性、每级成长、技能。技能伤害 = 对应属性 × mult × (1 + 0.02×(等级-1))
 // 官方数据与适配标注见 docs/skills-official.md；本文件只写有据可依的技能。
 import { Stats } from '../combat/types';
+/** 职业基础/成长：魔御官方职业成长未查到 → 可省略（按 0） */
+type ClassStats = Omit<Stats, 'mdef'> & { mdef?: number };
 export type ClassId = 'warrior' | 'mage' | 'taoist';
 export type SkillKind = 'melee' | 'pierce' | 'ranged' | 'aoe' | 'dot' | 'buff' | 'summon' | 'zone' | 'rush';
 export interface SkillDef {
@@ -23,7 +25,7 @@ export interface SkillDef {
 }
 export interface ClassDef {
   id: ClassId; name: string; art: string; bg: number; artFacing: 1 | -1; atkInterval: number;
-  base: Stats; grow: Stats; skills: SkillDef[]; desc: string; autoStat: 'atk' | 'mag' | 'tao';
+  base: ClassStats; grow: ClassStats; skills: SkillDef[]; desc: string; autoStat: 'atk' | 'mag' | 'tao';
 }
 const S = 'assets/skills/';
 export const CLASSES: Record<ClassId, ClassDef> = {
