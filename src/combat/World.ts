@@ -45,12 +45,22 @@ export const OFFICIAL = {
   /** 赤月地刺：官方「每隔 2~3 秒」取 2.5；[适配] 预警 0.8 秒、判定半径 60px */
   spikeEvery: 2.5, spikeWarn: 0.8, spikeRadius: 60,
   /** 施毒：绿毒每 2.5 秒掉血、无视防御；红毒受伤 +20%；持续 = 道术×2 + 表值（秒） */
+  /** 沃玛教主电火花：魔法伤害占比（官方 50%） */
+  womaMagic: 0.5,
   poisonTick: 2.5, redAmp: 0.2, greenDur: [20, 27, 33, 40], redDur: [15, 20, 25, 30],
   /** 魔法盾 0–3 级减伤 */
   shieldReduce: [0.15, 0.3, 0.45, 0.6],
 };
-const ZERO: Stats = { hp: 0, mp: 0, atk: 0, mag: 0, tao: 0, def: 0 };
+const ZERO: Stats = { hp: 0, mp: 0, atk: 0, mag: 0, tao: 0, def: 0, mdef: 0 };
 
+/**
+ * 防御结算（[适配] 卡牌化）：物理部分按防御、魔法部分按魔御（MAC）减免，各部分减免量按占比分摊：
+ *   伤害 = Σ max(部分×20%, 部分 − 对应防御×defFactor×占比)；magic=0 与旧公式完全一致。
+ */
+export function mitigate(amount: number, def: number, mdef: number, magic = 0): number {
+  const m = Math.max(0, Math.min(1, magic)), red = (a: number, d: number, w: number) => w <= 0 ? 0 : Math.max(a * w * 0.2, a * w - d * WORLD.defFactor * w);
+  return red(amount, def, 1 - m) + red(amount, mdef, m);
+}
 export class World {
   units: Unit[] = []; events: BattleEvent[] = []; ground: GroundItem[] = [];
   /** 火墙等地面持续区：[适配] 落点灼烧 */
@@ -131,12 +141,12 @@ export class World {
   // ---------- 属性 ----------
   baseStats(lv = this.level): Stats {
     const c = this.classDef, l = lv - 1, r: any = {};
-    for (const k of Object.keys(ZERO) as (keyof Stats)[]) r[k] = Math.round(c.base[k] + c.grow[k] * l);
+    for (const k of Object.keys(ZERO) as (keyof Stats)[]) r[k] = Math.round((c.base[k] ?? 0) + (c.grow[k] ?? 0) * l); // 魔御职业成长未查到 → 0
     return r;
   }
   equipStats(): Stats {
     const r = { ...ZERO };
-    for (const it of Object.values(this.equip)) if (it) for (const [k, v] of Object.entries(it.stats)) (r as any)[k] += v ?? 0;
+    for (const it of Object.values(this.equip)) if (it) { for (const [k, v] of Object.entries(it.stats)) (r as any)[k] += v ?? 0; if (it.stats.mdef === undefined) r.mdef += this.itemMdef(it); }
     for (const b of this.setBonuses()) for (const [k, v] of Object.entries(b.stats)) (r as any)[k] += v ?? 0;
     for (const a of this.activeAchieves()) for (const [k, v] of Object.entries(a.bonus)) (r as any)[k] += v ?? 0;
     return r;
@@ -158,10 +168,16 @@ export class World {
   /** 当前激活的套装加成 */
   setBonuses() { const c = this.setCounts(); return Object.values(SETS).flatMap(s => s.bonus.filter(b => (c[s.id] ?? 0) >= b.n)); }
   stats(): Stats { const b = this.baseStats(), e = this.equipStats(), r: any = {}; for (const k of Object.keys(ZERO)) r[k] = (b as any)[k] + (e as any)[k]; return r; }
+  /** 旧档装备（存档 stats 无 mdef）：按物品定义 × 品质 × 强化 推导魔御，不改存档结构 */
+  itemMdef(it: InvItem): number {
+    const v = ITEMS[it.item]?.equip?.mdef; if (!v) return 0;
+    const mul = 1 + (it.rarity === 'common' ? 0 : WORLD.affix[it.rarity]);
+    return Math.round(v * mul * (1 + (it.enhance ?? 0) * ENHANCE_STAT));
+  }
   recompute(fill = false) {
     const h = this.hero; if (!h) return;
     const s = this.stats();
-    h.maxHp = s.hp; h.maxMp = s.mp; h.atk = s.atk; h.mag = s.mag; h.tao = s.tao; h.def = s.def; h.level = this.level;
+    h.maxHp = s.hp; h.maxMp = s.mp; h.atk = s.atk; h.mag = s.mag; h.tao = s.tao; h.def = s.def; h.mdef = s.mdef; h.level = this.level;
     if (fill) { h.hp = h.maxHp; h.mp = h.maxMp; } else { h.hp = Math.max(1, Math.min(h.maxHp, Math.round(h.hp))); h.mp = Math.min(h.maxMp, h.mp ?? 0); }
   }
   /** 总幸运（装备 luck 之和；负数=诅咒） */
@@ -343,11 +359,15 @@ export class World {
     return null;
   }
 
-  damage(target: Unit, amount: number, source?: Unit, canCrit = true, dot = false, ignoreDef = false) {
+  /**
+   * magic = 魔法伤害占比（0 物理 / 1 魔法 / 0.5 沃玛教主混合）。官方：物理只算防御，魔法只算魔御（MAC）。
+   * 物理部分 − 防御×defFactor，魔法部分 − 魔御×defFactor，各自保底 20%。ignoreDef（绿毒）两者都无视。
+   */
+  damage(target: Unit, amount: number, source?: Unit, canCrit = true, dot = false, ignoreDef = false, magic = 0) {
     if (!target.alive) return 0;
     const crit = canCrit && this.rng() < (source?.isHero ? this.critChance() : CRIT_CHANCE);
     if (crit) amount *= CRIT_MULT;
-    if (!ignoreDef) amount = Math.max(amount * 0.2, amount - (target.def ?? 0) * WORLD.defFactor);
+    if (!ignoreDef) amount = mitigate(amount, target.def ?? 0, target.mdef ?? target.def ?? 0, magic);
     if (target.redUntil && target.redUntil > this.time) amount *= 1 + OFFICIAL.redAmp; // R13 红毒
     if (target.armorUntil && target.armorUntil > this.time) amount *= 1 - (target.armorReduce ?? 0.5);
     amount = Math.max(1, Math.round(amount));
@@ -616,20 +636,20 @@ export class World {
       const t0 = targets[0];
       const dps = pw * (s.mult ?? 0.8);
       this.zones.push({ x: t0.x, until: this.time + dur, dps, radius: 160, tick: this.time + 0.5, skill: s.id });
-      this.damage(t0, dps * 0.6, h, false); // 落点瞬时轻伤
+      this.damage(t0, dps * 0.6, h, false, false, false, 1); // 落点瞬时轻伤（魔法）
       this.events.push({ type: 'log', text: `${s.name}：燃烧 ${dur} 秒` });
     } else if (s.kind === 'rush') {
       for (const t of targets) {
         t.x += h.facing * 150;
         t.x = Math.max(t.width / 2, Math.min(WORLD.mapWidth - t.width / 2, t.x));
-        this.damage(t, pw * (s.mult ?? 0.5) * this.roll(0.95, 0.1), h);
+        this.damage(t, pw * (s.mult ?? 0.5) * this.roll(0.95, 0.1), h, true, false, false, s.stat === 'atk' ? 0 : 1);
       }
       this.events.push({ type: 'log', text: `${s.name}：撞开 ${targets.length} 个低等级目标` });
     } else {
       targets.forEach((t, j) => {
         // 战士剑法：官方各级倍率（刺杀/半月：主目标 100%，其余按倍率；烈火：主目标倍率）
         const m = s.lvMult ? (s.kind === 'pierce' ? (j === 0 ? 1 : s.lvMult[slv]) : s.lvMult[slv]) : (s.mult ?? 1);
-        this.damage(t, pw * m * this.roll(0.95, 0.1), h);
+        this.damage(t, pw * m * this.roll(0.95, 0.1), h, true, false, false, s.stat === 'atk' ? 0 : 1); // 魔法/道术技能 = 魔法伤害
         if (s.slow && t.alive) t.slowUntil = this.time + (s.duration ?? 3);
       });
     }
@@ -757,7 +777,7 @@ export class World {
         for (const z of this.zones) {
           if (this.time < z.tick) continue;
           z.tick += 0.5;
-          for (const e of this.alive('enemy')) if (Math.abs(e.x - z.x) <= z.radius) this.damage(e, z.dps * 0.5, h, false, true);
+          for (const e of this.alive('enemy')) if (Math.abs(e.x - z.x) <= z.radius) this.damage(e, z.dps * 0.5, h, false, true, false, 1);
         }
       }
 
@@ -847,7 +867,7 @@ export class World {
         const t = pick(); if (!this.inMelee(t, b)) continue;
         b.cd = crazy ? OFFICIAL.womaCrazyInterval : b.atkInterval * slow;
         this.events.push({ type: 'attack', source: b.uid, target: t.uid, skill: 'boss' }, { type: 'bossfx', uid: b.uid, kind: 'spark', x: t.x, target: t.uid });
-        this.damage(t, b.atk * (0.9 + this.rng() * 0.2), b);
+        this.damage(t, b.atk * (0.9 + this.rng() * 0.2), b, true, false, false, OFFICIAL.womaMagic); // 官方 50% 物理 + 50% 魔法
       } else if (b.id === 'boss_zuma') {
         // 丢火球远程攻击，边攻击边召唤祖玛雕像/卫士
         if (b.cd > 0 || Math.abs(b.x - h.x) > OFFICIAL.zumaRange) continue;

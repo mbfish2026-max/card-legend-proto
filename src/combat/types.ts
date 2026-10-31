@@ -4,13 +4,15 @@ export interface DropEntry { item: string; chance: number; rarity?: Rarity }
 export type Slot = 'weapon' | 'helmet' | 'armor' | 'necklace' | 'ring' | 'bracelet' | 'boots';
 /** 穿戴位（官方：左右戒指、左右手镯各两位）；Slot 是物品部位类别 */
 export type EquipSlot = 'weapon' | 'helmet' | 'armor' | 'necklace' | 'ring1' | 'ring2' | 'bracelet1' | 'bracelet2' | 'boots';
-export interface Stats { hp: number; mp: number; atk: number; mag: number; tao: number; def: number }
+export interface Stats { hp: number; mp: number; atk: number; mag: number; tao: number; def: number; /** 魔御（MAC）：只减魔法伤害 */ mdef: number }
 export interface UnitDef {
   id: string; name: string; level: number; hp: number; mp?: number; atk: number;
   atkInterval: number; range: number; speed: number; width: number; height: number;
   tier: Tier; exp?: number; drops?: DropEntry[];
   /** 额外掉落（独立随机流，不影响主随机序列）：从 setDrop 里随机 1 件，概率 setChance */
   setDrop?: string[]; setChance?: number; oilChance?: number; deathSfx?: string; def?: number;
+  /** 魔御（MAC，只减魔法伤害）；怪物未设 = 取 def（[适配] 怪物魔御多数未查到） */
+  mdef?: number;
   /** 立绘纹理 ID（缺省 = id）；Boss 变体复用普通怪立绘 */
   art?: string;
   /** 渲染用（不影响战斗逻辑） */

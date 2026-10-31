@@ -1,7 +1,7 @@
 import { EquipSlot, ItemDef, Slot } from '../combat/types';
 import { CLASSES } from './classes';
 import { BOOKS, bookItemId } from './books';
-import { NEW_EQUIP, EQUIP_META } from './equip-official';
+import { NEW_EQUIP, EQUIP_META, adaptMdef } from './equip-official';
 // 物品表：中文名 + 图标。equip=基础属性；req=需求等级；price=出售价（商人收购价）
 const I = 'assets/items/';
 export const SLOTS: Slot[] = ['weapon', 'helmet', 'armor', 'necklace', 'ring', 'bracelet', 'boots'];
@@ -13,7 +13,7 @@ export const EQUIP_SLOT_NAMES: Record<EquipSlot, string> = { weapon: '武器', h
 export function equipSlotsFor(k: Slot): EquipSlot[] { return k === 'ring' ? ['ring1', 'ring2'] : k === 'bracelet' ? ['bracelet1', 'bracelet2'] : [k]; }
 /** 存档装备结构版本：2 = 双戒双镯 */
 export const EQUIP_VERSION = 2;
-export const STAT_NAMES: Record<string, string> = { hp: '生命', mp: '魔法值', atk: '攻击', mag: '魔法', tao: '道术', def: '防御' };
+export const STAT_NAMES: Record<string, string> = { hp: '生命', mp: '魔法值', atk: '攻击', mag: '魔法', tao: '道术', def: '防御', mdef: '魔御' };
 export const ITEMS: Record<string, ItemDef> = {
   hp_small: { id: 'hp_small', name: '金创药(小量)', icon: 'assets/potions/INV_Potion_51.png', potion: 0 },
   hp_mid: { id: 'hp_mid', name: '金创药(中量)', icon: 'assets/potions/INV_Potion_54.png', potion: 1 },
@@ -90,6 +90,8 @@ export const ITEMS: Record<string, ItemDef> = {
 };
 // 存量装备挂官方职业限制（按官方需求类型推导）
 for (const [id, m] of Object.entries(EQUIP_META)) if (m.cls && ITEMS[id] && !ITEMS[id].cls) ITEMS[id].cls = m.cls;
+// #10 魔防：存量件按官方魔御回填（[适配] 中值×3），其余数值不动
+for (const [id, m] of Object.entries(EQUIP_META)) { const v = adaptMdef(m.off), d = ITEMS[id]; if (v && d?.equip && d.equip.mdef === undefined) d.equip.mdef = v; }
 /** 套装：集齐 n 件激活对应加成（卸下即失效）；同名重复件只计 1 件（官方：相同款式不生效） */
 
 export interface SetDef { id: string; name: string; pieces: string[]; bonus: { n: number; stats: Partial<Record<'hp' | 'mp' | 'atk' | 'mag' | 'tao' | 'def', number>>; luck?: number; text: string }[] }

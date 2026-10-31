@@ -34,17 +34,20 @@ export const NEED_CN: Record<NeedKind, string> = { level: '等级', atk: '攻击
 
 /**
  * [适配] 系数（v1 新增件）：卡牌属性 = 官方区间中值 × 系数，四舍五入；
- *   攻击 ×2、魔法/道术 ×4、防御 ×3、生命 = 适配后防御 ×8；魔御/准确/敏捷/攻速 卡牌无对应属性 → 不换算（文档列出）。
+ *   攻击 ×2、魔法/道术 ×4、防御 ×3、生命 = 适配后防御 ×8；魔御 ×3（#10 魔防：与防御同系数，不折算生命；存量 r18 件同样回填）；准确/敏捷/攻速 卡牌无对应属性 → 不换算（文档列出）。
  * （与 R13 存量「上限×1.5/3/2.3」对齐：常见区间中值≈0.75×上限 → 中值×2/4/3 ≈ 上限×1.5/3/2.3。）
  * 需求等级 req（本作唯一门槛）：官方为等级需求 → 取官方值；为攻击力/魔法力/精神力 → 按档次 [适配]：沃玛 24、祖玛 30、赤月 35、黑铁头盔 30。
  */
-export const ADAPT = { atk: 2, mag: 4, tao: 4, def: 3, hpPerDef: 8 } as const;
+export const ADAPT = { atk: 2, mag: 4, tao: 4, def: 3, mdef: 3, hpPerDef: 8 } as const;
 export const TIER_REQ: Record<Exclude<Tier, 'base'>, number> = { woma: 24, zuma: 30, chiyue: 35 };
 const mid = (r?: Range) => (r ? (r[0] + r[1]) / 2 : 0);
-export function adapt(o: OffStats): Partial<Record<'atk' | 'mag' | 'tao' | 'def' | 'hp', number>> {
+/** [适配] 魔御 = 官方魔御区间中值 × 3，四舍五入 */
+export const adaptMdef = (o?: OffStats) => Math.round(mid(o?.mdef) * ADAPT.mdef);
+export function adapt(o: OffStats): Partial<Record<'atk' | 'mag' | 'tao' | 'def' | 'hp' | 'mdef', number>> {
   const r: Record<string, number> = {};
   const atk = Math.round(mid(o.atk) * ADAPT.atk), mag = Math.round(mid(o.mag) * ADAPT.mag), tao = Math.round(mid(o.tao) * ADAPT.tao), def = Math.round(mid(o.def) * ADAPT.def);
   if (atk) r.atk = atk; if (mag) r.mag = mag; if (tao) r.tao = tao; if (def) { r.def = def; r.hp = def * ADAPT.hpPerDef; }
+  const mdef = adaptMdef(o); if (mdef) r.mdef = mdef;
   return r;
 }
 const clsOf = (n?: Need): Cls[] | undefined => !n || n.kind === 'level' ? undefined : [n.kind === 'atk' ? 'warrior' : n.kind === 'mag' ? 'mage' : 'taoist'];

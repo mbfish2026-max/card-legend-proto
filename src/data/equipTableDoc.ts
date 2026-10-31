@@ -16,7 +16,7 @@ export function renderEquipTable(): string {
   out.push('# 官方装备表 v1', '', '> 本文件由 `npm run gen:equip`（src/data/equipTableDoc.ts）生成，勿手改；`npm test` 校验与数据一致。', '');
   out.push('## 规则', '',
     `- 来源：21cq 热血传奇 1.76 物品库（每行「来源」链接）；沃玛/祖玛/赤月 职业归属：https://www.21cq.com/mir/Suit.aspx 、https://zhidao.baidu.com/question/56230124.html`,
-    `- [适配] 系数（v1 新增件）：属性 = 官方区间中值 × 系数（攻×${ADAPT.atk}、魔/道×${ADAPT.mag}、防×${ADAPT.def}，四舍五入），生命 = 适配后防御×${ADAPT.hpPerDef}；魔御/准确不换算（本作无此属性）；售价 = 官方出售价/100。`,
+    `- [适配] 系数（v1 新增件）：属性 = 官方区间中值 × 系数（攻×${ADAPT.atk}、魔/道×${ADAPT.mag}、防×${ADAPT.def}，四舍五入），生命 = 适配后防御×${ADAPT.hpPerDef}；魔御×${ADAPT.mdef}（#10 起回填，含存量件；不折算生命）；准确不换算（本作无此属性）；售价 = 官方出售价/100。`,
     `- 存量件（R18 及以前）数值保持不变（旧档与平衡），仅骨玉权杖 道术→魔法 修正。`,
     `- 本作门槛 = 需求等级 req。官方为等级需求 → 取官方值；官方为攻击力/魔法力/精神力 → [适配] 档次等级：沃玛 ${TIER_REQ.woma}、祖玛 ${TIER_REQ.zuma}、赤月 ${TIER_REQ.chiyue}、黑铁头盔 30。`,
     `- 职业：1.76 无硬职业锁，按官方需求类型推导（攻击力→战士、魔法力→法师、精神力→道士，等级需求→通用）；穿戴时校验（「职业不符」）。`,
