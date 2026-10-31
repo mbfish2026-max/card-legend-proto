@@ -460,6 +460,10 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 - 未查到：原作具体配色与头部造型的官方立绘描述（配色暗红/黑红为玩家资料推测）；短枪画成两端带刃，属自由发挥。
 - 原创绘制，未描摹原作素材。
 
+## M. 传世独有技能图标（art/chuanshi-skills）
+详见 `docs/chuanshi-skills.md`。16 个图标，64×64 + @2x 128×128，路径 `public/assets/skills/skill_<id>.png`：
+thunder_sword 雷霆剑、break_strike 破击剑法、shield_break 破盾斩、vajra_body 金刚护体、dash_slash 突斩（战士）；ice_arrow 冰箭术、ice_dragon 冰龙破、frost_blade 玄冰刃、five_thunder 五雷轰、ice_whirl 冰旋风（法师）；drive_corpse 赶尸、decoy_talisman 替身法符、soul_wall 灵魂墙、clear_mind 道心清明、holy_light 神光术、cleanse 解毒术（道士）。
+预览：`docs/art-gap-preview/chuanshi_skills.jpg`。src 未改，接入时在 classes.ts 增加技能并把 icon 指向对应文件。
 ### L.x 神兽改为直立站姿（2026-10-31）
 - `public/assets/portraits/summon_beast_full.png` 重绘为直立站姿：后腿站立、身体直立、一爪前伸微抬、一爪垂于腹前，正面偏 3/4；配色与画风沿用旧版（米黄毛、浅色鬃毛、弯角、青蓝眼、紫蓝电光爪）。
 - 尺寸保持 960×747，透明背景，脚底 y=745，内容水平重心 x≈480。
