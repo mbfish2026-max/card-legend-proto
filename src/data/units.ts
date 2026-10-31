@@ -88,12 +88,12 @@ export const ENEMIES: Record<string, UnitDef> = {
   cave_bat: n('cave_bat', '山洞蝙蝠', 14, 560, 34, 9, 165, [G(0.4), { item: 'hp_small', chance: 0.25 }], { art: 'bat', deathSfx: 'death', card: card({ figureScale: 1.0 }) }),
   cave_maggot: n('cave_maggot', '洞蛆', 14, 740, 36, 12, 185, [G(0.4), { item: 'hp_mid', chance: 0.25 }], { art: 'zombie', speed: 70, deathSfx: 'ghoul_death' }),
   // feat/maps-batch2（plan-60h B2）新增 6 种：官方名/出没按 21cq（docs/map-system-full.md）；等级/数值官方逐怪未查到，全部 [适配]（21cq 区间沃玛寺庙 20–31、矿区 21–25 与本作层位曲线冲突，按通关顺序普通怪等级递增取值）；僵尸1–5 合为一种 [适配]
-  dung_beetle: n('dung_beetle', '粪虫', 19, 900, 38, 12, 210, [G(0.5), { item: 'hp_mid', chance: 0.25 }], { art: 'zombie', speed: 70, deathSfx: 'ghoul_death' }),
-  woma_brave: n('woma_brave', '沃玛勇士', 20, 1100, 42, 15, 245, [G(0.6), { item: 'hp_mid', chance: 0.3 }], { art: 'woma_warrior', deathSfx: 'death2', oilChance: 0.02 }),
-  woma_general: n('woma_general', '沃玛战将', 21, 1250, 45, 17, 270, [G(0.6), { item: 'mp_mid', chance: 0.3 }], { art: 'woma_warrior', deathSfx: 'death2', oilChance: 0.02 }),
-  fire_woma: n('fire_woma', '火焰沃玛', 20, 1100, 48, 14, 270, [G(0.6), { item: 'mp_mid', chance: 0.3 }], { art: 'woma_warrior', deathSfx: 'death2', oilChance: 0.02 }),
-  dark_warrior: n('dark_warrior', '暗黑战士', 21, 1300, 47, 18, 290, [G(0.6), { item: 'hp_mid', chance: 0.3 }], { art: 'woma_warrior', deathSfx: 'death2', oilChance: 0.02 }),
-  mine_zombie: n('mine_zombie', '僵尸', 14, 1000, 40, 13, 225, [G(0.6), { item: 'hp_mid', chance: 0.3 }], { art: 'zombie', speed: 75, atkInterval: 1.5, width: 135, deathSfx: 'ghoul_death', card: card({ anchorX: 0.58 }) }),
+  dung_beetle: n('dung_beetle', '粪虫', 19, 900, 38, 12, 210, [G(0.5), { item: 'hp_mid', chance: 0.25 }], { art: 'dung_beetle', speed: 70, deathSfx: 'ghoul_death' }),
+  woma_brave: n('woma_brave', '沃玛勇士', 20, 1100, 42, 15, 245, [G(0.6), { item: 'hp_mid', chance: 0.3 }], { art: 'woma_brave', deathSfx: 'death2', oilChance: 0.02 }),
+  woma_general: n('woma_general', '沃玛战将', 21, 1250, 45, 17, 270, [G(0.6), { item: 'mp_mid', chance: 0.3 }], { art: 'woma_general', deathSfx: 'death2', oilChance: 0.02 }),
+  fire_woma: n('fire_woma', '火焰沃玛', 20, 1100, 48, 14, 270, [G(0.6), { item: 'mp_mid', chance: 0.3 }], { art: 'fire_woma', deathSfx: 'death2', oilChance: 0.02 }),
+  dark_warrior: n('dark_warrior', '暗黑战士', 21, 1300, 47, 18, 290, [G(0.6), { item: 'hp_mid', chance: 0.3 }], { art: 'dark_warrior', deathSfx: 'death2', oilChance: 0.02 }),
+  mine_zombie: n('mine_zombie', '僵尸', 14, 1000, 40, 13, 225, [G(0.6), { item: 'hp_mid', chance: 0.3 }], { art: 'mine_zombie', speed: 75, atkInterval: 1.5, width: 135, deathSfx: 'ghoul_death', card: card({ anchorX: 0.58 }) }),
 };
 /** feat/maps-more：同名官方怪的掉落沿用已有 21cq 表（id 不同仅因数值按层位区分）；无表的标「未查到」只给 [适配] 金币/药水 */
 /** [适配] 新洞穴怪的难度系数（攻/血），按 9 种子模拟调到死亡中位 1–4 */
