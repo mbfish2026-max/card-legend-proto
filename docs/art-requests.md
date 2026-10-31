@@ -869,3 +869,19 @@ thunder_sword 雷霆剑、break_strike 破击剑法、shield_break 破盾斩、v
 | sq_nimo_shiwei_full.png | 697x960 | 逆魔侍卫 | 新画（取代原复用图） | 据描述：身后箭型巨尾；蜥蜴形、盾矛为推测 |
 | sq_nimo_guard_full.png | 687x960 | 逆魔卫士 | 新画（取代原复用图） | 部分推测：迅猛近战卫士；双弯刀为新设计 |
 | sq_nimo_statue_full.png | 653x960 | 逆魔雕像 | 新画（取代原复用图） | 据描述："死神"、巨镰；砂岩活化为新设计 |
+
+
+## art/maps-sq-mir3 重画·第4组（8 张，取消复用）
+
+用户要求不再复用小怪素材，以下 id 的复制图都换成了各自的新立绘，外形和配色都与原图明显不同。路径：`public/assets/portraits/<id>_full.png`。预览：`docs/art-gap-preview/sq_mir3_redo4.jpg`。
+
+| 文件 | 尺寸 | 名称 | 状态 | 依据 |
+|---|---|---|---|---|
+| m3_noma_full.png | 746x960 | 诺玛 | 新画（取代原复用图） | 据描述：皮衣骨甲、骨制武器；兽颅盔为新设计 |
+| m3_noma_pharaoh_full.png | 689x960 | 诺玛法老 | 新画（取代原复用图） | 据描述：魔法拐棍；法老头饰木乃伊为推测 |
+| m3_desert_fish_full.png | 714x960 | 沙漠鱼魔 | 新画（取代原复用图） | 据描述：毒强、不死系；腐烂鱼形为新设计 |
+| m3_desert_wind_full.png | 693x960 | 沙漠风魔 | 新画（取代原复用图） | 据描述：持扇；沙旋风下身为新设计（无五官，存疑） |
+| m3_desert_tree_full.png | 703x960 | 沙漠树魔 | 新画（取代原复用图） | 据描述：仙人掌、射刺果 |
+| m3_desert_stone_full.png | 730x960 | 沙漠石人 | 新画（取代原复用图） | 据描述：石垒；红砂岩层叠、胸晶为新设计（与 sq_stone_man 区分） |
+| sq_cimo_full.png | 679x960 | 刺魔 | 新画（取代原复用图） | 据描述：剪刀爪、六背鳍（剪刀爪画成钩爪，存疑） |
+| sq_lizhua_full.png | 740x960 | 利爪魔 | 新画（取代原复用图） | 未查到/推测：按名称画长爪兽魔 |
