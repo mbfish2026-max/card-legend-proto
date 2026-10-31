@@ -45,7 +45,7 @@ export const WORLD = {
   /** 药水（balance-plan E [适配]；官方回血间隔未查到）：冷却 1s，2s 内分 4 跳回满额（总量不变） */
   potCd: 1.0, potHotSec: 0.5, potHotTicks: 2,
   lvDiffUp: 0.03, lvDiffDown: 0.02, lvDiffMin: 0.7,
-  rarityRoll: { magic: 0.3, rare: 0.1 },
+  rarityRoll: { magic: 0.12, rare: 0.02 },  // R56b：精良/极品 30%/10% → 官方 12%/2%（9 种子×3 职业全通关 50 级）
   affix: { magic: 0.5, rare: 1.2 },
   goldAmount: [5, 40] as [number, number],
   bagSize: 200, // feat/bag-200：用户要求扩到 200 格（[适配]；原版格数此处未查证）；面板分页 30 格/页
