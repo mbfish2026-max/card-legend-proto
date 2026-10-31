@@ -102,5 +102,26 @@ export const FLOORS: Floor[] = [
     { id: 'blood_zombie', x: 800 }, { id: 'redmoon_spider', x: 910, y: 20 },
     { id: 'blood_zombie', x: 1550 }, { id: 'redmoon_spider', x: 1650, y: -15 },
     { id: 'blood_zombie', x: 2300 }, { id: 'redmoon_spider', x: 2400, y: 15 },
-    { id: 'boss_redmoon', x: 3380 } ] }
+    { id: 'boss_redmoon', x: 3380 } ] },
+  // 合击版 #8（docs/hejiban-official.md §4）：追加在末尾，旧存档层号不变
+  { name: '保卫家园', bg: 'bg_floor14', boss: true, zone: '合击·英雄地（保卫家园四连本合为一层 [适配]，官方 40 级）', spawns: [
+    { id: 'hj_guard', x: 800 }, { id: 'redmoon_spider', x: 910, y: 20 },
+    { id: 'hj_guard', x: 1550 }, { id: 'redmoon_spider', x: 1650, y: -15 },
+    { id: 'hj_guard', x: 2300 }, { id: 'redmoon_spider', x: 2400, y: 15 },
+    { id: 'boss_hj_home', x: 3380 } ] },
+  { name: '卧龙山庄', bg: 'bg_floor15', boss: true, zone: '盟重卧龙笔记(330,340)·卧龙山庄（官方 47 级）', spawns: [
+    { id: 'wolong_guard', x: 800 }, { id: 'hj_guard', x: 910, y: 20 },
+    { id: 'wolong_guard', x: 1550 }, { id: 'hj_guard', x: 1650, y: -15 },
+    { id: 'wolong_guard', x: 2300 }, { id: 'hj_guard', x: 2400, y: 15 },
+    { id: 'boss_wolong', x: 3380 } ] },
+  { name: '雷炎洞穴', bg: 'bg_floor16', boss: true, zone: '盟重店小二(382,308)·雷炎洞穴（官方 47 级，2 层合 1 [适配]）', spawns: [
+    { id: 'leiyan_spider', x: 800 }, { id: 'wolong_guard', x: 910, y: 20 },
+    { id: 'leiyan_spider', x: 1550 }, { id: 'wolong_guard', x: 1650, y: -15 },
+    { id: 'leiyan_spider', x: 2300 }, { id: 'wolong_guard', x: 2400, y: 15 },
+    { id: 'boss_leiyan', x: 3380 } ] },
+  { name: '火龙神殿', bg: 'bg_floor17', boss: true, zone: '火龙神殿（1.90 终章，入口/等级未查到）', spawns: [
+    { id: 'fire_dragon_guard', x: 800 }, { id: 'leiyan_spider', x: 910, y: 20 },
+    { id: 'fire_dragon_guard', x: 1550 }, { id: 'leiyan_spider', x: 1650, y: -15 },
+    { id: 'fire_dragon_guard', x: 2300 }, { id: 'leiyan_spider', x: 2400, y: 15 },
+    { id: 'boss_fire_dragon', x: 3380 } ] },
 ];

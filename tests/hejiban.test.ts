@@ -49,3 +49,23 @@ console.log(`合击版 #5 通过（${pass}）`);
   ok(W(45, 'warrior', w.toSave()).companion!.combo!.includes('leiting'), '合击存档');
 }
 console.log(`合击版 #7 通过（${pass}）`);
+{ // #8 合击地图
+  const { FLOORS } = await import('../src/data/world');
+  const { REGIONS, regionOf } = await import('../src/data/map');
+  const { ENEMIES } = await import('../src/data/units');
+  const { townOfFloor } = await import('../src/data/towns');
+  const { FLOOR_LEVEL_ANCHORS } = await import('../src/data/expCurve');
+  const names = ['保卫家园', '卧龙山庄', '雷炎洞穴', '火龙神殿'];
+  ok(FLOORS.slice(13).map(f => f.name).join() === names.join() && FLOORS[12].name === '赤月魔穴', '#8 四张合击地图追加在第 14–17 层（旧层号不变）');
+  ok([13, 14, 15, 16].every(i => regionOf(i)?.id === 'hejiban' && REGIONS.find(r => r.id === 'hejiban')!.nodes.some(n => n.floor === i)), '#8 接入世界地图/区域小地图');
+  ok([13, 14, 15, 16].every(i => townOfFloor(i) === 'mengzhong'), '#8 合击地图回城 → 盟重');
+  const bosses = FLOORS.slice(13).map(f => ENEMIES[f.spawns.find(s => ENEMIES[s.id].tier === 'boss')!.id]);
+  ok(bosses.every(b => b.drops!.some(d => d.item === 'book_page') && b.drops!.some(d => d.item === 'gold_bar')), '#8 BOSS 掉书页+金条');
+  ok(FLOORS.slice(13).every(f => f.spawns.some(s => ENEMIES[s.id].drops?.some(d => d.item === 'book_page' && d.chance < 1))), '#8 小怪低概率掉书页');
+  ok(FLOOR_LEVEL_ANCHORS.length === FLOORS.length + 1 && FLOOR_LEVEL_ANCHORS[14] >= 47 && FLOOR_LEVEL_ANCHORS[13] >= 43, '#8 等级锚点 ≥43/47');
+  const w = new World(seeded(2), 30, FLOORS, 'warrior'); w.floorIndex = 12; const sv = w.toSave(); delete (sv as any).companion;
+  ok(new World(seeded(2), 30, FLOORS, 'warrior', sv).floorIndex === 12, '#8 旧存档层号不变');
+  const w2 = new World(seeded(3), 50, FLOORS, 'warrior'); w2.floorIndex = 16;
+  const u = w2.spawn(ENEMIES.boss_fire_dragon, 'enemy', 500, 0); w2.kill(u); ok(w2.ground.some(g => g.item === 'gold_bar') && w2.ground.some(g => g.item === 'book_page'), '#8 击杀火龙实际掉落金条/书页');
+}
+console.log(`合击版 #8 通过（${pass}）`);

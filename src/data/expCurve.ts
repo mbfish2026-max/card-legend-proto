@@ -28,7 +28,7 @@ export const EXP_PER_LEVEL_V1 = (lv: number) => 80 + lv * 45;
 export const EXP_VERSION = 2;
 const cum = (f: (l: number) => number, a: number, b: number) => { let s = 0; for (let l = a; l < b; l++) s += f(l); return s; };
 /** [适配] 各层目标等级（第 i 层进入时等级，末项为通关等级）：取改动前 9 种子×3 职业模拟的平均进入等级（13 层） */
-export const FLOOR_LEVEL_ANCHORS: readonly number[] = [1, 3, 7, 12, 15, 18, 22, 25, 29, 32, 36, 40, 45, 48];
+export const FLOOR_LEVEL_ANCHORS: readonly number[] = [1, 3, 7, 12, 15, 18, 22, 25, 29, 32, 36, 40, 45, 48, 49, 50, 51, 52]; // 合击版 #8：+4 层 [适配]（≥43 合击 / ≥47 卧龙·雷炎）
 /** 每层怪物/悬赏经验倍率 = 该层目标等级段的新曲线累计经验 ÷ 旧曲线累计经验（同一比例缩放，保持每层升级节奏） */
 export const floorExpMult = (anchors: readonly number[]): number[] => anchors.slice(0, -1).map((a, i) =>
   cum(EXP_PER_LEVEL, a, anchors[i + 1]) / cum(EXP_PER_LEVEL_V1, a, anchors[i + 1]));

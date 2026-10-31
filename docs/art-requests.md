@@ -188,3 +188,9 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 ## 合击版 #7（feat/hj-books）
 - 龙人立绘/店面（暂用首饰店位与立绘）
 - 白日门技能书、书页、金条图标（暂用 Pearl）
+
+## 合击版 #8（feat/hj-maps）
+- 背景 bg_floor14–17（保卫家园/卧龙山庄/雷炎洞穴/火龙神殿），现回退为通用 bg
+- 怪物立绘：家园守卫、卧龙护卫、火龙守卫（暂用 orc）、雷炎蜘蛛（暂用 spider）
+- BOSS 立绘：魔龙守将（暂用 boss_woma）、卧龙名将（暂用 boss_orc_chief）、雷炎蛛王/火龙（暂用 boss_redmoon）
+- 世界地图节点图标 map_node_hejiban（暂用 mengzhong）

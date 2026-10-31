@@ -52,6 +52,14 @@ export const REGIONS: Region[] = [
     { id: 'chiyue_town', name: '白日门', kind: 'town', safe: true, x: 0.3, y: 0.45, orig: '未查到' },
     { id: 'chiyue_canyon', name: '赤月峡谷/赤月魔穴', kind: 'dungeon', floor: 12, x: 0.72, y: 0.6, orig: '未查到' },
   ] },
+  // 合击版 #8：盟重出发的合击地图（入口 NPC 见 docs/hejiban-official.md §4；世界图坐标 [适配]）
+  { id: 'hejiban', name: '盟重·合击地图', floors: [13, 14, 15, 16], x: 2050, y: 1080, icon: 'map_node_mengzhong', nodes: [
+    { id: 'hj_town', name: '盟重（狂欢使者/卧龙笔记/店小二）', kind: 'town', safe: true, x: 0.2, y: 0.5, orig: '未查到' },
+    { id: 'hj_home', name: '保卫家园', kind: 'dungeon', floor: 13, x: 0.4, y: 0.25, orig: '未查到' },
+    { id: 'hj_wolong', name: '卧龙山庄', kind: 'dungeon', floor: 14, x: 0.6, y: 0.7, orig: '盟重卧龙笔记(330,340)' },
+    { id: 'hj_leiyan', name: '雷炎洞穴', kind: 'cave', floor: 15, x: 0.75, y: 0.3, orig: '盟重店小二(382,308)' },
+    { id: 'hj_firedragon', name: '火龙神殿', kind: 'dungeon', floor: 16, x: 0.9, y: 0.65, orig: '未查到' },
+  ] },
 ];
 /** 某层的 BOSS（spawns 中 tier=boss 的单位） */
 export function floorBoss(i: number) {

@@ -33,11 +33,11 @@ export const TOWNS: Record<string, TownDef> = {
   fengmo: { id: 'fengmo', name: '封魔谷', region: 'fengmo', src: '未查到', npcs: basic('fm') },
 };
 /** 地图城镇节点 id → 城镇 id */
-export const NODE_TOWN: Record<string, string> = { bichi_town: 'bichi', zuma_town: 'mengzhong', chiyue_town: 'bairimen', cangyue_town: 'cangyue', fengmo_town: 'fengmo' };
+export const NODE_TOWN: Record<string, string> = { bichi_town: 'bichi', zuma_town: 'mengzhong', chiyue_town: 'bairimen', cangyue_town: 'cangyue', fengmo_town: 'fengmo', hj_town: 'mengzhong' };
 /** 城镇所在区域的入口层（出城去的层） */
 export function townFloors(t: string): number[] { const r = REGIONS.find(x => x.id === TOWNS[t]?.region); return r ? [...r.floors] : [0]; }
 /** 某层所在区域的城镇（地牢逃脱卷）；没有返回 bichi */
-export function townOfFloor(f: number): string { const r = REGIONS.find(x => x.floors.includes(f)); return Object.values(TOWNS).find(t => t.region === r?.id)?.id ?? 'bichi'; }
+export function townOfFloor(f: number): string { const r = REGIONS.find(x => x.floors.includes(f)); const tn = r?.nodes.find(n => n.kind === 'town'); return Object.values(TOWNS).find(t => t.region === r?.id)?.id ?? (tn && NODE_TOWN[tn.id]) ?? 'bichi'; }
 export const STORAGE_SIZE = 40;
 
 /** R14 横版长街：街宽 = 3 屏；西端城门（出城），店铺门面沿街等距排开 */
