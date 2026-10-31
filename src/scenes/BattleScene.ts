@@ -1,3 +1,4 @@
+import { REGIONS } from '../data/map';
 import { fmtExp } from '../data/expCurve';
 import { floorKeys, PreloadScene } from '../loader';
 import { playFx, flyFx, follow, SLASH_TINT } from '../ui/FxPlayer';
@@ -68,6 +69,7 @@ export class BattleScene extends Phaser.Scene {
     const lv = Number(qs.get('lv')) || 1;
     this.world = new World(Math.random, lv, FLOORS, data?.cls ?? 'warrior', data?.save);
     this.world.requireUse = true;
+    if (!data?.save && !qs.get('floor')) this.world.startInVillage(); // 新档出生在新手村
     this.cds = this.world.skills.map(() => 0);
     this.registry.set('fxCls', this.world.cls); this.registry.set('fxLearned', [...this.world.learned]);
     this.buildPortal(this.world.exitX); this.buildMerchant();
@@ -95,7 +97,7 @@ export class BattleScene extends Phaser.Scene {
     this.handle(this.world.drainEvents());
     const sk = this.world.skills.map(s => `${s.key} ${s.name}`).join('  ');
     this.log(`${this.world.classDef.name}：${sk}`);
-    this.log('本层起点有商人（按 T 交易）；B 打开背包');
+    this.log('商人只在城镇/新手村；战斗地图起点左侧是回城入口（S）；B 打开背包');
     // 截图/调试参数：?floor=N 直接进入第 N 层；?demo=1 把怪物排到主角附近
     const fl = Number(qs.get('floor'));
     if (fl >= 1 && fl <= this.world.floors.length && !data?.save) { this.world.loadFloor(fl - 1); this.handle(this.world.drainEvents()); }
@@ -203,14 +205,20 @@ export class BattleScene extends Phaser.Scene {
     g.lineStyle(2, 0xd4a64a).strokeRect(-60, -10, 120, 70);
     c.add(g);
     if (this.textures.exists('merchant')) c.add(this.add.image(0, 22, 'merchant').setDisplaySize(52, 52));
-    c.add(this.add.text(0, -92, '商人 [T]', { fontFamily: FONT, fontSize: '16px', color: '#ffe8a0', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5));
-    g.setInteractive(new Phaser.Geom.Rectangle(-75, -70, 150, 130), Phaser.Geom.Rectangle.Contains).on('pointerdown', () => this.openPanel('shop'));
+    this.gateLabel = this.add.text(0, -92, '回城 [S]', { fontFamily: FONT, fontSize: '16px', color: '#ffe8a0', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5); c.add(this.gateLabel);
+    g.setInteractive(new Phaser.Geom.Rectangle(-75, -70, 150, 130), Phaser.Geom.Rectangle.Contains).on('pointerdown', () => this.goBackTown());
     this.merchant = c;
+  }
+  gateLabel?: Phaser.GameObjects.Text;
+  /** 回城/回村入口（原「商人」位置，战斗地图不再有商人） */
+  goBackTown() {
+    if (this.state !== 'play' || this.paused) return; const w = this.world;
+    const e = w.returnToTown(); if (e) this.log(e === '回城入口在本层起点（左侧）' ? `走回本层起点左侧的入口，回到 ${w.returnTownName()}` : e); else this.sfx('click');
   }
   nearMerchant() { const h = this.world.hero; return !!h && h.x - MERCHANT_X < SHOP_RANGE; }
   openPanel(m: PanelMode) {
     if (this.state !== 'play') return;
-    if (m === 'shop' && !this.nearMerchant() && !this.ui.panel.open) { this.log('商人在本层起点，请走回左侧商人处（T）'); return; }
+    if (m === 'shop' && !this.world.town && !this.ui.panel.open) { this.log(`战斗地图没有商人：从起点回城入口（S）回 ${this.world.returnTownName()} 补给`); return; }
     this.sfx('click'); this.ui.panel.toggle(m);
   }
   saveGame() { if (this.state !== 'win' && this.world.hero) SaveStore.write(this.world.toSave()); }
@@ -227,7 +235,8 @@ export class BattleScene extends Phaser.Scene {
     if (k === 'Q') return this.openPanel('quests');
     if (this.paused || this.state !== 'play') return;
     if (k === ' ' || k === 'W') { if (this.world.town) this.townUse(); else this.usePortal(); return; }
-    if (k === 'S') { if (!this.fading && this.world.hero && this.world.floorIndex > 0 && this.world.hero.x <= WORLD.heroStartX + 150) { this.fading = true; this.cameras.main.fadeOut(400, 0, 0, 0); this.cameras.main.once('camerafadeoutcomplete', () => { this.fading = false; this.world.prevFloor(); }); } else this.log('在本层起点按 S 返回上一层'); return; }
+    if (k === 'S' && !this.world.town && this.world.atReturnGate() && (this.world.floorIndex === 0 || REGIONS.some(r => r.floors[0] === this.world.floorIndex))) { this.goBackTown(); return; }
+    if (k === 'S') { if (!this.fading && this.world.hero && this.world.floorIndex > 0 && this.world.hero.x <= WORLD.heroStartX + 150) { this.fading = true; this.cameras.main.fadeOut(400, 0, 0, 0); this.cameras.main.once('camerafadeoutcomplete', () => { this.fading = false; this.world.prevFloor(); }); } else this.log('在本层起点按 S 返回上一层，或点左侧入口回城'); return; }
     const h = this.world.hero; if (!h) return;
     const si = this.world.skills.findIndex(s => s.key === k);
     if (si >= 0) {
@@ -286,23 +295,34 @@ export class BattleScene extends Phaser.Scene {
         if (fb && this.textures.exists('fx_fireball_cast')) this.time.delayedCall(150, go); else go();
         return;
       } return done();
-      // #11 法师新技能：专属特效待美术（docs/fx-requests.md #11），暂复用现有图集，缺图回落 Graphics
+      // #11 法师新技能：专属图集（docs/fx-requests.md #11 / v3），缺图回落旧图集或 Graphics
       case 'big_fireball': if (tv[0]) {
         const t = tv[0], x0 = hv.cx + dir * hv.w * 0.4, y0 = hv.cy - 20;
-        const hit = () => { this.sfx('fireball_impact', 0.7); if (!playFx(this, 'fx_fireball_hit', t.cx, t.cy, { scale: 1.4 })) fx.explosion(this, t.cx, t.cy, t.h * 0.5); done(); };
-        if (!flyFx(this, 'fx_fireball_fly', x0, y0, t.cx, t.cy, hit)) fx.projectile(this, x0, y0, t.cx, t.cy, 'fire', hit);
+        const hit = () => { this.sfx('fireball_impact', 0.7); if (!playFx(this, 'fx_big_fireball_hit', t.cx, t.cy) && !playFx(this, 'fx_fireball_hit', t.cx, t.cy, { scale: 1.4 })) fx.explosion(this, t.cx, t.cy, t.h * 0.5); done(); };
+        playFx(this, 'fx_fireball_cast', x0, y0, { decorative: true });
+        const go = () => { if (!flyFx(this, 'fx_big_fireball_fly', x0, y0, t.cx, t.cy, hit) && !flyFx(this, 'fx_fireball_fly', x0, y0, t.cx, t.cy, hit)) fx.projectile(this, x0, y0, t.cx, t.cy, 'fire', hit); };
+        if (this.textures.exists('fx_fireball_cast')) this.time.delayedCall(150, go); else go();
         return;
       } return done();
       case 'burst_fire': if (tv[0]) {
-        const t = tv[0]; if (!playFx(this, 'fx_common_explosion', t.cx, t.cy, { scale: 1.6 })) fx.explosion(this, t.cx, t.cy, 170, 0xffdd55, 0xff4400);
-        tv.forEach(v => fx.hitSpark(this, v.cx, v.cy));
+        const t = tv[0];
+        if (!playFx(this, 'fx_burst_fire_blast', t.cx, t.y) && !playFx(this, 'fx_common_explosion', t.cx, t.cy, { scale: 1.6 })) fx.explosion(this, t.cx, t.cy, 170, 0xffdd55, 0xff4400);
+        tv.forEach((v, i) => { if (i === 0) return; this.time.delayedCall(60, () => { if (v.active && !playFx(this, 'fx_common_hitspark', v.cx, v.cy)) fx.hitSpark(this, v.cx, v.cy); }); });
       } return done();
-      case 'hell_fire': tv.forEach((v, i) => this.time.delayedCall(i * 60, () => { if (!v.active) return; if (!playFx(this, 'fx_fire_wall_loop', v.cx, v.y, { ms: 500 })) fx.fireWall(this, v.cx, v.cy + 40); }));
+      case 'hell_fire': {
+        if (!playFx(this, 'fx_hell_fire_line', hv.cx + dir * hv.w / 2, hv.y, { flip: dir < 0 }))
+          tv.forEach((v, i) => this.time.delayedCall(i * 60, () => { if (!v.active) return; if (!playFx(this, 'fx_fire_wall_loop', v.cx, v.y, { ms: 500 })) fx.fireWall(this, v.cx, v.cy + 40); }));
         return done();
+      }
       case 'lightning_flash': case 'hell_thunder': {
-        const shake = () => { if (!FxQuality.low) this.cameras.main.shake(140, 0.005); };
-        tv.forEach((v, i) => this.time.delayedCall(i * (skill === 'hell_thunder' ? 50 : 30), () => { if (v.active && !playFx(this, 'fx_thunder_strike', v.cx, v.y)) fx.lightning(this, v.cx, v.y - 600, v.cy); }));
-        if (skill === 'hell_thunder') fx.explosion(this, hv.cx, hv.cy, sk?.range ?? 425, 0xbfe4ff, 0x4a7dff);
+        const ht = skill === 'hell_thunder', shake = () => { if (!FxQuality.low) this.cameras.main.shake(140, 0.005); };
+        if (!ht) {
+          if (!playFx(this, 'fx_lightning_flash_beam', hv.cx + dir * hv.w / 2, hv.cy, { flip: dir < 0 }))
+            tv.forEach((v, i) => this.time.delayedCall(i * 30, () => { if (v.active && !playFx(this, 'fx_thunder_strike', v.cx, v.y)) fx.lightning(this, v.cx, v.y - 600, v.cy); }));
+        } else {
+          if (!playFx(this, 'fx_hell_thunder_burst', hv.cx, hv.y)) fx.explosion(this, hv.cx, hv.cy, sk?.range ?? 425, 0xbfe4ff, 0x4a7dff);
+          tv.forEach((v, i) => this.time.delayedCall(i * 50, () => { if (v.active && !playFx(this, 'fx_thunder_strike', v.cx, v.y)) fx.lightning(this, v.cx, v.y - 600, v.cy); }));
+        }
         shake(); return done();
       }
       case 'thunder': if (tv[0]) {
@@ -330,16 +350,19 @@ export class BattleScene extends Phaser.Scene {
         if (!flyFx(this, 'fx_poison_fly', x0, y0, t.cx, t.cy, hit)) fx.projectile(this, x0, y0, t.cx, t.cy, 'poison', hit);
         return;
       } return done();
-      // #12 道士：幽灵盾/神圣战甲术 复用魔法盾图集着色（蓝紫/金），无素材走 Graphics 兜底；群疗 复用治愈光柱 ×每个目标
+      // #12 道士：专属图集（docs/fx-requests.md #12 / v4）；缺图回落魔法盾图集着色 / 每目标治愈光柱 / Graphics
       case 'ghost_shield': case 'holy_armor': {
-        const tint = skill === 'ghost_shield' ? 0xb08cff : 0xffd860, ms = dur * 1000, name = skill === 'ghost_shield' ? '幽灵盾' : '神圣战甲术';
-        const startLoop = () => { const l = playFx(this, 'fx_magic_shield_loop', hv.cx, hv.cy, { tint, ms, decorative: true }); if (l) follow(this, l, () => hv.active ? { x: hv.cx, y: hv.cy } : null); return !!l; };
-        const c = playFx(this, 'fx_magic_shield_cast', hv.cx, hv.cy, { tint, onDone: () => { startLoop(); } });
+        const gs = skill === 'ghost_shield', tint = gs ? 0xb08cff : 0xffd860, ms = dur * 1000, name = gs ? '幽灵盾' : '神圣战甲术';
+        const kc = gs ? 'fx_ghost_shield_cast' : 'fx_holy_armor_cast', kl = gs ? 'fx_ghost_shield_loop' : 'fx_holy_armor_loop';
+        const own = this.textures.exists(kc);
+        const startLoop = () => { const l = this.textures.exists(kl) ? playFx(this, kl, hv.cx, hv.cy, { ms, decorative: true }) : playFx(this, 'fx_magic_shield_loop', hv.cx, hv.cy, { tint, ms, decorative: true }); if (l) follow(this, l, () => hv.active ? { x: hv.cx, y: hv.cy } : null); return !!l; };
+        const c = own ? playFx(this, kc, hv.cx, hv.cy, { onDone: () => { startLoop(); } }) : playFx(this, 'fx_magic_shield_cast', hv.cx, hv.cy, { tint, onDone: () => { startLoop(); } });
         if (!c) fx.holyLight(this, hv.cx, hv.cy, hv.h);
-        fx.floatNumber(this, hv.cx, hv.cy - hv.h * 0.2, hv.h, name, skill === 'ghost_shield' ? '#c8a8ff' : '#ffe080', 0.7); return done();
+        fx.floatNumber(this, hv.cx, hv.cy - hv.h * 0.2, hv.h, name, gs ? '#c8a8ff' : '#ffe080', 0.7); return done();
       }
       case 'mass_heal': {
         const all = [hv, ...tv.filter(v => v !== hv)];
+        playFx(this, 'fx_mass_heal_burst', hv.cx, hv.y);
         all.forEach((v, i) => this.time.delayedCall(i * 80, () => { if (v.active && !playFx(this, 'fx_heal_pillar', v.cx, v.y)) fx.holyLight(this, v.cx, v.cy, v.h); }));
         fx.floatNumber(this, hv.cx, hv.cy - hv.h * 0.2, hv.h, '群体治愈术', '#80ff90', 0.7); return done();
       }
@@ -390,7 +413,7 @@ export class BattleScene extends Phaser.Scene {
       } else if (e.type === 'aggro') this.views.get(e.uid)?.alert(WORLD.alertSec);
       else if (e.type === 'leap') this.views.get(e.uid)?.leap(WORLD.leapSec * 1000);
       else if (e.type === 'leash') { const v = this.views.get(e.uid); if (v) fx.floatNumber(this, v.cx, v.cy - v.h * 0.3, v.h, '脱离战斗', FX.statusColor, 0.6); }
-      else if (e.type === 'floor') this.enterFloor(e.index, e.name);
+      else if (e.type === 'floor') { this.enterFloor(e.index, e.name); this.gateLabel?.setText(`回${this.world.returnTownName().replace(/（.*）/, '')} [S]`); }
       else if (e.type === 'town') this.buildStreet(e.id);
       else if (e.type === 'cleared') this.log('首领已被击败！出口已开启，向右前往下一层');
       else if (e.type === 'win') this.end();

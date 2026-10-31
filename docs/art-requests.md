@@ -185,3 +185,7 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 - 沃玛教主之家大门（woma_door，x=2850，横版 256×384，可开/关两帧）
 - 沃玛寺庙二/三层地面区分贴花（可选）
 - 鉴定特效（小型金光，64×64 序列帧）
+
+## town-return（feat/town-return）
+- 银杏村（新手村）专属街景/门面（暂复用比奇长街素材）
+- 战斗层起点「回城」入口门图（暂用原商人摊 Graphics）

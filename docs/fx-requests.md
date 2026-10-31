@@ -62,3 +62,33 @@
 | fx_holy_armor_cast.png | holy_armor | cast | 16 | 256×256 | 20 | 否 | caster | 128,128 | ADD | 800 | 神圣战甲术施放：金色甲片光环合拢；触发：施法即刻；命中点：主角卡中心；现用 fx_magic_shield_cast 着色 0xffd860，缺图 fx.holyLight |
 | fx_holy_armor_loop.png | holy_armor | loop | 12 | 256×256 | 11 | 是 | caster | 128,128 | ADD | 持续时间（同上公式） | 神圣战甲术持续：金色护甲微光，跟随主角；现用 fx_magic_shield_loop 着色 |
 | fx_mass_heal_burst.png | mass_heal | hit | 12 | 512×256 | 20 | 否 | caster | 256,220 | ADD | 600 | 群体治愈术：以主角为中心绿色治愈光环，横向覆盖 ±170px（1 卡）；触发：施法即刻；命中点：主角及范围内每个召唤物叠治愈光柱（逐个延迟 80ms）；现用每目标 fx_heal_pillar，缺图 fx.holyLight |
+
+## #11 产出记录（特效 Bot，2026-10-31，分支 fx/mage-fx）
+资源位于 public/assets/fx/，全部为 ADD 混合，按 1× 使用；帧尺寸和 pivot 从 JSON 读取。
+
+| 文件 | 帧 | 帧尺寸 | pivot | fps | 触发 / 命中 |
+|---|---|---|---|---|---|
+| fx_big_fireball_fly | 6（循环） | 192×96 | 144,48 | 20 | 施法后 150ms 从法杖前端飞出（前置 fx_fireball_cast 复用） |
+| fx_big_fireball_hit | 8 | 256×256 | 128,128 | 20 | 弹道到达，目标卡中心 |
+| fx_burst_fire_blast | 10 | 512×256 | 256,200 | 20 | 前摇结束，首目标脚下；其余目标 +60ms 叠 hitspark |
+| fx_hell_fire_line | 10 | 512×192 | 0,160 | 20 | 施法者前沿脚下，可 flip；火浪前锋 250ms 推进到约 440px |
+| fx_lightning_flash_beam | 8 | 768×128 | 0,64 | 24 | 施法者前沿 cy，可 flip；第 1 帧（≈42ms）全部命中 |
+| fx_hell_thunder_burst | 10 | 1024×384 | 512,320 | 20 | 施法者脚下；目标逐个 +50ms 叠 thunder_strike |
+
+已知不足：
+- 地狱火火焰偏低（约膝高）；疾光电影光束偏细。
+- 爆裂火焰、地狱火、大火球飞行、地狱雷光环为「参考不足」，按通用风格制作。
+- 伤害仍按原逻辑立即结算（done()），未与特效帧对齐。
+## #12 产出记录（特效 Bot，2026-10-31，分支 fx/taoist-fx）
+资源位于 public/assets/fx/，全部为 ADD 混合，按 1× 使用，不需要再着色。
+
+| 文件 | 帧 | 帧尺寸 | pivot | fps | 循环 | 触发 / 命中 |
+|---|---|---|---|---|---|---|
+| fx_ghost_shield_cast | 16 | 256×256 | 128,128 | 20 | 否 | 施法即刻，主角卡中心；符印环自脚下升起后护罩张开，播完接 loop |
+| fx_ghost_shield_loop | 12 | 256×256 | 128,128 | 11 | 是 | 跟随主角，持续 buff 时长 |
+| fx_holy_armor_cast | 16 | 256×256 | 128,128 | 20 | 否 | 施法即刻；8 片金甲合拢，护罩成型，十字闪 |
+| fx_holy_armor_loop | 12 | 256×256 | 128,128 | 11 | 是 | 跟随主角 |
+| fx_mass_heal_burst | 12 | 512×256 | 256,220 | 20 | 否 | 主角脚下 (cx, y)；光环约 375ms 扩到 ±190px；每目标仍叠 fx_heal_pillar（间隔 80ms） |
+
+缺图时的兜底：回落到 fx_magic_shield_* 着色，再回落 fx.holyLight。
+已知不足：参考帧里没有这三个技能，造型为原创；loop 的幽光点在循环接缝处有轻微跳变。
