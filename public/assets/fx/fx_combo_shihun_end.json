@@ -1,0 +1,127 @@
+{
+ "frames": {
+  "fx_combo_shihun_end_00": {
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 640,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 640,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 640,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.375
+   }
+  },
+  "fx_combo_shihun_end_01": {
+   "frame": {
+    "x": 0,
+    "y": 192,
+    "w": 640,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 640,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 640,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.375
+   }
+  },
+  "fx_combo_shihun_end_02": {
+   "frame": {
+    "x": 0,
+    "y": 384,
+    "w": 640,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 640,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 640,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.375
+   }
+  },
+  "fx_combo_shihun_end_03": {
+   "frame": {
+    "x": 0,
+    "y": 576,
+    "w": 640,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 640,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 640,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.375
+   }
+  }
+ },
+ "meta": {
+  "app": "card-legend fx proc (python numpy/Pillow)",
+  "image": "fx_combo_shihun_end.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 640,
+   "h": 768
+  },
+  "scale": "1",
+  "fx": {
+   "w": 640,
+   "h": 192,
+   "n": 4,
+   "fps": 12,
+   "loop": false,
+   "pivot": [
+    320,
+    72
+   ],
+   "anchor": "target",
+   "skill": "combo_shihun",
+   "phase": "end",
+   "blend": "ADD",
+   "ms": 333,
+   "cols": 1
+  }
+ }
+}

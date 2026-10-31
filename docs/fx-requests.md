@@ -153,6 +153,20 @@
 - 原作合击帧「未查到」；box 参考视频帧中无合击画面，「参考不足」。形态只依据 21cq.com/chuanqi/743.html、百度百科「合击」的文字描述，原创绘制。
 - 已知不足：shihun/mori 的循环尾段、pixing 的 3s 麻痹需要逻辑侧另外播放循环/状态，本次未接；huolong 用的是横向盘旋（照规格 ±300px），不是具象龙形。
 
+### 合击持续段 产出记录（特效 Bot，2026-10-31，分支 fx/combo-loop）
+规格取自 origin/feat/hj-fx-loop 的本文件（main 上尚无该小节）。全部 ADD、12fps、pivot=目标卡中心，原作持续表现「未查到」，原创，风格同 fx_combo_*。
+| 文件 | 帧 | 帧尺寸 | pivot | 循环 | 说明 |
+|---|---|---|---|---|---|
+| fx_combo_shihun_loop | 8 | 640×192 | 320,72 | 是 | 毒沼持续，亮度 0.7×，首尾无缝 |
+| fx_combo_shihun_end | 4 | 640×192 | 320,72 | 否 | 可选收尾淡出 |
+| fx_combo_mori_loop | 8 | 384×384 | 192,192 | 是 | 法阵每周期转 60°（六重对称），首尾无缝 |
+| fx_combo_mori_end | 4 | 384×384 | 192,192 | 否 | 可选收尾扩散淡出 |
+| fx_combo_pixing_stun | 6 | 192×192 | 96,96 | 是 | 麻痹电弧+小星绕圈，1× 使用（不必再 0.5×） |
+| assets/ui/icon_status_stun.png | 1 | 32×32 | — | — | 麻痹图标（黄螺旋+星，深紫描边，透明底）；key icon_status_stun 已加入 assets-manifest |
+
+- 只注册资源（FX_DEFS + assets-manifest），未改战斗逻辑。战斗侧接入：comboStatus 改用 *_loop key（不再取帧 8–11 往返）、状态结束播 *_end、麻痹用 fx_combo_pixing_stun + icon_status_stun 替换「⚡麻痹」文字。
+- 首尾无缝校验：尾→首帧差与相邻帧差同量级（shihun 7.7 / 相邻 7.8–18.6；mori 9.2 / 8.4–9.2；pixing 23.7 / 23.0–24.4，电弧逐帧闪烁属设计）。
+
 ## 阶段 B #9 魔龙教主 / 魔龙血域美术需求（当前占位：沃玛教主贴图 + 紫色 tint 0xb070ff + figureScale 1.35；背景 bg_floor24 缺图走现有回退）
 | key | 内容 | 规格 |
 |---|---|---|

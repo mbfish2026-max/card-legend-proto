@@ -39,6 +39,7 @@ export const ASSETS: Record<string, string> = {
   set_badge: 'assets/ui/set_badge.png', menu_0: 'assets/portraits/INV_Misc_Head_Human_01.png', menu_1: 'assets/items/INV_Misc_Bag_08.png',
   menu_2: 'assets/items/INV_Misc_Book_09.png', menu_3: 'assets/items/INV_Misc_Coin_01.png', menu_4: 'assets/skills/Ability_Warrior_BattleShout.png',
   slot_bg: 'assets/ui/UI-Quickslot2.png', slot_empty: 'assets/ui/UI-Backpack-EmptySlot.png',
+  icon_status_stun: 'assets/ui/icon_status_stun.png', // 劈星斩麻痹状态图标 32×32（特效 Bot，fx/combo-loop）；显示接入由战斗开发做
 };
 export const MENU_LABELS = ['角色', '悬赏', '技能', '商店', '设置'];
 const A = 'assets/sfx/';
