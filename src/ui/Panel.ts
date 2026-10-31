@@ -7,6 +7,7 @@ import { EQUIP_SLOTS, EQUIP_SLOT_NAMES, SLOT_NAMES, STAT_NAMES, ITEMS, SETS, ENH
 import { OIL_PRICE } from '../combat/World';
 import { POTIONS } from '../data/skills';
 import { WORLD } from '../data/world';
+export const BAG_PAGE = 30;
 import { CLASSES } from '../data/classes';
 import { renderSettingsView } from './SettingsView';
 import { txt, button, sfx } from '../scenes/TitleScene';
@@ -35,6 +36,8 @@ export class Panel {
   region: string | null = null;
   /** 背包选中的黑铁矿石下标：下一次点装备栏即强化 */
   ironIdx: number | null = null;
+  /** 背包分页（200 格，每页 BAG_PAGE 格） */
+  bagPage = 0;
   /** 商店分页：杂货 / 书店（R11 技能书） */
   shopTab: 'goods' | 'books' = 'goods';
   onTeleport?: () => void;
@@ -177,8 +180,15 @@ export class Panel {
   private renderBag(R: Phaser.GameObjects.Container, top: number) {
     const s = this.s, w = this.world(), cols = 6, size = 56, x0 = 600, y0 = top + 100;
     R.add(txt(s, x0 - size / 2, top + 50, `背包 ${w.bag.length}/${WORLD.bagSize}`, 15, '#ffe8a0'));
-    for (let i = 0; i < WORLD.bagSize; i++) {
-      const it = w.bag[i], x = x0 + (i % cols) * (size + 6), y = y0 + Math.floor(i / cols) * (size + 6);
+    const pages = Math.ceil(WORLD.bagSize / BAG_PAGE); this.bagPage = Math.max(0, Math.min(pages - 1, this.bagPage));
+    const go = (d: number) => { this.bagPage = (this.bagPage + d + pages) % pages; this.sel = null; this.render(); };
+    R.add([...button(s, x0 + 150, top + 52, 40, 30, '◀', () => go(-1), 15)]);
+    R.add(txt(s, x0 + 175, top + 50, `${this.bagPage + 1}/${pages}`, 15, '#ffe8a0'));
+    R.add([...button(s, x0 + 250, top + 52, 40, 30, '▶', () => go(1), 15)]);
+    R.add([...button(s, x0 + 300, top + 52, 50, 30, '末页', () => { this.bagPage = Math.floor(Math.max(0, w.bag.length - 1) / BAG_PAGE); this.render(); }, 13)]);
+    const p0 = this.bagPage * BAG_PAGE;
+    for (let i = p0; i < Math.min(WORLD.bagSize, p0 + BAG_PAGE); i++) {
+      const it = w.bag[i], k = i - p0, x = x0 + (k % cols) * (size + 6), y = y0 + Math.floor(k / cols) * (size + 6);
       this.slotBox(R, x, y, size, it, '', right => {
         if (this.mode === 'shop' || this.npcKind() && this.npcKind() !== 'storage') { const g = w.sellItem(i); sfx(s, 'coin'); this.onChange(`出售 ${it!.name} 获得 ${g} 金币`, true); }
         else if (this.npcKind() === 'storage') { const e = w.deposit(i); this.onChange(e ?? `存入 ${it!.name}`, !e); }

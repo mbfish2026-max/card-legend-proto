@@ -31,7 +31,7 @@ export const WORLD = {
   rarityRoll: { magic: 0.3, rare: 0.1 },
   affix: { magic: 0.5, rare: 1.2 },
   goldAmount: [5, 40] as [number, number],
-  bagSize: 30,
+  bagSize: 200, // feat/bag-200：用户要求扩到 200 格（[适配]；原版格数此处未查证）；面板分页 30 格/页
   deathGoldLoss: 0.1,          // 死亡损失金币比例
   summonLane: -36,             // 召唤物站位（纵深偏后）
 };

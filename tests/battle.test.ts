@@ -944,4 +944,16 @@ const free = (w: World) => w.skills.map(() => 0);
   for (let i = 0; i < cds.length; i++) cds[i] = Math.max(0, cds[i] - CAST_GAP); ok(w.cast(idx(w, 'fireball'), cds).ok, `间隔 ${CAST_GAP}s 后可再次施放同一技能（无独立冷却）`);
   const ws = new World(seeded(2), 30, FLOORS, 'mage', JSON.parse(JSON.stringify(w.toSave()))); ok(ws.learned.has('hell_fire') && !('cds' in w.toSave()), '冷却不存档，旧档读档正常');
 }
+{ // feat/bag-200
+  ok(WORLD.bagSize === 200, '背包 200 格');
+  const w = new World(seeded(9), 10, FLOORS, 'warrior'); w.gold = 99999;
+  const old = w.toSave(); old.bag = Array.from({ length: 30 }, () => w.makeItem('bone'));
+  const w2 = new World(seeded(9), 10, FLOORS, 'warrior', old); ok(w2.bag.length === 30 && w2.buyBook !== undefined, '旧档 30 格背包读入不变');
+  w.bag = Array.from({ length: 199 }, () => w.makeItem('bone'));
+  ok(w.storage.length === 0 && w.buyOil() === null && w.bag.length === 200, '199 格时仍可购买');
+  ok(w.buyOil() !== null && w.bag.length === 200, '满 200 格不能再买');
+  w.ground.push(w.rollDrop('wood_sword', undefined, w.hero!.x, w.hero!.y)); w.ground[w.ground.length - 1].landAt = 0; w.step(0.05);
+  ok(w.bag.length === 200 && w.ground.some(g => g.item === 'wood_sword') && w.drainEvents().some(e => e.type === 'log' && /满/.test((e as any).text)), '满包拾取提示且物品留在地上');
+  ok(w.sellItem(0) > 0 && w.bag.length === 199, '满包可出售');
+}
 console.log(`全部通过 ${pass} 项`);
