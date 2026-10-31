@@ -1,4 +1,5 @@
 declare const process: { env: Record<string, string | undefined> };
+import { returnTownOf } from '../src/data/towns';
 import { World, SaveData, OIL_PRICE, IRON_PRICE, OFFICIAL, mitigate, taoBuffValue, taoBuffDur, SKELETON_OFFICIAL, SUMMON_NAME_COLORS, SUMMON_MAX_LV, SUMMON_LV_KILLS } from '../src/combat/World';
 import { ITEMS, SETS, ENHANCE_MAX, enhanceChance, shatterChance } from '../src/data/items';
 import { WORLD, CARD, Floor, FLOORS, FLOOR_ORDER, SIDE_FLOORS, nextFloorOf, floorNo, DEPTH_STEP, prevLayerOf, groupOf } from '../src/data/world';
@@ -241,16 +242,23 @@ const free = (w: World) => w.skills.map(() => 0);
   // feat/maps-more（plan-60h B1）：洞穴群子层追加在 13–18（旧档下标不变），通关顺序按 FLOOR_ORDER
   ok(FLOORS.slice(13, 19).map(f => f.name).join() === '兽人古墓二层,兽人古墓三层,骷髅洞·洞穴一层,骷髅洞·洞穴二层,沃玛自然洞穴·一,沃玛自然洞穴·二' && FLOORS.slice(13, 19).every(f => f.farm && f.group && f.sub && f.src), 'B1 6 个子层：官方名/图群/子层名/来源，全部 farm');
   ok([...FLOOR_ORDER, ...SIDE_FLOORS].sort((a, b) => a - b).join() === FLOORS.map((_, i) => i).join() && SIDE_FLOORS.every(i => !FLOOR_ORDER.includes(i)) && FLOOR_ORDER.slice(0, 5).join() === '0,1,2,3,4', 'FLOOR_ORDER + 侧线层（魔龙血域）覆盖全部层，新手段不变');
-  ok(nextFloorOf(4) === 13 && nextFloorOf(14) === 15 && nextFloorOf(18) === 5 && nextFloorOf(12) === 19 && nextFloorOf(22) === -1 && floorNo(13) === 6 && floorNo(5) === 12 && floorNo(12) === 19, '子层顺序：古墓一→二→三→洞穴一→二→自然洞穴一→二→尸王殿');
+  ok(nextFloorOf(4) === 13 && nextFloorOf(14) === 15 && nextFloorOf(18) === 27 && nextFloorOf(31) === 5 && nextFloorOf(7) === 25 && nextFloorOf(26) === 8 && nextFloorOf(12) === 19 && nextFloorOf(22) === -1 && floorNo(13) === 6 && floorNo(5) === 17 && floorNo(12) === 26, '子层顺序：古墓一→二→三→洞穴一→二→自然洞穴一→二→废矿入口…矿区B二层→尸王殿；石墓→沃玛寺庙一→二→沃玛寺庙（入口为侧线）');
   ok(nextFloorOf(2, FLOORS.slice(0, 3)) === -1 && floorNo(1, FLOORS.slice(0, 3)) === 2 && prevLayerOf(1, FLOORS.slice(0, 3)) === -1, '自定义层表仍按线性');
-  ok(prevLayerOf(13) === 4 && prevLayerOf(14) === 13 && prevLayerOf(16) === 15 && prevLayerOf(15) === -1 && prevLayerOf(17) === -1 && prevLayerOf(18) === 17 && prevLayerOf(5) === -1 && prevLayerOf(0) === -1, '上一层入口只在同图群内');
+  ok(prevLayerOf(13) === 4 && prevLayerOf(14) === 13 && prevLayerOf(16) === 15 && prevLayerOf(15) === -1 && prevLayerOf(17) === -1 && prevLayerOf(18) === 17 && prevLayerOf(5) === 31 && prevLayerOf(27) === -1 && prevLayerOf(8) === 26 && prevLayerOf(25) === -1 && prevLayerOf(0) === -1, '上一层入口只在同图群内');
   ok(groupOf(4) === 'shouren' && groupOf(13) === 'shouren' && groupOf(0) === undefined, '白骨墓穴并入兽人古墓图群（层本身不变）');
   { const r = REGIONS.flatMap(g => g.nodes).filter(n => n.floor !== undefined && n.floor >= 13 && n.floor <= 18); ok(r.length === 6 && REGIONS.find(g => g.id === 'bichi')!.nodes.find(n => n.id === 'bichi_cave')!.floor === 15, '骷髅洞节点开放，6 个子层都有小地图入口'); }
-  { const x = new World(seeded(4), 30, FLOORS, 'warrior'); x.loadFloor(13); x.hero!.x = WORLD.heroStartX; ok(x.prevFloor() && x.floorIndex === 4, '起点「上一层」入口按通关顺序（兽人古墓二层→白骨墓穴，不是第 12 层）'); x.loadFloor(5); x.hero!.x = WORLD.heroStartX; ok(x.prevFloor() && (x.floorIndex as number) === 18, '尸王殿上一层=沃玛自然洞穴·二'); }
+  { const x = new World(seeded(4), 30, FLOORS, 'warrior'); x.loadFloor(13); x.hero!.x = WORLD.heroStartX; ok(x.prevFloor() && x.floorIndex === 4, '起点「上一层」入口按通关顺序（兽人古墓二层→白骨墓穴，不是第 12 层）'); x.loadFloor(5); x.hero!.x = WORLD.heroStartX; ok(x.prevFloor() && (x.floorIndex as number) === 31, '尸王殿上一层=矿区B二层'); }
   { const x = new World(seeded(4), 30, FLOORS, 'warrior'); x.loadFloor(14); ok(x.upLayer() === 'ok' && (x.floorIndex as number) === 13 && x.upLayer() === "ok" && (x.floorIndex as number) === 4 && x.upLayer() === '没有上一层' && x.floorIndex === 4, 'upLayer 逐层返回'); }
   { const x = new World(seeded(4), 30, FLOORS, 'warrior'); x.loadFloor(17); for (let k = 0; k < 40 && x.floorIndex === 17; k++) { x.hero!.x = x.exitX; x.step(0.05); } ok(x.floorIndex === 18, '无 BOSS 层直接从出口进入下一层（沃玛自然洞穴·二）'); }
   { const x = new World(seeded(4), 30, FLOORS, 'warrior'); x.loadFloor(15); const a = x.units.find(u => u.id === 'cave_skel_warrior')!; x.loadFloor(16); const b2 = x.units.find(u => u.id === 'cave_skel_warrior')!; x.loadFloor(0); const c = x.units.find(u => !u.isHero)!; ok(b2.maxHp === Math.round(a.maxHp * (1 + DEPTH_STEP)) && b2.atk === Math.round(a.atk * (1 + DEPTH_STEP)) && c.maxHp === ENEMIES[c.id].hp, '层深难度：洞穴二层同名怪更强，原有层不变'); }
   ok(QUESTS.find(q => q.target === 'orc')!.floor === 1 && QUESTS.find(q => q.target === 'spider')!.floor === 2 && QUESTS.find(q => q.target === 'skeleton')!.floor === 4, '悬赏随层移动');
+  // feat/maps-batch2（plan-60h B2）：下标 24–33 追加
+  ok(FLOORS.slice(24, 34).map(f => f.name).join() === '沃玛寺庙入口,沃玛寺庙一层,沃玛寺庙二层,废矿入口,废矿区东部,矿区一层,矿区·桥,矿区B二层,山谷矿区·一,山谷矿区·二' && FLOORS.length === 34 && FLOORS.slice(24).every(f => f.farm && f.group && f.sub && f.src?.startsWith('https://www.21cq.com/') && f.spawns.length >= 8), 'B2 10 个子层：官方名/图群/子层名/21cq 来源，全部练级图且有刷怪');
+  ok(SIDE_FLOORS.join() === '23,24,32,33' && FLOOR_ORDER.slice(11, 17).join() === '27,28,29,30,31,5' && FLOOR_ORDER.slice(18, 22).join() === '7,25,26,8', 'B2 主线：废矿入口→东部→矿区一层→桥→B二层→尸王殿；石墓→沃玛寺庙一/二层→教主层；入口与山谷矿区侧线');
+  ok(groupOf(5) === 'bq_mine' && groupOf(8) === 'woma' && prevLayerOf(26) === 25 && FLOORS[31].spawns.some(sp => sp.id === 'boss_lich') && FLOORS[33].spawns.some(sp => sp.id === 'boss_lich'), 'B2 图群：尸王殿并入比奇矿区、教主层并入沃玛寺庙；B二层/山谷矿区 BOSS 尸王');
+  { const nodes = REGIONS.flatMap(g => g.nodes).filter(n => n.floor !== undefined && n.floor >= 24); ok(nodes.length === 10, 'B2 10 层都有小地图入口'); }
+  { const x = new World(seeded(5), 30, FLOORS, 'warrior'); for (const i of [24, 27, 32]) { x.loadFloor(i); ok(x.floorIndex === i && x.alive('enemy').length >= 8, `B2 层 ${FLOORS[i].name} 可进入且刷怪`); } for (const i of [24, 29, 32, 33]) { x.loadFloor(i); x.town = null as any; ok(x.enterTown(returnTownOf(i)) === null && !!x.town, `B2 层 ${FLOORS[i].name} 可回城（${returnTownOf(i)}）`); } }
+  ok(ENEMIES.mine_zombie.name === '僵尸' && ['dung_beetle', 'woma_brave', 'woma_general', 'fire_woma', 'dark_warrior'].every(id => ENEMIES[id] && ENEMIES[id].tier !== 'boss'), 'B2 新怪 6 种');
   const lv = FLOOR_ORDER.map(i => FLOORS[i]).map(f => Math.max(...f.spawns.map(sp => ENEMIES[sp.id].tier === 'boss' ? 0 : ENEMIES[sp.id].level)));
   ok(lv.every((v, i) => i === 0 || v >= lv[i - 1]), `各层（按通关顺序）普通怪最高等级递增 ${lv.join('/')}`);
 }
@@ -1108,7 +1116,7 @@ console.log('# 诱惑之光');
 }
 { // feat/first-map-farm：首图练级
   const { FARM_RESPAWN } = await import('../src/data/world');
-  ok(FLOORS[0].farm === true && FLOORS.slice(1, 13).every(f => !f.farm) && FLOORS.slice(13, 19).every(f => f.farm) && FLOORS.slice(19).every(f => !f.farm), '原有层只有第 1 层是练级图；B1 子层全部练级图');
+  ok(FLOORS[0].farm === true && FLOORS.slice(1, 13).every(f => !f.farm) && FLOORS.slice(13, 19).every(f => f.farm) && FLOORS.slice(19, 24).every(f => !f.farm) && FLOORS.slice(24).every(f => f.farm), '原有层只有第 1 层是练级图；B1/B2 子层全部练级图');
   ok(ENEMIES.wolf_king.hp < 900 * DIFF.bossHp && ENEMIES.wolf_king.atk < Math.round(20 * 1.4 * DIFF.bossAtk), '狼王已削弱');
   const w = new World(seeded(5), 3, FLOORS, 'warrior'); w.requireUse = true;
   const n0 = w.alive('enemy').filter(u => u.tier !== 'boss').length;
