@@ -698,12 +698,16 @@ export class World {
       if (u.poisonUntil && u.poisonTick !== undefined && this.time >= u.poisonTick && u.poisonTick <= u.poisonUntil) {
         u.poisonTick += OFFICIAL.poisonTick; this.damage(u, (u.poisonDps ?? 1) * OFFICIAL.poisonTick, h, false, true, true); if (!u.alive) continue;
       }
+      // 脱战缓慢回血：仅返回/待机且未中毒时（官方：绿毒期间回复无效）；追击中不回，避免风筝无法击杀
+      if ((u.ai === 'return' || u.ai === 'idle') && u.hp < u.maxHp && !(u.poisonUntil && u.poisonUntil > this.time)) u.hp = Math.min(u.maxHp, u.hp + u.maxHp * WORLD.leashRegen * dt);
       if (u.ai === 'alert') { u.alertT -= dt; if (u.alertT <= 0) u.ai = 'chase'; }
       else if (u.ai === 'return') {
         u.facing = Math.sign(u.homeX - u.x || u.facing) as 1 | -1;
-        if (this.toward(u, u.homeX, u.homeY, ret, dt)) { u.ai = 'idle'; u.hp = u.maxHp; u.moving = false; }
+        if (this.toward(u, u.homeX, u.homeY, ret, dt)) { u.ai = 'idle'; u.moving = false; }
       } else if (u.ai === 'chase' && (!h || Math.abs(u.x - h.x) > WORLD.leashRange || Math.abs(u.x - u.homeX) > WORLD.leashRange * 1.5)) {
         u.ai = 'return'; this.events.push({ type: 'leash', uid: u.uid });
+        // BOSS 脱战：清除发呆/狂暴/飞身/地刺预警等计时残留；阶段 stage 随保留的血量保留，不会重复触发
+        if (u.boss) Object.assign(u.boss, { dazeUntil: 0, crazyUntil: 0, crazyOn: false, flyT: 0, spikeX: undefined, spikeT: OFFICIAL.spikeEvery });
       }
     }
     if (h) for (const side of [1, -1]) {

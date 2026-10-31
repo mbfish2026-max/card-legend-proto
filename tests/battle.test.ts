@@ -1,7 +1,7 @@
 declare const process: { env: Record<string, string | undefined> };
 import { World, SaveData, OIL_PRICE, IRON_PRICE, OFFICIAL } from '../src/combat/World';
 import { ITEMS, SETS, ENHANCE_MAX, enhanceChance, shatterChance } from '../src/data/items';
-import { WORLD, Floor, FLOORS } from '../src/data/world';
+import { WORLD, CARD, Floor, FLOORS } from '../src/data/world';
 import { CLASSES, ClassId } from '../src/data/classes';
 import { ENEMIES, DIFF } from '../src/data/units';
 import { QUESTS, ACHIEVES } from '../src/data/quests';
@@ -49,9 +49,26 @@ const free = (w: World) => w.skills.map(() => 0);
 { // 脱战回位
   const w = mk([{ id: 'zombie', x: 3500 }]); tough(w); const h = w.hero!, z = w.alive('enemy')[0];
   h.x = z.x - WORLD.aggroRange + 5; run(w, 1.5); ok(z.ai === 'chase' && z.x < 3500, '开始追击');
-  let left = 0; while (z.ai === 'chase' && left < 30) { w.step(0.05, { dx: -1, dy: 0 }); left += 0.05; if (h.x <= h.width / 2) break; }
+  let left = 0; while (z.ai === 'chase' && left < 30) { w.step(0.05, { dx: -1, dy: 0 }); left += 0.05; }
   ok(z.ai === 'return' || z.ai === 'idle', '超过脱战距离放弃追击');
-  run(w, 20); ok(z.ai === 'idle' && z.x === 3500 && z.hp === z.maxHp, '回到原位回满血');
+  run(w, 20); ok(z.ai === 'idle' && z.x === 3500, '回到原位');
+}
+{ // 脱战规则：距离阈值、保留血量、缓慢回血、BOSS 一致、不卡死
+  ok(WORLD.leashRange === 10 * CARD && WORLD.leashRange > WORLD.screenW && WORLD.leashRange * 1.5 < WORLD.mapWidth, '脱战距离 10 卡宽（> 屏宽，离家上限 < 地图宽）');
+  for (const id of ['zombie', 'boss_woma']) {
+    const w = mk([{ id, x: 3000 }]); const h = w.hero!, z = w.alive('enemy')[0]; h.hp = h.maxHp = 1e9;
+    z.ai = 'chase'; h.x = z.x - WORLD.leashRange + 20; w.step(0.05); ok(z.ai === 'chase', `${id} 阈值内不脱战`);
+    z.hp = Math.round(z.maxHp * 0.3); if (z.boss) Object.assign(z.boss, { dazeUntil: w.time + 99, crazyUntil: w.time + 99 });
+    h.x = z.x - WORLD.leashRange - 20; w.step(0.05); ok((z.ai as string) === 'return', `${id} 超过阈值脱战`);
+    ok(!z.boss || (z.boss.dazeUntil === 0 && z.boss.crazyUntil === 0), `${id} 脱战清除狂暴/发呆计时`);
+    h.x = 200; const hp0 = z.hp; let t = 0; while ((z.ai as string) === 'return' && t < 60) { w.step(0.05); t += 0.05; }
+    ok((z.ai as string) === 'idle' && Math.abs(z.x - 3000) < 1, `${id} 能回到原位（不卡死）`);
+    ok(z.hp < z.maxHp * 0.3 + z.maxHp * WORLD.leashRegen * (t + 0.1) && z.hp > hp0, `${id} 回位保留血量，仅缓慢回血`);
+    const a = z.hp; run(w, 10); ok(Math.abs(z.hp - a - z.maxHp * WORLD.leashRegen * 10) < z.maxHp * 0.002, `${id} 待机每秒回 1% 最大血量`);
+    run(w, 120); ok(z.hp === z.maxHp, `${id} 回血不超过上限`);
+    z.hp = z.maxHp * 0.5; z.poisonUntil = w.time + 5; z.poisonTick = w.time + 99; const p = z.hp; run(w, 3); ok(z.hp === p, `${id} 中毒时不回血`);
+    z.ai = 'chase'; h.x = z.x - 300; h.hp = 1e9; z.hp = z.maxHp * 0.5; z.poisonUntil = 0; const c = z.hp; w.step(0.5); ok(z.hp <= c, `${id} 追击中不回血（风筝也能击杀）`);
+  }
 }
 { // 职业属性与成长
   for (const c of ['warrior', 'mage', 'taoist'] as ClassId[]) {
