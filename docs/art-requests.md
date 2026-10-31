@@ -1444,3 +1444,8 @@ public/assets/ui/UI-Tooltip-Border.png
 - 迷雾用周期噪声程序化生成，平铺时没有接缝。Phaser 里可以用 TileSprite 铺满再用区域多边形做遮罩，也可以整张铺满后在已探索区域挖洞。要更透的话调 alpha 就行。
 - 边框是从一张 1024 的生成图缩到 96 的，角花缩小后细节较少。原图两侧边中点的菱形装饰已经抹掉，避免九宫格拉伸后变形。
 - 全部原创，没有文字。传送点图标特意用了素面金环，没有符文。
+
+## W 状态（feat/world-map 接入，2026-11-01）
+- 三批真图已接入游戏（assets-manifest WM_ASSETS，按需加载）；节点坐标按 W-1/W-2/W-3 锚点回填。
+- 无锚点、手工放置 [适配] 的节点：bichi_xinshou、bichi_newbie、rift_58、sq_jiguan 群、bichi_to_woma、bichi_to_dushe、sq_snake 群、rift_66、rift_67、hj_town；其余未列锚点的节点按旧 0–1 比例换算（[适配]）。
+- 东北角紫雾浮岛仅装饰；出口用 icon_wm_portal；无需新增美术。
