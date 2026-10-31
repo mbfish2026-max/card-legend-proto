@@ -1,6 +1,6 @@
 import { COMPANION_MODE_NAME } from '../data/companion';
 import { COMPANION_UNLOCK_LEVEL, comboFor, BOOK_PAGE, BRM_BOOK, GOLD_BAR, PAGES_PER_BOOK, COMBO_LEVEL, heartFeedValue, RAGE_MAX, HEART_STORE_MAX, RECRUIT_DIALOG } from '../data/companion';
-import { toLogic } from '../render';
+import { toLogic, toLogicX, MAX_LW } from '../render';
 import { compareLines } from './equipCompare';
 import { RING_MIN_LEVEL, IDENT_PRICE, IDENT_MIN_LEVEL } from '../data/r14b';
 import { fmtExp, scaledExp } from '../data/expCurve';
@@ -71,7 +71,7 @@ export class Panel {
     this.root?.destroy(true); this.hideTip(); this.clearMapInput();
     if (!this.mode) return;
     const s = this.s, R = this.root = s.add.container(0, 0).setDepth(200);
-    R.add(s.add.rectangle(640, 360, 1280, 720, 0x000000, 0.45).setInteractive());
+    R.add(s.add.rectangle(640, 360, MAX_LW, 720, 0x000000, 0.45).setInteractive());
     const W = this.mode === 'settings' ? 640 : 1000, H = this.mode === 'settings' ? 580 : 500, top = Math.max(40, 360 - H / 2);
     // 边框与内容对齐：非设置面板内容从 top 起排到 top+478，边框覆盖 top-20 ~ top+480
     R.add(s.add.rectangle(640, this.mode === 'settings' ? 300 : top + H / 2 - 20, W, H, 0x15100b, 0.97).setStrokeStyle(3, 0xd4a64a));
@@ -369,10 +369,10 @@ export class Panel {
       });
       apply();
       // 拖动 / 双指缩放 / 滚轮缩放（桌面与手机通用）
-      const inV = (p: Phaser.Input.Pointer) => toLogic(p.x) >= VX && toLogic(p.x) <= VX + VW && toLogic(p.y) >= VY && toLogic(p.y) <= VY + VH;
+      const inV = (p: Phaser.Input.Pointer) => toLogicX(p.x) >= VX && toLogicX(p.x) <= VX + VW && toLogic(p.y) >= VY && toLogic(p.y) <= VY + VH;
       s.input.addPointer(1);
       let pinch = 0;
-      const onDown = (p: Phaser.Input.Pointer) => { if (inV(p)) { downAt = { x: toLogic(p.x), y: toLogic(p.y) }; moved = 0; } };
+      const onDown = (p: Phaser.Input.Pointer) => { if (inV(p)) { downAt = { x: toLogicX(p.x), y: toLogic(p.y) }; moved = 0; } };
       const onMove = (p: Phaser.Input.Pointer) => {
         const p1 = s.input.pointer1, p2 = s.input.pointer2;
         if (p1?.isDown && p2?.isDown) {
@@ -382,11 +382,11 @@ export class Panel {
         }
         pinch = 0;
         if (!downAt || !p.isDown) return;
-        const dx = toLogic(p.x) - toLogic(p.prevPosition.x), dy = toLogic(p.y) - toLogic(p.prevPosition.y); moved += Math.abs(dx) + Math.abs(dy);
+        const dx = toLogicX(p.x) - toLogicX(p.prevPosition.x), dy = toLogic(p.y) - toLogic(p.prevPosition.y); moved += Math.abs(dx) + Math.abs(dy);
         this.view = clampView({ ...this.view!, x: this.view!.x + dx, y: this.view!.y + dy }, VW, VH); apply();
       };
       const onUp = () => { downAt = null; pinch = 0; s.time.delayedCall(0, () => { moved = 0; }); };
-      const onWheel = (p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => { if (!inV(p)) return; this.view = zoomAt(this.view!, toLogic(p.x) - VX, toLogic(p.y) - VY, dy > 0 ? 0.9 : 1.1, VW, VH); apply(); };
+      const onWheel = (p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => { if (!inV(p)) return; this.view = zoomAt(this.view!, toLogicX(p.x) - VX, toLogic(p.y) - VY, dy > 0 ? 0.9 : 1.1, VW, VH); apply(); };
       s.input.on('pointerdown', onDown); s.input.on('pointermove', onMove); s.input.on('pointerup', onUp); s.input.on('wheel', onWheel);
       this.mapOff.push(() => { s.input.off('pointerdown', onDown); s.input.off('pointermove', onMove); s.input.off('pointerup', onUp); s.input.off('wheel', onWheel); mk.destroy(); });
       const zb = (f: number) => { this.view = zoomAt(this.view!, VW / 2, VH / 2, f, VW, VH); apply(); };

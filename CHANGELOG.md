@@ -7,6 +7,23 @@
 - 沃玛寺庙的门和分段按层宽等比缩放；保底号角改为门前小怪清完就给（修复 sim 卡在 38 级）。
 - sim：SIM_MAX_T 放宽到 ×6（保护上限，不是验收指标）；同层连死 5 次回上一层练 1 级（玩家行为模拟）。三职业 9 seed 都在 50 级通关。
 - 文档：docs/floor-scale.md。
+## 手机入口全覆盖（feat/mobile-fill）
+- 右下大键按位置显示「进入/封印/上一层/回城/出城/对话」，入口在范围内高亮；左端回城与返回上一层可直接点大键。
+- 手机端可直接点传送门本体进入；顶栏地图图标改名「传送」。
+- 新增 e2e `tests/e2e/mobile-entrance-verify.mjs`：出口(键/本体)、BOSS 门、上一层、回城口、城门、传送员、地图传送、侧线出口全部触屏验证。
+- 回城卷轴未实现，预留 `entranceHere/mobileAct` 扩展点。电脑端不变。
+
+## 手机画面铺满（feat/mobile-fill）
+- 手机模式下画布铺满整个可视区，iPhone 横屏两侧不再有黑边。逻辑高度固定 720，逻辑宽度按可视区宽高比扩展，范围 1280–2016（2.8:1），等比不变形。尺寸取自 visualViewport，地址栏收起或展开、旋转、resize 时实时重算（Phaser setGameSize + FIT）。
+- 战斗相机加宽后能看到更多场景；World 坐标、碰撞、怪物位置不变。相机夹紧沿用 setBounds，按新相机宽度自动计算。
+- 标题、城镇、面板：1280 内容居中，两侧显示延伸的背景（标题背景按最宽比例铺满并裁切，面板遮罩加宽）。
+- sf0 屏幕固定物体统一用 fixedShiftX 补偿，宽度变化时增量修正。暗角贴真实屏幕边缘。
+- Panel 拖动/滚轮坐标改用 toLogicX，已扣除居中偏移。
+- 手机模式下 #game 不再加 safe-area padding，避开刘海由 DOM HUD 的 env(safe-area-inset-*) 处理。
+- 电脑端逻辑宽保持 1280，代码路径不变；与 main 对比的截图差异为 0.03%。
+- 测试：
+  - 新增 tests/e2e/mobile-fill-verify.mjs，覆盖 7 种视口，包括地址栏展开和收起、CDP 模拟刘海。
+  - mobile-ui-verify 和 lib 的坐标换算改为按相机 worldView 计算。
 
 ## 手机网页版界面（feat/mobile-ui）
 - 新增 src/ui/MobileHud.ts：手机专用 DOM HUD，按 safe-area 布局，支持多点触控。

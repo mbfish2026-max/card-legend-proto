@@ -38,6 +38,7 @@ const CSS = `
 #mh-joy .hint{position:absolute;left:var(--sl);bottom:var(--sb);width:56px;height:56px;border-radius:50%;background:rgba(0,0,0,.25);border:2px solid rgba(255,232,160,.45);
  color:rgba(255,232,160,.85);font-size:11px;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.2}
 #mh-joy .knob{position:absolute;left:36px;top:36px;width:48px;height:48px;border-radius:50%;background:rgba(255,232,160,.35);border:2px solid rgba(255,232,160,.6)}
+#mh-act.hot{box-shadow:0 0 12px 3px rgba(255,210,90,.85);border-color:#ffd060!important}
 #mh-act{position:absolute;right:calc(var(--sr) + 8px);bottom:calc(var(--sb) + 8px);width:68px;height:68px;border-radius:50%!important;font-size:15px!important;font-weight:bold}
 #mhud .sk{position:absolute;width:50px;height:50px;border-radius:50%;padding:0;overflow:hidden;background-size:cover;background-position:center}
 #mhud .sk .cd{position:absolute;inset:0;border-radius:50%}
@@ -72,7 +73,7 @@ export class MobileHud {
     // 右上：功能图标，每个功能只出现一次
     const top = this.el('div', r, 'ctl'); top.id = 'mh-top';
     const icon = (ic: string, label: string, k: string, id: string) => { const e = this.btn(top, `<span class="ic">${ic}</span>${label}`, () => b.onKey(k)); e.dataset.id = id; return e; };
-    icon('🎒', '角色', 'B', 'bag'); icon('📜', '技能', 'K', 'skills'); icon('🎯', '悬赏', 'Q', 'quests'); icon('🗺', '地图', 'M', 'map');
+    icon('🎒', '角色', 'B', 'bag'); icon('📜', '技能', 'K', 'skills'); icon('🎯', '悬赏', 'Q', 'quests'); icon('🗺', '传送', 'M', 'map'); // 地图面板即传送界面（点已到达入口传送）
     // 商人/传送合并为右下「对话/进入」键（城里 T 与 W 同为 townUse；战斗地图没有商人），不再单列商店图标
     icon('🏯', '回城', 'S', 'town'); icon('⚙', '设置', 'ESCAPE', 'settings');
     // 左下：浮动摇杆（左下区域任意处按下即在指下出现，不常驻遮挡主角；角落只留一个小提示），多点触控按 pointerId 区分
@@ -91,7 +92,7 @@ export class MobileHud {
     joy.addEventListener('pointermove', e => { if (e.pointerId === pid) mv(e); });
     joy.addEventListener('pointerup', end); joy.addEventListener('pointercancel', end);
     // 右下：互动（传送/对话）+ 技能弧 + 自动 + 药水 + 合击
-    this.act = this.btn(r, '进入', () => b.onKey(' ')); this.act.id = 'mh-act'; this.act.classList.add('ctl');
+    this.act = this.btn(r, '进入', () => b.mobileAct()); this.act.id = 'mh-act'; this.act.classList.add('ctl');
     this.auto = this.btn(r, '', () => { Settings.autoAttack = !Settings.autoAttack; Settings.save(); }); this.auto.id = 'mh-auto'; this.auto.classList.add('ctl');
     const pots = this.el('div', r, 'ctl'); pots.id = 'mh-pots';
     POTIONS.forEach((p, i) => { const e = this.btn(pots, '<span></span>', () => b.onKey(p.key)); e.dataset.id = 'pot' + i; e.style.backgroundImage = this.texUrl('potion_' + i); this.potBtns.push(e.firstChild as HTMLElement); });
@@ -145,7 +146,9 @@ export class MobileHud {
     this.floor.textContent = `${this.hud.floorName}${dead.length ? `  怪 ${left}/${dead.length}` : ''}`;
     const sig = this.hud.lines.map(l => l.t + l.at).join('|');
     if (sig !== this.logSig) { this.logSig = sig; this.log.innerHTML = ''; this.hud.lines.slice().reverse().forEach(l => { const d = this.el('div', this.log); d.textContent = l.t; d.style.color = l.c; }); }
-    this.act.innerHTML = w.town ? '对话' : '进入';
+    const en = this.b.entranceHere(); // 入口在范围内时高亮并显示具体去向
+    this.act.innerHTML = en === 'talk' ? '对话' : en === 'gate' ? '出城' : en === 'town' ? '回城' : en === 'prev' ? '上一层' : en === 'sealed' ? '封印' : w.town ? '对话' : '进入';
+    this.act.classList.toggle('hot', !!en && en !== 'sealed');
     this.auto.innerHTML = `自动<br>${Settings.autoAttack ? '开' : '关'}`; this.auto.classList.toggle('on', Settings.autoAttack);
     this.comp.style.display = w.companion ? 'flex' : 'none';
     POTIONS.forEach((_, i) => { this.potBtns[i].textContent = String(w.pots[i] ?? 0); });
