@@ -31,8 +31,7 @@ if (existsSync(join(DIST, 'index.html'))) {
   const run = async (group, name, fn) => { const page = await b.newPage(); await page.setViewport({ width: 1280, height: 720 }); const w = watch(page); try { const r = await fn(page, w); add(group, name, r === true ? 'PASS' : 'FAIL', r === true ? '' : String(r)); } catch (e) { add(group, name, 'FAIL', String(e.message ?? e).slice(0, 200)); } await page.close(); };
   const toTitle = async (page, qs = '') => { await page.goto(sv.url + qs); await page.waitForFunction(() => window.__game?.scene.getScene('Title')?.sys.isActive(), { timeout: 30000 }); await sleep(800); };
   const click = async (page, k, re) => { const p = await findPos(page, k, re); if (!p) throw new Error('找不到 ' + re); await page.mouse.click(p.x, p.y); await sleep(600); };
-  const ignorable = e => /Texture key already in use/.test(e); // 已知 BUG-003
-  await run('冒烟', '本地构建启动标题页无 JS 报错', async (page, w) => { await toTitle(page); const e = w.errs.filter(x => !ignorable(x)); return !e.length || e.join(' | '); });
+  await run('冒烟', '本地构建启动标题页无 JS 报错', async (page, w) => { await toTitle(page); const e = w.errs; return !e.length || e.join(' | '); });
   const preset = { volume: 0.3, muted: true, lowFx: true, autoAttack: false };
   await run('设置', '标题设置界面显示 = 已存设置', async page => {
     await page.evaluateOnNewDocument(p => { if (!sessionStorage.getItem('x')) { localStorage.setItem('fcl_settings_v1', JSON.stringify(p)); sessionStorage.setItem('x', '1'); } }, preset);
