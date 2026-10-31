@@ -589,3 +589,104 @@ thunder_sword 雷霆剑、break_strike 破击剑法、shield_break 破盾斩、v
 | boss_m3_panye_bull_full.png 潘夜牛魔王 | 960×958 | 中华网/百度百科：牛面牛身的畜界魔王；装备推测 |
 
 存疑：机关巨兽腿甲有类似「2/9」的螺旋装饰纹（非文字，第一版有类字母刻纹已重做）；机关巨兽蒸汽、禁地魔王雾气边缘略带粉色残边；逆魔武器为斧而非扇；骷髅教主首版偏紫已改绿底重做。
+
+## feat/maps-sq-mir3
+
+规格按 L 章：立绘 `public/assets/portraits/<id>_full.png` 透明底 PNG 最长边 960，接入时 ASSETS 加 `<id>` 并把 units 的 art 指向它；背景 1920×1080 JPG，接入时改 `bg_floorN` 路径（N=下标+1）。现均为占位（括号列为借用贴图）。外观官方描述未查到的一律按名推测并注明。
+
+### 立绘（54 普通怪 + 9 BOSS）
+
+| id | 官方名 | 文件 | 现占位 | 来源 |
+|---|---|---|---|---|
+| sq_shiwei | 尸卫 | `public/assets/portraits/sq_shiwei_full.png` | skeleton | [来源](https://woool.52pk.com/data/100995.shtml) |
+| sq_shiwei_yong | 尸卫勇士 | `public/assets/portraits/sq_shiwei_yong_full.png` | skeleton | [来源](https://woool.52pk.com/data/100995.shtml) |
+| sq_shiwei_qiang | 掷枪尸卫 | `public/assets/portraits/sq_shiwei_qiang_full.png` | skeleton | [来源](https://woool.52pk.com/data/100995.shtml) |
+| sq_shiwei_zhan | 尸卫战将 | `public/assets/portraits/sq_shiwei_zhan_full.png` | skeleton | [来源](https://woool.52pk.com/data/100995.shtml) |
+| sq_bat | 蝙蝠 | `public/assets/portraits/sq_bat_full.png` | bat | [来源](https://woool.52pk.com/data/100995.shtml) |
+| m3_ant_warrior | 蚂蚁战士 | `public/assets/portraits/m3_ant_warrior_full.png` | jump_bee | [来源](https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml) |
+| m3_ant_armor | 盔甲蚂蚁 | `public/assets/portraits/m3_ant_armor_full.png` | black_maggot | [来源](https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml) |
+| m3_ant_bomb | 爆毒蚂蚁 | `public/assets/portraits/m3_ant_bomb_full.png` | jump_bee | [来源](https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml) |
+| m3_ant_tao | 蚂蚁道士 | `public/assets/portraits/m3_ant_tao_full.png` | centipede | [来源](https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml) |
+| sq_stone_man | 石人 | `public/assets/portraits/sq_stone_man_full.png` | zuma_statue | [来源](http://woool.17173.com/content/2025-05-07/20250507220209240.shtml) |
+| sq_bronze_man | 铜人 | `public/assets/portraits/sq_bronze_man_full.png` | zuma_guard | [来源](http://woool.17173.com/content/2025-05-07/20250507220209240.shtml) |
+| sq_bronze_beast | 青铜兽 | `public/assets/portraits/sq_bronze_beast_full.png` | zuma_statue | [来源](http://woool.17173.com/content/2025-05-07/20250507220209240.shtml) |
+| sq_blade_man | 滚刀手 | `public/assets/portraits/sq_blade_man_full.png` | zuma_guard | [来源](http://woool.17173.com/content/2025-05-07/20250507220209240.shtml) |
+| sq_hammer_man | 铜锤手 | `public/assets/portraits/sq_hammer_man_full.png` | zuma_guard | [来源](http://woool.17173.com/content/2025-05-07/20250507220209240.shtml) |
+| sq_jingang | 金刚人 | `public/assets/portraits/sq_jingang_full.png` | zuma_statue | [来源](http://woool.17173.com/content/2025-05-07/20250507220209240.shtml) |
+| sq_red_snake_yao | 红蛇妖 | `public/assets/portraits/sq_red_snake_yao_full.png` | red_snake | [来源](https://woool.52pk.com/data/101224.shtml) |
+| sq_black_snake_yao | 黑蛇妖 | `public/assets/portraits/sq_black_snake_yao_full.png` | tiger_snake | [来源](https://woool.52pk.com/data/101224.shtml) |
+| sq_scarab | 圣甲虫 | `public/assets/portraits/sq_scarab_full.png` | dung_beetle | [来源](https://woool.52pk.com/data/101224.shtml) |
+| sq_magic_beetle | 魔甲虫 | `public/assets/portraits/sq_magic_beetle_full.png` | dung_beetle | [来源](https://woool.52pk.com/data/101224.shtml) |
+| sq_termite | 白蚁 | `public/assets/portraits/sq_termite_full.png` | centipede | [来源](https://woool.52pk.com/data/101224.shtml) |
+| sq_three_snake | 三头蛇 | `public/assets/portraits/sq_three_snake_full.png` | scorpion_snake | [来源](https://woool.52pk.com/data/101224.shtml) |
+| sq_white_snake_yao | 白蛇妖 | `public/assets/portraits/sq_white_snake_yao_full.png` | red_snake | [来源](https://woool.52pk.com/data/101224.shtml) |
+| m3_skel_wushi | 骷髅武士 | `public/assets/portraits/m3_skel_wushi_full.png` | skeleton | [来源](https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml) |
+| m3_skel_wujiang | 骷髅武将 | `public/assets/portraits/m3_skel_wujiang_full.png` | skeleton | [来源](https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml) |
+| m3_skel_soldier | 骷髅士兵 | `public/assets/portraits/m3_skel_soldier_full.png` | skeleton | [来源](https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml) |
+| m3_skel_archer | 骷髅弓箭手 | `public/assets/portraits/m3_skel_archer_full.png` | skeleton | [来源](https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml) |
+| m3_bone_general | 骨鬼将 | `public/assets/portraits/m3_bone_general_full.png` | skeleton | [来源](https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml) |
+| m3_noma | 诺玛 | `public/assets/portraits/m3_noma_full.png` | zuma_statue | [来源](https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml) |
+| m3_noma_pharaoh | 诺玛法老 | `public/assets/portraits/m3_noma_pharaoh_full.png` | zuma_guard | [来源](https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml) |
+| m3_desert_fish | 沙漠鱼魔 | `public/assets/portraits/m3_desert_fish_full.png` | scorpion_snake | [来源](https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml) |
+| m3_desert_wind | 沙漠风魔 | `public/assets/portraits/m3_desert_wind_full.png` | jump_bee | [来源](https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml) |
+| m3_desert_tree | 沙漠树魔 | `public/assets/portraits/m3_desert_tree_full.png` | tree_demon | [来源](https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml) |
+| m3_desert_stone | 沙漠石人 | `public/assets/portraits/m3_desert_stone_full.png` | zuma_statue | [来源](https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml) |
+| sq_imp | 地下小鬼 | `public/assets/portraits/sq_imp_full.png` | darkmage | [来源](https://woool.52pk.com/data/100994.shtml) |
+| sq_nimo_archer | 逆魔弓箭手 | `public/assets/portraits/sq_nimo_archer_full.png` | zuma_guard | [来源](https://woool.52pk.com/data/100994.shtml) |
+| sq_nimo_guard | 逆魔卫士 | `public/assets/portraits/sq_nimo_guard_full.png` | zuma_guard | [来源](https://woool.52pk.com/data/100994.shtml) |
+| sq_nimo_shiwei | 逆魔侍卫 | `public/assets/portraits/sq_nimo_shiwei_full.png` | bull_guard | [来源](https://woool.52pk.com/data/100994.shtml) |
+| sq_nimo_statue | 逆魔雕像 | `public/assets/portraits/sq_nimo_statue_full.png` | zuma_statue | [来源](https://woool.52pk.com/data/100994.shtml) |
+| sq_cimo | 刺魔 | `public/assets/portraits/sq_cimo_full.png` | hongmo_pig | [来源](https://woool.52pk.com/data/101222.shtml) |
+| sq_lizhua | 利爪魔 | `public/assets/portraits/sq_lizhua_full.png` | hongmo_scorpion | [来源](https://woool.52pk.com/data/101222.shtml) |
+| sq_shanling | 闪灵 | `public/assets/portraits/sq_shanling_full.png` | darkmage | [来源](https://woool.52pk.com/data/101222.shtml) |
+| sq_tengyao | 藤妖 | `public/assets/portraits/sq_tengyao_full.png` | tree_demon | [来源](https://woool.52pk.com/data/101222.shtml) |
+| sq_xueyao | 血妖 | `public/assets/portraits/sq_xueyao_full.png` | blood_zombie | [来源](https://woool.52pk.com/data/101222.shtml) |
+| sq_tieyi | 铁翼魔 | `public/assets/portraits/sq_tieyi_full.png` | jump_bee | [来源](https://woool.52pk.com/data/101222.shtml) |
+| sq_yaolishi | 妖力士 | `public/assets/portraits/sq_yaolishi_full.png` | bull_warrior | [来源](https://woool.52pk.com/data/101222.shtml) |
+| sq_youling_bug | 幽灵虫 | `public/assets/portraits/sq_youling_bug_full.png` | black_maggot | [来源](https://woool.52pk.com/data/101222.shtml) |
+| m3_panye_fire | 潘夜火魔 | `public/assets/portraits/m3_panye_fire_full.png` | fire_woma | [来源](https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml) |
+| m3_panye_wind | 潘夜风魔 | `public/assets/portraits/m3_panye_wind_full.png` | woma_brave | [来源](https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml) |
+| m3_panye_ice | 潘夜冰魔 | `public/assets/portraits/m3_panye_ice_full.png` | woma_general | [来源](https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml) |
+| m3_panye_cloud | 潘夜云魔 | `public/assets/portraits/m3_panye_cloud_full.png` | darkmage | [来源](https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml) |
+| m3_panye_warrior | 潘夜战士 | `public/assets/portraits/m3_panye_warrior_full.png` | bull_warrior | [来源](https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml) |
+| m3_panye_left | 潘夜左护卫 | `public/assets/portraits/m3_panye_left_full.png` | bull_guard | [来源](https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml) |
+| m3_panye_right | 潘夜右护卫 | `public/assets/portraits/m3_panye_right_full.png` | bull_guard | [来源](https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml) |
+| m3_panye_ghost | 潘夜鬼将 | `public/assets/portraits/m3_panye_ghost_full.png` | dark_warrior | [来源](https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml) |
+| boss_sq_shiba | 尸霸 | `public/assets/portraits/boss_sq_shiba_full.png` | boss_lich | [来源](https://woool.52pk.com/data/100995.shtml) |
+| boss_m3_ant_general | 蚂蚁将军 | `public/assets/portraits/boss_m3_ant_general_full.png` | boss_chulong | [来源](https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml) |
+| boss_sq_jiguan | 机关巨兽 | `public/assets/portraits/boss_sq_jiguan_full.png` | boss_zuma | [来源](http://woool.17173.com/content/2025-05-07/20250507220209240.shtml) |
+| boss_sq_snake_king | 三头蛇王 | `public/assets/portraits/boss_sq_snake_king_full.png` | boss_white_boar | [来源](https://woool.17173.com/content/2014-11-30/20141130225158263.shtml) |
+| boss_m3_skel_master | 骷髅教主 | `public/assets/portraits/boss_m3_skel_master_full.png` | boss_skeleton_lord | [来源](https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml) |
+| boss_m3_great_pharaoh | 大法老 | `public/assets/portraits/boss_m3_great_pharaoh_full.png` | boss_zuma | [来源](https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml) |
+| boss_sq_nimo | 逆魔 | `public/assets/portraits/boss_sq_nimo_full.png` | boss_hongmo | [来源](https://woool.17173.com/content/2014-11-30/20141130225158263.shtml) |
+| boss_sq_jindi | 禁地魔王 | `public/assets/portraits/boss_sq_jindi_full.png` | boss_redmoon | [来源](https://woool.17173.com/content/2014-11-30/20141130225158263.shtml) |
+| boss_m3_panye_bull | 潘夜牛魔王 | `public/assets/portraits/boss_m3_panye_bull_full.png` | boss_bull_king | [来源](https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml) |
+
+### 背景（24 层，可按图群合并为 10 张）
+
+| key | 层 | 文件 | 现占位 | 来源 |
+|---|---|---|---|---|
+| bg_floor57 | 异界裂隙·将军坟东一层 | `public/assets/bg/bg_floor57.jpg`（1920×1080 JPG，下 40% 空地面） | 借用相邻原层背景 | [来源](https://woool.52pk.com/data/100995.shtml) |
+| bg_floor58 | 异界裂隙·将军坟东二层 | `public/assets/bg/bg_floor58.jpg`（1920×1080 JPG，下 40% 空地面） | 借用相邻原层背景 | [来源](https://woool.52pk.com/data/100995.shtml) |
+| bg_floor59 | 异界裂隙·蚂蚁洞穴 | `public/assets/bg/bg_floor59.jpg`（1920×1080 JPG，下 40% 空地面） | 借用相邻原层背景 | [来源](https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml) |
+| bg_floor60 | 异界裂隙·机关道一 | `public/assets/bg/bg_floor60.jpg`（1920×1080 JPG，下 40% 空地面） | 借用相邻原层背景 | [来源](http://woool.17173.com/content/2025-05-07/20250507220209240.shtml) |
+| bg_floor61 | 异界裂隙·中枢大殿 | `public/assets/bg/bg_floor61.jpg`（1920×1080 JPG，下 40% 空地面） | 借用相邻原层背景 | [来源](http://woool.17173.com/content/2025-05-07/20250507220209240.shtml) |
+| bg_floor62 | 异界裂隙·蛇魔谷 | `public/assets/bg/bg_floor62.jpg`（1920×1080 JPG，下 40% 空地面） | 借用相邻原层背景 | [来源](https://woool.52pk.com/data/101224.shtml) |
+| bg_floor63 | 异界裂隙·地穴入口 | `public/assets/bg/bg_floor63.jpg`（1920×1080 JPG，下 40% 空地面） | 借用相邻原层背景 | [来源](https://woool.52pk.com/data/101224.shtml) |
+| bg_floor64 | 异界裂隙·环道 | `public/assets/bg/bg_floor64.jpg`（1920×1080 JPG，下 40% 空地面） | 借用相邻原层背景 | [来源](https://woool.52pk.com/data/101224.shtml) |
+| bg_floor65 | 异界裂隙·百虫穴 | `public/assets/bg/bg_floor65.jpg`（1920×1080 JPG，下 40% 空地面） | 借用相邻原层背景 | [来源](https://woool.52pk.com/data/101224.shtml) |
+| bg_floor66 | 异界裂隙·五蛇殿 | `public/assets/bg/bg_floor66.jpg`（1920×1080 JPG，下 40% 空地面） | 借用相邻原层背景 | [来源](https://woool.17173.com/content/2014-11-30/20141130225158263.shtml) |
+| bg_floor67 | 异界裂隙·潘夜石窟 | `public/assets/bg/bg_floor67.jpg`（1920×1080 JPG，下 40% 空地面） | 借用相邻原层背景 | [来源](https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml) |
+| bg_floor68 | 异界裂隙·沙漠 | `public/assets/bg/bg_floor68.jpg`（1920×1080 JPG，下 40% 空地面） | 借用相邻原层背景 | [来源](https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml) |
+| bg_floor69 | 异界裂隙·逆魔古刹一层 | `public/assets/bg/bg_floor69.jpg`（1920×1080 JPG，下 40% 空地面） | 借用相邻原层背景 | [来源](https://woool.52pk.com/data/100994.shtml) |
+| bg_floor70 | 异界裂隙·逆魔古刹二层 | `public/assets/bg/bg_floor70.jpg`（1920×1080 JPG，下 40% 空地面） | 借用相邻原层背景 | [来源](https://woool.52pk.com/data/100994.shtml) |
+| bg_floor71 | 异界裂隙·逆魔古刹三层 | `public/assets/bg/bg_floor71.jpg`（1920×1080 JPG，下 40% 空地面） | 借用相邻原层背景 | [来源](https://woool.52pk.com/data/100994.shtml) |
+| bg_floor72 | 异界裂隙·逆魔古刹四层 | `public/assets/bg/bg_floor72.jpg`（1920×1080 JPG，下 40% 空地面） | 借用相邻原层背景 | [来源](https://woool.52pk.com/data/100994.shtml) |
+| bg_floor73 | 异界裂隙·逆魔大殿 | `public/assets/bg/bg_floor73.jpg`（1920×1080 JPG，下 40% 空地面） | 借用相邻原层背景 | [来源](https://woool.17173.com/content/2014-11-30/20141130225158263.shtml) |
+| bg_floor74 | 异界裂隙·禁地·禁地之门 | `public/assets/bg/bg_floor74.jpg`（1920×1080 JPG，下 40% 空地面） | 借用相邻原层背景 | [来源](https://woool.52pk.com/data/101222.shtml) |
+| bg_floor75 | 异界裂隙·禁地·冰石之地 | `public/assets/bg/bg_floor75.jpg`（1920×1080 JPG，下 40% 空地面） | 借用相邻原层背景 | [来源](https://woool.52pk.com/data/101222.shtml) |
+| bg_floor76 | 异界裂隙·禁地·青玉宫 | `public/assets/bg/bg_floor76.jpg`（1920×1080 JPG，下 40% 空地面） | 借用相邻原层背景 | [来源](https://woool.52pk.com/data/101222.shtml) |
+| bg_floor77 | 异界裂隙·禁地·生死门 | `public/assets/bg/bg_floor77.jpg`（1920×1080 JPG，下 40% 空地面） | 借用相邻原层背景 | [来源](https://woool.52pk.com/data/101222.shtml) |
+| bg_floor78 | 异界裂隙·禁地·尸上行 | `public/assets/bg/bg_floor78.jpg`（1920×1080 JPG，下 40% 空地面） | 借用相邻原层背景 | [来源](https://woool.52pk.com/data/101222.shtml) |
+| bg_floor79 | 异界裂隙·禁地·魔穴 | `public/assets/bg/bg_floor79.jpg`（1920×1080 JPG，下 40% 空地面） | 借用相邻原层背景 | [来源](https://woool.17173.com/content/2014-11-30/20141130225158263.shtml) |
+| bg_floor80 | 异界裂隙·潘夜神殿 | `public/assets/bg/bg_floor80.jpg`（1920×1080 JPG，下 40% 空地面） | 借用相邻原层背景 | [来源](https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml) |
