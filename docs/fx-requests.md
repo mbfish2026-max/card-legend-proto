@@ -62,3 +62,17 @@
 | fx_holy_armor_cast.png | holy_armor | cast | 16 | 256×256 | 20 | 否 | caster | 128,128 | ADD | 800 | 神圣战甲术施放：金色甲片光环合拢；触发：施法即刻；命中点：主角卡中心；现用 fx_magic_shield_cast 着色 0xffd860，缺图 fx.holyLight |
 | fx_holy_armor_loop.png | holy_armor | loop | 12 | 256×256 | 11 | 是 | caster | 128,128 | ADD | 持续时间（同上公式） | 神圣战甲术持续：金色护甲微光，跟随主角；现用 fx_magic_shield_loop 着色 |
 | fx_mass_heal_burst.png | mass_heal | hit | 12 | 512×256 | 20 | 否 | caster | 256,220 | ADD | 600 | 群体治愈术：以主角为中心绿色治愈光环，横向覆盖 ±170px（1 卡）；触发：施法即刻；命中点：主角及范围内每个召唤物叠治愈光柱（逐个延迟 80ms）；现用每目标 fx_heal_pillar，缺图 fx.holyLight |
+
+## #12 产出记录（特效 Bot，2026-10-31，分支 fx/taoist-fx）
+资源位于 public/assets/fx/，全部为 ADD 混合，按 1× 使用，不需要再着色。
+
+| 文件 | 帧 | 帧尺寸 | pivot | fps | 循环 | 触发 / 命中 |
+|---|---|---|---|---|---|---|
+| fx_ghost_shield_cast | 16 | 256×256 | 128,128 | 20 | 否 | 施法即刻，主角卡中心；符印环自脚下升起后护罩张开，播完接 loop |
+| fx_ghost_shield_loop | 12 | 256×256 | 128,128 | 11 | 是 | 跟随主角，持续 buff 时长 |
+| fx_holy_armor_cast | 16 | 256×256 | 128,128 | 20 | 否 | 施法即刻；8 片金甲合拢，护罩成型，十字闪 |
+| fx_holy_armor_loop | 12 | 256×256 | 128,128 | 11 | 是 | 跟随主角 |
+| fx_mass_heal_burst | 12 | 512×256 | 256,220 | 20 | 否 | 主角脚下 (cx, y)；光环约 375ms 扩到 ±190px；每目标仍叠 fx_heal_pillar（间隔 80ms） |
+
+缺图时的兜底：回落到 fx_magic_shield_* 着色，再回落 fx.holyLight。
+已知不足：参考帧里没有这三个技能，造型为原创；loop 的幽光点在循环接缝处有轻微跳变。
