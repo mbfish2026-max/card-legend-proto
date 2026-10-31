@@ -14,6 +14,13 @@
 - F3：FxPlayer 非命中特效（火墙/半月/治愈/冰咆哮/被动闪光/毒/冲撞/符/召唤阵）scale 去掉，魔法盾不再按卡高放大，统一 1×。
 - F4：模拟死亡 战士 4 / 法师 1 / 道士 2。未改 src/data。
 
+## R13 地图扩充 + 官方掉落 + 超大世界地图（2026-10-31）
+- 地图 8 → 13 层：新增 毒蛇山谷、蜈蚣洞、石墓·猪洞、牛魔寺庙、封魔殿，按原版递进插入；新怪 19 种（含 4 BOSS）。旧存档 mapV2→3 层号自动迁移。调研见 docs/maps-research.md。
+- 掉落改为数据驱动：src/data/drops-official.ts（21cq 1.76 数据库，32 种怪）→ drops.ts；技能书按官方书单与爆率独立判定（World.ts 掉落逻辑改动），无数据的怪沿用 [适配] 25%/2%。新增 21 把武器、8 件衣帽。详见 docs/drops-official.md。
+- 难度重调：DIFF bossHp 1.6→2.8、bossAtk 2.08→1.9；模拟死亡 战4/法2/道3。
+- 世界地图改为可拖动缩放的超大地图（2400×1400，鼠标拖动/滚轮/＋－按钮，手机单指拖动、双指缩放）；点区域进入区域小地图，显示城镇/洞穴/副本/出口节点，点入口直接传送（沿用费用/冷却/战斗中禁用规则）。区域数据含 town 节点与 safe 标记，留给城镇/商人任务。
+- 测试 254 项；build 通过；无头浏览器验证地图拖动/滚轮/触摸拖动/传送。
+
 ## R12 技能攻击特效（FX v2 接入）
 - 新增 src/ui/FxPlayer.ts：配置驱动 FX_DEFS（fps/loop/blend/depth/scale），26 个 v2 图集，JSON anchor 直接作 pivot（浏览器验证 origin=pivot）。
 - 命中/雷电 1×；混合模式按 MANIFEST（ice_roar/rush_dash/poison_loop/soul_fire_fly/召唤阵 NORMAL）；职业刀光着色；depth 一次性 55–60、火墙 30、召唤阵 9、护盾 11。

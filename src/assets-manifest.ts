@@ -19,6 +19,8 @@ export const ASSETS: Record<string, string> = {
   bg_floor4: 'assets/bg/bg_floor4.jpg', bg_floor5: 'assets/bg/bg_floor5.jpg',
   map_world: 'assets/map/map_world.jpg', map_node_bichi: 'assets/map/map_node_bichi.png', map_node_mengzhong: 'assets/map/map_node_mengzhong.png', map_node_woma: 'assets/map/map_node_woma.png', map_node_zuma: 'assets/map/map_node_zuma.png', map_node_chiyue: 'assets/map/map_node_chiyue.png',
   bg_floor6: 'assets/bg/bg_floor6.jpg', bg_floor7: 'assets/bg/bg_floor7.jpg', bg_floor8: 'assets/bg/bg_floor8.jpg',
+  // R13 新地图背景占位：复用现有背景文件（独立 key，美术到位后替换路径即可，见 art-requests §R13）
+  bg_floor9: 'assets/bg/bg_floor2.jpg', bg_floor10: 'assets/bg/bg_floor3.jpg', bg_floor11: 'assets/bg/bg_floor4.jpg', bg_floor12: 'assets/bg/bg_floor6.jpg', bg_floor13: 'assets/bg/bg_floor7.jpg',
   potion_0: 'assets/potions/INV_Potion_51.png', potion_1: 'assets/potions/INV_Potion_54.png',
   potion_2: 'assets/potions/INV_Potion_72.png', potion_3: 'assets/potions/INV_Potion_75.png',
   set_badge: 'assets/ui/set_badge.png', menu_0: 'assets/portraits/INV_Misc_Head_Human_01.png', menu_1: 'assets/items/INV_Misc_Bag_08.png',

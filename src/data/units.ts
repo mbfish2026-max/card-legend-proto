@@ -1,4 +1,5 @@
 import { UnitDef, DropEntry } from '../combat/types';
+import { officialDrops } from './drops';
 // 主角卡（属性由职业+等级计算，见 classes.ts；这里只提供卡牌尺寸等通用字段）
 export const HERO: UnitDef = {
   id: 'hero', name: '战士', level: 1, hp: 320, mp: 120, atk: 30, atkInterval: 1.1,
@@ -8,7 +9,7 @@ export const HERO: UnitDef = {
 const card = (o: Partial<NonNullable<UnitDef['card']>> = {}) => ({ w: 140, h: 190, figureScale: 1.15, anchorX: 0.55, maxWidthRatio: 1.7, artFacing: -1 as const, ...o });
 const bossCard = (o: Partial<NonNullable<UnitDef['card']>> = {}) => card({ w: 200, h: 260, figureScale: 1.2, maxWidthRatio: 1.6, bg: 0x3a0606, ...o });
 /** 难度曲线（v0.2 上调：原版偏简单）。普通怪/首领的生命与攻击倍率 */
-export const DIFF = { hp: 1.6, atk: 2.81, bossHp: 1.6, bossAtk: 2.08 };
+export const DIFF = { hp: 1.6, atk: 2.81, bossHp: 2.8, bossAtk: 1.9 };
 const n = (id: string, name: string, level: number, hp: number, atk: number, def: number, exp: number, drops: DropEntry[], extra: Partial<UnitDef> = {}): UnitDef =>
   ({ id, name, level, hp: Math.round(hp * DIFF.hp), atk: Math.round(atk * 1.4 * DIFF.atk), def, exp, drops, atkInterval: 1.3, range: 6, speed: 110, width: 130, height: 180, tier: 'normal', card: card(), ...extra });
 const b = (id: string, art: string, name: string, level: number, hp: number, atk: number, def: number, exp: number, drops: DropEntry[], extra: Partial<UnitDef> = {}): UnitDef =>
@@ -45,7 +46,29 @@ export const ENEMIES: Record<string, UnitDef> = {
   blood_zombie: n('blood_zombie', '血僵尸', 28, 1700, 68, 22, 420, [G(0.6), { item: 'hp_mid', chance: 0.35 }], { deathSfx: 'ghoul_death', speed: 75, atkInterval: 1.5, oilChance: 0.02 }),
   redmoon_spider: n('redmoon_spider', '赤月蜘蛛', 29, 1400, 75, 18, 440, [G(0.6), { item: 'mp_mid', chance: 0.3 }], { art: 'spider', deathSfx: 'death', oilChance: 0.02 }),
   boss_redmoon: b('boss_redmoon', 'boss_redmoon', '赤月恶魔', 32, 15000, 95, 26, 6000, [{ item: 'dragon_sword', chance: 0.5 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'lich_death', setDrop: ['set_chiyue_necklace', 'set_chiyue_ring', 'set_chiyue_bracelet'] }),
+  // R13 新增地图（原版怪名/BOSS 见 docs/maps-research.md；数值按本作层位 [适配]，非原版数值）
+  red_snake: n('red_snake', '红蛇', 10, 420, 28, 8, 110, [G(0.5), { item: 'hp_small', chance: 0.3 }, { item: 'bracelet', chance: 0.08 }], { art: 'spider', deathSfx: 'death' }),
+  tiger_snake: n('tiger_snake', '虎蛇', 11, 460, 30, 8, 120, [G(0.5), { item: 'mp_small', chance: 0.3 }, { item: 'boots', chance: 0.08 }], { art: 'spider', deathSfx: 'death' }),
+  scorpion: n('scorpion', '蝎子', 11, 440, 31, 9, 125, [G(0.5), { item: 'hp_small', chance: 0.3 }, { item: 'iron_ring', chance: 0.08 }], { art: 'spider', deathSfx: 'death' }),
+  tree_demon: b('tree_demon', 'boss_spider_queen', '万年树妖', 14, 3800, 48, 13, 1100, [{ item: 'magic_staff', chance: 0.6 }, { item: 'pearl', chance: 0.6 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1)], { deathSfx: 'death' }),
+  centipede: n('centipede', '蜈蚣', 15, 760, 38, 12, 200, [G(0.6), { item: 'hp_mid', chance: 0.3 }, { item: 'helmet', chance: 0.06 }], { art: 'spider', deathSfx: 'death' }),
+  jump_bee: n('jump_bee', '跳跳蜂', 16, 700, 40, 11, 210, [G(0.6), { item: 'mp_mid', chance: 0.3 }, { item: 'bracelet', chance: 0.06 }], { art: 'bat', deathSfx: 'death', card: card({ figureScale: 1.0 }) }),
+  black_maggot: n('black_maggot', '黑色恶蛆', 17, 820, 40, 13, 220, [G(0.6), { item: 'hp_mid', chance: 0.3 }], { art: 'zombie', speed: 80, deathSfx: 'ghoul_death' }),
+  boss_chulong: b('boss_chulong', 'boss_spider_queen', '触龙神', 19, 6000, 60, 18, 2200, [{ item: 'gold_ring', chance: 0.8 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'death' }),
+  red_boar: n('red_boar', '红野猪', 18, 880, 40, 13, 230, [G(0.6), { item: 'hp_mid', chance: 0.3 }, { item: 'armor', chance: 0.04 }], { art: 'wolf', deathSfx: 'death2' }),
+  black_boar: n('black_boar', '黑野猪', 19, 950, 42, 14, 245, [G(0.6), { item: 'mp_mid', chance: 0.3 }, { item: 'helmet', chance: 0.05 }], { art: 'wolf', deathSfx: 'death2' }),
+  scorpion_snake: n('scorpion_snake', '蝎蛇', 19, 900, 44, 13, 245, [G(0.6), { item: 'hp_mid', chance: 0.3 }, { item: 'gold_ring', chance: 0.03 }], { art: 'spider', deathSfx: 'death' }),
+  boss_white_boar: b('boss_white_boar', 'boss_wolf_king', '白野猪', 21, 7500, 66, 20, 2800, [{ item: 'armor', chance: 1 }, { item: 'pearl', chance: 0.6 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'death2' }),
+  bull_warrior: n('bull_warrior', '牛魔战士', 25, 1400, 60, 19, 380, [G(0.6), { item: 'hp_mid', chance: 0.3 }, { item: 'bone_helm', chance: 0.04 }], { art: 'orc', deathSfx: 'death2', oilChance: 0.02 }),
+  bull_mage: n('bull_mage', '牛魔法师', 26, 1300, 66, 17, 400, [G(0.6), { item: 'mp_mid', chance: 0.3 }, { item: 'pearl', chance: 0.04 }], { art: 'darkmage', deathSfx: 'death', atkInterval: 1.6, oilChance: 0.02 }),
+  bull_guard: n('bull_guard', '牛魔侍卫', 26, 1500, 62, 20, 410, [G(0.6), { item: 'hp_mid', chance: 0.3 }, { item: 'gold_ring', chance: 0.04 }], { art: 'orc', deathSfx: 'death2', oilChance: 0.02 }),
+  boss_bull_king: b('boss_bull_king', 'boss_orc_chief', '牛魔王', 30, 13000, 90, 25, 5000, [{ item: 'dragon_sword', chance: 0.4 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'death2' }),
+  hongmo_pig: n('hongmo_pig', '虹魔猪卫', 27, 1550, 64, 20, 410, [G(0.6), { item: 'hp_mid', chance: 0.35 }], { art: 'orc', deathSfx: 'death2', oilChance: 0.02 }),
+  hongmo_scorpion: n('hongmo_scorpion', '虹魔蝎卫', 27, 1650, 66, 21, 420, [G(0.6), { item: 'mp_mid', chance: 0.3 }], { art: 'spider', deathSfx: 'death', oilChance: 0.02 }),
+  boss_hongmo: b('boss_hongmo', 'boss_woma', '虹魔教主', 31, 14000, 92, 25, 5500, [{ item: 'dragon_sword', chance: 0.4 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'death2' }),
 };
+/** R13：有资料的怪，装备/药水/祝福油掉落替换为资料表（1/N）；金币条目保留 [适配]。见 docs/drops-official.md */
+for (const u of Object.values(ENEMIES)) { const od = officialDrops(u.id); if (od) u.drops = [...(u.drops ?? []).filter(d => d.item === 'gold'), ...od]; }
 /** 道士召唤骷髅（金色卡底，友方） */
 export const SUMMON: UnitDef = { id: 'summon_skeleton', art: 'skeleton', name: '骷髅', level: 1, hp: 200, atk: 10, def: 4, atkInterval: 1.3, range: 6, speed: 0, width: 120, height: 170, tier: 'player',
   card: card({ w: 120, h: 160, figureScale: 1.15, bg: 0x7a5c14 }) };

@@ -1,4 +1,4 @@
-import { BOOKS, BookDef, BOOK_DROP, STARTER, bookItemId } from '../data/books';
+import { BOOKS, BookDef, BOOK_DROP, BOOK_RATES, STARTER, bookItemId } from '../data/books';
 // 纯逻辑世界模块（无 Phaser 依赖，可在 node 中单测）：职业/等级成长、分层横版地图、怪物 AI、
 // 自动战斗与技能、召唤物、掉落/背包/装备/商店、死亡复活、存档序列化。
 import { BattleEvent, GroundItem, InvItem, Rarity, Slot, Stats, Team, Unit, UnitDef } from './types';
@@ -23,10 +23,12 @@ export interface SaveData {
   /** R11 已学技能 id；缺省 = 旧存档（按等级视为全部已学） */
   learned?: string[];
   /** R11 地图顺序版本：缺省 = 旧顺序，读档时迁移层号 */
-  mapV?: 2;
+  mapV?: 2 | 3;
 }
 /** R11 旧层号 → 新层号（按原版递进重排：兽人要塞提前到第 2 层） */
 export const FLOOR_MIGRATE = [0, 2, 3, 1, 4, 5, 6, 7];
+/** R13 新增 5 张地图后，mapV2 的 8 层层号 → mapV3 层号 */
+export const FLOOR_MIGRATE_V3 = [0, 1, 2, 4, 5, 8, 9, 12];
 /** 商店祝福油价格（较贵，每层限购 1） */
 export const OIL_PRICE = 400;
 export { IRON_PRICE } from '../data/items';
@@ -94,9 +96,13 @@ export class World {
       this.equip = { ...save.equip }; this.bag = [...save.bag]; this.kills = save.kills; this.nextItem = save.nextUid;
       this.skillTrain = { ...(save.skillTrain ?? {}) }; this.reached = new Set(save.reached ?? []); this.bossKilled = new Set(save.bossKilled ?? []);
       this.questProg = { ...(save.questProg ?? {}) }; this.questDone = new Set(save.questDone ?? []); this.achieves = new Set(save.achieves ?? []);
-      if (save.mapV !== 2 && this.floors === FLOORS) {
+      if (save.mapV !== 2 && save.mapV !== 3 && this.floors === FLOORS) {
         const m = (i: number) => FLOOR_MIGRATE[i] ?? i;
         save = { ...save, floorIndex: m(save.floorIndex) }; this.reached = new Set([...this.reached].map(m)); this.bossKilled = new Set([...this.bossKilled].map(m));
+      }
+      if (save.mapV !== 3 && this.floors === FLOORS) { // R13：旧 8 层存档层号迁移到 13 层
+        const m = (i: number) => FLOOR_MIGRATE_V3[i] ?? i;
+        save = { ...save, floorIndex: m(save.floorIndex ?? 0) }; this.reached = new Set([...this.reached].map(m)); this.bossKilled = new Set([...this.bossKilled].map(m));
       }
       // 旧存档兼容：已达到学习等级的技能视为已学
       this.learned = new Set(save.learned ?? this.skillPool.filter(s => this.level >= (s.unlock ?? s.learn?.[0] ?? 1)).map(s => s.id));
@@ -413,8 +419,10 @@ export class World {
     const extra: { id: string; purity?: number }[] = [];
     if (u.tier === 'boss' || this.lootRng() < (u.oilChance ?? 0)) extra.push({ id: 'bless_oil' });
     // R11 技能书掉落（本职业、未学、背包里也没有）
-    { const pool = Object.values(BOOKS).filter(b => b.cls === this.cls && b.drops.includes(u.id) && !this.learned.has(b.skill) && !this.bag.some(x => x.item === bookItemId(b.skill)));
-      if (pool.length && this.lootRng() < (u.tier === 'boss' ? BOOK_DROP.boss : BOOK_DROP.normal)) extra.push({ id: bookItemId(pool[Math.floor(this.lootRng() * pool.length)].skill) }); }
+    { const pool = Object.values(BOOKS).filter(b => b.cls === this.cls && (u.id in BOOK_RATES ? (BOOK_RATES[u.id][b.skill] ?? 0) > 0 : b.drops.includes(u.id)) && !this.learned.has(b.skill) && !this.bag.some(x => x.item === bookItemId(b.skill)));
+      // R13：有资料的怪逐本按资料爆率（1/N）独立判定；无资料的怪沿用 [适配] 首领/普通几率随机一本
+      if (u.id in BOOK_RATES) { for (const b of pool) if (this.lootRng() < BOOK_RATES[u.id][b.skill]) { extra.push({ id: bookItemId(b.skill) }); break; } }
+      else if (pool.length && this.lootRng() < (u.tier === 'boss' ? BOOK_DROP.boss : BOOK_DROP.normal)) extra.push({ id: bookItemId(pool[Math.floor(this.lootRng() * pool.length)].skill) }); }
     if (u.setDrop?.length && this.lootRng() < (u.setChance ?? 1)) extra.push({ id: u.setDrop[Math.floor(this.lootRng() * u.setDrop.length)] });
     // 黑铁：Boss 必掉 1 块纯度 1–3；普通怪 8% 掉纯度 1（lootRng，不影响平衡模拟主序列）
     if (u.tier === 'boss') extra.push({ id: 'black_iron', purity: 1 + Math.floor(this.lootRng() * 3) });
@@ -627,7 +635,7 @@ export class World {
 
   // ---------- 存档 ----------
   toSave(): SaveData {
-    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 2 };
+    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3 };
   }
 
   /** 点按一格：滑行中的按键全部排队（同向最多 10 格，反向则替换队列），每次按键都会走一格 */

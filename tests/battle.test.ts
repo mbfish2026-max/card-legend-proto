@@ -5,6 +5,7 @@ import { WORLD, CARD, Floor, FLOORS } from '../src/data/world';
 import { CLASSES, ClassId } from '../src/data/classes';
 import { ENEMIES, DIFF } from '../src/data/units';
 import { QUESTS, ACHIEVES } from '../src/data/quests';
+import { REGIONS, floorBoss, regionOf, entrances, nodeOfFloor, clampView, zoomAt, WORLD_W, WORLD_H } from '../src/data/map';
 import { detectMobile } from '../src/mobile';
 import { StepGate, stepDir, HoldKeys, HOLD } from '../src/input/stepKeys';
 import { POTIONS } from '../src/data/skills';
@@ -157,8 +158,10 @@ const free = (w: World) => w.skills.map(() => 0);
   ok(w.floorIndex === 1 && !!w.summon, '召唤物随主角进入下一层');
 }
 { // 掉落 → 背包 → 装备/卸下/需求等级/丢弃/出售/购买
+  // R13：尸王资料掉落不含必掉屠龙，本用例临时注入一条 1/1 屠龙以测试拾取/装备流程
+  const L0 = ENEMIES.boss_lich.drops; ENEMIES.boss_lich.drops = [...(L0 ?? []), { item: 'dragon_sword', chance: 1 }];
   const w = mk([{ id: 'boss_lich', x: 2000 }, { id: 'wolf', x: 3500 }], [], 'warrior', 30); const h = w.hero!, b = w.alive('enemy')[0];
-  w.kill(b); ok(w.ground.length >= 6 && w.ground.some(g => g.item === 'dragon_sword'), 'Boss 掉落多件，必掉屠龙刀');
+  w.kill(b); ENEMIES.boss_lich.drops = L0; ok(w.ground.length >= 6 && w.ground.some(g => g.item === 'dragon_sword'), 'Boss 掉落多件（含注入的屠龙刀）');
   run(w, 3); ok(w.ground.length >= 6, '离得远不会自动拾取');
   const g = w.ground[0]; h.x = g.x; h.y = g.y; w.time = g.landAt - 0.2; w.step(0.01); ok(w.ground.includes(g), '落地前不可拾取');
   w.step(0.3); ok(!w.ground.includes(g), '落地后靠近自动拾取');
@@ -178,7 +181,7 @@ const free = (w: World) => w.skills.map(() => 0);
   w.ground.push(w.rollDrop('helmet', 'common', h.x, h.y)); w.time += 1; w.step(0.05); ok(w.ground.length === 1, '背包满时不拾取');
 }
 { // 5 层 + 每层 Boss + 出口封印
-  ok(FLOORS.length >= 8 && FLOORS.slice(5).map(f => f.name).join() === '沃玛寺庙,祖玛阁,赤月魔穴' && FLOORS.every(f => f.boss && f.spawns.some(s => ENEMIES[s.id].tier === 'boss')), `共 ${FLOORS.length} 层，每层末尾有 Boss`);
+  ok(FLOORS.length >= 8 && FLOORS.slice(8).map(f => f.name).join() === '沃玛寺庙,祖玛阁,牛魔寺庙,封魔殿,赤月魔穴' && FLOORS.every(f => f.boss && f.spawns.some(s => ENEMIES[s.id].tier === 'boss')), `共 ${FLOORS.length} 层，每层末尾有 Boss`);
   ok(new Set(FLOORS.map(f => f.bg)).size === FLOORS.length, '每层背景不同');
   const w = new World(seeded(3), 30, FLOORS); const h = w.hero!;
   h.x = w.exitX; w.step(0.05); ok(w.floorIndex === 0, 'Boss 未死出口封印');
@@ -214,11 +217,22 @@ const free = (w: World) => w.skills.map(() => 0);
   const bw = new World(seeded(3), 30, FLOORS, 'warrior'); let got = 0;
   for (let k = 0; k < 40; k++) { const u = bw.spawn(ENEMIES.boss_lich, 'enemy', 1000); bw.kill(u); }
   got = bw.ground.filter(g => g.item.startsWith('book_')).length;
-  ok(got > 0 && bw.ground.every(g => !g.item.startsWith('book_') || ['book_half_moon', 'book_rush', 'book_fire_sword'].includes(g.item)), `尸王掉落战士技能书（40 次掉 ${got} 本）`);
+  ok(got > 0 && bw.ground.every(g => !g.item.startsWith('book_') || ['book_thrust', 'book_half_moon', 'book_rush'].includes(g.item)), `尸王按资料爆率掉战士技能书（刺杀1/10 半月1/500 野蛮1/600）（40 次掉 ${got} 本）`);
+}
+{ // R13 地图扩充：区域覆盖、旧存档迁移、传送
+  const all = REGIONS.flatMap(r => r.floors).sort((a, b) => a - b);
+  ok(all.join() === FLOORS.map((_, i) => i).join(), `世界地图区域覆盖全部 ${FLOORS.length} 层且不重复`);
+  ok(FLOORS.every((_, i) => !!floorBoss(i) && !!regionOf(i)), '每层有 BOSS 与所属区域');
+  ok(QUESTS.every(q => q.floor < FLOORS.length && FLOORS[q.floor].spawns.some(s => s.id === q.target)), '悬赏目标都在对应层');
+  const m = new World(seeded(3), 30, FLOORS, 'mage'); const v2 = { ...m.toSave(), mapV: 2, floorIndex: 5, reached: [0, 1, 2, 3, 4, 5], bossKilled: [0, 1, 2, 3, 4], questDone: ['q0'] } as unknown as SaveData;
+  const w2 = new World(seeded(3), 1, FLOORS, 'mage', v2);
+  ok(w2.floorIndex === 8 && w2.floor.name === '沃玛寺庙' && w2.reached.has(5) && w2.reached.has(8) && !w2.reached.has(3) && w2.bossKilled.has(4) && w2.questDone.has('q0'), 'mapV2 存档迁移：沃玛寺庙 5→8，进度不丢');
+  const w3 = new World(seeded(3), 1, FLOORS, 'mage', w2.toSave()); ok(w3.floorIndex === 8 && w3.toSave().mapV === 3, 'mapV3 存档不重复迁移');
+  w3.gold = 9999; w3.reached.add(10); w3.time = 999; ok(w3.teleport(10) === null && w3.floor.name === '牛魔寺庙', '世界地图传送到新地图牛魔寺庙');
 }
 { // R11 地图按原版递进
-  ok(FLOORS.map(f => f.name).join() === '幽暗森林,兽人要塞,蛛网晶洞,白骨墓穴,尸王殿,沃玛寺庙,祖玛阁,赤月魔穴', '层序：新手村→沃玛森林(兽人/蛛洞)→兽人古墓→比奇矿区尸王殿→沃玛寺庙→祖玛→赤月');
-  ok(QUESTS.find(q => q.target === 'orc')!.floor === 1 && QUESTS.find(q => q.target === 'spider')!.floor === 2 && QUESTS.find(q => q.target === 'skeleton')!.floor === 3, '悬赏随层移动');
+  ok(FLOORS.map(f => f.name).join() === '幽暗森林,兽人要塞,蛛网晶洞,毒蛇山谷,白骨墓穴,尸王殿,蜈蚣洞,石墓·猪洞,沃玛寺庙,祖玛阁,牛魔寺庙,封魔殿,赤月魔穴', '层序：新手村→沃玛森林(兽人/蛛洞)→兽人古墓→比奇矿区尸王殿→沃玛寺庙→祖玛→赤月');
+  ok(QUESTS.find(q => q.target === 'orc')!.floor === 1 && QUESTS.find(q => q.target === 'spider')!.floor === 2 && QUESTS.find(q => q.target === 'skeleton')!.floor === 4, '悬赏随层移动');
   const lv = FLOORS.map(f => Math.max(...f.spawns.map(sp => ENEMIES[sp.id].tier === 'boss' ? 0 : ENEMIES[sp.id].level)));
   ok(lv.every((v, i) => i === 0 || v >= lv[i - 1]), `各层普通怪最高等级递增 ${lv.join('/')}`);
 }
@@ -244,7 +258,7 @@ const free = (w: World) => w.skills.map(() => 0);
 { // 平衡：每个职业的自动脚本能打通全部 5 层（允许死亡复活）
   for (const c of ['warrior', 'mage', 'taoist'] as ClassId[]) {
     const w = (process.env.ALL ? learnAll : (x: World) => x)(new World(seeded(11), 1, FLOORS, c)); let cds = w.skills.map(() => 0); let t = 0, potUsed = 0; const learnLog: string[] = [];
-    while (!w.done && t < 3600) {
+    while (!w.done && t < 7200) {
       const h = w.hero;
       if (!h) { learnLog.push(`死@${w.floorIndex + 1}层Lv${w.level}`); w.respawn(); continue; }
       if (h.hp < h.maxHp * 0.4 && w.usePotion(w.pots[1] > 0 ? 1 : 0)) potUsed++;
@@ -266,11 +280,11 @@ const free = (w: World) => w.skills.map(() => 0);
       while (w.gold >= 60 && w.pots[3] < cap) w.buyPotion(3);
       w.step(0.05, { dx: (() => { const f = w.queue(1)[0]; return f && w.inMelee(h, f) ? 0 : 1; })(), dy: 0 }); w.drainEvents(); t += 0.05; /* 玩家：前方接战时站定输出（可穿怪） */ for (let i = 0; i < cds.length; i++) cds[i] = Math.max(0, cds[i] - 0.05);
     }
-    console.log(`  ${CLASSES[c].name}: 通关=${w.done} 等级 ${w.level} 死亡 ${w.deaths} 学书 ${learnLog.join(' ')}`);
+    if (process.env.SIM) console.log(JSON.stringify(Object.fromEntries(Object.entries(w.equip).map(([k,v])=>[k,(v as any)?.name]))), w.hero?.maxHp, w.hero?.atk); console.log(`  ${CLASSES[c].name}: 通关=${w.done} 等级 ${w.level} 死亡 ${w.deaths} 学书 ${learnLog.join(' ')}`);
     if (!process.env.SIM) ok(w.deaths >= 1 && w.deaths <= 4, `${CLASSES[c].name} 难度适中：模拟通关死亡 1–4 次（实际 ${w.deaths}）`);
     console.log(`  ${CLASSES[c].name}: 通关=${w.done} 用时 ${Math.round(t)}s 等级 ${w.level} 死亡 ${w.deaths} 次 层 ${w.floorIndex + 1} 红药 ${potUsed} 瓶`);
     ok(potUsed >= 3, `${CLASSES[c].name} 通关需要吃药（${potUsed} 瓶，难度不再过于简单）`);
-    ok(w.done && w.deaths <= 6, `${CLASSES[c].name} 可通关 8 层（死亡 ${w.deaths} 次）`);
+    if (!process.env.SIM) ok(w.done && w.deaths <= 6, `${CLASSES[c].name} 可通关全部层（死亡 ${w.deaths} 次）`);
   }
 }
 { // 难度曲线：怪物强度倍率已上调
@@ -628,6 +642,21 @@ const free = (w: World) => w.skills.map(() => 0);
   ok(resolveLayers(old.cls, old.equip).length === 0 && resolveLayers('warrior', undefined).length === 0, '旧存档/无装备照常（无层）');
   const w2 = mk([]); w2.bag.push(it('dragon_sword', 'weapon', 1)); const wi = w2.bag.length - 1;
   { const a = comboKey('warrior', resolveLayers('warrior', w2.equip)); w2.equipItem(wi); const b = comboKey('warrior', resolveLayers('warrior', w2.equip)); w2.unequip('weapon'); const c2 = comboKey('warrior', resolveLayers('warrior', w2.equip)); ok(a !== b && c2 === a, '穿/脱武器后组合签名刷新并可还原'); }
+}
+
+{ // R13 超大世界地图 + 区域小地图入口
+  ok(FLOORS.every((_, i) => nodeOfFloor(i)), '每一层都有区域小地图入口');
+  ok(entrances().length === FLOORS.length, `入口与层一一对应（${entrances().length}/${FLOORS.length}）`);
+  ok(entrances().every(e => e.region.floors.includes(e.node.floor!)), '入口所在区域与 floors 一致');
+  ok(REGIONS.every(r => r.nodes.filter(n => n.kind === 'town').every(n => n.safe && n.floor === undefined)), '城镇节点为安全区且不是战斗层（留给城镇/商人任务）');
+  ok(REGIONS.every(r => r.nodes.every(n => n.kind !== 'exit' || REGIONS.some(x => x.id === n.to))), '区域出口指向存在的区域');
+  ok(REGIONS.every(r => r.x > 0 && r.x < WORLD_W && r.y > 0 && r.y < WORLD_H && r.nodes.every(n => n.x >= 0 && n.x <= 1 && n.y >= 0 && n.y <= 1)), '坐标在画布内');
+  const v = clampView({ x: 500, y: 500, z: 0.01 }, 960, 360); ok(v.x <= 0 && v.y <= 0 && v.z * WORLD_W >= 960, '视口夹紧：不露出画布外、最小缩放铺满');
+  const z = zoomAt({ x: -400, y: -200, z: 1 }, 480, 180, 1.5, 960, 360); ok(Math.abs((480 - z.x) / z.z - 880) < 1e-6 && Math.abs((180 - z.y) / z.z - 380) < 1e-6, '缩放以锚点为中心');
+  ok(zoomAt({ x: 0, y: 0, z: 2 }, 0, 0, 5, 960, 360).z === 2, '最大缩放受限');
+  const w = new World(seeded(3), 1, FLOORS, 'warrior'); w.reached.add(4); w.gold = 1000;
+  ok(w.teleport(nodeOfFloor(4)!.node.floor!) === null && w.floorIndex === 4, '点击入口沿用 teleport 规则传送');
+  ok(!!w.teleport(nodeOfFloor(0)!.node.floor!), '传送冷却仍生效');
 }
 
 console.log(`全部通过 ${pass} 项`);

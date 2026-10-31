@@ -10,7 +10,7 @@ import { renderSettingsView } from './SettingsView';
 import { txt, button, sfx } from '../scenes/TitleScene';
 import { IS_MOBILE } from '../mobile';
 import { FxQuality } from './Fx';
-import { REGIONS, floorBoss, regionOf } from '../data/map';
+import { REGIONS, floorBoss, regionOf, clampView, zoomAt, WORLD_W, WORLD_H, View } from '../data/map';
 import { QUESTS, ACHIEVES } from '../data/quests';
 import { ENEMIES } from '../data/units';
 import { FLOORS } from '../data/world';
@@ -36,9 +36,9 @@ export class Panel {
   constructor(public s: Phaser.Scene, public world: () => World, public onChange: (msg?: string, green?: boolean) => void, public onTitle: () => void) {}
   get open() { return this.mode !== null; }
   toggle(m: PanelMode) { if (this.mode === m) this.close(); else { this.mode = m; this.sel = null; this.region = null; this.render(); } }
-  close() { this.sel = null; this.ironIdx = null; this.mode = null; this.root?.destroy(true); this.root = undefined; this.hideTip(); }
+  close() { this.clearMapInput(); this.sel = null; this.ironIdx = null; this.mode = null; this.root?.destroy(true); this.root = undefined; this.hideTip(); }
   render() {
-    this.root?.destroy(true); this.hideTip();
+    this.root?.destroy(true); this.hideTip(); this.clearMapInput();
     if (!this.mode) return;
     const s = this.s, R = this.root = s.add.container(0, 0).setDepth(200);
     R.add(s.add.rectangle(640, 360, 1280, 720, 0x000000, 0.45).setInteractive());
@@ -199,46 +199,100 @@ export class Panel {
     });
     R.add(txt(s, 180, top + 430, `学习等级/修炼点/战士倍率取自 1.76 官方；耗魔×3、冷却、火墙灼烧、野蛮伤害、准确→暴击为卡牌适配。人物等级加成 ×${w.skillScale().toFixed(2)}`, 12, '#aaa'));
   }
+  /** 世界地图视口（拖动/缩放状态，跨重绘保留） */
+  view: View | null = null;
+  private mapOff: (() => void)[] = [];
+  private clearMapInput() { this.mapOff.forEach(f => f()); this.mapOff = []; }
+  /** 传送到某个入口层（沿用 World.teleport 的费用/冷却/战斗中禁用规则） */
+  private doTeleport(f: number) {
+    const s = this.s, w = this.world(), e = w.teleport(f);
+    if (e) { this.onChange(e); sfx(s, 'click', 0.3); this.render(); return; }
+    sfx(s, 'coin'); this.close(); this.onChange(`传送到第 ${f + 1} 层 ${w.floors[f].name}`, true); this.onTeleport?.();
+  }
   private renderMap(R: Phaser.GameObjects.Container, top: number) {
     const s = this.s, w = this.world(), cur = regionOf(w.floorIndex);
+    const VX = 160, VY = top + 45, VW = 960, VH = 360;
     if (!this.region) {
-      if (s.textures.exists('map_world')) R.add(s.add.image(640, top + 215, 'map_world').setDisplaySize(960, 350).setAlpha(0.9));
-      else R.add(s.add.rectangle(640, top + 215, 960, 350, 0x1e2a18).setStrokeStyle(1, 0x4a5a30));
-      const g = s.add.graphics().lineStyle(4, 0x8a7040, 0.8); R.add(g);
-      REGIONS.forEach((r, i) => { if (i) g.lineBetween(REGIONS[i - 1].x, top + REGIONS[i - 1].y - 180, r.x, top + r.y - 180); });
+      if (!this.view) { const z = 0.5; this.view = clampView({ x: VW / 2 - cur.x * z, y: VH / 2 - cur.y * z, z }, VW, VH); }
+      const M = s.add.container(VX, VY); R.add(M);
+      const mk = s.make.graphics({}, false).fillRect(VX, VY, VW, VH); M.setMask(mk.createGeometryMask());
+      R.add(s.add.rectangle(VX + VW / 2, VY + VH / 2, VW, VH).setStrokeStyle(2, 0x6a5030));
+      const C = s.add.container(0, 0); M.add(C);
+      const apply = () => { const v = this.view!; C.setPosition(v.x, v.y).setScale(v.z); };
+      // 底图（占位：无 map_world_big 贴图时用色块+网格）
+      if (s.textures.exists('map_world_big')) C.add(s.add.image(0, 0, 'map_world_big').setOrigin(0).setDisplaySize(WORLD_W, WORLD_H));
+      else {
+        C.add(s.add.rectangle(0, 0, WORLD_W, WORLD_H, 0x1e2a18).setOrigin(0));
+        const gg = s.add.graphics().lineStyle(1, 0x2e3a24, 1); for (let x = 0; x <= WORLD_W; x += 100) gg.lineBetween(x, 0, x, WORLD_H); for (let y = 0; y <= WORLD_H; y += 100) gg.lineBetween(0, y, WORLD_W, y); C.add(gg);
+      }
+      const g = s.add.graphics().lineStyle(8, 0x8a7040, 0.8); C.add(g);
+      REGIONS.forEach((r, i) => { if (i) g.lineBetween(REGIONS[i - 1].x, REGIONS[i - 1].y, r.x, r.y); });
+      let downAt: { x: number; y: number } | null = null, moved = 0;
       REGIONS.forEach(r => {
-        const y = top + r.y - 180, open = r.floors.some(f => w.reached.has(f)), here = r === cur;
-        const c = s.add.circle(r.x, y, 38, open ? 0x3a2a10 : 0x222222).setStrokeStyle(here ? 5 : 2, here ? 0x66ff66 : open ? 0xd4a64a : 0x555555).setInteractive({ useHandCursor: true });
-        c.on('pointerdown', () => { sfx(s, 'click', 0.4); this.region = r.id; this.render(); }); R.add(c);
-        if (s.textures.exists(r.icon)) R.add(s.add.image(r.x, y, r.icon).setDisplaySize(60, 60).setAlpha(open ? 1 : 0.35));
-        R.add(txt(s, r.x, y + 50, r.name, 17, open ? '#ffe8a0' : '#777', { fontStyle: 'bold' }).setOrigin(0.5));
-        R.add(txt(s, r.x, y + 72, `第 ${r.floors.map(f => f + 1).join('/')} 层`, 13, '#bbb').setOrigin(0.5));
-        if (here) R.add(txt(s, r.x, y - 58, '▼ 你在这里', 14, '#66ff66', { fontStyle: 'bold' }).setOrigin(0.5));
+        const open = r.floors.some(f => w.reached.has(f)), here = r === cur;
+        const c = s.add.circle(r.x, r.y, 80, open ? 0x3a2a10 : 0x222222).setStrokeStyle(here ? 10 : 4, here ? 0x66ff66 : open ? 0xd4a64a : 0x555555).setInteractive({ useHandCursor: true });
+        c.on('pointerup', () => { if (moved > 10) return; sfx(s, 'click', 0.4); this.region = r.id; this.render(); }); C.add(c);
+        if (s.textures.exists(r.icon)) C.add(s.add.image(r.x, r.y, r.icon).setDisplaySize(120, 120).setAlpha(open ? 1 : 0.35));
+        C.add(txt(s, r.x, r.y + 100, r.name, 34, open ? '#ffe8a0' : '#777', { fontStyle: 'bold' }).setOrigin(0.5));
+        C.add(txt(s, r.x, r.y + 140, `第 ${r.floors.map(f => f + 1).join('/')} 层`, 24, '#bbb').setOrigin(0.5));
+        if (here) C.add(txt(s, r.x, r.y - 120, '▼ 你在这里', 28, '#66ff66', { fontStyle: 'bold' }).setOrigin(0.5));
       });
-      R.add(txt(s, 640, top + 412, `当前：${cur.name} · 第 ${w.floorIndex + 1} 层 ${w.floor.name}    点击区域查看详情与传送（M 关闭）`, 15, '#9fd').setOrigin(0.5));
+      apply();
+      // 拖动 / 双指缩放 / 滚轮缩放（桌面与手机通用）
+      const inV = (p: Phaser.Input.Pointer) => p.x >= VX && p.x <= VX + VW && p.y >= VY && p.y <= VY + VH;
+      s.input.addPointer(1);
+      let pinch = 0;
+      const onDown = (p: Phaser.Input.Pointer) => { if (inV(p)) { downAt = { x: p.x, y: p.y }; moved = 0; } };
+      const onMove = (p: Phaser.Input.Pointer) => {
+        const p1 = s.input.pointer1, p2 = s.input.pointer2;
+        if (p1?.isDown && p2?.isDown) {
+          const d = Phaser.Math.Distance.Between(p1.x, p1.y, p2.x, p2.y);
+          if (pinch) this.view = zoomAt(this.view!, (p1.x + p2.x) / 2 - VX, (p1.y + p2.y) / 2 - VY, d / pinch, VW, VH);
+          pinch = d; moved = 99; apply(); return;
+        }
+        pinch = 0;
+        if (!downAt || !p.isDown) return;
+        const dx = p.x - p.prevPosition.x, dy = p.y - p.prevPosition.y; moved += Math.abs(dx) + Math.abs(dy);
+        this.view = clampView({ ...this.view!, x: this.view!.x + dx, y: this.view!.y + dy }, VW, VH); apply();
+      };
+      const onUp = () => { downAt = null; pinch = 0; s.time.delayedCall(0, () => { moved = 0; }); };
+      const onWheel = (p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => { if (!inV(p)) return; this.view = zoomAt(this.view!, p.x - VX, p.y - VY, dy > 0 ? 0.9 : 1.1, VW, VH); apply(); };
+      s.input.on('pointerdown', onDown); s.input.on('pointermove', onMove); s.input.on('pointerup', onUp); s.input.on('wheel', onWheel);
+      this.mapOff.push(() => { s.input.off('pointerdown', onDown); s.input.off('pointermove', onMove); s.input.off('pointerup', onUp); s.input.off('wheel', onWheel); mk.destroy(); });
+      const zb = (f: number) => { this.view = zoomAt(this.view!, VW / 2, VH / 2, f, VW, VH); apply(); };
+      R.add([...button(s, VX + VW - 70, VY + 26, 40, 34, '＋', () => zb(1.25), 18)]);
+      R.add([...button(s, VX + VW - 26, VY + 26, 40, 34, '－', () => zb(0.8), 18)]);
+      R.add(txt(s, 640, top + 418, `当前：${cur.name} · 第 ${w.floorIndex + 1} 层 ${w.floor.name}    拖动平移 / 滚轮或双指缩放，点击区域进入小地图（M 关闭）`, 14, '#9fd').setOrigin(0.5));
       return;
     }
     const r = REGIONS.find(x => x.id === this.region)!;
     R.add([...button(s, 200, top + 22, 110, 32, '◀ 世界', () => { this.region = null; this.render(); }, 15)]);
-    R.add(txt(s, 640, top + 62, `${r.name}${r === cur ? `（你在第 ${w.floorIndex + 1} 层 ${w.floor.name}）` : ''}`, 18, '#ffe8a0').setOrigin(0.5));
-    r.floors.forEach((f, j) => {
-      const y = top + 112 + j * 94, fl = w.floors[f], reached = w.reached.has(f), here = f === w.floorIndex, b = floorBoss(f);
-      R.add(s.add.rectangle(640, y, 880, 84, here ? 0x1c2a14 : 0x0a0806).setStrokeStyle(2, here ? 0x66ff66 : reached ? 0x6a5030 : 0x333333));
-      if (s.textures.exists(fl.bg ?? '')) R.add(s.add.image(250, y, fl.bg!).setDisplaySize(140, 76).setAlpha(reached ? 1 : 0.3));
-      R.add(txt(s, 340, y - 30, `第 ${f + 1} 层  ${fl.name}${here ? '  ← 当前位置' : ''}${reached ? '' : '  （未到达）'}`, 18, reached ? '#ffd24a' : '#777', { fontStyle: 'bold' }));
-      if (fl.zone) R.add(txt(s, 1060, y - 30, `原版：${fl.zone}`, 12, '#b9a').setOrigin(1, 0));
-      if (b) R.add(txt(s, 340, y + 2, `BOSS：${b.name}   建议等级 Lv${b.level}   ${w.bossKilled.has(f) ? '已击杀（重新进入该层会刷新）' : '未击杀'}`, 14, w.bossKilled.has(f) ? '#9f9' : '#f99', { strokeThickness: 2 }));
-      if (!here) {
-        const why = w.canTeleport(f);
-        R.add(txt(s, 340, y + 24, reached ? `传送费用 ${w.teleportCost(f)} 金${why ? '   ' + why : ''}` : '到达后解锁传送', 13, '#aaa', { strokeThickness: 2 }));
-        R.add([...button(s, 1010, y, 120, 40, '传送', () => {
-          const e = w.teleport(f);
-          if (e) { this.onChange(e); sfx(s, 'click', 0.3); this.render(); return; }
-          sfx(s, 'coin'); this.close(); this.onChange(`传送到第 ${f + 1} 层 ${fl.name}`, true); this.onTeleport?.();
-        }, 17, reached)]);
-      }
+    R.add(txt(s, 640, top + 58, `${r.name}${r === cur ? `（你在第 ${w.floorIndex + 1} 层 ${w.floor.name}）` : ''}`, 18, '#ffe8a0').setOrigin(0.5));
+    const RY = top + 80, RH = 320;
+    if (s.textures.exists(r.bg ?? `map_region_${r.id}`)) R.add(s.add.image(VX, RY, r.bg ?? `map_region_${r.id}`).setOrigin(0).setDisplaySize(VW, RH));
+    else R.add(s.add.rectangle(VX, RY, VW, RH, 0x1a2414).setOrigin(0).setStrokeStyle(2, 0x6a5030));
+    const KIND = { town: { c: 0x3a6a9a, t: '城' }, cave: { c: 0x6a5030, t: '洞' }, dungeon: { c: 0x8a2a2a, t: '本' }, exit: { c: 0x444444, t: '→' } } as const;
+    r.nodes.forEach(n => {
+      const x = VX + 40 + n.x * (VW - 80), y = RY + 30 + n.y * (RH - 70), f = n.floor, reached = f !== undefined && w.reached.has(f), here = f === w.floorIndex;
+      const k = KIND[n.kind], icon = `map_entry_${n.kind}`;
+      const c = s.add.circle(x, y, 24, k.c).setStrokeStyle(here ? 4 : 2, here ? 0x66ff66 : reached || n.kind !== 'cave' && n.kind !== 'dungeon' ? 0xd4a64a : 0x555555).setInteractive({ useHandCursor: true });
+      R.add(c);
+      if (s.textures.exists(icon)) R.add(s.add.image(x, y, icon).setDisplaySize(44, 44));
+      else R.add(txt(s, x, y, k.t, 18, '#fff', { fontStyle: 'bold' }).setOrigin(0.5));
+      const sub = f !== undefined ? `第${f + 1}层${here ? '·当前' : reached ? ` ${w.teleportCost(f)}金` : '·未到达'}` : n.kind === 'town' ? '安全区' : n.kind === 'exit' ? '' : '未开放';
+      R.add(txt(s, x, y + 32, n.name, 14, '#ffe8a0', { strokeThickness: 3 }).setOrigin(0.5, 0));
+      if (sub) R.add(txt(s, x, y + 50, sub, 12, '#bbb', { strokeThickness: 2 }).setOrigin(0.5, 0));
+      c.on('pointerdown', () => {
+        sfx(s, 'click', 0.4);
+        if (n.kind === 'exit' && n.to) { this.region = n.to; this.render(); return; }
+        if (f === undefined) { this.onChange(n.kind === 'town' ? `${n.name}：城镇功能稍后开放` : `${n.name}：暂未开放`); return; }
+        if (here) { this.onChange('你已在此地图'); return; }
+        if (!reached) { this.onChange('到达该层后解锁传送'); return; }
+        this.doTeleport(f);
+      });
     });
-    R.add(txt(s, 640, top + 418, `传送规则：只能去已到达的层；战斗中（有怪物追击）不可传送；冷却 ${WorldCls.TELEPORT_CD} 秒；费用 = 层号 × 20 金`, 13, '#9fd').setOrigin(0.5));
+    const b = r.floors.map(f => floorBoss(f)).filter(Boolean).map(x => x!.name).join('、');
+    R.add(txt(s, 640, top + 418, `点击洞穴/副本入口传送（只能去已到达层；战斗中不可传送；冷却 ${WorldCls.TELEPORT_CD} 秒；费用 = 层号 × 20 金）  BOSS：${b}`, 13, '#9fd').setOrigin(0.5));
   }
   private renderQuests(R: Phaser.GameObjects.Container, top: number) {
     const s = this.s, w = this.world();
