@@ -1,4 +1,5 @@
 import { World } from '../src/combat/World';
+import { HEART_ITEM, HEART_STORE_MAX, RAGE_MAX, canUnleash, unleash, feedHeart, heartFeedValue } from '../src/data/companion';
 import { HERO } from '../src/data/units';
 import { newCompanion, companionEquip, companionUnequip, companionStats, COMPANION_UNIT_ID, migrateCompanion } from '../src/data/companion';
 let pass = 0; const ok = (c: boolean, m: string) => { if (!c) { console.error('FAIL', m); throw new Error(m); } pass++; console.log('ok', m); };
@@ -25,3 +26,15 @@ console.log(`合击版测试全部通过（${pass}）`);
   ok(W(40, 'warrior', w.toSave()).companion?.name === '阿道', '领取后存档保留');
 }
 console.log(`合击版 #2 通过（${pass}）`);
+{ // #5 怒槽 + 火龙之心
+  const w = W(40); w.recruitCompanion('mage', '法'); const c = w.companion!;
+  ok(w.feedCompanionHeart(0) === '英雄未装备火龙之心', '无火龙之心不可补充');
+  c.equip.heart = { uid: 9e6, item: HEART_ITEM, name: '火龙之心', rarity: 'legendary' as any, stats: {}, req: 0, price: 0 };
+  w.bag.push({ uid: 9e6 + 1, item: 'hl_yuanshen', name: '元神丹', rarity: 'common' as any, stats: {}, req: 0, price: 0 });
+  const n = w.bag.length; ok(w.feedCompanionHeart(n - 1) === null && c.heartStore === 5000 && w.bag.length === n - 1, '元神丹补充并消耗');
+  ok(feedHeart(c, 'hl_yuanshen', 99) > 0 && c.heartStore === HEART_STORE_MAX, '储量上限 30000');
+  ok(heartFeedValue('meat') > 0 && heartFeedValue('hp_small') === 0, '肉可补，药不可补');
+  ok(!canUnleash(c) && (c.rage = RAGE_MAX, canUnleash(c)) && unleash(c) && c.rage === 0, '满槽可爆发（占位清槽）');
+  c.rage = 50; const w2 = W(40, 'warrior', w.toSave()); ok(w2.companion!.heartStore === HEART_STORE_MAX && w2.companion!.rage === 50, '怒槽/储量存档');
+}
+console.log(`合击版 #5 通过（${pass}）`);

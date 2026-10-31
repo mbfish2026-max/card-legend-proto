@@ -1,4 +1,4 @@
-import { COMPANION_UNLOCK_LEVEL, RECRUIT_DIALOG } from '../data/companion';
+import { COMPANION_UNLOCK_LEVEL, heartFeedValue, RAGE_MAX, HEART_STORE_MAX, RECRUIT_DIALOG } from '../data/companion';
 import { fmtExp, scaledExp } from '../data/expCurve';
 import Phaser from 'phaser';
 import type { World } from '../combat/World';
@@ -269,6 +269,9 @@ export class Panel {
     if (n.kind === 'veteran') { R.add(txt(s, X, top + 66, '老兵：城里安全，西门出城；要去哪我送你。', 13, '#9fd'));
       const c = w.companion; // 合击版 #2 英雄获取（40 级，免费）
       if (c) row(0, `英雄 ${c.name}`, `${CLASSES[c.cls].name} Lv${c.level} · ${c.out ? '召唤中' : '已收回'}`, c.out ? '收回' : '召唤', () => { c.out = !c.out; if (!c.out) c.recallAt = w.time; this.render(); }, true, undefined, X + 250);
+      // #5 怒槽/火龙之心显示（爆发结算归战斗开发）
+      if (c) { const fi = w.bag.findIndex(b => heartFeedValue(b.item) > 0);
+        row(1, `怒槽 ${c.rage}/${RAGE_MAX}`, c.equip.heart ? `火龙之心 ${c.heartStore}/${HEART_STORE_MAX}` : '未装备火龙之心（学合击后获得）', '补充', () => { const e = w.feedCompanionHeart(fi); this.onChange(e ?? '火龙之心已补充', !e); this.render(); }, !!c.equip.heart && fi >= 0, undefined, X + 250); }
       else CLASS_IDS.forEach((k, i) => row(i, `领取${CLASSES[k].name}英雄`, w.level < COMPANION_UNLOCK_LEVEL ? `${COMPANION_UNLOCK_LEVEL} 级开放 · 免费` : RECRUIT_DIALOG[i % 2].slice(0, 14) + '…', '领取', () => {
         const nm = CLASSES[k].name + '英雄'; // [适配] 起名用默认名（输入框后续做）
         const e = w.recruitCompanion(k, nm); this.onChange(e ?? `获得英雄 ${nm}`, !e); this.render(); }, w.level >= COMPANION_UNLOCK_LEVEL, undefined, X + 250)); }

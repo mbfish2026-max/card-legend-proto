@@ -1,4 +1,4 @@
-import { CompanionState, migrateCompanion, companionGainExp, COMPANION_BAG, COMPANION_UNLOCK_LEVEL, newCompanion } from '../data/companion';
+import { CompanionState, migrateCompanion, companionGainExp, COMPANION_BAG, COMPANION_UNLOCK_LEVEL, newCompanion, feedHeart, heartFeedValue, HEART_STORE_MAX, RAGE_MAX } from '../data/companion';
 import { BOOKS, BookDef, BOOK_DROP, BOOK_RATES, STARTER, bookItemId } from '../data/books';
 // 纯逻辑世界模块（无 Phaser 依赖，可在 node 中单测）：职业/等级成长、分层横版地图、怪物 AI、
 // 自动战斗与技能、召唤物、掉落/背包/装备/商店、死亡复活、存档序列化。
@@ -770,6 +770,14 @@ export class World {
     if (this.companion) return '已有英雄'; if (this.level < COMPANION_UNLOCK_LEVEL) return `${COMPANION_UNLOCK_LEVEL} 级才能领取英雄`;
     if (!CLASSES[cls]) return '职业无效'; this.companion = newCompanion(cls, name); this.companion.out = true;
     this.events.push({ type: 'log', text: `获得英雄 ${this.companion.name}（${CLASSES[cls].name}）`, color: 'green' }, { type: 'inventory' }); return null;
+  }
+  /** 合击版 #5：背包物品喂火龙之心（须已装火龙之心；满储量不消耗） */
+  feedCompanionHeart(bagIdx: number): string | null {
+    const c = this.companion; if (!c) return '还没有英雄'; if (!c.equip.heart) return '英雄未装备火龙之心';
+    const it = this.bag[bagIdx]; if (!it) return '没有物品'; if (!heartFeedValue(it.item)) return '该物品不能补充火龙之心';
+    if (c.heartStore >= HEART_STORE_MAX) return '火龙之心已满'; const got = feedHeart(c, it.item);
+    if ((it.qty ?? 1) > 1) it.qty!--; else this.bag.splice(bagIdx, 1);
+    this.events.push({ type: 'log', text: `火龙之心 +${got}（${c.heartStore}/${HEART_STORE_MAX}）`, color: 'green' }, { type: 'inventory' }); return null;
   }
   takeFromCompanion(idx: number): string | null {
     const c = this.companion; if (!c) return '还没有英雄'; const it = c.bag[idx]; if (!it) return '没有物品';

@@ -34,7 +34,9 @@ export function newCompanion(cls: ClassId, name: string, level = 1): CompanionSt
 export function migrateCompanion(c: Partial<CompanionState> | null | undefined): CompanionState | null {
   if (!c || !c.cls || !CLASSES[c.cls]) return null;
   const d = newCompanion(c.cls, c.name ?? '', c.level ?? 1);
-  return { ...d, ...c, bag: [...(c.bag ?? [])], equip: { ...(c.equip ?? {}) }, combo: [...(c.combo ?? [])] } as CompanionState;
+  const r = { ...d, ...c, bag: [...(c.bag ?? [])], equip: { ...(c.equip ?? {}) }, combo: [...(c.combo ?? [])] } as CompanionState;
+  // #5 存档兜底：怒槽/储量缺省 0 并夹到合法区间
+  r.rage = Math.max(0, Math.min(100, +r.rage || 0)); r.heartStore = Math.max(0, Math.min(30000, +r.heartStore || 0)); return r;
 }
 /** [适配] 英雄属性：同职业主角成长 ×0.8（官方英雄成长表未查到） */
 export const COMPANION_STAT_MULT = 0.8;
@@ -75,3 +77,44 @@ export function companionUnequip(c: CompanionState, sl: CompanionSlot): string |
 export const COMPANION_UNLOCK_LEVEL = 40;
 /** [适配] 本作没有苍月岛/英雄地地图：在城里老兵处弹剧情对话完成（神秘人→长老两步合一） */
 export const RECRUIT_DIALOG = ['神秘人：你已有 40 级修为，随我去英雄地吧。', '长老：选一位英雄与你并肩作战，给他起个名字。'];
+
+// ===== #5 怒槽 + 火龙之心（仅数据/存档/UI；爆发结算留给战斗开发） =====
+/** 官方：火龙之心储量 30000（H1 https://actmir2.web.sdo.com/project/mir2180/index.html 、H5） */
+export const HEART_STORE_MAX = 30000;
+/** [适配] 怒槽满值（官方未查到） */
+export const RAGE_MAX = 100;
+export const HEART_ITEM = 'fire_heart';
+/** 官方可补充物（H5）；每件补充储量为 [适配]（官方未查到） */
+export const HEART_FEED: Record<string, { name: string; rage: number; price: number }> = {
+  herb_scorpion: { name: '蝎尾', rage: 300, price: 20 },
+  herb_antler: { name: '鹿茸', rage: 300, price: 20 },
+  herb_yinyang: { name: '阴阳仙草', rage: 500, price: 40 },
+  hl_yulu: { name: '九花玉露', rage: 3000, price: 300 },
+  hl_xuelu: { name: '九花雪露', rage: 3000, price: 300 },
+  hl_yuanshen: { name: '元神丹', rage: 5000, price: 500 },
+  hl_huiqi: { name: '回气糕', rage: 2000, price: 200 },
+  hl_buqi: { name: '补气丹', rage: 2000, price: 200 },
+};
+ITEMS[HEART_ITEM] = { id: HEART_ITEM, name: '火龙之心', icon: 'assets/items/INV_Misc_Gem_Pearl_01.png', price: 0, heart: true };
+for (const [id, f] of Object.entries(HEART_FEED)) ITEMS[id] ??= { id, name: f.name, icon: 'assets/items/INV_Misc_Food_15.png', price: f.price, rage: f.rage };
+// 肉类 [适配] 补充量
+if (ITEMS.chicken) ITEMS.chicken.rage ??= 100; if (ITEMS.meat) ITEMS.meat.rage ??= 150;
+/** 物品可补充的储量（书页/白日门技能书同样可喂；未知 = 0） */
+export function heartFeedValue(itemId: string): number {
+  const d = ITEMS[itemId]; if (!d) return 0; if (d.rage) return d.rage;
+  if (d.book) return 1000; // [适配] 技能书/书页补充量
+  return 0;
+}
+export function hasHeart(c: CompanionState): boolean { return !!c.equip.heart; }
+/** 往火龙之心喂物品（不超过 HEART_STORE_MAX），返回实际补充量 */
+export function feedHeart(c: CompanionState, itemId: string, qty = 1): number {
+  if (!hasHeart(c)) return 0; const v = heartFeedValue(itemId) * qty; const before = c.heartStore;
+  c.heartStore = Math.min(HEART_STORE_MAX, c.heartStore + v); return c.heartStore - before;
+}
+// ---- 战斗开发接入点（占位，无战斗结算） ----
+/** TODO(战斗开发)：每 tick 从 heartStore 往 rage 补充；积满时间官方未查到，当前不做任何事 */
+export function rageTick(_c: CompanionState, _dt: number): void { /* 占位 */ }
+/** 怒槽满且装了火龙之心 → 可爆发（Ctrl+S，H1） */
+export function canUnleash(c: CompanionState): boolean { return hasHeart(c) && c.out && c.rage >= RAGE_MAX; }
+/** TODO(战斗开发)：爆发期间持续消耗、同目标同范围释放、耗尽作废（H1）；此处只清槽占位 */
+export function unleash(c: CompanionState): boolean { if (!canUnleash(c)) return false; c.rage = 0; return true; }
