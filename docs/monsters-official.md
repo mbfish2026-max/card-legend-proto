@@ -14,9 +14,9 @@
 | orc | 兽人战士 | normal | 2.兽人要塞 | 半兽人 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=34) |
 | darkmage | 黑暗法师 | normal | 2.兽人要塞 6.尸王殿 | 未查到 | 未查到 |
 | orc_chief | 兽人酋长 | boss | 2.兽人要塞 | 未查到 | 未查到 |
-| boss_lich | 尸王 | boss | 6.尸王殿 | 尸王 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=89) |
-| woma_warrior | 沃玛战士 | normal | 9.沃玛寺庙 | 沃玛战士 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=64) |
-| woma_guard | 沃玛卫士 | normal | 9.沃玛寺庙 | 沃玛卫士 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=73) |
+| boss_lich | 尸王 | boss | 6.尸王殿 32.矿区B二层 33.山谷矿区·一 34.山谷矿区·二 | 尸王 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=89) |
+| woma_warrior | 沃玛战士 | normal | 9.沃玛寺庙 26.沃玛寺庙一层 27.沃玛寺庙二层 | 沃玛战士 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=64) |
+| woma_guard | 沃玛卫士 | normal | 9.沃玛寺庙 26.沃玛寺庙一层 27.沃玛寺庙二层 | 沃玛卫士 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=73) |
 | boss_woma | 沃玛教主 | boss | 9.沃玛寺庙 | 沃玛教主 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=76) |
 | zuma_statue | 祖玛雕像 | normal | 10.祖玛阁 | 祖玛雕像 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=153) |
 | zuma_guard | 祖玛卫士 | normal | 10.祖玛阁 | 祖玛卫士 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=156) |
@@ -55,5 +55,11 @@
 | cave_skel_warrior | 骷髅战士 | normal | 14.兽人古墓二层 15.兽人古墓三层 16.骷髅洞·洞穴一层 17.骷髅洞·洞穴二层 18.沃玛自然洞穴·一 19.沃玛自然洞穴·二 | 未查到 | 未查到 |
 | cave_skel_general | 骷髅战将 | normal | 14.兽人古墓二层 15.兽人古墓三层 17.骷髅洞·洞穴二层 18.沃玛自然洞穴·一 19.沃玛自然洞穴·二 | 未查到 | 未查到 |
 | axe_skeleton | 掷斧骷髅 | normal | 14.兽人古墓二层 15.兽人古墓三层 17.骷髅洞·洞穴二层 18.沃玛自然洞穴·一 19.沃玛自然洞穴·二 | 未查到 | 未查到 |
-| cave_bat | 山洞蝙蝠 | normal | 14.兽人古墓二层 15.兽人古墓三层 16.骷髅洞·洞穴一层 17.骷髅洞·洞穴二层 18.沃玛自然洞穴·一 19.沃玛自然洞穴·二 | 未查到 | 未查到 |
-| cave_maggot | 洞蛆 | normal | 14.兽人古墓二层 15.兽人古墓三层 16.骷髅洞·洞穴一层 17.骷髅洞·洞穴二层 18.沃玛自然洞穴·一 19.沃玛自然洞穴·二 | 未查到 | 未查到 |
+| cave_bat | 山洞蝙蝠 | normal | 14.兽人古墓二层 15.兽人古墓三层 16.骷髅洞·洞穴一层 17.骷髅洞·洞穴二层 18.沃玛自然洞穴·一 19.沃玛自然洞穴·二 25.沃玛寺庙入口 26.沃玛寺庙一层 27.沃玛寺庙二层 | 未查到 | 未查到 |
+| cave_maggot | 洞蛆 | normal | 14.兽人古墓二层 15.兽人古墓三层 16.骷髅洞·洞穴一层 17.骷髅洞·洞穴二层 18.沃玛自然洞穴·一 19.沃玛自然洞穴·二 25.沃玛寺庙入口 28.废矿入口 29.废矿区东部 | 未查到 | 未查到 |
+| dung_beetle | 粪虫 | normal | 26.沃玛寺庙一层 27.沃玛寺庙二层 | 未查到 | 未查到 |
+| woma_brave | 沃玛勇士 | normal | 26.沃玛寺庙一层 27.沃玛寺庙二层 | 未查到 | 未查到 |
+| woma_general | 沃玛战将 | normal | 26.沃玛寺庙一层 27.沃玛寺庙二层 | 未查到 | 未查到 |
+| fire_woma | 火焰沃玛 | normal | 26.沃玛寺庙一层 27.沃玛寺庙二层 | 未查到 | 未查到 |
+| dark_warrior | 暗黑战士 | normal | 27.沃玛寺庙二层 | 未查到 | 未查到 |
+| mine_zombie | 僵尸 | normal | 28.废矿入口 29.废矿区东部 30.矿区一层 31.矿区·桥 32.矿区B二层 33.山谷矿区·一 34.山谷矿区·二 | 未查到 | 未查到 |
