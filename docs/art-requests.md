@@ -1155,3 +1155,49 @@ public/assets/ui/UI-Tooltip-Border.png
 | 4 | | 远景沙巴克城门（背景自带） | 约 7300 |
 
 顺序依据 towns-plan（由西向东）：城门·老兵 → 杂货 → 仓库·客栈 → 武器·服装·首饰 → 炼金·肉店·药店 → 书店。每屏最多 3 间店。屏 1 的仓库中心在 1650，右半跨到 1920 附近，接入时可按需微调。
+
+## L-P2. 白日门街景（art/towns 分支交付）
+
+规格来源：feat/balance-sys 分支 docs/art-requests.md 第 L 章（P2 行），排序依据 towns-plan（标了 [适配]）。素材全部原创生成，没有用、也没有描摹任何 WoW 或传奇原作素材，图里也没有文字。白日门的建筑外观在资料里未查到，做成了山谷边寨风格（灰石墙、深色木构、坡顶瓦），属于推测。门面画风和盟重、比奇一致，只是建筑形制不同。
+
+### 文件
+
+| 文件 | 尺寸 | 用途 |
+|---|---|---|
+| public/assets/town/bg_town_bairimen.jpg | 5760×1080（3 屏）| 白日门长街：西端城门（传送门位），中段石墙木栅加松林群山，东端远景是山崖上的龙形古祠（给龙人做背景呼应）|
+| public/assets/town/shop_brm_weapon.png | 540×720 透明 | 武器店 |
+| public/assets/town/shop_brm_pharmacy.png | 540×720 透明 | 药店 |
+| public/assets/town/shop_brm_storage.png | 540×720 透明 | 仓库 |
+| public/assets/town/shop_brm_jewelry.png | 540×720 透明 | 首饰店 |
+| public/assets/town/shop_brm_clothes.png | 540×720 透明 | 服装店 |
+| public/assets/town/shop_brm_mystic_book.png | 540×720 透明 | 神秘书商（外观推测）|
+| public/assets/town/shop_brm_mystic_smith.png | 540×720 透明 | 神秘铁匠（外观推测）|
+| public/assets/town/npc_brm_guide.png | 768×960 透明 | 向导（外观推测）|
+| public/assets/town/npc_brm_mystic_book.png | 768×960 透明 | 神秘书商（外观推测）|
+| public/assets/town/npc_brm_mystic_smith.png | 768×960 透明 | 神秘铁匠（外观推测）|
+| docs/town-preview/bairimen_preview.jpg | 2880×540 | 摆位预览（半尺寸；白线是屏分隔，黄框是龙人占位）|
+
+说明：
+- 门面同 L-P1，采用 3:4（540×720），底边贴画布底，水平居中，门头上方有空白木招牌，店名由游戏绘制。
+- 文件名 shop_brm_* / npc_brm_* 是本分支自定的，第 L 章没有给出具体文件名。
+- 龙人沿用现有的 brm_dragon，本次没有重画。本分支（基于 main）里没有找到 brm_dragon 文件，预览中用黄框占位。
+
+### 摆位表（背景坐标，x 为中心点）
+
+门面底边 y=760，NPC 脚底 y=1040，origin 都是 (0.5, 1)。NPC 在预览里按 0.35 倍显示。
+
+| 屏 | x 范围 | 内容 | x 中心 |
+|---|---|---|---|
+| 1 | 0–1920 | 城门 / 传送门位（背景自带）| 约 560 |
+| 1 | | npc_brm_guide | 820 |
+| 1 | | shop_brm_mystic_book + npc_brm_mystic_book | 1150 / 1400 |
+| 1 | | shop_brm_weapon | 1750 |
+| 2 | 1920–3840 | shop_brm_storage | 2350 |
+| 2 | | shop_brm_pharmacy | 2950 |
+| 2 | | shop_brm_jewelry | 3550 |
+| 3 | 3840–5760 | shop_brm_clothes | 4150 |
+| 3 | | shop_brm_mystic_smith + npc_brm_mystic_smith | 4800 / 5050 |
+| 3 | | 龙人 brm_dragon（已有素材）| 5300 |
+| 3 | | 远景龙形古祠（背景自带）| 约 5400 |
+
+顺序依据 towns-plan：城门·向导 → 神秘书商·武器 → 仓库·药店 → 首饰·服装 → 神秘铁匠·龙人。原计划是两两一组，这里按 3 屏重新分配，每屏最多 3 间店。
