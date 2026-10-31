@@ -17,7 +17,7 @@ import { FxQuality } from './Fx';
 import { REGIONS, floorBoss, regionOf, clampView, zoomAt, WORLD_W, WORLD_H, View } from '../data/map';
 import { QUESTS, ACHIEVES } from '../data/quests';
 import { ENEMIES } from '../data/units';
-import { FLOORS } from '../data/world';
+import { FLOORS, floorNo } from '../data/world';
 import { World as WorldCls } from '../combat/World';
 import { BOOKS } from '../data/books';
 import { TOWNS, NODE_TOWN, STORAGE_SIZE, NPC_ART } from '../data/towns';
@@ -367,12 +367,12 @@ export class Panel {
       const zb = (f: number) => { this.view = zoomAt(this.view!, VW / 2, VH / 2, f, VW, VH); apply(); };
       R.add([...button(s, VX + VW - 70, VY + 26, 40, 34, '＋', () => zb(1.25), 18)]);
       R.add([...button(s, VX + VW - 26, VY + 26, 40, 34, '－', () => zb(0.8), 18)]);
-      R.add(txt(s, 640, top + 418, `当前：${cur.name} · 第 ${w.floorIndex + 1} 层 ${w.floor.name}    拖动平移 / 滚轮或双指缩放，点击区域进入小地图（M 关闭）`, 14, '#9fd').setOrigin(0.5));
+      R.add(txt(s, 640, top + 418, `当前：${cur.name} · 第 ${floorNo(w.floorIndex, w.floors)} 层 ${w.floor.name}    拖动平移 / 滚轮或双指缩放，点击区域进入小地图（M 关闭）`, 14, '#9fd').setOrigin(0.5));
       return;
     }
     const r = REGIONS.find(x => x.id === this.region)!;
     R.add([...button(s, 200, top + 22, 110, 32, '◀ 世界', () => { this.region = null; this.render(); }, 15)]);
-    R.add(txt(s, 640, top + 58, `${r.name}${r === cur ? `（你在第 ${w.floorIndex + 1} 层 ${w.floor.name}）` : ''}`, 18, '#ffe8a0').setOrigin(0.5));
+    R.add(txt(s, 640, top + 58, `${r.name}${r === cur ? `（你在第 ${floorNo(w.floorIndex, w.floors)} 层 ${w.floor.name}）` : ''}`, 18, '#ffe8a0').setOrigin(0.5));
     const RY = top + 80, RH = 320;
     if (s.textures.exists(r.bg ?? `map_region_${r.id}`)) R.add(s.add.image(VX, RY, r.bg ?? `map_region_${r.id}`).setOrigin(0).setDisplaySize(VW, RH));
     else R.add(s.add.rectangle(VX, RY, VW, RH, 0x1a2414).setOrigin(0).setStrokeStyle(2, 0x6a5030));

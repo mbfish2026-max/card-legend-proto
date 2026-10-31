@@ -15,20 +15,25 @@ const WM = 'https://www.betermondo.com/a/2502/1375986.html';
 /** R13 新增毒蛇山谷/苍月岛/封魔谷；盟重省含蜈蚣洞、石墓、祖玛寺庙（icon 暂用现有节点图，见 art-requests）
  * R11 按原版地理：比奇省（新手村/兽人古墓/比奇矿区）、沃玛森林（含沃玛寺庙）、盟重省祖玛寺庙、白日门赤月峡谷 */
 export const REGIONS: Region[] = [
-  { id: 'bichi', name: '比奇省', floors: [0, 4, 5], x: 500, y: 950, icon: 'map_node_bichi', nodes: [
+  { id: 'bichi', name: '比奇省', floors: [0, 4, 13, 14, 15, 16, 5], x: 500, y: 950, icon: 'map_node_bichi', nodes: [
     { id: 'bichi_town', name: '比奇城', kind: 'town', safe: true, x: 0.55, y: 0.5, src: SINA_BQ },
     { id: 'bichi_xinshou', name: '银杏村（新手村）', kind: 'town', safe: true, x: 0.8, y: 0.88, orig: '(623,600)', src: 'http://sscq.oss-cn-hangzhou.aliyuncs.com/game/datainfo/hzfXGJXY8LQ.html' },
     { id: 'bichi_newbie', name: '新手村周边', kind: 'cave', floor: 0, x: 0.75, y: 0.75, orig: '未查到', src: S21(4) },
-    { id: 'bichi_orc', name: '兽人古墓', kind: 'cave', floor: 4, x: 0.25, y: 0.2, orig: '(147,33)', src: S21(4) },
+    { id: 'bichi_orc', name: '兽人古墓一层（白骨墓穴）', kind: 'cave', floor: 4, x: 0.25, y: 0.2, orig: '(147,33)', src: S21(4) },
     { id: 'bichi_mine', name: '废矿/僵尸洞→尸王殿', kind: 'dungeon', floor: 5, x: 0.85, y: 0.35, orig: '(664,214)', src: 'https://blog.sina.com.cn/s/blog_4e0d83f10102y172.html' },
-    { id: 'bichi_cave', name: '洞穴(骷髅洞)', kind: 'cave', x: 0.1, y: 0.45, orig: '(41,108)', src: S21(4) },
+    { id: 'bichi_orc2', name: '兽人古墓二层', kind: 'cave', floor: 13, x: 0.3, y: 0.32, orig: '未查到', src: 'https://www.21cq.com/mir/Map.aspx?id=218' },
+    { id: 'bichi_orc3', name: '兽人古墓三层', kind: 'cave', floor: 14, x: 0.36, y: 0.44, orig: '未查到', src: 'https://www.21cq.com/mir/Map.aspx?id=221' },
+    { id: 'bichi_cave', name: '骷髅洞·洞穴一层', kind: 'cave', floor: 15, x: 0.1, y: 0.45, orig: '(41,108)', src: 'https://www.21cq.com/mir/Map.aspx?id=248' },
+    { id: 'bichi_cave2', name: '骷髅洞·洞穴二层', kind: 'cave', floor: 16, x: 0.12, y: 0.62, orig: '洞穴一层(330,115)/(127,201)', src: 'https://www.21cq.com/mir/Map.aspx?id=249' },
     { id: 'bichi_to_woma', name: '通往沃玛森林', kind: 'exit', to: 'woma', x: 0.5, y: 0.08, orig: '(324,34)', src: S21(4) },
     { id: 'bichi_to_dushe', name: '通往毒蛇山谷', kind: 'exit', to: 'dushe', x: 0.95, y: 0.12, orig: '(671,82)', src: S21(4) },
   ] },
-  { id: 'woma', name: '沃玛森林', floors: [1, 2, 8], x: 820, y: 620, icon: 'map_node_woma', nodes: [
+  { id: 'woma', name: '沃玛森林', floors: [1, 2, 17, 18, 8], x: 820, y: 620, icon: 'map_node_woma', nodes: [
     { id: 'woma_forest', name: '沃玛森林', kind: 'cave', floor: 1, x: 0.6, y: 0.6, orig: '比奇(324,34)进入', src: S21(4) },
     { id: 'woma_deep', name: '沃玛森林深处', kind: 'cave', floor: 2, x: 0.35, y: 0.3, orig: '未查到' },
     { id: 'woma_temple', name: '沃玛寺庙', kind: 'dungeon', floor: 8, x: 0.12, y: 0.65, orig: '沃玛森林(86,280)', src: WM },
+    { id: 'woma_cave', name: '沃玛自然洞穴·一', kind: 'cave', floor: 17, x: 0.3, y: 0.82, orig: '兽人古墓三层相连（坐标未查到）', src: 'https://www.21cq.com/mir/Map.aspx?id=1506' },
+    { id: 'woma_cave2', name: '沃玛自然洞穴·二', kind: 'cave', floor: 18, x: 0.15, y: 0.88, orig: '洞穴二层(377,64)', src: 'https://www.21cq.com/mir/Map.aspx?id=1507' },
     { id: 'woma_to_bichi', name: '通往比奇省', kind: 'exit', to: 'bichi', x: 0.9, y: 0.9, orig: '(559,554)', src: S21(4) },
   ] },
   { id: 'dushe', name: '毒蛇山谷', floors: [3], x: 1080, y: 880, icon: 'map_node_woma', nodes: [

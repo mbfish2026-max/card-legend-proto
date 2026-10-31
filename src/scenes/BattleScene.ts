@@ -10,7 +10,7 @@ import { World, SaveData } from '../combat/World';
 import { BattleEvent, GroundItem, Unit } from '../combat/types';
 import { POTIONS } from '../data/skills';
 import { FX, FONT, GROUND_Y } from '../data/fx';
-import { WORLD, FLOORS } from '../data/world';
+import { WORLD, FLOORS, nextFloorOf, floorNo } from '../data/world';
 import { ClassId, CLASSES } from '../data/classes';
 import { playCombatAnim } from '../ui/combatAnim';
 import { CardView } from '../ui/CardView';
@@ -510,7 +510,7 @@ export class BattleScene extends Phaser.Scene {
     // R10：本层背景未到 → 到了自动替换；下一层资源插队预加载
     const want = this.world.floor.bg;
     if (want && bg !== want) { const on = (k: string) => { if (k === want && this.world.floor.bg === want) { this.textures.off('addtexture', on); this.bgImgs.forEach(b => b.setTexture(want).setDisplaySize(1280, 720)); } }; this.textures.on('addtexture', on); this.events.once('shutdown', () => this.textures.off('addtexture', on)); }
-    (this.scene.get('Preload') as PreloadScene | undefined)?.prioritize?.([...floorKeys(this.world.floor), ...floorKeys(this.world.floors[this.world.floorIndex + 1])]);
+    (this.scene.get('Preload') as PreloadScene | undefined)?.prioritize?.([...floorKeys(this.world.floor), ...floorKeys(this.world.floors[nextFloorOf(this.world.floorIndex, this.world.floors)])]);
     this.hud?.setFloor(name, this.floorIcons());
     this.log(`进入 第 ${i + 1} 层 · ${name}（首领在地图尽头）`);
     this.cameras.main.centerOn(WORLD.heroStartX, 360); this.cameras.main.fadeIn(700, 0, 0, 0);
@@ -617,7 +617,7 @@ export class BattleScene extends Phaser.Scene {
     const w = this.world, h = w.hero, st = w.stats();
     const dead = this.floorUids.map(id => !w.units.some(u => u.uid === id && u.alive));
     const pw = { atk: '攻击', mag: '魔法', tao: '道术' }[w.classDef.autoStat];
-    const info = `${w.classDef.name} Lv${w.level}   经验 ${fmtExp(w.exp)}/${fmtExp(w.expNext)}   金币 ${w.gold}   ${pw} ${st[w.classDef.autoStat]}  防御 ${Math.round(st.def)}   第 ${w.floorIndex + 1}/${w.floors.length} 层`;
+    const info = `${w.classDef.name} Lv${w.level}   经验 ${fmtExp(w.exp)}/${fmtExp(w.expNext)}   金币 ${w.gold}   ${pw} ${st[w.classDef.autoStat]}  防御 ${Math.round(st.def)}   第 ${floorNo(w.floorIndex, w.floors)}/${w.floors.length} 层`;
     this.hud?.update(dt, h?.hp ?? 0, h?.maxHp ?? st.hp, h?.mp ?? 0, h?.maxMp ?? st.mp, this.cds, dead, w.pots, info);
   }
   end() {
