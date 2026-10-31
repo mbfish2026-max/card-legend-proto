@@ -179,3 +179,9 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 ### K 章接入备注（R14-A2）
 - 游戏画布 1280×720，素材整体按 2/3 缩放使用；已用 bg_far / ground_strip / street_near_1-3 / npc_<id>；shop_<id> 作为缺 street_near 时的后备。
 - 仍缺：其它城镇（银杏村/沃玛村等）长街素材、西端城门/出城牌美术（当前为文字「◀出城」占位）。
+
+## R14 阶段 B
+- 圣战/法神/天尊 套 12 件图标（item_shengzhan_* / item_fashen_* / item_tianzun_*）：若缺图当前回退通用图标
+- 沃玛教主之家大门（woma_door，x=2850，横版 256×384，可开/关两帧）
+- 沃玛寺庙二/三层地面区分贴花（可选）
+- 鉴定特效（小型金光，64×64 序列帧）

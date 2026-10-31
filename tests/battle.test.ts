@@ -170,6 +170,7 @@ const free = (w: World) => w.skills.map(() => 0);
   for (const x of [...w.ground]) { h.x = x.x; h.y = x.y; w.step(0.05); }
   ok(w.ground.length === 0 && w.bag.some(i => i.item === 'dragon_sword'), '装备进入背包');
   ok(w.pots[1] === pot0 + allHp - (g.item === 'hp_mid' ? 1 : 0) || w.pots[1] >= pot0, '药水计入药水栏');
+  const lv0 = w.level; w.level = Math.max(lv0, 34); w.recompute(); // R14：屠龙官方 req34
   const atk0 = h.atk, si = w.bag.findIndex(i => i.item === 'dragon_sword'), sw = w.bag[si];
   ok(w.equipItem(si) === null && w.equip.weapon === sw && h.atk === atk0 + (sw.stats.atk ?? 0), `装备屠龙刀攻击 +${sw.stats.atk}`);
   ok(w.unequip('weapon') === null && h.atk === atk0 && w.bag.includes(sw), '卸下回到背包，属性还原');
@@ -186,7 +187,7 @@ const free = (w: World) => w.skills.map(() => 0);
   ok(new Set(FLOORS.map(f => f.bg)).size === FLOORS.length, '每层背景不同');
   const w = new World(seeded(3), 30, FLOORS); const h = w.hero!;
   h.x = w.exitX; w.step(0.05); ok(w.floorIndex === 0, 'Boss 未死出口封印');
-  for (let i = 0; i < FLOORS.length; i++) { for (const u of w.alive('enemy')) w.kill(u); w.hero!.x = w.exitX; w.step(0.05); }
+  for (let i = 0; i < FLOORS.length; i++) for (let k = 0, f0 = w.floorIndex; k < 3 && w.floorIndex === f0 && !w.done; k++) { for (const u of w.alive('enemy')) w.kill(u); w.hero!.x = w.exitX; w.step(0.05); } // 沃玛：第二轮吹号角打教主
   ok(w.done, `依次通过 ${FLOORS.length} 层 → 胜利`);
 }
 { // 死亡复活 + 存档读档
@@ -533,10 +534,34 @@ const free = (w: World) => w.skills.map(() => 0);
   w.unequip('bracelet1'); ok(w.setBonuses().length === 1 && w.stats().def === base.def + 10, '卸下 1 件：3 件加成失效');
   const c = mk([], [], 'mage', 25); for (const id of SETS.chiyue.pieces) { c.bag.push(c.makeItem(id)); c.equipItem(c.bag.length - 1); }
   ok(c.luck() === 1, '赤月 3 件：幸运+1');
-  ok(Object.values(SETS).every(st => st.pieces.every(id => ENEMIES && id.startsWith('set_'))), '套装物品 ID 规范');
-  for (const [bid, sid] of [['boss_woma', 'woma'], ['boss_zuma', 'zuma'], ['boss_redmoon', 'chiyue']] as const) {
+  ok(Object.values(SETS).every(st => st.pieces.every(id => ENEMIES && (id.startsWith('set_') || /^(shengzhan|fashen|tianzun)_/.test(id)))), '套装物品 ID 规范');
+  for (const [bid, sid] of [['boss_woma', 'woma'], ['boss_zuma', 'zuma'], ['boss_redmoon', 'shengzhan']] as const) {
     const t = mk([{ id: bid, x: 800 }]); t.kill(t.alive('enemy')[0]); const ids = t.ground.map(g => g.item);
     ok(ids.includes('bless_oil') && ids.some(i => SETS[sid].pieces.includes(i)), `${ENEMIES[bid].name} 掉落祝福油 + ${SETS[sid].name}套装 1 件`);
+  }
+  { // R14 #13 赤月三职业套：按职业掉
+    for (const [c, sid] of [['warrior', 'shengzhan'], ['mage', 'fashen'], ['taoist', 'tianzun']] as const) { const t = mk([{ id: 'boss_redmoon', x: 800 }], [], c, 40); t.kill(t.alive('enemy')[0]);
+      ok(t.ground.some(g => SETS[sid].pieces.includes(g.item)) && SETS[sid].pieces.length === 4, `赤月恶魔给${c}掉${SETS[sid].name}套`); }
+    const m = mk([], [], 'mage', 40); m.bag.push(m.makeItem('shengzhan_helm')); ok(m.equipItem(0) === '职业不符', '法师不能戴圣战头盔');
+    const lw = mk([], [], 'warrior', 33); lw.bag.push(lw.makeItem('dragon_sword')); ok(lw.equipItem(0)?.includes('需要等级 34') === true, '屠龙 req34（21cq）');
+    const tm = mk([], [], 'taoist', 40); tm.bag.push(tm.makeItem('dragon_sword')); ok(tm.equipItem(0) === '职业不符', '屠龙战士专用');
+  }
+  { // R14 #14 沃玛寺庙多层 + 号角
+    const fi = FLOORS.findIndex(f => f.name === '沃玛寺庙'); const w = new World(seeded(5), 30, FLOORS); w.loadFloor(fi); const h = w.hero!;
+    ok(!!w.womaPending && !w.alive('enemy').some(u => u.id === 'boss_woma'), '教主之家未开：沃玛教主不刷');
+    h.x = 2400; w.step(0.05); ok(w.drainEvents().some(e => e.type === 'log' && /三层/.test(e.text)), '分层提示');
+    w.bag = w.bag.filter(x => x.item !== 'woma_horn'); h.x = 3000; w.step(0.05); ok(h.x < 2850 && !!w.womaPending, '无号角被挡在门外');
+    w.bag.push(w.makeItem('woma_horn')); h.x = 2900; w.step(0.05); ok(!w.womaPending && w.alive('enemy').some(u => u.id === 'boss_woma') && !w.bag.some(x => x.item === 'woma_horn'), '吹号角消耗 1 个，教主现身');
+    const w2 = new World(seeded(6), 30, FLOORS); w2.loadFloor(fi); for (const u of w2.alive('enemy')) w2.kill(u); w2.step(0.05); ok(w2.bag.some(x => x.item === 'woma_horn') && !w2.cleared, '清完小怪保底给号角且未判通关');
+  }
+  { // R14 #17 环式任务 / 鉴定
+    const w = mk([{ id: 'zombie', x: 3000 }], [], 'warrior', 19); ok(w.ringAccept()?.includes('20') === true, '环式任务 20 级开放');
+    w.level = 20; ok(w.ringAccept() === null && !!w.ringQ, '接到环式任务'); const q = w.ringQ!; q.prog = q.need - 1; w.onKillQuest(q.target); const g0 = w.gold;
+    ok(w.ringClaim() === null && w.gold > g0 && w.ringDone === 1 && !w.ringQ, '交付第 1 环');
+    const s = w.toSave(); ok(s.ringDone === 1 && new World(seeded(1), 1, FLOORS, 'warrior', { ...s, ringQ: undefined, ringDone: undefined } as never).ringQ === null, '旧存档兼容（无 ringQ）');
+    const e = mk([], [], 'warrior', 34); e.gold = 9999; e.bag.push(e.makeItem('iron_sword')); e.equipItem(0); ok(e.identify('weapon')?.includes('35') === true, '鉴定 35 级开放');
+    e.level = 35; const before = JSON.stringify(e.equip.weapon!.stats); ok(e.identify('weapon') === null && e.gold === 9999 - 500 && (e.equip.weapon!.ided ?? 0) >= 1 && JSON.stringify(e.equip.weapon!.stats) !== before, '鉴定 1–3 条随机属性');
+    ok(e.identify('weapon') === '已鉴定', '不能重复鉴定');
   }
   const b = mk([{ id: 'boss_woma', x: 800 }]); b.kill(b.alive('enemy')[0]);
   b.hero!.x = 800; for (let i = 0; i < 40; i++) b.step(0.05); ok(b.bag.some(x => SETS.woma.pieces.includes(x.item)), '套装可拾取进背包');
