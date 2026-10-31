@@ -537,7 +537,11 @@ export class BattleScene extends Phaser.Scene {
       this.tweens.add({ targets: o, alpha: a && !a.fallback ? 1 : 0.85, duration: 200 }); // 专用循环段已按 0.7× 亮度出图
       objs.push(o); place = (cx, cy) => { o.setPosition(cx, cy); last = { x: cx, y: cy }; };
     } else {
-      const arc = a ? this.add.sprite(v0.cx, v0.cy, a.tex).play(a.anim).setBlendMode(Phaser.BlendModes.ADD).setScale(a.fallback ? 0.5 : 1).setAlpha(a.fallback ? 0.8 : 1).setDepth(57) : null;
+      // 专用 fx_combo_pixing_stun：播放 1 次（cs_once_ 动画 repeat 0，播完自毁，图标保留到麻痹结束）；回退起手帧：0.5× 往返循环
+      let once: string | null = null;
+      if (a && !a.fallback) { once = 'cs_once_' + a.tex; if (!this.anims.exists(once)) { const src = this.anims.get(a.anim); this.anims.create({ key: once, frames: src.frames.map(f => ({ key: f.textureKey, frame: f.textureFrame })), frameRate: src.frameRate, repeat: 0 }); } }
+      const arc = a ? this.add.sprite(v0.cx, v0.cy, a.tex).play(once ?? a.anim).setBlendMode(Phaser.BlendModes.ADD).setScale(a.fallback ? 0.5 : 1).setAlpha(a.fallback ? 0.8 : 1).setDepth(57) : null;
+      if (arc && once) arc.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => arc.setVisible(false));
       const tag: Phaser.GameObjects.Image | Phaser.GameObjects.Text = plan.icon
         ? this.add.image(v0.cx, 0, plan.icon).setDisplaySize(32, 32).setOrigin(0.5, 1).setDepth(62)
         : this.add.text(v0.cx, 0, '⚡麻痹', { fontFamily: FONT, fontSize: '18px', color: '#ffe84a', fontStyle: 'bold', stroke: '#2a1a60', strokeThickness: 4 }).setOrigin(0.5, 1).setDepth(62);

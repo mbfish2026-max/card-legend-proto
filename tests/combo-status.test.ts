@@ -4,6 +4,7 @@ import { ENEMIES } from '../src/data/units';
 import { comboFor, RAGE_MAX, COMBO_EFFECTS } from '../src/data/companion';
 import { ComboStatusTracker, StatusUnit, comboStatusPlan, fallbackAnimKey, COMBO_STATUS } from '../src/ui/comboStatus';
 import { ASSETS as MANIFEST } from '../src/assets-manifest';
+// @ts-ignore 测试运行于 node（tsx），项目未装 @types/node
 import { existsSync, readFileSync } from 'node:fs';
 const FX_SRC = readFileSync('src/ui/FxPlayer.ts', 'utf8'); const FX_DEFS: Record<string, true> = Object.fromEntries([...FX_SRC.matchAll(/^\s+(fx_\w+): D\(/gm)].map(m => [m[1], true])); // FxPlayer 依赖 Phaser，无头只解析源码键名
 import type { InvItem } from '../src/combat/types';

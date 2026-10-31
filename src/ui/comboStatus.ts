@@ -5,7 +5,7 @@
  * - pixing 劈星斩：麻痹期间目标头顶「麻痹」标记 + 电弧（fx_combo_pixing 帧 6–9）；BOSS 免疫麻痹 → World 不放进 affected → 不显示
  * 状态结束 / 目标全部死亡或离场 → 立即 destroy 句柄。只读 Unit 状态字段，不改任何战斗数值。
  * 素材（特效 Bot fx/combo-loop）：优先专用 loopKey（fx_combo_shihun_loop / fx_combo_mori_loop / fx_combo_pixing_stun），结束播 endKey 一次；
- * 缺专用素材 → 回退起手图集帧区间往返（动画 key 用 cs_fallback_<id>，避免与素材同名 key 冲突）→ 再缺 → Graphics。
+ * pixing_stun 每次麻痹播放 1 次（动画 cs_once_fx_combo_pixing_stun）。缺专用素材 → 回退起手图集帧区间往返（动画 key 用 cs_fallback_<id>，避免与素材同名 key 冲突）→ 再缺 → Graphics。
  */
 export type ComboStatusField = 'poisonUntil' | 'stunUntil';
 export interface ComboStatusDef { field: ComboStatusField; /** 起手段播放多久后才接循环段（秒） */ introSec: number; kind: 'loop' | 'mark'; loopFrames?: [number, number]; loopKey?: string; endKey?: string; icon?: string }
