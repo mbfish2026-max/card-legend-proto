@@ -885,3 +885,17 @@ thunder_sword 雷霆剑、break_strike 破击剑法、shield_break 破盾斩、v
 | m3_desert_stone_full.png | 730x960 | 沙漠石人 | 新画（取代原复用图） | 据描述：石垒；红砂岩层叠、胸晶为新设计（与 sq_stone_man 区分） |
 | sq_cimo_full.png | 679x960 | 刺魔 | 新画（取代原复用图） | 据描述：剪刀爪、六背鳍（剪刀爪画成钩爪，存疑） |
 | sq_lizhua_full.png | 740x960 | 利爪魔 | 新画（取代原复用图） | 未查到/推测：按名称画长爪兽魔 |
+
+
+## art/maps-sq-mir3 重画·第5组（6 张，取消复用）
+
+用户要求不再复用小怪素材，以下 id 的复制图都换成了各自的新立绘，外形和配色都与原图明显不同。路径：`public/assets/portraits/<id>_full.png`。预览：`docs/art-gap-preview/sq_mir3_redo5.jpg`。
+
+| 文件 | 尺寸 | 名称 | 状态 | 依据 |
+|---|---|---|---|---|
+| sq_shanling_full.png | 717x960 | 闪灵 | 新画（取代原复用图） | 未查到/推测：闪电魔，雷纹暗影躯体为推测 |
+| sq_tengyao_full.png | 724x960 | 藤妖 | 新画（取代原复用图） | 据描述：藤树化身；紫花为新设计（与 tree_demon 同类，存疑） |
+| sq_xueyao_full.png | 700x960 | 血妖 | 新画（取代原复用图） | 据描述：吐血、似僵尸 |
+| sq_tieyi_full.png | 960x695 | 铁翼魔 | 新画（取代原复用图） | 据描述：巨蝙蝠；铁板翼为新设计 |
+| sq_yaolishi_full.png | 722x960 | 妖力士 | 新画（取代原复用图） | 据描述：一臂粗大；独角、锁链为新设计 |
+| sq_youling_bug_full.png | 960x746 | 幽灵虫 | 新画（取代原复用图） | 未查到/推测：按名称画幽灵螳蜂（重画1次） |
