@@ -7,7 +7,9 @@
     "dev": "vite --host --port 5180",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "test": "tsx tests/battle.test.ts"
+    "test": "tsx tests/battle.test.ts",
+    "regress": "node tests/regress.mjs",
+    "verify:h": "node tests/e2e/h-verify.mjs"
   },
   "dependencies": {
     "phaser": "^3.80.1"
