@@ -1,0 +1,223 @@
+{
+ "frames": {
+  "fx_half_moon_sweep_00": {
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.1875,
+    "y": 0.625
+   }
+  },
+  "fx_half_moon_sweep_01": {
+   "frame": {
+    "x": 256,
+    "y": 0,
+    "w": 256,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.1875,
+    "y": 0.625
+   }
+  },
+  "fx_half_moon_sweep_02": {
+   "frame": {
+    "x": 512,
+    "y": 0,
+    "w": 256,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.1875,
+    "y": 0.625
+   }
+  },
+  "fx_half_moon_sweep_03": {
+   "frame": {
+    "x": 768,
+    "y": 0,
+    "w": 256,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.1875,
+    "y": 0.625
+   }
+  },
+  "fx_half_moon_sweep_04": {
+   "frame": {
+    "x": 0,
+    "y": 192,
+    "w": 256,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.1875,
+    "y": 0.625
+   }
+  },
+  "fx_half_moon_sweep_05": {
+   "frame": {
+    "x": 256,
+    "y": 192,
+    "w": 256,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.1875,
+    "y": 0.625
+   }
+  },
+  "fx_half_moon_sweep_06": {
+   "frame": {
+    "x": 512,
+    "y": 192,
+    "w": 256,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.1875,
+    "y": 0.625
+   }
+  },
+  "fx_half_moon_sweep_07": {
+   "frame": {
+    "x": 768,
+    "y": 192,
+    "w": 256,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.1875,
+    "y": 0.625
+   }
+  }
+ },
+ "meta": {
+  "app": "card-legend fx proc (python numpy/Pillow)",
+  "image": "fx_half_moon_sweep.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 1024,
+   "h": 384
+  },
+  "scale": "1",
+  "fx": {
+   "w": 256,
+   "h": 192,
+   "n": 8,
+   "fps": 20,
+   "loop": false,
+   "pivot": [
+    48,
+    120
+   ],
+   "anchor": "caster",
+   "skill": "half_moon",
+   "phase": "hit",
+   "blend": "ADD",
+   "ms": 400,
+   "cols": 4
+  }
+ }
+}

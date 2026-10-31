@@ -1,0 +1,199 @@
+{
+ "frames": {
+  "fx_thrust_hit_00": {
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 128
+   },
+   "anchor": {
+    "x": 0.0469,
+    "y": 0.5
+   }
+  },
+  "fx_thrust_hit_01": {
+   "frame": {
+    "x": 256,
+    "y": 0,
+    "w": 256,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 128
+   },
+   "anchor": {
+    "x": 0.0469,
+    "y": 0.5
+   }
+  },
+  "fx_thrust_hit_02": {
+   "frame": {
+    "x": 512,
+    "y": 0,
+    "w": 256,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 128
+   },
+   "anchor": {
+    "x": 0.0469,
+    "y": 0.5
+   }
+  },
+  "fx_thrust_hit_03": {
+   "frame": {
+    "x": 768,
+    "y": 0,
+    "w": 256,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 128
+   },
+   "anchor": {
+    "x": 0.0469,
+    "y": 0.5
+   }
+  },
+  "fx_thrust_hit_04": {
+   "frame": {
+    "x": 0,
+    "y": 128,
+    "w": 256,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 128
+   },
+   "anchor": {
+    "x": 0.0469,
+    "y": 0.5
+   }
+  },
+  "fx_thrust_hit_05": {
+   "frame": {
+    "x": 256,
+    "y": 128,
+    "w": 256,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 128
+   },
+   "anchor": {
+    "x": 0.0469,
+    "y": 0.5
+   }
+  },
+  "fx_thrust_hit_06": {
+   "frame": {
+    "x": 512,
+    "y": 128,
+    "w": 256,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 128
+   },
+   "anchor": {
+    "x": 0.0469,
+    "y": 0.5
+   }
+  }
+ },
+ "meta": {
+  "app": "card-legend fx proc (python numpy/Pillow)",
+  "image": "fx_thrust_hit.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 1024,
+   "h": 256
+  },
+  "scale": "1",
+  "fx": {
+   "w": 256,
+   "h": 128,
+   "n": 7,
+   "fps": 24,
+   "loop": false,
+   "pivot": [
+    12,
+    64
+   ],
+   "anchor": "caster",
+   "skill": "thrust",
+   "phase": "hit",
+   "blend": "ADD",
+   "ms": 292,
+   "cols": 4
+  }
+ }
+}
