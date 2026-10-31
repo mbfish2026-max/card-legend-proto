@@ -460,6 +460,12 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 - 未查到：原作具体配色与头部造型的官方立绘描述（配色暗红/黑红为玩家资料推测）；短枪画成两端带刃，属自由发挥。
 - 原创绘制，未描摹原作素材。
 
+### L.x 神兽改为直立站姿（2026-10-31）
+- `public/assets/portraits/summon_beast_full.png` 重绘为直立站姿：后腿站立、身体直立、一爪前伸微抬、一爪垂于腹前，正面偏 3/4；配色与画风沿用旧版（米黄毛、浅色鬃毛、弯角、青蓝眼、紫蓝电光爪）。
+- 尺寸保持 960×747，透明背景，脚底 y=745，内容水平重心 x≈480。
+- 攻击帧 `fx/summon_beast_atk.png`、受击帧 `fx/summon_beast_hurt.png` 同步重绘为直立姿态，尺寸/脚底锚点/重心与立绘一致（960×747，脚底 y≈745，重心 x=480），代码无需改动。
+- 旧立绘备份：`docs/art-gap-preview/summon_beast_full_old.png`；新旧对比：`docs/art-gap-preview/summon_beast_upright_compare.jpg`。
+- 处理脚本：`/workspace/cardlegend/gap/beast_up.py`。
 ### 批次5：蛇魔谷（下） + 禁地（12）
 
 预览：`docs/art-gap-preview/sq_b5_snake_jindi.jpg`
