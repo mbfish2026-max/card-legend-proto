@@ -213,6 +213,136 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 5. 角色/NPC 立绘（600–960px 源图，构建缩到 640）：放宽构建上限即可，暂不需重画。
 文字与 Graphics（血条、面板底、按钮框）为矢量/运行时栅格化，已按倍率清晰，无需素材。
 
+<!-- CH-L -->
+## L. 缺口补图（art/gap-fill）接入说明
+
+只给接入说明，本分支未改任何 src 代码。
+
+- 怪物立绘：`public/assets/portraits/<art>_full.png`。普通怪 art 默认等于单位 id；Boss 的 art 是 `src/data/units.ts` 中 `b()` 的第 2 个参数。接入时在 `src/assets-manifest.ts` 的 ASSETS 加 `<art>: P + '<art>_full.png'`，并确认 units 的 art 字段指向该 key（如原先借用别的怪图，改为下表 id）。
+- 装备图标：`public/assets/items/eq_<id>.png`（64×64）+ `eq_<id>@2x.png`（128×128）。把 `src/data/items.ts` / `items-town.ts` 中 ITEMS[id].icon 改为 `items/eq_<id>.png`，加载 key 仍是 `item_<id>`。
+- 道具图标（I1）：同上规则，文件名见下表，替换原 WoW 图标路径。
+
+| 批次 | id | 名称 | 文件 | 接入改动 | 外观 |
+|---|---|---|---|---|---|
+| M1 | tree_demon | 千年树妖 | `public/assets/portraits/tree_demon_full.png` | ASSETS 加 `tree_demon`，units 中 art 指向 `tree_demon` | 参考原作 |
+| M1 | boss_chulong | 触龙神 | `public/assets/portraits/boss_chulong_full.png` | ASSETS 加 `boss_chulong`，units 中 art 指向 `boss_chulong` | 参考原作 |
+| M1 | boss_white_boar | 白野猪 | `public/assets/portraits/boss_white_boar_full.png` | ASSETS 加 `boss_white_boar`，units 中 art 指向 `boss_white_boar` | 参考原作 |
+| M1 | boss_bull_king | 牛魔王 | `public/assets/portraits/boss_bull_king_full.png` | ASSETS 加 `boss_bull_king`，units 中 art 指向 `boss_bull_king` | 参考原作 |
+| M1 | boss_hongmo | 虹魔教主 | `public/assets/portraits/boss_hongmo_full.png` | ASSETS 加 `boss_hongmo`，units 中 art 指向 `boss_hongmo` | 参考原作 |
+| E1 | xiangmo | 降魔 | `public/assets/items/eq_xiangmo.png` | ITEMS.xiangmo.icon → `items/eq_xiangmo.png` | 参考原作 |
+| E1 | yanyue | 偃月 | `public/assets/items/eq_yanyue.png` | ITEMS.yanyue.icon → `items/eq_yanyue.png` | 参考原作 |
+| E1 | xiuluo | 修罗 | `public/assets/items/eq_xiuluo.png` | ITEMS.xiuluo.icon → `items/eq_xiuluo.png` | 参考原作 |
+| E1 | zhanma | 斩马刀 | `public/assets/items/eq_zhanma.png` | ITEMS.zhanma.icon → `items/eq_zhanma.png` | 参考原作 |
+| E1 | pohun | 破魂 | `public/assets/items/eq_pohun.png` | ITEMS.pohun.icon → `items/eq_pohun.png` | 参考原作 |
+| E1 | ningshuang | 凝霜 | `public/assets/items/eq_ningshuang.png` | ITEMS.ningshuang.icon → `items/eq_ningshuang.png` | 参考原作 |
+| E1 | lianyu | 炼狱 | `public/assets/items/eq_lianyu.png` | ITEMS.lianyu.icon → `items/eq_lianyu.png` | 参考原作 |
+| E1 | jingzhongyue | 井中月 | `public/assets/items/eq_jingzhongyue.png` | ITEMS.jingzhongyue.icon → `items/eq_jingzhongyue.png` | 参考原作 |
+| E1 | wujigun | 无极棍 | `public/assets/items/eq_wujigun.png` | ITEMS.wujigun.icon → `items/eq_wujigun.png` | 参考原作 |
+| E1 | longwen | 龙纹剑 | `public/assets/items/eq_longwen.png` | ITEMS.longwen.icon → `items/eq_longwen.png` | 参考原作 |
+| E1 | caijue | 裁决之杖 | `public/assets/items/eq_caijue.png` | ITEMS.caijue.icon → `items/eq_caijue.png` | 参考原作 |
+| E1 | guyu | 骨玉权杖 | `public/assets/items/eq_guyu.png` | ITEMS.guyu.icon → `items/eq_guyu.png` | 参考原作 |
+| E1 | war_armor | 战神盔甲 | `public/assets/items/eq_war_armor.png` | ITEMS.war_armor.icon → `items/eq_war_armor.png` | 参考原作 |
+| E1 | ghost_robe | 幽灵战衣 | `public/assets/items/eq_ghost_robe.png` | ITEMS.ghost_robe.icon → `items/eq_ghost_robe.png` | 参考原作 |
+| E1 | demon_robe | 恶魔长袍 | `public/assets/items/eq_demon_robe.png` | ITEMS.demon_robe.icon → `items/eq_demon_robe.png` | 参考原作 |
+| E1 | black_iron_helm | 黑铁头盔 | `public/assets/items/eq_black_iron_helm.png` | ITEMS.black_iron_helm.icon → `items/eq_black_iron_helm.png` | 参考原作 |
+| E1 | green_necklace | 绿色项链 | `public/assets/items/eq_green_necklace.png` | ITEMS.green_necklace.icon → `items/eq_green_necklace.png` | 参考原作 |
+| E1 | power_ring | 力量戒指 | `public/assets/items/eq_power_ring.png` | ITEMS.power_ring.icon → `items/eq_power_ring.png` | 参考原作 |
+| E1 | knight_bracelet | 骑士手镯 | `public/assets/items/eq_knight_bracelet.png` | ITEMS.knight_bracelet.icon → `items/eq_knight_bracelet.png` | 参考原作 |
+| E1 | demon_bell | 恶魔铃铛 | `public/assets/items/eq_demon_bell.png` | ITEMS.demon_bell.icon → `items/eq_demon_bell.png` | 参考原作 |
+| E1 | zibiluo | 紫碧螺 | `public/assets/items/eq_zibiluo.png` | ITEMS.zibiluo.icon → `items/eq_zibiluo.png` | 参考原作 |
+| E1 | dragon_bracelet | 龙之手镯 | `public/assets/items/eq_dragon_bracelet.png` | ITEMS.dragon_bracelet.icon → `items/eq_dragon_bracelet.png` | 参考原作 |
+| E1 | soul_necklace | 灵魂项链 | `public/assets/items/eq_soul_necklace.png` | ITEMS.soul_necklace.icon → `items/eq_soul_necklace.png` | 参考原作 |
+| E1 | titan_ring | 泰坦戒指 | `public/assets/items/eq_titan_ring.png` | ITEMS.titan_ring.icon → `items/eq_titan_ring.png` | 参考原作 |
+| E1 | sanyan_bracelet | 三眼手镯 | `public/assets/items/eq_sanyan_bracelet.png` | ITEMS.sanyan_bracelet.icon → `items/eq_sanyan_bracelet.png` | 参考原作 |
+| E1 | shengzhan_helm | 圣战头盔 | `public/assets/items/eq_shengzhan_helm.png` | ITEMS.shengzhan_helm.icon → `items/eq_shengzhan_helm.png` | 参考原作 |
+| E1 | shengzhan_necklace | 圣战项链 | `public/assets/items/eq_shengzhan_necklace.png` | ITEMS.shengzhan_necklace.icon → `items/eq_shengzhan_necklace.png` | 参考原作 |
+| E1 | shengzhan_ring | 圣战戒指 | `public/assets/items/eq_shengzhan_ring.png` | ITEMS.shengzhan_ring.icon → `items/eq_shengzhan_ring.png` | 参考原作 |
+| E1 | shengzhan_bracelet | 圣战手镯 | `public/assets/items/eq_shengzhan_bracelet.png` | ITEMS.shengzhan_bracelet.icon → `items/eq_shengzhan_bracelet.png` | 参考原作 |
+| E1 | fashen_helm | 法神头盔 | `public/assets/items/eq_fashen_helm.png` | ITEMS.fashen_helm.icon → `items/eq_fashen_helm.png` | 参考原作 |
+| E1 | fashen_necklace | 法神项链 | `public/assets/items/eq_fashen_necklace.png` | ITEMS.fashen_necklace.icon → `items/eq_fashen_necklace.png` | 参考原作 |
+| E1 | fashen_ring | 法神戒指 | `public/assets/items/eq_fashen_ring.png` | ITEMS.fashen_ring.icon → `items/eq_fashen_ring.png` | 参考原作 |
+| E1 | fashen_bracelet | 法神手镯 | `public/assets/items/eq_fashen_bracelet.png` | ITEMS.fashen_bracelet.icon → `items/eq_fashen_bracelet.png` | 参考原作 |
+| E1 | tianzun_helm | 天尊头盔 | `public/assets/items/eq_tianzun_helm.png` | ITEMS.tianzun_helm.icon → `items/eq_tianzun_helm.png` | 参考原作 |
+| E1 | tianzun_necklace | 天尊项链 | `public/assets/items/eq_tianzun_necklace.png` | ITEMS.tianzun_necklace.icon → `items/eq_tianzun_necklace.png` | 参考原作 |
+| E1 | tianzun_ring | 天尊戒指 | `public/assets/items/eq_tianzun_ring.png` | ITEMS.tianzun_ring.icon → `items/eq_tianzun_ring.png` | 参考原作 |
+| E1 | tianzun_bracelet | 天尊手镯 | `public/assets/items/eq_tianzun_bracelet.png` | ITEMS.tianzun_bracelet.icon → `items/eq_tianzun_bracelet.png` | 参考原作 |
+| M2 | woma_warrior | 沃玛战士 | `public/assets/portraits/woma_warrior_full.png` | ASSETS 加 `woma_warrior`，units 中 art 指向 `woma_warrior` | 参考原作 |
+| M2 | zuma_guard | 祖玛卫士 | `public/assets/portraits/zuma_guard_full.png` | ASSETS 加 `zuma_guard`，units 中 art 指向 `zuma_guard` | 参考原作 |
+| M2 | bull_warrior | 牛魔战士 | `public/assets/portraits/bull_warrior_full.png` | ASSETS 加 `bull_warrior`，units 中 art 指向 `bull_warrior` | 参考原作 |
+| M2 | bull_mage | 牛魔法师 | `public/assets/portraits/bull_mage_full.png` | ASSETS 加 `bull_mage`，units 中 art 指向 `bull_mage` | 参考原作 |
+| M2 | bull_guard | 牛魔侍卫 | `public/assets/portraits/bull_guard_full.png` | ASSETS 加 `bull_guard`，units 中 art 指向 `bull_guard` | 参考原作 |
+| M2 | hongmo_pig | 虹魔猪卫 | `public/assets/portraits/hongmo_pig_full.png` | ASSETS 加 `hongmo_pig`，units 中 art 指向 `hongmo_pig` | 参考原作 |
+| M2 | hongmo_scorpion | 虹魔蝎卫 | `public/assets/portraits/hongmo_scorpion_full.png` | ASSETS 加 `hongmo_scorpion`，units 中 art 指向 `hongmo_scorpion` | 参考原作 |
+| M2 | redmoon_spider | 赤月蜘蛛 | `public/assets/portraits/redmoon_spider_full.png` | ASSETS 加 `redmoon_spider`，units 中 art 指向 `redmoon_spider` | 推测 |
+| E2 | wood_sword | 木剑 | `public/assets/items/eq_wood_sword.png` | ITEMS.wood_sword.icon → `items/eq_wood_sword.png` | 参考原作 |
+| E2 | iron_sword | 铁剑 | `public/assets/items/eq_iron_sword.png` | ITEMS.iron_sword.icon → `items/eq_iron_sword.png` | 参考原作 |
+| E2 | magic_staff | 魔杖 | `public/assets/items/eq_magic_staff.png` | ITEMS.magic_staff.icon → `items/eq_magic_staff.png` | 参考原作 |
+| E2 | tao_sword | 银蛇剑 | `public/assets/items/eq_tao_sword.png` | ITEMS.tao_sword.icon → `items/eq_tao_sword.png` | 参考原作 |
+| E2 | dragon_sword | 屠龙刀 | `public/assets/items/eq_dragon_sword.png` | ITEMS.dragon_sword.icon → `items/eq_dragon_sword.png` | 参考原作 |
+| E2 | short_sword | 短剑 | `public/assets/items/eq_short_sword.png` | ITEMS.short_sword.icon → `items/eq_short_sword.png` | 参考原作 |
+| E2 | bronze_sword | 青铜剑 | `public/assets/items/eq_bronze_sword.png` | ITEMS.bronze_sword.icon → `items/eq_bronze_sword.png` | 参考原作 |
+| E2 | dagger | 匕首 | `public/assets/items/eq_dagger.png` | ITEMS.dagger.icon → `items/eq_dagger.png` | 参考原作 |
+| E2 | ebony_sword | 乌木剑 | `public/assets/items/eq_ebony_sword.png` | ITEMS.ebony_sword.icon → `items/eq_ebony_sword.png` | 参考原作 |
+| E2 | bronze_axe | 青铜斧 | `public/assets/items/eq_bronze_axe.png` | ITEMS.bronze_axe.icon → `items/eq_bronze_axe.png` | 参考原作 |
+| E2 | bahuang | 八荒 | `public/assets/items/eq_bahuang.png` | ITEMS.bahuang.icon → `items/eq_bahuang.png` | 参考原作 |
+| E2 | banyue | 半月 | `public/assets/items/eq_banyue.png` | ITEMS.banyue.icon → `items/eq_banyue.png` | 参考原作 |
+| E2 | haihun | 海魂 | `public/assets/items/eq_haihun.png` | ITEMS.haihun.icon → `items/eq_haihun.png` | 参考原作 |
+| E2 | lingfeng | 凌风 | `public/assets/items/eq_lingfeng.png` | ITEMS.lingfeng.icon → `items/eq_lingfeng.png` | 参考原作 |
+| E2 | ghost_necklace | 幽灵项链 | `public/assets/items/eq_ghost_necklace.png` | ITEMS.ghost_necklace.icon → `items/eq_ghost_necklace.png` | 参考原作 |
+| E2 | dragon_ring | 龙之戒指 | `public/assets/items/eq_dragon_ring.png` | ITEMS.dragon_ring.icon → `items/eq_dragon_ring.png` | 参考原作 |
+| E2 | ghost_glove | 幽灵手套 | `public/assets/items/eq_ghost_glove.png` | ITEMS.ghost_glove.icon → `items/eq_ghost_glove.png` | 参考原作 |
+| E2 | life_necklace | 生命项链 | `public/assets/items/eq_life_necklace.png` | ITEMS.life_necklace.icon → `items/eq_life_necklace.png` | 参考原作 |
+| E2 | ruby_ring | 红宝石戒指 | `public/assets/items/eq_ruby_ring.png` | ITEMS.ruby_ring.icon → `items/eq_ruby_ring.png` | 参考原作 |
+| E2 | sibeier_bracelet | 思贝儿手镯 | `public/assets/items/eq_sibeier_bracelet.png` | ITEMS.sibeier_bracelet.icon → `items/eq_sibeier_bracelet.png` | 参考原作 |
+| E2 | tianzhu_necklace | 天珠项链 | `public/assets/items/eq_tianzhu_necklace.png` | ITEMS.tianzhu_necklace.icon → `items/eq_tianzhu_necklace.png` | 参考原作 |
+| E2 | platinum_ring | 铂金戒指 | `public/assets/items/eq_platinum_ring.png` | ITEMS.platinum_ring.icon → `items/eq_platinum_ring.png` | 参考原作 |
+| E2 | heart_bracelet | 心灵手镯 | `public/assets/items/eq_heart_bracelet.png` | ITEMS.heart_bracelet.icon → `items/eq_heart_bracelet.png` | 参考原作 |
+| M3 | red_snake | 红蛇 | `public/assets/portraits/red_snake_full.png` | ASSETS 加 `red_snake`，units 中 art 指向 `red_snake` | 参考原作 |
+| M3 | tiger_snake | 虎蛇 | `public/assets/portraits/tiger_snake_full.png` | ASSETS 加 `tiger_snake`，units 中 art 指向 `tiger_snake` | 参考原作 |
+| M3 | scorpion | 蝎子 | `public/assets/portraits/scorpion_full.png` | ASSETS 加 `scorpion`，units 中 art 指向 `scorpion` | 参考原作 |
+| M3 | centipede | 蜈蚣 | `public/assets/portraits/centipede_full.png` | ASSETS 加 `centipede`，units 中 art 指向 `centipede` | 参考原作 |
+| M3 | jump_bee | 跳跳蜂 | `public/assets/portraits/jump_bee_full.png` | ASSETS 加 `jump_bee`，units 中 art 指向 `jump_bee` | 参考原作 |
+| M3 | black_maggot | 黑色恶蛆 | `public/assets/portraits/black_maggot_full.png` | ASSETS 加 `black_maggot`，units 中 art 指向 `black_maggot` | 改编 |
+| M3 | red_boar | 红野猪 | `public/assets/portraits/red_boar_full.png` | ASSETS 加 `red_boar`，units 中 art 指向 `red_boar` | 参考原作 |
+| M3 | black_boar | 黑野猪 | `public/assets/portraits/black_boar_full.png` | ASSETS 加 `black_boar`，units 中 art 指向 `black_boar` | 参考原作 |
+| M3 | scorpion_snake | 蝎蛇 | `public/assets/portraits/scorpion_snake_full.png` | ASSETS 加 `scorpion_snake`，units 中 art 指向 `scorpion_snake` | 参考原作 |
+| M3 | summon_beast | 神兽 | `public/assets/portraits/summon_beast_full.png` | ASSETS 加 `summon_beast`，units 中 art 指向 `summon_beast` | 推测 |
+| M4 | yeti_king | 雪人王 | `public/assets/portraits/yeti_king_full.png` | ASSETS 加 `yeti_king`，units 中 art 指向 `yeti_king` | 参考原作 |
+| M4 | rake_cat_king | 钉耙猫王 | `public/assets/portraits/rake_cat_king_full.png` | ASSETS 加 `rake_cat_king`，units 中 art 指向 `rake_cat_king` | 推测 |
+| M4 | orc_commander | 半兽统领 | `public/assets/portraits/orc_commander_full.png` | ASSETS 加 `orc_commander`，units 中 art 指向 `orc_commander` | 参考原作 |
+| M4 | evil_lich | 恶灵尸王 | `public/assets/portraits/evil_lich_full.png` | ASSETS 加 `evil_lich`，units 中 art 指向 `evil_lich` | 参考原作 |
+| M4 | huangquan_master | 黄泉教主 | `public/assets/portraits/huangquan_master_full.png` | ASSETS 加 `huangquan_master`，units 中 art 指向 `huangquan_master` | 参考原作 |
+| M4 | hawk_guard | 鹰卫 | `public/assets/portraits/hawk_guard_full.png` | ASSETS 加 `hawk_guard`，units 中 art 指向 `hawk_guard` | 参考原作 |
+| M4 | twinhead_kong | 双头金刚 | `public/assets/portraits/twinhead_kong_full.png` | ASSETS 加 `twinhead_kong`，units 中 art 指向 `twinhead_kong` | 推测 |
+| M4 | twinhead_blood | 双头血魔 | `public/assets/portraits/twinhead_blood_full.png` | ASSETS 加 `twinhead_blood`，units 中 art 指向 `twinhead_blood` | 推测 |
+| E3 | helmet | 青铜头盔 | `public/assets/items/eq_helmet.png` | ITEMS.helmet.icon → `items/eq_helmet.png` | 参考原作 |
+| E3 | bone_helm | 骷髅头盔 | `public/assets/items/eq_bone_helm.png` | ITEMS.bone_helm.icon → `items/eq_bone_helm.png` | 参考原作 |
+| E3 | cloth | 布衣 | `public/assets/items/eq_cloth.png` | ITEMS.cloth.icon → `items/eq_cloth.png` | 参考原作 |
+| E3 | armor | 重盔甲 | `public/assets/items/eq_armor.png` | ITEMS.armor.icon → `items/eq_armor.png` | 参考原作 |
+| E3 | pearl | 黑珍珠项链 | `public/assets/items/eq_pearl.png` | ITEMS.pearl.icon → `items/eq_pearl.png` | 推测 |
+| E3 | iron_ring | 铁戒指 | `public/assets/items/eq_iron_ring.png` | ITEMS.iron_ring.icon → `items/eq_iron_ring.png` | 推测 |
+| E3 | gold_ring | 金戒指 | `public/assets/items/eq_gold_ring.png` | ITEMS.gold_ring.icon → `items/eq_gold_ring.png` | 参考原作 |
+| E3 | bracelet | 翡翠手镯 | `public/assets/items/eq_bracelet.png` | ITEMS.bracelet.icon → `items/eq_bracelet.png` | 推测 |
+| E3 | light_armor | 轻型盔甲 | `public/assets/items/eq_light_armor.png` | ITEMS.light_armor.icon → `items/eq_light_armor.png` | 参考原作 |
+| E3 | soul_robe | 灵魂战衣 | `public/assets/items/eq_soul_robe.png` | ITEMS.soul_robe.icon → `items/eq_soul_robe.png` | 参考原作 |
+| E3 | magic_robe | 魔法长袍 | `public/assets/items/eq_magic_robe.png` | ITEMS.magic_robe.icon → `items/eq_magic_robe.png` | 参考原作 |
+| E3 | tao_helm | 道士头盔 | `public/assets/items/eq_tao_helm.png` | ITEMS.tao_helm.icon → `items/eq_tao_helm.png` | 改编 |
+| E3 | magic_helm | 魔法头盔 | `public/assets/items/eq_magic_helm.png` | ITEMS.magic_helm.icon → `items/eq_magic_helm.png` | 参考原作 |
+| E3 | medium_armor | 中型盔甲 | `public/assets/items/eq_medium_armor.png` | ITEMS.medium_armor.icon → `items/eq_medium_armor.png` | 参考原作 |
+| I1 | hp_small | 金创药(小量) | `public/assets/items/hp_small.png` | ITEMS.hp_small.icon → `items/hp_small.png` | 改编 |
+| I1 | hp_mid | 金创药(中量) | `public/assets/items/hp_mid.png` | ITEMS.hp_mid.icon → `items/hp_mid.png` | 改编 |
+| I1 | mp_small | 魔法药(小量) | `public/assets/items/mp_small.png` | ITEMS.mp_small.icon → `items/mp_small.png` | 改编 |
+| I1 | mp_mid | 魔法药(中量) | `public/assets/items/mp_mid.png` | ITEMS.mp_mid.icon → `items/mp_mid.png` | 改编 |
+| I1 | hp_strong | 强效金创药 | `public/assets/items/hp_strong.png` | ITEMS.hp_strong.icon → `items/hp_strong.png` | 改编 |
+| I1 | mp_strong | 强效魔法药 | `public/assets/items/mp_strong.png` | ITEMS.mp_strong.icon → `items/mp_strong.png` | 改编 |
+| I1 | sun_water | 太阳水 | `public/assets/items/sun_water.png` | ITEMS.sun_water.icon → `items/sun_water.png` | 改编 |
+| I1 | return_scroll | 回城卷 | `public/assets/items/return_scroll.png` | ITEMS.return_scroll.icon → `items/return_scroll.png` | 改编 |
+| I1 | dungeon_scroll | 地牢逃脱卷 | `public/assets/items/dungeon_scroll.png` | ITEMS.dungeon_scroll.icon → `items/dungeon_scroll.png` | 改编 |
+| I1 | woma_horn | 沃玛号角 | `public/assets/items/woma_horn.png` | ITEMS.woma_horn.icon → `items/woma_horn.png` | 改编 |
+| I1 | gold | 金币 | `public/assets/items/gold.png` | ITEMS.gold.icon → `items/gold.png` | 改编 |
+| I1 | chicken | 鸡肉 | `public/assets/items/chicken.png` | ITEMS.chicken.icon → `items/chicken.png` | 改编 |
+| I1 | meat | 鹿肉 | `public/assets/items/meat.png` | ITEMS.meat.icon → `items/meat.png` | 改编 |
+| I1 | bone | 骷髅骨头 | `public/assets/items/bone.png` | ITEMS.bone.icon → `items/bone.png` | 改编 |
 ## feat/maps-more（plan-60h B1）
 1. 背景 3 张（1920×1080 起）：兽人古墓（bg_floor14/15）、天然洞穴（骷髅洞，bg_floor16/17）、沃玛自然洞穴（bg_floor18/19）；现占位复用 bg_floor3 / bg_floor2。
 2. 怪物立绘 5 张：骷髅战士、骷髅战将、掷斧骷髅、洞蛆、山洞蝙蝠（现复用已有贴图）。
