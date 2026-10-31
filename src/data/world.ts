@@ -52,6 +52,11 @@ export const FLOORS: Floor[] = [
     { id: 'spider', x: 1500 }, { id: 'spider', x: 1610, y: -15 },
     { id: 'wolf', x: 2200 }, { id: 'spider', x: 2300 }, { id: 'bat', x: 2400, y: 15 },
     { id: 'spider_queen', x: 3350 } ] },
+  { name: '毒蛇山谷', bg: 'bg_floor9', boss: true, zone: '毒蛇山谷（原版 21 级起推荐练级；BOSS 取自经毒蛇山谷进入的情缘峡谷）', spawns: [
+    { id: 'red_snake', x: 800 }, { id: 'tiger_snake', x: 910, y: 20 },
+    { id: 'scorpion', x: 1550 }, { id: 'red_snake', x: 1650, y: -15 },
+    { id: 'tiger_snake', x: 2300 }, { id: 'scorpion', x: 2400, y: 15 }, { id: 'red_snake', x: 2500 },
+    { id: 'tree_demon', x: 3350 } ] },
   { name: '白骨墓穴', bg: 'bg_floor3', boss: true, zone: '比奇省·半兽人古墓/骷髅洞（原版 15–21 级）', spawns: [
     { id: 'skeleton', x: 800 }, { id: 'skeleton', x: 900, y: 20 },
     { id: 'zombie', x: 1550 }, { id: 'skeleton', x: 1650, y: -15 },
@@ -62,6 +67,16 @@ export const FLOORS: Floor[] = [
     { id: 'darkmage', x: 1450 }, { id: 'zombie', x: 1550, y: -15 }, { id: 'skeleton', x: 1650 },
     { id: 'darkmage', x: 2250 }, { id: 'darkmage', x: 2350, y: 15 },
     { id: 'skeleton', x: 3150, y: -20 }, { id: 'boss_lich', x: 3380 } ] },
+  { name: '蜈蚣洞', bg: 'bg_floor10', boss: true, zone: '盟重土城·蜈蚣洞（原版 26–31 级怪）', spawns: [
+    { id: 'centipede', x: 800 }, { id: 'jump_bee', x: 910, y: 20 },
+    { id: 'black_maggot', x: 1550 }, { id: 'centipede', x: 1650, y: -15 },
+    { id: 'jump_bee', x: 2300 }, { id: 'black_maggot', x: 2400, y: 15 }, { id: 'centipede', x: 2500 },
+    { id: 'boss_chulong', x: 3350 } ] },
+  { name: '石墓·猪洞', bg: 'bg_floor11', boss: true, zone: '盟重·石墓（猪洞，原版 32–35 级怪）', spawns: [
+    { id: 'red_boar', x: 800 }, { id: 'black_boar', x: 910, y: 20 },
+    { id: 'scorpion_snake', x: 1550 }, { id: 'red_boar', x: 1650, y: -15 },
+    { id: 'black_boar', x: 2300 }, { id: 'scorpion_snake', x: 2400, y: 15 }, { id: 'red_boar', x: 2500 },
+    { id: 'boss_white_boar', x: 3350 } ] },
   { name: '沃玛寺庙', bg: 'bg_floor6', boss: true, zone: '沃玛寺庙（经沃玛森林进入）', spawns: [
     { id: 'woma_warrior', x: 800 }, { id: 'woma_warrior', x: 910, y: 20 },
     { id: 'woma_guard', x: 1550 }, { id: 'woma_warrior', x: 1650, y: -15 },
@@ -72,6 +87,16 @@ export const FLOORS: Floor[] = [
     { id: 'zuma_guard', x: 1550 }, { id: 'zuma_statue', x: 1650, y: -15 },
     { id: 'zuma_guard', x: 2300 }, { id: 'zuma_statue', x: 2400, y: 15 },
     { id: 'boss_zuma', x: 3350 } ] },
+  { name: '牛魔寺庙', bg: 'bg_floor12', boss: true, zone: '苍月岛·牛魔寺庙（原版 33–45 级怪，40 级地图）', spawns: [
+    { id: 'bull_warrior', x: 800 }, { id: 'bull_mage', x: 910, y: 20 },
+    { id: 'bull_guard', x: 1550 }, { id: 'bull_warrior', x: 1650, y: -15 },
+    { id: 'bull_mage', x: 2300 }, { id: 'bull_guard', x: 2400, y: 15 }, { id: 'bull_warrior', x: 2500 },
+    { id: 'boss_bull_king', x: 3350 } ] },
+  { name: '封魔殿', bg: 'bg_floor13', boss: true, zone: '封魔谷·封魔矿区/封魔殿（原版 40 级地图）', spawns: [
+    { id: 'hongmo_pig', x: 800 }, { id: 'hongmo_scorpion', x: 910, y: 20 },
+    { id: 'hongmo_pig', x: 1550 }, { id: 'hongmo_pig', x: 1650, y: -15 },
+    { id: 'hongmo_scorpion', x: 2300 }, { id: 'hongmo_pig', x: 2400, y: 15 }, { id: 'hongmo_pig', x: 2500 },
+    { id: 'boss_hongmo', x: 3350 } ] },
   { name: '赤月魔穴', bg: 'bg_floor8', boss: true, zone: '白日门·赤月峡谷', spawns: [
     { id: 'blood_zombie', x: 800 }, { id: 'redmoon_spider', x: 910, y: 20 },
     { id: 'blood_zombie', x: 1550 }, { id: 'redmoon_spider', x: 1650, y: -15 },

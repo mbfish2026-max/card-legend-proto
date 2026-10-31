@@ -5,6 +5,7 @@ import { WORLD, Floor, FLOORS } from '../src/data/world';
 import { CLASSES, ClassId } from '../src/data/classes';
 import { ENEMIES, DIFF } from '../src/data/units';
 import { QUESTS, ACHIEVES } from '../src/data/quests';
+import { REGIONS, floorBoss, regionOf } from '../src/data/map';
 import { detectMobile } from '../src/mobile';
 import { StepGate, stepDir, HoldKeys, HOLD } from '../src/input/stepKeys';
 import { POTIONS } from '../src/data/skills';
@@ -156,7 +157,7 @@ const free = (w: World) => w.skills.map(() => 0);
   w.ground.push(w.rollDrop('helmet', 'common', h.x, h.y)); w.time += 1; w.step(0.05); ok(w.ground.length === 1, '背包满时不拾取');
 }
 { // 5 层 + 每层 Boss + 出口封印
-  ok(FLOORS.length >= 8 && FLOORS.slice(5).map(f => f.name).join() === '沃玛寺庙,祖玛阁,赤月魔穴' && FLOORS.every(f => f.boss && f.spawns.some(s => ENEMIES[s.id].tier === 'boss')), `共 ${FLOORS.length} 层，每层末尾有 Boss`);
+  ok(FLOORS.length >= 8 && FLOORS.slice(8).map(f => f.name).join() === '沃玛寺庙,祖玛阁,牛魔寺庙,封魔殿,赤月魔穴' && FLOORS.every(f => f.boss && f.spawns.some(s => ENEMIES[s.id].tier === 'boss')), `共 ${FLOORS.length} 层，每层末尾有 Boss`);
   ok(new Set(FLOORS.map(f => f.bg)).size === FLOORS.length, '每层背景不同');
   const w = new World(seeded(3), 30, FLOORS); const h = w.hero!;
   h.x = w.exitX; w.step(0.05); ok(w.floorIndex === 0, 'Boss 未死出口封印');
@@ -194,16 +195,27 @@ const free = (w: World) => w.skills.map(() => 0);
   got = bw.ground.filter(g => g.item.startsWith('book_')).length;
   ok(got > 0 && bw.ground.every(g => !g.item.startsWith('book_') || ['book_half_moon', 'book_rush', 'book_fire_sword'].includes(g.item)), `尸王掉落战士技能书（40 次掉 ${got} 本）`);
 }
+{ // R13 地图扩充：区域覆盖、旧存档迁移、传送
+  const all = REGIONS.flatMap(r => r.floors).sort((a, b) => a - b);
+  ok(all.join() === FLOORS.map((_, i) => i).join(), `世界地图区域覆盖全部 ${FLOORS.length} 层且不重复`);
+  ok(FLOORS.every((_, i) => !!floorBoss(i) && !!regionOf(i)), '每层有 BOSS 与所属区域');
+  ok(QUESTS.every(q => q.floor < FLOORS.length && FLOORS[q.floor].spawns.some(s => s.id === q.target)), '悬赏目标都在对应层');
+  const m = new World(seeded(3), 30, FLOORS, 'mage'); const v2 = { ...m.toSave(), mapV: 2, floorIndex: 5, reached: [0, 1, 2, 3, 4, 5], bossKilled: [0, 1, 2, 3, 4], questDone: ['q0'] } as unknown as SaveData;
+  const w2 = new World(seeded(3), 1, FLOORS, 'mage', v2);
+  ok(w2.floorIndex === 8 && w2.floor.name === '沃玛寺庙' && w2.reached.has(5) && w2.reached.has(8) && !w2.reached.has(3) && w2.bossKilled.has(4) && w2.questDone.has('q0'), 'mapV2 存档迁移：沃玛寺庙 5→8，进度不丢');
+  const w3 = new World(seeded(3), 1, FLOORS, 'mage', w2.toSave()); ok(w3.floorIndex === 8 && w3.toSave().mapV === 3, 'mapV3 存档不重复迁移');
+  w3.gold = 9999; w3.reached.add(10); w3.time = 999; ok(w3.teleport(10) === null && w3.floor.name === '牛魔寺庙', '世界地图传送到新地图牛魔寺庙');
+}
 { // R11 地图按原版递进
-  ok(FLOORS.map(f => f.name).join() === '幽暗森林,兽人要塞,蛛网晶洞,白骨墓穴,尸王殿,沃玛寺庙,祖玛阁,赤月魔穴', '层序：新手村→沃玛森林(兽人/蛛洞)→兽人古墓→比奇矿区尸王殿→沃玛寺庙→祖玛→赤月');
-  ok(QUESTS.find(q => q.target === 'orc')!.floor === 1 && QUESTS.find(q => q.target === 'spider')!.floor === 2 && QUESTS.find(q => q.target === 'skeleton')!.floor === 3, '悬赏随层移动');
+  ok(FLOORS.map(f => f.name).join() === '幽暗森林,兽人要塞,蛛网晶洞,毒蛇山谷,白骨墓穴,尸王殿,蜈蚣洞,石墓·猪洞,沃玛寺庙,祖玛阁,牛魔寺庙,封魔殿,赤月魔穴', '层序：新手村→沃玛森林(兽人/蛛洞)→兽人古墓→比奇矿区尸王殿→沃玛寺庙→祖玛→赤月');
+  ok(QUESTS.find(q => q.target === 'orc')!.floor === 1 && QUESTS.find(q => q.target === 'spider')!.floor === 2 && QUESTS.find(q => q.target === 'skeleton')!.floor === 4, '悬赏随层移动');
   const lv = FLOORS.map(f => Math.max(...f.spawns.map(sp => ENEMIES[sp.id].tier === 'boss' ? 0 : ENEMIES[sp.id].level)));
   ok(lv.every((v, i) => i === 0 || v >= lv[i - 1]), `各层普通怪最高等级递增 ${lv.join('/')}`);
 }
 { // 平衡：每个职业的自动脚本能打通全部 5 层（允许死亡复活）
   for (const c of ['warrior', 'mage', 'taoist'] as ClassId[]) {
     const w = (process.env.ALL ? learnAll : (x: World) => x)(new World(seeded(11), 1, FLOORS, c)); let cds = w.skills.map(() => 0); let t = 0, potUsed = 0; const learnLog: string[] = [];
-    while (!w.done && t < 3600) {
+    while (!w.done && t < 7200) {
       const h = w.hero;
       if (!h) { learnLog.push(`死@${w.floorIndex + 1}层Lv${w.level}`); w.respawn(); continue; }
       if (h.hp < h.maxHp * 0.4 && w.usePotion(w.pots[1] > 0 ? 1 : 0)) potUsed++;
@@ -229,7 +241,7 @@ const free = (w: World) => w.skills.map(() => 0);
     if (!process.env.SIM) ok(w.deaths >= 1 && w.deaths <= 4, `${CLASSES[c].name} 难度适中：模拟通关死亡 1–4 次（实际 ${w.deaths}）`);
     console.log(`  ${CLASSES[c].name}: 通关=${w.done} 用时 ${Math.round(t)}s 等级 ${w.level} 死亡 ${w.deaths} 次 层 ${w.floorIndex + 1} 红药 ${potUsed} 瓶`);
     ok(potUsed >= 3, `${CLASSES[c].name} 通关需要吃药（${potUsed} 瓶，难度不再过于简单）`);
-    ok(w.done && w.deaths <= 6, `${CLASSES[c].name} 可通关 8 层（死亡 ${w.deaths} 次）`);
+    ok(w.done && w.deaths <= 6, `${CLASSES[c].name} 可通关全部层（死亡 ${w.deaths} 次）`);
   }
 }
 { // 难度曲线：怪物强度倍率已上调
