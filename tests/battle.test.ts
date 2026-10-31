@@ -136,8 +136,10 @@ const free = (w: World) => w.skills.map(() => 0);
   ok(w.floorIndex === 1 && !!w.summon, '召唤物随主角进入下一层');
 }
 { // 掉落 → 背包 → 装备/卸下/需求等级/丢弃/出售/购买
+  // R13：尸王资料掉落不含必掉屠龙，本用例临时注入一条 1/1 屠龙以测试拾取/装备流程
+  const L0 = ENEMIES.boss_lich.drops; ENEMIES.boss_lich.drops = [...(L0 ?? []), { item: 'dragon_sword', chance: 1 }];
   const w = mk([{ id: 'boss_lich', x: 2000 }, { id: 'wolf', x: 3500 }], [], 'warrior', 30); const h = w.hero!, b = w.alive('enemy')[0];
-  w.kill(b); ok(w.ground.length >= 6 && w.ground.some(g => g.item === 'dragon_sword'), 'Boss 掉落多件，必掉屠龙刀');
+  w.kill(b); ENEMIES.boss_lich.drops = L0; ok(w.ground.length >= 6 && w.ground.some(g => g.item === 'dragon_sword'), 'Boss 掉落多件（含注入的屠龙刀）');
   run(w, 3); ok(w.ground.length >= 6, '离得远不会自动拾取');
   const g = w.ground[0]; h.x = g.x; h.y = g.y; w.time = g.landAt - 0.2; w.step(0.01); ok(w.ground.includes(g), '落地前不可拾取');
   w.step(0.3); ok(!w.ground.includes(g), '落地后靠近自动拾取');
@@ -193,7 +195,7 @@ const free = (w: World) => w.skills.map(() => 0);
   const bw = new World(seeded(3), 30, FLOORS, 'warrior'); let got = 0;
   for (let k = 0; k < 40; k++) { const u = bw.spawn(ENEMIES.boss_lich, 'enemy', 1000); bw.kill(u); }
   got = bw.ground.filter(g => g.item.startsWith('book_')).length;
-  ok(got > 0 && bw.ground.every(g => !g.item.startsWith('book_') || ['book_half_moon', 'book_rush', 'book_fire_sword'].includes(g.item)), `尸王掉落战士技能书（40 次掉 ${got} 本）`);
+  ok(got > 0 && bw.ground.every(g => !g.item.startsWith('book_') || ['book_thrust', 'book_half_moon', 'book_rush'].includes(g.item)), `尸王按资料爆率掉战士技能书（刺杀1/10 半月1/500 野蛮1/600）（40 次掉 ${got} 本）`);
 }
 { // R13 地图扩充：区域覆盖、旧存档迁移、传送
   const all = REGIONS.flatMap(r => r.floors).sort((a, b) => a - b);
@@ -237,11 +239,11 @@ const free = (w: World) => w.skills.map(() => 0);
       while (w.gold >= 60 && w.pots[3] < cap) w.buyPotion(3);
       w.step(0.05, { dx: (() => { const f = w.queue(1)[0]; return f && w.inMelee(h, f) ? 0 : 1; })(), dy: 0 }); w.drainEvents(); t += 0.05; /* 玩家：前方接战时站定输出（可穿怪） */ for (let i = 0; i < cds.length; i++) cds[i] = Math.max(0, cds[i] - 0.05);
     }
-    console.log(`  ${CLASSES[c].name}: 通关=${w.done} 等级 ${w.level} 死亡 ${w.deaths} 学书 ${learnLog.join(' ')}`);
+    if (process.env.SIM) console.log(JSON.stringify(Object.fromEntries(Object.entries(w.equip).map(([k,v])=>[k,(v as any)?.name]))), w.hero?.maxHp, w.hero?.atk); console.log(`  ${CLASSES[c].name}: 通关=${w.done} 等级 ${w.level} 死亡 ${w.deaths} 学书 ${learnLog.join(' ')}`);
     if (!process.env.SIM) ok(w.deaths >= 1 && w.deaths <= 4, `${CLASSES[c].name} 难度适中：模拟通关死亡 1–4 次（实际 ${w.deaths}）`);
     console.log(`  ${CLASSES[c].name}: 通关=${w.done} 用时 ${Math.round(t)}s 等级 ${w.level} 死亡 ${w.deaths} 次 层 ${w.floorIndex + 1} 红药 ${potUsed} 瓶`);
     ok(potUsed >= 3, `${CLASSES[c].name} 通关需要吃药（${potUsed} 瓶，难度不再过于简单）`);
-    ok(w.done && w.deaths <= 6, `${CLASSES[c].name} 可通关全部层（死亡 ${w.deaths} 次）`);
+    if (!process.env.SIM) ok(w.done && w.deaths <= 6, `${CLASSES[c].name} 可通关全部层（死亡 ${w.deaths} 次）`);
   }
 }
 { // 难度曲线：怪物强度倍率已上调

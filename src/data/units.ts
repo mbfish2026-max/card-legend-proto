@@ -1,4 +1,5 @@
 import { UnitDef, DropEntry } from '../combat/types';
+import { officialDrops } from './drops';
 // 主角卡（属性由职业+等级计算，见 classes.ts；这里只提供卡牌尺寸等通用字段）
 export const HERO: UnitDef = {
   id: 'hero', name: '战士', level: 1, hp: 320, mp: 120, atk: 30, atkInterval: 1.1,
@@ -8,7 +9,7 @@ export const HERO: UnitDef = {
 const card = (o: Partial<NonNullable<UnitDef['card']>> = {}) => ({ w: 140, h: 190, figureScale: 1.15, anchorX: 0.55, maxWidthRatio: 1.7, artFacing: -1 as const, ...o });
 const bossCard = (o: Partial<NonNullable<UnitDef['card']>> = {}) => card({ w: 200, h: 260, figureScale: 1.2, maxWidthRatio: 1.6, bg: 0x3a0606, ...o });
 /** 难度曲线（v0.2 上调：原版偏简单）。普通怪/首领的生命与攻击倍率 */
-export const DIFF = { hp: 1.6, atk: 2.81, bossHp: 1.6, bossAtk: 2.08 };
+export const DIFF = { hp: 1.6, atk: 2.81, bossHp: 2.8, bossAtk: 1.9 };
 const n = (id: string, name: string, level: number, hp: number, atk: number, def: number, exp: number, drops: DropEntry[], extra: Partial<UnitDef> = {}): UnitDef =>
   ({ id, name, level, hp: Math.round(hp * DIFF.hp), atk: Math.round(atk * 1.4 * DIFF.atk), def, exp, drops, atkInterval: 1.3, range: 6, speed: 110, width: 130, height: 180, tier: 'normal', card: card(), ...extra });
 const b = (id: string, art: string, name: string, level: number, hp: number, atk: number, def: number, exp: number, drops: DropEntry[], extra: Partial<UnitDef> = {}): UnitDef =>
@@ -66,6 +67,8 @@ export const ENEMIES: Record<string, UnitDef> = {
   hongmo_scorpion: n('hongmo_scorpion', '虹魔蝎卫', 27, 1650, 66, 21, 420, [G(0.6), { item: 'mp_mid', chance: 0.3 }], { art: 'spider', deathSfx: 'death', oilChance: 0.02 }),
   boss_hongmo: b('boss_hongmo', 'boss_woma', '虹魔教主', 31, 14000, 92, 25, 5500, [{ item: 'dragon_sword', chance: 0.4 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'death2' }),
 };
+/** R13：有资料的怪，装备/药水/祝福油掉落替换为资料表（1/N）；金币条目保留 [适配]。见 docs/drops-official.md */
+for (const u of Object.values(ENEMIES)) { const od = officialDrops(u.id); if (od) u.drops = [...(u.drops ?? []).filter(d => d.item === 'gold'), ...od]; }
 /** 道士召唤骷髅（金色卡底，友方） */
 export const SUMMON: UnitDef = { id: 'summon_skeleton', art: 'skeleton', name: '骷髅', level: 1, hp: 200, atk: 10, def: 4, atkInterval: 1.3, range: 6, speed: 0, width: 120, height: 170, tier: 'player',
   card: card({ w: 120, h: 160, figureScale: 1.15, bg: 0x7a5c14 }) };
