@@ -837,3 +837,20 @@ thunder_sword 雷霆剑、break_strike 破击剑法、shield_break 破盾斩、v
 | sq_hammer_man_full.png | 651x960 | 锤手 | 新画（取代原复用图） | 据描述：持巨锤；矮胖黄铜机关身为新设计 |
 | sq_jingang_full.png | 690x960 | 金刚人 | 新画（取代原复用图） | 部分推测：金刚不坏巨人；铸铁肤色、袈裟为新设计 |
 | m3_skel_wushi_full.png | 683x960 | 骷髅武士 | 新画（取代原复用图） | 据描述：刀背带两环的刀 |
+
+
+## art/maps-sq-mir3 重画·第2组（9 张，取消复用）
+
+用户要求不再复用小怪素材，以下 id 的复制图都换成了各自的新立绘，外形和配色都与原图明显不同。路径：`public/assets/portraits/<id>_full.png`。预览：`docs/art-gap-preview/sq_mir3_redo2.jpg`。
+
+| 文件 | 尺寸 | 名称 | 状态 | 依据 |
+|---|---|---|---|---|
+| m3_skel_soldier_full.png | 438x960 | 骷髅士兵 | 新画（取代原复用图） | 据描述：持带旗长枪 |
+| m3_skel_archer_full.png | 674x960 | 骷髅弓箭手 | 新画（取代原复用图） | 据描述：弓箭手；兜帽跪射为新设计 |
+| m3_bone_general_full.png | 603x960 | 骨鬼将 | 新画（取代原复用图） | 未查到/推测：骷髅系将领，鬼烟下身、长柄刀为推测 |
+| sq_red_snake_yao_full.png | 746x960 | 红蛇妖 | 新画（取代原复用图） | 据描述：蛇妖喽啰；眼镜蛇兜帽、短弯刀为新设计 |
+| sq_black_snake_yao_full.png | 723x960 | 黑蛇妖 | 新画（取代原复用图） | 据描述：近卫、高防；塔盾三叉戟为新设计 |
+| sq_scarab_full.png | 960x703 | 圣甲虫 | 新画（取代原复用图） | 据描述：高防甲虫；翠玉壳、日珠为新设计 |
+| sq_magic_beetle_full.png | 960x785 | 魔甲虫 | 新画（取代原复用图） | 据描述：石化魔法；石纹壳、灰雾为新设计 |
+| sq_termite_full.png | 960x588 | 白蚁 | 新画（取代原复用图） | 据描述：小生物；兵蚁大头、朽木为新设计 |
+| sq_three_snake_full.png | 696x960 | 三头蛇 | 新画（取代原复用图） | 据描述：三头 |
