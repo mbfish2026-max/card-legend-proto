@@ -7,7 +7,8 @@ export const WORLD = {
   laneMin: -40, laneMax: 30,   // 纵深带：相对 GROUND_Y 的 Y 偏移范围
   heroStartX: 220,
   stepPx: 100, stepSec: 0.12, // 点按移动：每按一下滑行一格（100px，约 0.6 卡宽），0.12s 补间
-  heroSpeed: 1.2 * CARD,       // 主角速度：每秒 1.2 卡宽
+  baseSpeed: 1.2 * CARD,       // 怪物追击/召唤物速度基准（原主角速度，不随按住速度变化）
+  heroSpeed: 400,              // 按住移动速度 px/s（约 2.35 卡宽/秒，可调 350~450）
   heroLaneSpeed: 120,
   aggroRange: 2.5 * CARD,
   groupRadius: 1.6 * CARD,

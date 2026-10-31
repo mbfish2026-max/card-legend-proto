@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { IS_MOBILE } from '../mobile';
-import { StepGate, stepDir } from '../input/stepKeys';
+import { HoldKeys, stepDir } from '../input/stepKeys';
 import { World, SaveData } from '../combat/World';
 import { BattleEvent, GroundItem, Unit } from '../combat/types';
 import { POTIONS } from '../data/skills';
@@ -69,12 +69,12 @@ export class BattleScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, W, 720).startFollow(this.views.get(h.uid)!, true, 0.12, 0.12, 0, 120).setDeadzone(320, 720);
     this.keys = this.input.keyboard!.addKeys('LEFT,RIGHT,UP,DOWN,A,D') as any;
     // F1~F4 技能：阻止浏览器默认行为（F1 帮助等）；不占用 F5 等其它功能键
-    // 左右一格：window 原生 keydown 直接入队（不依赖 repeat 标志 / keyup / Phaser JustDown，兼容远程控制）
-    const gate = new StepGate(150);
-    const onWinKey = (e: KeyboardEvent) => {
-      const d = stepDir(e); if (!d) return;
-      e.preventDefault(); if (gate.accept(e, performance.now())) this.stepKey(d);
-    };
+    // 左右按住持续走：window 原生 keydown/keyup（不依赖 repeat 标志 / Phaser 键状态；丢 keyup 由看门狗超时停止）
+    const hold = this.hold;
+    const onWinKey = (e: KeyboardEvent) => { const d = stepDir(e); if (!d) return; e.preventDefault(); hold.down(d, performance.now()); };
+    const onWinUp = (e: KeyboardEvent) => { const d = stepDir(e); if (d) hold.up(d, performance.now()); };
+    window.addEventListener('keyup', onWinUp, true);
+    this.events.once('shutdown', () => window.removeEventListener('keyup', onWinUp, true));
     window.addEventListener('keydown', onWinKey, true);
     this.events.once('shutdown', () => window.removeEventListener('keydown', onWinKey, true));
     // 其它键（F1~F4 技能等）：阻止 F1 帮助等默认行为；不占用 F5 等其它功能键
@@ -82,7 +82,7 @@ export class BattleScene extends Phaser.Scene {
       if (stepDir(e)) return; if (/^F[1-4]$/.test(e.key)) e.preventDefault(); this.onKey(e.key.toUpperCase()); });
     this.input.keyboard!.addCapture('F1,F2,F3,F4');
     // 失焦/切后台时清空按键状态，避免 keyup 丢失导致方向键"卡住"或失灵
-    const reset = () => { gate.reset(); this.input.keyboard?.resetKeys(); this.ui?.pad?.reset?.(); };
+    const reset = () => { hold.reset(); this.input.keyboard?.resetKeys(); this.ui?.pad?.reset?.(); };
     window.addEventListener('blur', reset); document.addEventListener('visibilitychange', reset); this.game.events.on('blur', reset);
     this.events.once('shutdown', () => { window.removeEventListener('blur', reset); document.removeEventListener('visibilitychange', reset); this.game.events.off('blur', reset); });
     this.handle(this.world.drainEvents());
@@ -362,14 +362,15 @@ export class BattleScene extends Phaser.Scene {
   }
 
   /** 点按移动一格（键盘与虚拟方向键共用）；同帧多次按以最后一次为准，World 内再做 1 次排队 */
+  hold = new HoldKeys();
   stepKey(d: number) { if (this.state === 'play' && !this.paused) this.world.queueStep(d); }
   update(time: number, dms: number) {
     const dt = Math.min(0.05, dms / 1000), k = this.keys;
     if (this.state !== 'win' && !this.paused) {
       const pad = this.ui?.pad;
-      
+      const dx = this.state === 'play' ? (this.hold.dir(performance.now()) || (pad?.dx ?? 0)) : 0;
       const dy = this.state === 'play' ? Math.sign((k.DOWN.isDown ? 1 : 0) - (k.UP.isDown ? 1 : 0) + (pad?.dy ?? 0)) : 0;
-      this.world.step(dt, { dx: 0, dy, use: this.useNext }); this.useNext = false;
+      this.world.step(dt, { dx, dy, use: this.useNext }); this.useNext = false;
       this.cds = this.cds.map(c => Math.max(0, c - dt));
       this.saveT += dt; if (this.saveT > 15) { this.saveT = 0; this.saveGame(); }
     }

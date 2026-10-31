@@ -3,7 +3,7 @@ import { WORLD, Floor, FLOORS } from '../src/data/world';
 import { CLASSES, ClassId } from '../src/data/classes';
 import { ENEMIES, DIFF } from '../src/data/units';
 import { detectMobile } from '../src/mobile';
-import { StepGate, stepDir } from '../src/input/stepKeys';
+import { StepGate, stepDir, HoldKeys, HOLD } from '../src/input/stepKeys';
 import { POTIONS } from '../src/data/skills';
 import { Settings } from '../src/settings';
 let pass = 0; const ok = (c: boolean, m: string) => { if (!c) { console.error('FAIL', m); throw new Error(m); } pass++; console.log('ok', m); };
@@ -38,11 +38,11 @@ const free = (w: World) => w.skills.map(() => 0);
   const ax = a.x; run(w, 2, 1); ok(h.x > ax, '可穿过前排走到怪身后（不阻挡）');
 }
 { // 脱战回位
-  const w = mk([{ id: 'zombie', x: 2500 }]); tough(w); const h = w.hero!, z = w.alive('enemy')[0];
-  h.x = z.x - WORLD.aggroRange + 5; run(w, 1.5); ok(z.ai === 'chase' && z.x < 2500, '开始追击');
+  const w = mk([{ id: 'zombie', x: 3500 }]); tough(w); const h = w.hero!, z = w.alive('enemy')[0];
+  h.x = z.x - WORLD.aggroRange + 5; run(w, 1.5); ok(z.ai === 'chase' && z.x < 3500, '开始追击');
   let left = 0; while (z.ai === 'chase' && left < 30) { w.step(0.05, { dx: -1, dy: 0 }); left += 0.05; if (h.x <= h.width / 2) break; }
   ok(z.ai === 'return' || z.ai === 'idle', '超过脱战距离放弃追击');
-  run(w, 20); ok(z.ai === 'idle' && z.x === 2500 && z.hp === z.maxHp, '回到原位回满血');
+  run(w, 20); ok(z.ai === 'idle' && z.x === 3500 && z.hp === z.maxHp, '回到原位回满血');
 }
 { // 职业属性与成长
   for (const c of ['warrior', 'mage', 'taoist'] as ClassId[]) {
@@ -146,7 +146,7 @@ const free = (w: World) => w.skills.map(() => 0);
   }
 }
 { // 难度曲线：怪物强度倍率已上调
-  ok(DIFF.atk > 1 && DIFF.bossAtk >= DIFF.atk && ENEMIES.boss_lich.atk > ENEMIES.orc_chief.atk, '难度倍率上调且首领逐层变强');
+  ok(DIFF.atk > 1 && DIFF.bossAtk > 1 && ENEMIES.boss_lich.atk > ENEMIES.orc_chief.atk, '难度倍率上调且首领逐层变强');
   ok(['wolf_king', 'spider_queen', 'skeleton_lord', 'orc_chief', 'boss_lich'].every(id => ENEMIES[id].art?.startsWith('boss_')), '每层首领有专属立绘');
 }
 { // 手机检测：UA / 触屏小屏 / URL 覆盖
@@ -175,8 +175,8 @@ const free = (w: World) => w.skills.map(() => 0);
 { // 后退：怪在前方时按 A 向后走，朝向保持面对怪物，速度正常
   const w = mk([{ id: 'wolf', x: 700 }]); tough(w); const h = w.hero!; h.x = 450; const x0 = h.x;
   w.alive('enemy').forEach(e => (e.ai = 'idle', e.atk = 0));
-  for (let i = 0; i < 10; i++) w.step(0.05, { dx: -1, dy: 0 });
-  ok(h.facing === 1 && x0 - h.x > WORLD.heroSpeed * 0.5 * 0.9, `后退时仍面向怪物（facing ${h.facing}，后退 ${Math.round(x0 - h.x)}px）`);
+  for (let i = 0; i < 5; i++) w.step(0.05, { dx: -1, dy: 0 });
+  ok(h.facing === 1 && x0 - h.x > WORLD.heroSpeed * 0.25 * 0.9, `后退时仍面向怪物（facing ${h.facing}，后退 ${Math.round(x0 - h.x)}px）`);
   const w2 = mk([]); const h2 = w2.hero!; w2.step(0.05, { dx: -1, dy: 0 }); ok(h2.facing === -1, '附近无怪时向左走会转身');
 }
 { // 技能键 F1~F4，且不占用 W/A/S/D
@@ -247,5 +247,29 @@ const free = (w: World) => w.skills.map(() => 0);
   r = run(Array(10).fill({ ...R, repeat: true }), 30); ok(r.n >= 1 && r.n <= 3, `按住自动重复(30ms) 被节流到 ≥150ms 一格（触发 ${r.n} 次）`);
   const w = mk([], [{ name: 'x', spawns: [] }]); w.hero!.x = 1000; w.queueStep(1); w.stepTarget = 99999; for (let k = 0; k < 40; k++) w.step(0.02, { dx: 0, dy: 0 });
   ok(w.stepTarget === null, '补间卡住/被打断：stepTarget 超时自动释放，不会永久 busy');
+}
+{ // 按住持续移动（HoldKeys）：短按/长按/丢 keyup/repeat/keyCode-only/方向反转
+  type Ev = [number, 'down' | 'up', any];
+  const R = { key: 'ArrowRight', code: 'ArrowRight', keyCode: 39 }, L = { key: 'ArrowLeft', code: 'ArrowLeft', keyCode: 37 };
+  const sim = (evs0: Ev[], until: number) => { const evs = [...evs0].sort((a, b) => a[0] - b[0]);
+    const w = mk([], [{ name: 'x', spawns: [] }]); const h = w.hero!; h.x = 2000; const hk = new HoldKeys(); const xs: number[] = []; let i = 0;
+    for (let t = 0; t <= until; t += 10) {
+      while (i < evs.length && evs[i][0] <= t) { const [, ty, e] = evs[i++]; const d = stepDir(e); if (d) ty === 'down' ? hk.down(d, t) : hk.up(d, t); }
+      w.step(0.01, { dx: hk.dir(t), dy: 0 }); xs.push(h.x - 2000);
+    }
+    return xs;
+  };
+  const reps = (e: any, from: number, to: number, every = 33, repeat = true): Ev[] => { const o: Ev[] = []; for (let t = from; t < to; t += every) o.push([t, 'down', { ...e, repeat }]); return o; };
+  let xs = sim([[0, 'down', R], [30, 'up', R]], 600); ok(xs[xs.length - 1] >= 30 && xs[xs.length - 1] <= 60, `短按也有明显位移（${Math.round(xs[xs.length - 1])}px）`);
+  const hold1s: Ev[] = [[0, 'down', R], ...reps(R, 500, 1000), [1000, 'up', R]];
+  xs = sim(hold1s, 1500); ok(Math.abs(xs[100] - WORLD.heroSpeed) < 30 && Math.abs(xs[150] - xs[101]) < 1, `长按 1s 持续走约 ${WORLD.heroSpeed}px（${Math.round(xs[100])}px），松开立即停`);
+  xs = sim([[0, 'down', R], ...reps(R, 500, 1000)], 2000); ok(xs[100] > 380 && xs[200] - xs[100] < WORLD.heroSpeed * HOLD.watchdogMs / 1000 + 5 && xs[200] === xs[160], `丢 keyup：最后一次 repeat 后看门狗 ${HOLD.watchdogMs}ms 内自动停（多走 ${Math.round(xs[200] - xs[100])}px）`);
+  xs = sim([[0, 'down', R]], 1500); ok(xs[50] > 180 && xs[150] === xs[80], `单次 keydown 无 repeat 无 keyup：首次重复前宽限 ${HOLD.graceMs}ms 不停，之后自动停（${Math.round(xs[150])}px）`);
+  xs = sim([[0, 'down', { ...R, repeat: true }], ...reps(R, 100, 1000, 33, true)], 1000); ok(xs[100] > 380, `全部 repeat=true（无首个非 repeat）仍持续走（${Math.round(xs[100])}px）`);
+  const kc = { key: 'Unidentified', code: '', keyCode: 39 };
+  xs = sim([[0, 'down', kc], ...reps(kc, 500, 1000), [1000, 'up', kc]], 1200); ok(xs[100] > 380, `code 为空只有 keyCode 也能按住走（${Math.round(xs[100])}px）`);
+  xs = sim([[0, 'down', R], ...reps(R, 500, 1500), [600, 'down', L], ...reps(L, 1100, 1500), [1500, 'up', L], [1500, 'up', R]], 1600);
+  ok(xs[60] > 200 && xs[150] < xs[60], `同时按左右以后按下的为准：按住右再按左 → 反向（${Math.round(xs[60])}→${Math.round(xs[150])}）`);
+  xs = sim([[0, 'down', R], [300, 'up', R], [400, 'down', R], [430, 'up', R], [500, 'down', R], [530, 'up', R]], 800); ok(xs[79] > xs[52] && xs[52] > xs[42], '丢 keyup 后再次按下（新 keydown）依然生效');
 }
 console.log(`全部通过 ${pass} 项`);

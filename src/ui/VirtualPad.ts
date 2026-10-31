@@ -27,7 +27,7 @@ export class VirtualPad {
     // 左下：十字方向键
     const cx = 175, cy = 455, d = 112, rr = 54;
     const dirBtn = (k: keyof VirtualPad['dir'], x: number, y: number, l: string) => btn(x, y, rr, l, null, () => (this.dir[k] = true), () => (this.dir[k] = false), 34);
-    btn(cx - d, cy, rr, '◀', null, () => this.onStep?.(-1), () => {}, 34); btn(cx + d, cy, rr, '▶', null, () => this.onStep?.(1), () => {}, 34); dirBtn('up', cx, cy - d, '▲'); dirBtn('down', cx, cy + d * 0.95, '▼');
+    dirBtn('left', cx - d, cy, '◀'); dirBtn('right', cx + d, cy, '▶'); dirBtn('up', cx, cy - d, '▲'); dirBtn('down', cx, cy + d * 0.95, '▼');
     // 右下：技能扇形
     const ox = 1252, oy = 600, rad = 170;
     skills.forEach((k, i) => {
@@ -43,7 +43,7 @@ export class VirtualPad {
   }
   get dx() { return (this.dir.right ? 1 : 0) - (this.dir.left ? 1 : 0); }
   get dy() { return (this.dir.down ? 1 : 0) - (this.dir.up ? 1 : 0); }
-  onStep?: (d: number) => void; // 左右：一点一格
+  onStep?: (d: number) => void; // 旧“一点一格”接口（现左右为按住持续走，未使用）
   reset() { this.dir = { left: false, right: false, up: false, down: false }; }
   setVisible(v: boolean) { this.root.setVisible(v); if (!v) this.dir = { left: false, right: false, up: false, down: false }; }
   update(cds: number[], skills: SkillDef[]) {
