@@ -691,4 +691,33 @@ const free = (w: World) => w.skills.map(() => 0);
   const re = new World(seeded(1), 1, FLOORS, 'taoist', JSON.parse(JSON.stringify(nw.toSave())));
   ok(re.equip.ring1?.item === 'gold_ring' && JSON.stringify(re.stats()) === JSON.stringify(before), '新档往返一致');
 }
+{ // R22 经验曲线：官方 1.76 形状 ÷ EXP_SCALE，怪物经验按层同步缩放，旧档迁移
+  const C = await import('../src/data/expCurve');
+  const need = (l: number) => C.EXP_PER_LEVEL(l);
+  let mono = true; for (let l = 1; l < 60; l++) if (!(need(l + 1) > need(l))) mono = false;
+  ok(mono, '经验曲线 1–60 级严格单调递增');
+  ok([1, 10, 20, 30, 40, 49].every(l => need(l) === C.OFFICIAL_EXP[l] / C.EXP_SCALE), `各级 = 官方值 ÷ ${C.EXP_SCALE}`);
+  const jump = (l: number) => need(l) / need(l - 1);
+  // 官方跳变：9→10 ×2.4、13→14 ×2、20→21 ×1.79、37→38 ×1.46、45→46 ×4；相邻非跳变级 ≤ ×1.4
+  ok(jump(10) >= 2.3 && jump(14) >= 1.9 && jump(21) >= 1.7 && jump(38) >= 1.4 && jump(46) >= 3.9, `10/14/21/38/46 级跳变（${[10, 14, 21, 38, 46].map(l => jump(l).toFixed(2)).join('/')}）`);
+  ok(jump(11) <= 1.4 && jump(15) <= 1.4 && jump(22) <= 1.25 && jump(39) <= 1.1 && jump(36) <= 1.25, '跳变后的相邻级平缓（保留官方形状）');
+  ok(C.FLOOR_EXP_MULT.length === FLOORS.length && C.FLOOR_EXP_MULT.every((m, i) => i === 0 || m > C.FLOOR_EXP_MULT[i - 1]), '每层怪物经验倍率随层数递增');
+  ok(C.scaledExp(ENEMIES.wolf.exp!, 0) === Math.round(ENEMIES.wolf.exp! * C.FLOOR_EXP_MULT[0]) && C.scaledExp(0, 5) === 0 && C.scaledExp(1, 0) >= 1, '怪物经验按层缩放（0 经验召唤物仍为 0，最少 1 点）');
+  const wk = mk([{ id: 'zuma_statue', x: 3000 }], [], 'warrior', 20); wk.floorIndex = 9; const e0 = wk.exp; const z = wk.alive('enemy')[0]; wk.kill(z);
+  ok(wk.exp - e0 === C.scaledExp(ENEMIES.zuma_statue.exp!, 9) || wk.level > 20, `击杀经验按所在层缩放（祖玛阁 ×${C.FLOOR_EXP_MULT[9].toFixed(1)}）`);
+  // 每层目标等级段：新曲线累计 = 旧曲线累计 × 倍率（同一比例）
+  const cum = (f: (l: number) => number, a: number, b: number) => { let s = 0; for (let l = a; l < b; l++) s += f(l); return s; };
+  ok(C.FLOOR_LEVEL_ANCHORS.slice(0, -1).every((a, i) => Math.abs(cum(C.EXP_PER_LEVEL_V1, a, C.FLOOR_LEVEL_ANCHORS[i + 1]) * C.FLOOR_EXP_MULT[i] / cum(need, a, C.FLOOR_LEVEL_ANCHORS[i + 1]) - 1) < 1e-9), '各层升级量与旧曲线一致（无某段卡死/瞬升）');
+  // 旧存档迁移
+  const base = new World(seeded(5), 25, FLOORS, 'mage');
+  const old = { ...JSON.parse(JSON.stringify(base.toSave())), level: 25, exp: Math.floor(C.EXP_PER_LEVEL_V1(25) / 2) } as SaveData; delete (old as Partial<SaveData>).expV;
+  const m1 = new World(seeded(5), 1, FLOORS, 'mage', old);
+  ok(m1.level === 25 && m1.expNext === need(25) && m1.exp === Math.floor(old.exp / C.EXP_PER_LEVEL_V1(25) * need(25)), `旧档 expV 缺省：等级保持 25，经验按本级进度换算（${old.exp}/${C.EXP_PER_LEVEL_V1(25)} → ${m1.exp}/${need(25)}）`);
+  ok(m1.toSave().expV === 2, '新档写入 expV=2');
+  const m2 = new World(seeded(5), 1, FLOORS, 'mage', m1.toSave()); ok(m2.exp === m1.exp && m2.level === 25, 'expV=2 存档不重复迁移');
+  const full = { ...old, exp: C.EXP_PER_LEVEL_V1(25) + 999 } as SaveData; const m3 = new World(seeded(5), 1, FLOORS, 'mage', full);
+  ok(m3.level === 25 && m3.exp === need(25) - 1, '旧档异常溢出经验封顶到本级差 1，不越级');
+  ok(C.migrateExp(1, 0) === 0 && C.migrateExp(48, 100) >= 0, '低/高等级迁移不出错');
+  ok(C.fmtExp(123) === '123' && C.fmtExp(123456) === '12.3万' && C.fmtExp(300000000) === '3亿', '经验大数显示 万/亿');
+}
 console.log(`全部通过 ${pass} 项`);

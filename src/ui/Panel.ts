@@ -1,3 +1,4 @@
+import { fmtExp, scaledExp } from '../data/expCurve';
 import Phaser from 'phaser';
 import type { World } from '../combat/World';
 import { EquipSlot, InvItem, Slot } from '../combat/types';
@@ -101,7 +102,7 @@ export class Panel {
       }, 'eq_' + sl);
     }
     const st = w.stats(), h = w.hero;
-    const title = w.title(); const lines = [`${c.name}  Lv${w.level}${title ? '  「' + title + '」' : ''}`, `经验 ${w.exp}/${w.expNext}   金币 ${w.gold}   击杀 ${w.kills}`, `生命 ${h ? Math.ceil(h.hp) : 0}/${st.hp}   魔法 ${h ? Math.floor(h.mp ?? 0) : 0}/${st.mp}`,
+    const title = w.title(); const lines = [`${c.name}  Lv${w.level}${title ? '  「' + title + '」' : ''}`, `经验 ${fmtExp(w.exp)}/${fmtExp(w.expNext)}   金币 ${w.gold}   击杀 ${w.kills}`, `生命 ${h ? Math.ceil(h.hp) : 0}/${st.hp}   魔法 ${h ? Math.floor(h.mp ?? 0) : 0}/${st.mp}`,
       `攻击 ${st.atk}   魔法 ${st.mag}   道术 ${st.tao}   防御 ${Math.round(st.def)}   幸运 ${w.luck()}`];
     const sc = w.setCounts(), setLine = Object.values(SETS).filter(st => sc[st.id]).map(st => `${st.name}${sc[st.id]}/${st.pieces.length}`).join('  ');
     if (setLine) lines.push(`套装 ${setLine}`);
@@ -307,7 +308,7 @@ export class Panel {
       const en = ENEMIES[q.target], fl = FLOORS[q.floor];
       R.add(s.add.rectangle(400, y, 460, 52, 0x0a0806).setStrokeStyle(1, done ? 0x3a6a3a : prog >= q.need ? 0x6a5a28 : 0x4a3a28));
       R.add(txt(s, 190, y - 14, `${q.name}（第${q.floor + 1}层 ${fl?.name ?? ''}）`, 15, done ? '#8f8' : '#ffe8a0'));
-      R.add(txt(s, 190, y + 6, `击杀 ${en?.name ?? q.target}  ${Math.min(prog, q.need)}/${q.need}    奖 ${q.gold}金/${q.exp}经验`, 13, '#bbb', { strokeThickness: 2 }));
+      R.add(txt(s, 190, y + 6, `击杀 ${en?.name ?? q.target}  ${Math.min(prog, q.need)}/${q.need}    奖 ${q.gold}金/${fmtExp(scaledExp(q.exp, q.floor))}经验`, 13, '#bbb', { strokeThickness: 2 }));
       if (done) R.add(txt(s, 580, y, '已完成', 14, '#8f8').setOrigin(0.5));
       else if (prog >= q.need) R.add([...button(s, 580, y, 80, 32, '交付', () => { const m = w.claimQuest(q.id); sfx(s, 'coin'); this.onChange(m, true); this.render(); }, 15)]);
       else R.add(txt(s, 580, y, '进行中', 13, '#888').setOrigin(0.5));

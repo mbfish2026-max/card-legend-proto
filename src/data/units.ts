@@ -75,4 +75,5 @@ export const SUMMON: UnitDef = { id: 'summon_skeleton', art: 'skeleton', name: '
 /** 召唤神兽（官方 C：1/2/3 级神兽）；占位立绘用狼，美术见 art-requests */
 export const SUMMON_BEAST: UnitDef = { id: 'summon_beast', art: 'wolf', name: '神兽', level: 1, hp: 360, atk: 22, def: 10, atkInterval: 1.15, range: 8, speed: 0, width: 140, height: 180, tier: 'player',
   card: card({ w: 150, h: 190, figureScale: 1.2, bg: 0x5a4010 }) };
-export const EXP_PER_LEVEL = (lv: number) => 80 + lv * 45;
+/** R22：经验曲线移至 expCurve.ts（官方形状 ÷ 常数）；怪物 exp 字段为旧曲线基准值，按层由 scaledExp 同步缩放 */
+export { EXP_PER_LEVEL } from './expCurve';
