@@ -41,7 +41,7 @@ t('存档迁移', 'SaveStore 写入/读取一致；非 v1 拒绝', () => { SaveS
 for (const [sid, b] of Object.entries(BOOKS)) t('技能书', `${CLASSES[b.cls as ClassId].name} ${sid}${b.shop ? '（书店）' : '（掉落）'}`, () => {
   const w = new World(seeded(3), 1, FLOORS, b.cls as ClassId); w.gold = 1e6;
   if (w.learned.has(sid)) return true;
-  if (b.shop) { const r = w.buyBook(sid); if (r) return '购买失败 ' + r; } else { if (w.buyBook(sid) === null) return '掉落书不应在书店出售'; w.bag.push(w.makeItem(bookItemId(sid))); }
+  if (w.shopBooks().some(x => x.skill === sid)) { const r = w.buyBook(sid); if (r) return '购买失败 ' + r; } else { if (w.buyBook(sid) === null) return '掉落书不应在书店出售'; w.bag.push(w.makeItem(bookItemId(sid))); }
   const i = () => w.bag.findIndex(x => x.item === bookItemId(sid));
   const s = w.skillPool.find(x => x.id === sid)!; const need = w.needLevel(s);
   if (need > 1 && (!w.learnBook(i()).includes('需等级') || w.learned.has(sid))) return '等级不足仍学会';

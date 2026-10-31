@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 合击持续段专用素材接入（feat/hj-fx-assets）
+- 噬魂沼泽/末日审判：状态期间播 fx_combo_shihun_loop / fx_combo_mori_loop（不再取起手图集帧 8–11 往返），状态结束（到期或目标死亡）播 *_end 一次后自毁；场景关闭不播收尾。
+- 劈星斩：每次麻痹播 fx_combo_pixing_stun 一次（动画 cs_once_fx_combo_pixing_stun，1×），头顶「⚡麻痹」文字换成 icon_status_stun 图标（32×32），保留到麻痹结束。
+- 动画 key 冲突：旧回退动画名 fx_combo_<id>_loop 与新素材 key 重名 → 改为 cs_fallback_<id>；专用素材复用 FxPlayer.ensureAnim（导出）。
+- 降级：缺专用素材 → 回退起手帧往返 + 文字标记；再缺 → Graphics，0 报错（e2e fallback 模式验证）。
+- 纯表现，World/数值未改，9 种子战/法/道死亡与 main 逐种子一致。测试：tests/combo-status.test.ts 新增素材方案/key 冲突用例；e2e tests/e2e/hj-fx-assets-verify.mjs [目录] [fallback]。
+
 ## 修复：看不到的怪在攻击我（fix/invisible-attackers）
 - 根因：练级图（farm，第一张图幽暗森林等）小怪死后由 World.farmTick→spawnFoe 原地刷新，不发 summon 事件；BattleScene 只在进层/summon 事件时建卡牌（补建逻辑只写在 ?demo 截图路径里），刷新怪没有 CardView → 逻辑上照常仇恨/追击/攻击，屏幕上看不到。与手机铺满/相机宽度无关（电脑 1280 同样复现），手机 2016 宽视野只是让更多刷新点落在屏内、更容易察觉。
 - 修复：新增 src/ui/foeViews.ts foesWithoutView，BattleScene.ensureFoeViews 每帧对账，存活怪缺卡即补建（淡入）；demo 路径改用同一函数。纯表现，World/战斗数值未改，9 种子模拟与 main 逐种子一致。

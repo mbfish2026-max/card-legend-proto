@@ -1134,3 +1134,174 @@ public/assets/ui/UI-Tooltip-Border.png
 |---|---|---|---|---|---|
 | bichi | (x1,y1) (x2,y2) … | (x,y) | #c8a050 | bichi_town | (x,y) |
 大陆相对位置（适配）：比奇西南、沃玛其北、毒蛇其东、盟重最东荒漠、白日门西北雪山、封魔东北峡谷、苍月东海外岛、合击/魔龙盟重以北。
+## L-P1. 盟重土城街景（art/towns 分支交付）
+
+规格来源：feat/balance-sys 分支 docs/art-requests.md 第 L 章，以及 docs/towns-plan.md 的盟重排序。所有素材都是原创生成，没有用、也没有描摹任何 WoW 或传奇原作素材。画风对齐 art/town 分支的比奇街道。
+
+### 文件
+
+| 文件 | 尺寸 | 用途 |
+|---|---|---|
+| public/assets/town/bg_town_mengzhong.jpg | 7680×1080（4 屏）| 盟重长街背景：沙黄土街，下部地面留空；西端是城门，留出传送门位置；东端远处是沙巴克城门 |
+| public/assets/town/shop_mz_weapon.png | 540×720 透明 | 武器店/铁匠 |
+| public/assets/town/shop_mz_pharmacy.png | 540×720 透明 | 药店 |
+| public/assets/town/shop_mz_book.png | 540×720 透明 | 书店 |
+| public/assets/town/shop_mz_storage.png | 540×720 透明 | 仓库（王家） |
+| public/assets/town/shop_mz_clothes.png | 540×720 透明 | 服装店 |
+| public/assets/town/shop_mz_jewelry.png | 540×720 透明 | 首饰店 |
+| public/assets/town/shop_mz_grocer.png | 540×720 透明 | 杂货（罗家铺子） |
+| public/assets/town/shop_mz_inn.png | 540×720 透明 | 客栈（悦来客栈） |
+| public/assets/town/shop_mz_butcher.png | 540×720 透明 | 肉店（黄家肉店） |
+| public/assets/town/shop_mz_alchemist.png | 540×720 透明 | 炼金师（外观为推测） |
+| public/assets/town/npc_mz_veteran.png | 768×960 透明 | 盟重老兵 |
+| public/assets/town/npc_mz_book.png | 768×960 透明 | 书店老板 |
+| public/assets/town/npc_mz_pharmacy.png | 768×960 透明 | 药店老板 |
+| public/assets/town/npc_mz_weapon.png | 768×960 透明 | 武器店老板 |
+| public/assets/town/npc_mz_storage.png | 768×960 透明 | 仓库保管员 |
+| docs/town-preview/mengzhong_preview.jpg | 3840×540 | 摆位预览（半尺寸，白线是屏分隔） |
+
+说明：
+- 门面按第 L 章做成 3:4（540×720）。这和第 K 章比奇门面的 640×720 不一致，如果需要统一，可以在加载时缩放，或者让美术重新留边。
+- 门面底边贴画布底，水平居中。门头上方都有空白木招牌，店名由游戏绘制，图上没有任何文字。
+- 文件名 shop_mz_* / npc_mz_* 是本分支自己定的（第 L 章没有给出具体文件名），id 可以按代码需要再改。
+- NPC 外观在资料里未查到，均为推测。炼金师的原版坐标也未查到。
+
+### 摆位表（背景坐标，x 为中心点）
+
+门面底边 y=760（和比奇台阶线一致），origin (0.5, 1)。NPC 脚底 y=1040，origin (0.5, 1)，预览里按 0.35 倍显示（约 269×336）。
+
+| 屏 | x 范围 | 内容 | x 中心 |
+|---|---|---|---|
+| 1 | 0–1920 | 城门 / 传送门位 | 约 300（背景自带城门）|
+| 1 | | npc_mz_veteran | 520 |
+| 1 | | shop_mz_grocer | 1000 |
+| 1 | | shop_mz_storage + npc_mz_storage | 1650 / 1880 |
+| 2 | 1920–3840 | shop_mz_inn | 2250 |
+| 2 | | shop_mz_weapon + npc_mz_weapon | 2950 / 3200 |
+| 2 | | shop_mz_clothes | 3550 |
+| 3 | 3840–5760 | shop_mz_jewelry | 4150 |
+| 3 | | shop_mz_alchemist | 4850 |
+| 3 | | shop_mz_butcher | 5450 |
+| 4 | 5760–7680 | shop_mz_pharmacy + npc_mz_pharmacy | 6050 / 6290 |
+| 4 | | shop_mz_book + npc_mz_book | 6700 / 6940 |
+| 4 | | 远景沙巴克城门（背景自带） | 约 7300 |
+
+顺序依据 towns-plan（由西向东）：城门·老兵 → 杂货 → 仓库·客栈 → 武器·服装·首饰 → 炼金·肉店·药店 → 书店。每屏最多 3 间店。屏 1 的仓库中心在 1650，右半跨到 1920 附近，接入时可按需微调。
+
+## L-P2. 白日门街景（art/towns 分支交付）
+
+规格来源：feat/balance-sys 分支 docs/art-requests.md 第 L 章（P2 行），排序依据 towns-plan（标了 [适配]）。素材全部原创生成，没有用、也没有描摹任何 WoW 或传奇原作素材，图里也没有文字。白日门的建筑外观在资料里未查到，做成了山谷边寨风格（灰石墙、深色木构、坡顶瓦），属于推测。门面画风和盟重、比奇一致，只是建筑形制不同。
+
+### 文件
+
+| 文件 | 尺寸 | 用途 |
+|---|---|---|
+| public/assets/town/bg_town_bairimen.jpg | 5760×1080（3 屏）| 白日门长街：西端城门（传送门位），中段石墙木栅加松林群山，东端远景是山崖上的龙形古祠（给龙人做背景呼应）|
+| public/assets/town/shop_brm_weapon.png | 540×720 透明 | 武器店 |
+| public/assets/town/shop_brm_pharmacy.png | 540×720 透明 | 药店 |
+| public/assets/town/shop_brm_storage.png | 540×720 透明 | 仓库 |
+| public/assets/town/shop_brm_jewelry.png | 540×720 透明 | 首饰店 |
+| public/assets/town/shop_brm_clothes.png | 540×720 透明 | 服装店 |
+| public/assets/town/shop_brm_mystic_book.png | 540×720 透明 | 神秘书商（外观推测）|
+| public/assets/town/shop_brm_mystic_smith.png | 540×720 透明 | 神秘铁匠（外观推测）|
+| public/assets/town/npc_brm_guide.png | 768×960 透明 | 向导（外观推测）|
+| public/assets/town/npc_brm_mystic_book.png | 768×960 透明 | 神秘书商（外观推测）|
+| public/assets/town/npc_brm_mystic_smith.png | 768×960 透明 | 神秘铁匠（外观推测）|
+| public/assets/town/npc_brm_dragon.png | 768×960 透明 | 龙人 brm_dragon（外观推测）|
+| docs/town-preview/bairimen_preview.jpg | 2880×540 | 摆位预览（半尺寸；白线是屏分隔，龙人已画在 x=5300）|
+
+说明：
+- 门面同 L-P1，采用 3:4（540×720），底边贴画布底，水平居中，门头上方有空白木招牌，店名由游戏绘制。
+- 文件名 shop_brm_* / npc_brm_* 是本分支自定的，第 L 章没有给出具体文件名。
+- 龙人：brm_dragon 原来只是 src/data/towns.ts 里的 NPC id，没有对应的图。现已出图：public/assets/town/npc_brm_dragon.png（768×960 透明，与 npc_brm_* 同风格；龙首人身、红金长袍、持珠杖，外观推测）。预览中已放在 x=5300。
+
+### 摆位表（背景坐标，x 为中心点）
+
+门面底边 y=760，NPC 脚底 y=1040，origin 都是 (0.5, 1)。NPC 在预览里按 0.35 倍显示。
+
+| 屏 | x 范围 | 内容 | x 中心 |
+|---|---|---|---|
+| 1 | 0–1920 | 城门 / 传送门位（背景自带）| 约 560 |
+| 1 | | npc_brm_guide | 820 |
+| 1 | | shop_brm_mystic_book + npc_brm_mystic_book | 1150 / 1400 |
+| 1 | | shop_brm_weapon | 1750 |
+| 2 | 1920–3840 | shop_brm_storage | 2350 |
+| 2 | | shop_brm_pharmacy | 2950 |
+| 2 | | shop_brm_jewelry | 3550 |
+| 3 | 3840–5760 | shop_brm_clothes | 4150 |
+| 3 | | shop_brm_mystic_smith + npc_brm_mystic_smith | 4800 / 5050 |
+| 3 | | npc_brm_dragon（龙人）| 5300 |
+| 3 | | 远景龙形古祠（背景自带）| 约 5400 |
+
+顺序依据 towns-plan：城门·向导 → 神秘书商·武器 → 仓库·药店 → 首饰·服装 → 神秘铁匠·龙人。原计划是两两一组，这里按 3 屏重新分配，每屏最多 3 间店。
+
+## L-P3. 封魔谷 / 苍月岛街景：通用换色方案（art/towns 分支交付）
+
+两座城都是 2 屏（3840×1080），门面都是 basic 通用门面换色（见 src/data/towns.ts 的 basic('fm') / basic('cy')）。做法：先画一套**低饱和、偏灰白的中性底图和门面**，再按城换色。
+
+### 换色方式
+
+- 原理：乘色（multiply）。Phaser 的 `setTint(0xRRGGBB)` 本身就是乘色，所以底图必须是浅色、中性的，换色才明显；深色或高饱和的部分基本不变色。
+- 方案 A（运行时）：直接用 shop_basic_* 和 bg_town_basic_*，代码里 `sprite.setTint(色值)`。CSS 也可以用 `mix-blend-mode: multiply` 叠一层纯色做到同样的效果。
+- 方案 B（预出色版，已交付）：脚本把原图和乘色结果按比例混合，生成 shop_fm_* / shop_cy_* 和 bg_town_fengmo / bg_town_cangyue。直接加载就行，不用写 tint 代码。
+
+| 用途 | 色值 | 混合比例（方案 B） |
+|---|---|---|
+| 封魔谷底图（冷蓝紫） | #8C90D0 | 0.85 |
+| 封魔谷门面 | #C0C0EC | 0.90 |
+| 封魔谷老兵 | #B4B8F0 | 0.80 |
+| 苍月岛底图（海青） | #80C8C0 | 0.85 |
+| 苍月岛门面 | #B8E4DC | 0.90 |
+
+方案 A 用 Phaser 时，对应的色值直接写成 0x8C90D0 这种形式即可。setTint 是 100% 乘色，会比方案 B 暗一点，可以把色值调亮一些。
+
+### 文件（public/assets/town/）
+
+| 文件 | 尺寸 | 说明 |
+|---|---|---|
+| bg_town_basic_gate.jpg | 3840×1080 | 中性底图：城门（左 1/3，留传送门/出口位）+ 城墙、望楼 |
+| bg_town_basic_dock.jpg | 3840×1080 | 中性底图：码头、帆船（左 1/3，当作苍月岛「城门」）+ 城墙 |
+| bg_town_fengmo.jpg | 3840×1080 | 封魔谷色版（gate 底图换色） |
+| bg_town_cangyue.jpg | 3840×1080 | 苍月岛色版（dock 底图换色） |
+| shop_basic_{potion,weapon,storage,general,clothes,jewelry,book}.png | 540×720 透明 | 中性通用门面；招牌板留空，可以叠字 |
+| shop_fm_{potion,weapon,storage,general}.png | 540×720 透明 | 封魔谷色版 |
+| shop_cy_{weapon,general,storage,clothes,potion,jewelry,book}.png | 540×720 透明 | 苍月岛色版 |
+| npc_fm_veteran.png | 768×960 透明 | 封魔谷老兵，用比奇 npc_veteran.png 换色复用 |
+| docs/town-preview/fengmo_preview.jpg、cangyue_preview.jpg | 1920×540 | 摆位预览（半尺寸，白线是屏分隔） |
+
+门面 id 和 towns.ts 的对应关系：potion→_potion（药店），general→_general（杂货铺），storage→_storage（仓库）。传送员 _tele 没有单独做门面，沿用比奇的 shop_teleporter.png，或者用城门处的传送门（推测，可按需要再补）。
+
+### 位置表（x 为中心点，单位像素，原点在左边）
+
+门面 origin (0.5,1)，底边 y=760；NPC origin (0.5,1)，脚底 y=1040，预览里缩到 269×336。
+
+封魔谷（bg_town_fengmo，门面 1.0 倍）：
+
+| 元素 | x |
+|---|---|
+| 城门（传送门位） | 约 300–760 |
+| npc_fm_veteran（老兵） | 900 |
+| shop_fm_potion | 1400 |
+| shop_fm_weapon | 2000 |
+| shop_fm_storage | 2650 |
+| shop_fm_general | 3250 |
+
+苍月岛（bg_town_cangyue，门面缩到 0.85 倍，也就是 459×612，7 家才放得下）：
+
+| 元素 | x |
+|---|---|
+| 码头（城门 / 传送门位） | 约 0–560 |
+| shop_cy_weapon | 860 |
+| shop_cy_general | 1310 |
+| shop_cy_storage | 1760 |
+| shop_cy_clothes | 2210 |
+| shop_cy_potion | 2660 |
+| shop_cy_jewelry | 3110 |
+| shop_cy_book | 3560 |
+
+### 注意
+
+- 两城的官方外观和坐标都**未查到**。配色（封魔谷冷蓝紫、苍月岛海青）是**推测**。商店顺序按 docs/towns-plan.md 排（苍月岛的顺序标的是 [适配]）。
+- 苍月岛只有 basic 店铺（药/杂/仓）有数据。武器、服装、首饰、书店是按 towns-plan 预先出的，代码里没有的话可以不用。
+- 苍月岛没有 NPC。封魔谷的老兵是比奇老兵换色，其余 NPC 未查到。
+- 全部是原创绘制，没有文字；招牌板是空白的。

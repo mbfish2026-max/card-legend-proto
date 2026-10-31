@@ -18,10 +18,10 @@ try {
     // 书店 → 传世秘籍页签（真实点击）
     await page.evaluate(() => window.__game.scene.getScene('UI').panel.toggle('shop')); await sleep(600); // 战斗图无商人，直接打开商店面板验证 UI
     const bs = await findPos(page, 'UI', '^▶?书店$'); if (bs) { await page.mouse.click(bs.x, bs.y); await sleep(500); }
-    const tab = await findPos(page, 'UI', '传世秘籍'); if (tab) { await page.mouse.click(tab.x, tab.y); await sleep(600); }
+    const tab = await findPos(page, 'UI', '传世秘籍'); /* R54：传世页已取消，应为 null */
     await page.screenshot({ path: `${dir}/${cls}-1-cs-shop.png` });
     const r = await page.evaluate(ids => { const B = window.__game.scene.getScene('Battle'), W = B.world; const res = {};
-      for (const id of ids) { const e = W.buyBook(id); const i = W.bag.findIndex(x => x.item === 'book_' + id); res[id] = { buy: e, learn: i >= 0 ? W.learnBook(i) : 'no book' }; W.skillTrain[id] = 99999; }
+      for (const id of ids) { const e = W.buyBook(id); if (e) W.bag.push(W.makeItem('book_' + id)); /* R54：>25 级书店不卖 → 模拟 BOSS 掉落入包 */ const i = W.bag.findIndex(x => x.item === 'book_' + id); res[id] = { buy: e, learn: i >= 0 ? W.learnBook(i) : 'no book' }; W.skillTrain[id] = 99999; }
       return res; }, CS[cls]);
     await page.evaluate(() => window.__game.scene.getScene('Battle').openPanel('skills')); await sleep(800);
     await page.screenshot({ path: `${dir}/${cls}-2-skills-panel.png` });
@@ -54,7 +54,7 @@ try {
     if (cls === 'taoist') {
       golden = await page.evaluate(() => { const B = window.__game.scene.getScene('Battle'), W = B.world; W.hero.mp = 99999; B.cds = B.cds.map(() => 0); W.cast(W.skills.findIndex(s => s.id === 'summon_golden_skeleton'), B.cds); B.handle(W.drainEvents()); const g = W.summon; return g && { id: g.id, sLv: g.sLv, color: g.nameColor, tint: g.card?.tint }; });
       await page.screenshot({ path: `${dir}/taoist-4-golden.png` });
-      const up = await page.evaluate(() => { const W = window.__game.scene.getScene('Battle').world, g = W.summon; g.sKills = 1e6; const e = W.units.find(u => u.team === 'enemy' && u.alive); if (e) W.kill(e); return { sLv: g.sLv, color: g.nameColor, name: g.name }; });
+      const up = await page.evaluate(() => { const W = window.__game.scene.getScene('Battle').world, g = W.summon; if (!g) return { err: 'no golden' }; g.sKills = 1e6; const e = W.units.find(u => u.team === 'enemy' && u.alive); if (e) W.kill(e); return { sLv: g.sLv, color: g.nameColor, name: g.name }; });
       await sleep(1000); await page.screenshot({ path: `${dir}/taoist-5-golden-levelup.png` }); golden = { before: golden, after: up };
     }
     out[cls] = { auto, shopTab: !!tab, learn: r, icons, casts, golden, errs: w.errs.slice(0, 10) };
@@ -62,3 +62,6 @@ try {
   }
 } finally { await b.close(); sv.stop(); }
 console.log(JSON.stringify(out, null, 1));
+let fails = 0; const chk = (c, m) => { console.log((c ? 'ok ' : 'FAIL ') + m); if (!c) fails++; };
+for (const [cls, o] of Object.entries(out)) { chk(!o.shopTab, `${cls} 无传世秘籍页签`); chk(Object.values(o.learn).every(x => x.learn === null || x.learn === undefined || !x.learn || /学会/.test(x.learn)), `${cls} 书(购买或掉落)均可学 ${JSON.stringify(o.learn)}`); chk(Object.values(o.auto).every(Boolean), `${cls} autoCast ${JSON.stringify(o.auto)}`); chk(!o.errs.length, `${cls} 控制台 0 报错 ${o.errs.join('|')}`); if (o.golden) chk(o.golden.before && o.golden.before.id && !o.golden.after.err, `taoist 金甲骷髅 ${JSON.stringify(o.golden)}`); }
+console.log(fails ? 'FAIL ' + fails : 'ALL OK'); if (fails) process.exitCode = 1;

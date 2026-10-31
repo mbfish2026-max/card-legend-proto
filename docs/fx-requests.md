@@ -214,3 +214,7 @@
 | fx_holy_light / fx_cleanse | 金色光柱 / 毒滴化清水 | 治愈术 | 256×256 |
 | summon_golden_skeleton / summon_corpse 立绘 | 金甲重甲骷髅 / 尸灵 | 骷髅 tint 0xffd040 / zombie 立绘 | 与 summon_skeleton 同规格 |
 | skill_summon_golden_skeleton 图标 | 金甲骷髅图标 | 复用 skill_summon_skeleton.png | 64 + @2x 128 |
+
+### 合击持续段素材接入（feat/hj-fx-assets，2026-10-31）
+- 已接入：fx_combo_shihun_loop/_end、fx_combo_mori_loop/_end、fx_combo_pixing_stun（每次麻痹播 1 次）、icon_status_stun（替换「⚡麻痹」文字）。未交付：无。
+- 本次无新增特效需求。

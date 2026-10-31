@@ -1,11 +1,11 @@
 import { overview, posBar } from '../data/mapOverview';
 import { foesWithoutView } from '../ui/foeViews';
 import { hdFixed, Render, MAX_LW } from '../render';
-import { ComboStatusTracker, COMBO_STATUS } from '../ui/comboStatus';
+import { ComboStatusTracker, COMBO_STATUS, comboStatusPlan } from '../ui/comboStatus';
 import { REGIONS } from '../data/map';
 import { fmtExp } from '../data/expCurve';
 import { floorKeys, PreloadScene } from '../loader';
-import { playFx, flyFx, follow, SLASH_TINT } from '../ui/FxPlayer';
+import { playFx, ensureAnim, flyFx, follow, SLASH_TINT } from '../ui/FxPlayer';
 import Phaser from 'phaser';
 import { IS_MOBILE } from '../mobile';
 import { HoldKeys, stepDir } from '../input/stepKeys';
@@ -98,7 +98,7 @@ export class BattleScene extends Phaser.Scene {
     // 合击版 A1：点怪物卡指定英雄目标（无英雄/未召唤时静默忽略，不影响原操作）
     this.events.on('cardTap', (uid: number) => { const w = this.world; if (!w.companion?.out || this.paused) return; const e = w.setCompanionTarget(uid); if (e) this.log(e); else { const v = this.views.get(uid); if (v) fx.floatNumber(this, v.cx, v.cy - v.h * 0.45, v.h, '英雄目标', '#7fd7ff', 0.6); } this.handle(w.drainEvents()); });
     this.events.once('shutdown', () => this.events.off('cardTap'));
-    this.events.once('shutdown', () => this.comboStatus.clear());
+    this.events.once('shutdown', () => { this.comboStatusClosing = true; this.comboStatus.clear(); this.comboStatusClosing = false; });
     // 其它键（F1~F4 技能等）：阻止 F1 帮助等默认行为；不占用 F5 等其它功能键
     this.input.keyboard!.on('keydown', (e: KeyboardEvent) => {
       if (stepDir(e)) return; if (/^F([1-9]|10)$/.test(e.key)) e.preventDefault(); this.onKey(e.key.toUpperCase()); });
@@ -560,29 +560,38 @@ export class BattleScene extends Phaser.Scene {
   }
   /** 合击持续状态（噬魂沼泽/末日审判循环段、劈星斩麻痹标记）；句柄生命周期见 ui/comboStatus.ts */
   comboStatus = new ComboStatusTracker((id, u) => this.makeComboStatus(id, u));
-  private loopAnim(id: string): string | null {
-    const k = 'fx_combo_' + id, a = k + '_loop', d = COMBO_STATUS[id];
-    if (this.anims.exists(a)) return a;
-    if (!d.loopFrames || !this.textures.exists(k)) return null;
-    const names = this.textures.get(k).getFrameNames().filter(n => n.startsWith(k + '_')).sort().slice(d.loopFrames[0], d.loopFrames[1] + 1);
+  private comboStatusClosing = false;
+  /** 循环段动画：专用素材 key（FX_DEFS 同名动画）优先；否则回退起手图集帧区间往返，key = cs_fallback_<id> */
+  private loopAnim(id: string): { tex: string; anim: string; fallback: boolean } | null {
+    const p = comboStatusPlan(id, k => this.textures.exists(k)).loop; if (!p) return null;
+    if (!p.fallback) return ensureAnim(this, p.anim) ? p : null;
+    if (this.anims.exists(p.anim)) return p;
+    const d = COMBO_STATUS[id], k = p.tex;
+    const names = this.textures.get(k).getFrameNames().filter(n => n.startsWith(k + '_')).sort().slice(d.loopFrames![0], d.loopFrames![1] + 1);
     if (!names.length) return null;
-    this.anims.create({ key: a, frames: names.map(frame => ({ key: k, frame })), frameRate: 12, repeat: -1, yoyo: true }); // 素材无独立循环段：取尾帧往返循环
-    return a;
+    this.anims.create({ key: p.anim, frames: names.map(frame => ({ key: k, frame })), frameRate: 12, repeat: -1, yoyo: true });
+    return p;
   }
   private makeComboStatus(id: string, u0: { uid: number }): { update(u: { uid: number }): void; destroy(): void } | null {
     const v0 = this.views.get(u0.uid); if (!v0) return null;
-    const a = this.loopAnim(id), d = COMBO_STATUS[id], objs: Phaser.GameObjects.GameObject[] = [];
-    let place: (cx: number, cy: number, h: number) => void;
+    const a = this.loopAnim(id), d = COMBO_STATUS[id], plan = comboStatusPlan(id, k => this.textures.exists(k)), objs: Phaser.GameObjects.GameObject[] = [];
+    let place: (cx: number, cy: number, h: number) => void, last = { x: v0.cx, y: v0.cy };
     if (d.kind === 'loop') {
       let o: Phaser.GameObjects.Sprite | Phaser.GameObjects.Ellipse;
-      if (a) o = this.add.sprite(v0.cx, v0.cy, 'fx_combo_' + id).play(a).setBlendMode(Phaser.BlendModes.ADD);
+      if (a) o = this.add.sprite(v0.cx, v0.cy, a.tex).play(a.anim).setBlendMode(Phaser.BlendModes.ADD);
       else o = this.add.ellipse(v0.cx, v0.cy, id === 'shihun' ? 500 : 220, id === 'shihun' ? 60 : 220, id === 'shihun' ? 0x40ff60 : 0xa040ff, 0.3).setBlendMode(Phaser.BlendModes.ADD);
       o.setDepth(id === 'shihun' ? 30 : 56).setAlpha(0);
-      this.tweens.add({ targets: o, alpha: 0.85, duration: 200 });
-      objs.push(o); place = (cx, cy) => o.setPosition(cx, cy);
+      this.tweens.add({ targets: o, alpha: a && !a.fallback ? 1 : 0.85, duration: 200 }); // 专用循环段已按 0.7× 亮度出图
+      objs.push(o); place = (cx, cy) => { o.setPosition(cx, cy); last = { x: cx, y: cy }; };
     } else {
-      const arc = a ? this.add.sprite(v0.cx, v0.cy, 'fx_combo_pixing').play(a).setBlendMode(Phaser.BlendModes.ADD).setScale(0.5).setAlpha(0.8).setDepth(57) : null;
-      const tag = this.add.text(v0.cx, 0, '⚡麻痹', { fontFamily: FONT, fontSize: '18px', color: '#ffe84a', fontStyle: 'bold', stroke: '#2a1a60', strokeThickness: 4 }).setOrigin(0.5, 1).setDepth(62);
+      // 专用 fx_combo_pixing_stun：播放 1 次（cs_once_ 动画 repeat 0，播完自毁，图标保留到麻痹结束）；回退起手帧：0.5× 往返循环
+      let once: string | null = null;
+      if (a && !a.fallback) { once = 'cs_once_' + a.tex; if (!this.anims.exists(once)) { const src = this.anims.get(a.anim); this.anims.create({ key: once, frames: src.frames.map(f => ({ key: f.textureKey, frame: f.textureFrame })), frameRate: src.frameRate, repeat: 0 }); } }
+      const arc = a ? this.add.sprite(v0.cx, v0.cy, a.tex).play(once ?? a.anim).setBlendMode(Phaser.BlendModes.ADD).setScale(a.fallback ? 0.5 : 1).setAlpha(a.fallback ? 0.8 : 1).setDepth(57) : null;
+      if (arc && once) arc.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => arc.setVisible(false));
+      const tag: Phaser.GameObjects.Image | Phaser.GameObjects.Text = plan.icon
+        ? this.add.image(v0.cx, 0, plan.icon).setDisplaySize(32, 32).setOrigin(0.5, 1).setDepth(62)
+        : this.add.text(v0.cx, 0, '⚡麻痹', { fontFamily: FONT, fontSize: '18px', color: '#ffe84a', fontStyle: 'bold', stroke: '#2a1a60', strokeThickness: 4 }).setOrigin(0.5, 1).setDepth(62);
       this.tweens.add({ targets: tag, alpha: { from: 1, to: 0.55 }, duration: 300, yoyo: true, repeat: -1 });
       if (arc) objs.push(arc); objs.push(tag);
       place = (cx, cy, h) => { arc?.setPosition(cx, cy); tag.setPosition(cx, cy - h / 2 - 6); };
@@ -590,7 +599,10 @@ export class BattleScene extends Phaser.Scene {
     objs.forEach(o => o.setName('comboStatus_' + id));
     return {
       update: u => { const v = this.views.get(u.uid); if (v) place(v.cx, v.cy, v.h); },
-      destroy: () => objs.forEach(o => { this.tweens.killTweensOf(o); o.destroy(); }),
+      destroy: () => {
+        objs.forEach(o => { this.tweens.killTweensOf(o); o.destroy(); });
+        if (plan.end && !this.comboStatusClosing) playFx(this, plan.end, last.x, last.y, { depth: id === 'shihun' ? 30 : 56 }); // 收尾段播一次后自毁；场景关闭时不播
+      },
     };
   }
   /** R13 官方 BOSS 机制表现：沃玛电火花、祖玛火球、赤月地刺预警/冒刺、发呆/狂暴/瞬移/召唤提示（1× 简易图形） */
@@ -670,7 +682,7 @@ export class BattleScene extends Phaser.Scene {
     this.groundObjs.forEach(os => os.forEach(o => o.destroy())); this.groundObjs.clear();
     this.floorUids = this.world.alive('enemy').map(u => u.uid);
     for (const u of this.world.alive('enemy')) this.views.set(u.uid, new CardView(this, u));
-    const s = this.world.summon; if (s) { const v = this.views.get(s.uid); if (v) v.x = s.x; }
+    for (const s of this.world.summons) { const v = this.views.get(s.uid); if (v) v.x = s.x; }
     const bg = this.world.floor.bg && this.textures.exists(this.world.floor.bg) ? this.world.floor.bg : 'bg';
     this.bgImgs.forEach(b => b.setTexture(bg).setDisplaySize(1280, 720));
     // R10：本层背景未到 → 到了自动替换；下一层资源插队预加载

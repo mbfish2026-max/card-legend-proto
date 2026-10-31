@@ -55,7 +55,7 @@ export const FX_DEFS: Record<string, FxDef> = {
   fx_holy_armor_cast: D(20, 'ADD', 56, ['holy_armor', 'vajra_body']),
   fx_holy_armor_loop: D(11, 'ADD', 11, ['holy_armor', 'vajra_body'], { loop: true }),
   fx_mass_heal_burst: D(20, 'ADD', 55, ['mass_heal']),
-  // 合击（阶段 B）：目标卡中心播放，第 6 帧（0.3s）为命中/最亮帧；shihun/mori 帧 8–11、pixing 帧 6–9 由 ui/comboStatus.ts + BattleScene 作状态持续循环段
+  // 合击（阶段 B）：目标卡中心播放，第 6 帧（0.3s）为命中/最亮帧；持续段用下方 *_loop/*_end/pixing_stun（ui/comboStatus.ts）；缺图时回退取 shihun/mori 帧 8–11、pixing 帧 6–9
   fx_combo_pohun: D(20, 'ADD', 60, ['combo']),
   fx_combo_huolong: D(20, 'ADD', 60, ['combo']),
   fx_combo_shihun: D(20, 'ADD', 30, ['combo']),
@@ -81,7 +81,8 @@ export function fxLoadOrder(cls: string, learned: Iterable<string>): string[] {
 /** 同屏特效精灵上限（手机性能）；低特效更少，并跳过纯装饰层 */
 export interface PlayOpts { scale?: number; scaleY?: number; depth?: number; tint?: number; flip?: boolean; decorative?: boolean; ms?: number; onFrame?: [number, () => void]; onDone?: () => void }
 export function hasFx(s: Phaser.Scene, k: string) { return s.textures.exists(k) && !!FX_DEFS[k]; }
-function ensureAnim(s: Phaser.Scene, k: string) {
+export function ensureAnim(s: Phaser.Scene, k: string) {
+  if (!FX_DEFS[k] || !s.textures.exists(k)) return false;
   if (s.anims.exists(k)) return true;
   const names = s.textures.get(k).getFrameNames().filter(n => n.startsWith(k + '_')).sort();
   if (!names.length) return false;
