@@ -8,6 +8,8 @@ import { ITEMS, SLOTS, SETS, equipSlotsFor, EQUIP_VERSION, ENHANCE_SLOTS, ENHANC
 import { HERO, ENEMIES, SUMMON, SUMMON_BEAST } from '../data/units';
 import { EXP_PER_LEVEL, EXP_VERSION, migrateExp, scaledExp, fmtExp } from '../data/expCurve';
 import { WORLD, FLOORS, Floor } from '../data/world';
+import { TOWNS, townFloors, townOfFloor, STORAGE_SIZE, TOWN_W, TOWN_GATE_X, GATE_RANGE, TOWN_SPAWN_X, DOOR_RANGE, streetDoors } from '../data/towns';
+import { CONSUMABLE } from '../data/items-town';
 import { QUESTS, ACHIEVES, QuestDef, AchieveDef } from '../data/quests';
 
 export const CRIT_CHANCE = 0.15, CRIT_MULT = 1.8;
@@ -25,6 +27,8 @@ export interface SaveData {
   learned?: string[];
   /** R11 地图顺序版本：缺省 = 旧顺序，读档时迁移层号 */
   mapV?: 2 | 3;
+  /** R14 仓库物品 / 快捷栏技能顺序 */
+  storage?: InvItem[]; skillOrder?: string[];
   /** 装备结构版本：缺省/1 = 单戒单镯旧档，2 = 双戒双镯 */
   eqV?: number;
   /** R22 经验曲线版本：缺省=1（旧线性），2=官方形状 */
@@ -120,6 +124,7 @@ export class World {
         save = { ...save, floorIndex: m(save.floorIndex ?? 0) }; this.reached = new Set([...this.reached].map(m)); this.bossKilled = new Set([...this.bossKilled].map(m));
       }
       // 旧存档兼容：已达到学习等级的技能视为已学
+      this.storage = [...(save.storage ?? [])]; this.skillOrder = [...(save.skillOrder ?? [])];
       this.learned = new Set(save.learned ?? this.skillPool.filter(s => this.level >= (s.unlock ?? s.learn?.[0] ?? 1)).map(s => s.id));
     }
     this.learned.add(this.starter);
@@ -134,7 +139,8 @@ export class World {
   get skillPool(): SkillDef[] { return this.classDef.skills; }
   /** 快捷栏主动技能：去掉被动后按顺序重标 F1..Fn */
   get skills(): SkillDef[] {
-    return this.skillPool.filter(s => !s.passive && this.learned.has(s.id)).map((s, i) => ({ ...s, key: `F${i + 1}` }));
+    const ord = (id: string) => { const i = this.skillOrder.indexOf(id); return i < 0 ? 999 : i; };
+    return this.skillPool.filter(s => !s.passive && this.learned.has(s.id)).map((s, i) => ({ s, i })).sort((a, b) => ord(a.s.id) - ord(b.s.id) || a.i - b.i).map(({ s }, i) => ({ ...s, key: `F${i + 1}` }));
   }
   get floor() { return this.floors[this.floorIndex]; }
   get exitX() { return WORLD.mapWidth - WORLD.exitMargin; }
@@ -328,7 +334,14 @@ export class World {
     this.units = this.units.filter(u => u.isHero || u.summon);
     const h = this.hero; if (h) { h.x = WORLD.heroStartX; h.y = 0; h.facing = 1; }
     const s = this.summon; if (s) { s.x = WORLD.heroStartX - 110; s.y = WORLD.summonLane; }
-    for (const sp of this.floor.spawns) this.spawn(ENEMIES[sp.id], 'enemy', sp.x, sp.y ?? 0);
+    for (const sp of this.floor.spawns) {
+      if (sp.id === 'boss_woma' && this.bossKilled.has(i)) { // R14 #14：再次挑战沃玛教主需沃玛号角（首次免号角 [适配]）
+        const h = this.bag.findIndex(x => x.item === 'woma_horn');
+        if (h < 0) { this.events.push({ type: 'log', text: '沃玛教主未现身：需要沃玛号角（背包）' }); continue; }
+        this.bag.splice(h, 1); this.events.push({ type: 'log', text: '吹响沃玛号角，沃玛教主现身！' }, { type: 'inventory' });
+      }
+      this.spawn(ENEMIES[sp.id], 'enemy', sp.x, sp.y ?? 0);
+    }
     this.events.push({ type: 'floor', index: i, name: this.floor.name });
   }
   /** 主角死亡后：损失部分金币，在本层起点满血复活，本层怪物重置 */
@@ -568,6 +581,79 @@ export class World {
     this.loadFloor(i); this.events.push({ type: 'log', text: `传送到 ${this.floors[i].name}` }); return null;
   }
 
+  // ---------- R14 城镇 / NPC / 仓库 ----------
+  /** 当前所在城镇（null=野外）。城内为安全区：step 不结算战斗 */
+  town: string | null = null;
+  storage: InvItem[] = [];
+  skillOrder: string[] = [];
+  enterTown(t: string, free = false): string | null {
+    if (!TOWNS[t]) return '无此城镇';
+    if (this.town === t) return null;
+    if (!free && this.inCombat()) return '战斗中无法回城';
+    this.town = t; this.stepTarget = null; this.stepQueued = 0;
+    const h = this.hero; if (h) { h.hp = h.maxHp; h.mp = h.maxMp; h.x = TOWN_SPAWN_X; h.y = WORLD.laneMin + (WORLD.laneMax - WORLD.laneMin) / 2; }
+    // 横版长街：清掉野外怪物/地上物品（出城时重新刷层）
+    this.units = this.units.filter(u => u.isHero || u.summon); this.ground = []; this.zones = [];
+    this.events.push({ type: 'town', id: t });
+    this.events.push({ type: 'log', text: `进入 ${TOWNS[t].name}（安全区）：左右走到店铺门口进店，西端城门出城` }); return null;
+  }
+  /** 长街：当前站在哪家店门口（null=不在门口） */
+  nearDoor() { const h = this.hero; if (!this.town || !h) return null; return streetDoors(this.town).find(d => Math.abs(d.x - h.x) <= DOOR_RANGE) ?? null; }
+  atTownGate() { const h = this.hero; return !!this.town && !!h && h.x <= TOWN_GATE_X + GATE_RANGE; }
+  /** 出城：去指定层（需已到达或为 0 层），默认本城区域第一层 */
+  leaveTown(f?: number): string | null {
+    if (!this.town) return '不在城内';
+    const fl = f ?? townFloors(this.town)[0];
+    if (fl !== 0 && !this.reached.has(fl)) return '尚未到达该层';
+    this.town = null; this.loadFloor(fl); this.events.push({ type: 'log', text: `出城：${this.floors[fl].name}` }); return null;
+  }
+  /** 城内传送员：去已到达的层（沿用传送费用/冷却） */
+  townTeleport(i: number): string | null {
+    if (!this.town) return '不在城内';
+    if (!this.reached.has(i)) return '尚未到达该层';
+    if (this.time < this.teleportReadyAt) return `传送冷却中（${Math.ceil(this.teleportReadyAt - this.time)} 秒）`;
+    if (this.gold < this.teleportCost(i)) return `金币不足（需 ${this.teleportCost(i)}）`;
+    this.gold -= this.teleportCost(i); this.teleportReadyAt = this.time + World.TELEPORT_CD; return this.leaveTown(i);
+  }
+  /** NPC 商品购买：只卖该 NPC 的 goods（商店装，不含首领掉落装） */
+  buyGoods(npcId: string, item: string): string | null {
+    const n = Object.values(TOWNS).flatMap(t => t.npcs).find(x => x.id === npcId), gd = n?.goods?.find(x => x.item === item);
+    if (!gd) return '该 NPC 不卖此物';
+    if (this.gold < gd.price) return `金币不足（需 ${gd.price}）`;
+    if (this.bag.length >= WORLD.bagSize) return '背包已满';
+    this.gold -= gd.price; this.bag.push(this.makeItem(item)); this.events.push({ type: 'inventory' }); return null;
+  }
+  deposit(bagIdx: number): string | null {
+    const it = this.bag[bagIdx]; if (!it) return '无物品';
+    if (this.storage.length >= STORAGE_SIZE) return '仓库已满';
+    this.bag.splice(bagIdx, 1); this.storage.push(it); this.events.push({ type: 'inventory' }); return null;
+  }
+  withdraw(i: number): string | null {
+    const it = this.storage[i]; if (!it) return '无物品';
+    if (this.bag.length >= WORLD.bagSize) return '背包已满';
+    this.storage.splice(i, 1); this.bag.push(it); this.events.push({ type: 'inventory' }); return null;
+  }
+  /** 背包消耗品：强效药/太阳水/回城卷/地牢逃脱卷 */
+  useConsumable(bagIdx: number): string {
+    const it = this.bag[bagIdx], c = it && CONSUMABLE[it.item]; if (!c) return '无法使用';
+    if (c.town) {
+      const t = c.town === 'bichi' ? 'bichi' : townOfFloor(this.floorIndex);
+      if (this.town === t) return '已在城内';
+      this.bag.splice(bagIdx, 1); this.enterTown(t, true); this.events.push({ type: 'inventory' }); return `使用 ${it.name}：回到 ${TOWNS[t].name}`;
+    }
+    const h = this.hero; if (!h) return '无法使用';
+    this.bag.splice(bagIdx, 1);
+    if (c.hp) h.hp = Math.min(h.maxHp, h.hp + c.hp);
+    if (c.mp) h.mp = Math.min(h.maxMp, (h.mp ?? 0) + c.mp);
+    this.events.push({ type: 'inventory' }); return `使用 ${it.name}`;
+  }
+  /** 技能页：快捷栏顺序（拖放/上下移） */
+  moveSkill(id: string, to: number) {
+    const ids = this.skills.map(s => s.id); const from = ids.indexOf(id); if (from < 0) return;
+    ids.splice(from, 1); ids.splice(Math.max(0, Math.min(ids.length, to)), 0, id);
+    this.skillOrder = ids; this.events.push({ type: 'learned', skill: id });
+  }
+
   // ---------- 技能 ----------
   cast(i: number, cds: number[]): CastResult {
     const s = this.skills[i], h = this.hero;
@@ -670,7 +756,7 @@ export class World {
 
   // ---------- 存档 ----------
   toSave(): SaveData {
-    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, eqV: EQUIP_VERSION, expV: EXP_VERSION };
+    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], eqV: EQUIP_VERSION, expV: EXP_VERSION };
   }
 
   /** 点按一格：滑行中的按键全部排队（同向最多 10 格，反向则替换队列），每次按键都会走一格 */
@@ -722,6 +808,12 @@ export class World {
   step(dt: number, inp: Input = { dx: 0, dy: 0 }) {
     if (this.done) return;
     this.time += dt;
+    if (this.town) { // R14 安全区：城内只左右走，不结算战斗
+      const h = this.hero; if (!h) return; const dx = Math.sign(inp.dx), dy = Math.sign(inp.dy); h.moving = !!(dx || dy);
+      if (dx) { h.facing = dx as 1 | -1; h.x = Math.max(24, Math.min(TOWN_W - h.width / 2, h.x + dx * WORLD.heroSpeed * dt)); }
+      if (dy) h.y = Math.max(WORLD.laneMin, Math.min(WORLD.laneMax, h.y + dy * WORLD.heroLaneSpeed * dt));
+      return;
+    }
     const h = this.hero;
     const fighting = this.alive('enemy').some(u => u.ai === 'chase');
     if (h) {

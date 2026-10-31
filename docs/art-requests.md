@@ -106,6 +106,12 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 - `map_world_big`：2400×1400 世界大地图（区域中心坐标见 src/data/map.ts REGIONS.x/y）
 - `map_region_<id>`：960×320 区域小地图，id = bichi / woma / dushe / zuma / cangyue / fengmo / chiyue
 - `map_entry_town` / `map_entry_cave` / `map_entry_dungeon` / `map_entry_exit`：64×64 入口图标（城镇/洞穴/副本/出口）
+### R14 城镇 / NPC / 技能页（未提供时代码画占位色块与文字）
+- `bg_town`：960×360 城镇背景（比奇城，可按城镇加 `bg_town_<id>`：bichi / mengzhong / bairimen / cangyue / fengmo）
+- `npc_<kind>`：128×128 NPC 头像，kind = potion / weapon / armor / jewelry / book / general / smith / storage / teleport
+- `icon_hp_strong` `icon_mp_strong` `icon_sun_water` `icon_return_scroll` `icon_dungeon_scroll` `icon_woma_horn`：64×64 消耗品图标（目前复用药瓶/卷轴图标）
+- 技能页：`ui_drag_handle` 24×24 拖动把手、`ui_check_on/off` 24×24 勾选框（目前用文字 ≡ / ☑）
+
 
 ## J. 比奇城城镇（art/town）——✅ 已交付（2026-10-31）
 对应 gap-vs-official §3.1 / §6.1 / §6.7。全部为原创卡通美术，未使用原版素材；NPC 名称沿用原版常见称呼（来源：传奇正传比奇省 NPC 坐标表、5PK 比奇地图指南、他也玩传奇比奇城攻略），查不到的标“待确认”。（注：本文件已有 H 节为悬赏/成就，故本章编号为 J。）
@@ -169,3 +175,7 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 通式：店铺间距 576，中心 x = 288 + 576×i；NPC（768×960 立绘）缩放 0.45（约 346×432），水平与店铺中心对齐，脚底 y = 门面底 + 280（站在门前路面上）。玩家走到 |player.x − 店铺中心 x| < 200 时触发该店 NPC。若单独使用 shop_<id>.png（1.0 倍），NPC 偏移为相对店铺中心 (0, +330)、缩放约 0.53。
 
 预览：`docs/town-preview/street_composite.jpg`（2880×540 缩略，远景+地面+近景+NPC 合成）、`shops_grid.jpg`（10 个门面暗底拼图）、`npcs_redraw.jpg`（两张重画 NPC）。
+
+### K 章接入备注（R14-A2）
+- 游戏画布 1280×720，素材整体按 2/3 缩放使用；已用 bg_far / ground_strip / street_near_1-3 / npc_<id>；shop_<id> 作为缺 street_near 时的后备。
+- 仍缺：其它城镇（银杏村/沃玛村等）长街素材、西端城门/出城牌美术（当前为文字「◀出城」占位）。

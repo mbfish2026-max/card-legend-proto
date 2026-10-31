@@ -1,5 +1,6 @@
 import { UnitDef, DropEntry } from '../combat/types';
 import { officialDrops } from './drops';
+import { WOMA_S9 } from './drops-s9';
 // 主角卡（属性由职业+等级计算，见 classes.ts；这里只提供卡牌尺寸等通用字段）
 export const HERO: UnitDef = {
   id: 'hero', name: '战士', level: 1, hp: 320, mp: 120, atk: 30, atkInterval: 1.1,
@@ -69,6 +70,8 @@ export const ENEMIES: Record<string, UnitDef> = {
 };
 /** R13：有资料的怪，装备/药水/祝福油掉落替换为资料表（1/N）；金币条目保留 [适配]。见 docs/drops-official.md */
 for (const u of Object.values(ENEMIES)) { const od = officialDrops(u.id); if (od) u.drops = [...(u.drops ?? []).filter(d => d.item === 'gold'), ...od]; }
+/** R14 #7：沃玛教主按 S9 结构（[适配] 倍率 K），见 drops-s9.ts */
+ENEMIES.boss_woma.drops = [...(ENEMIES.boss_woma.drops ?? []).filter(d => d.item === 'gold'), ...WOMA_S9];
 /** 道士召唤骷髅（金色卡底，友方） */
 export const SUMMON: UnitDef = { id: 'summon_skeleton', art: 'skeleton', name: '骷髅', level: 1, hp: 200, atk: 10, def: 4, atkInterval: 1.3, range: 6, speed: 0, width: 120, height: 170, tier: 'player',
   card: card({ w: 120, h: 160, figureScale: 1.15, bg: 0x7a5c14 }) };

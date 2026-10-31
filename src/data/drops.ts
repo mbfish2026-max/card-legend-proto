@@ -1,3 +1,4 @@
+import { EQUIP_META } from './equip-official';
 import { OFFICIAL_DROPS } from './drops-official';
 /**
  * R13 逐级掉落：怪物/BOSS 掉落表数据化。
@@ -22,6 +23,8 @@ export const NAME_TO_ITEM: Record<string, string> = {
   '幽灵战衣(男)': 'ghost_robe', '幽灵战衣(女)': 'ghost_robe', '恶魔长袍(男)': 'demon_robe', '恶魔长袍(女)': 'demon_robe',
   '青铜头盔': 'helmet', '骷髅头盔': 'bone_helm', '道士头盔': 'tao_helm', '魔法头盔': 'magic_helm', '金戒指': 'gold_ring',
 };
+// 官方装备表（equip-official.ts）新增件：按官方名接入资料掉落；已有映射优先，男女款同名合并
+for (const [id, m] of Object.entries(EQUIP_META)) if (m.official && m.official !== '自创') for (const n of [m.official, m.official + '(男)', m.official + '(女)']) NAME_TO_ITEM[n] ??= id;
 /** 资料书名 → 本作技能 id */
 export const BOOK_NAME: Record<string, string> = {
   '攻杀剑术': 'slaying', '刺杀剑术': 'thrust', '半月弯刀': 'half_moon', '野蛮冲撞': 'rush', '烈火剑法': 'fire_sword',

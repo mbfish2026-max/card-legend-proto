@@ -9,6 +9,7 @@ import { REGIONS, floorBoss, regionOf, entrances, nodeOfFloor, clampView, zoomAt
 import { detectMobile } from '../src/mobile';
 import { StepGate, stepDir, HoldKeys, HOLD } from '../src/input/stepKeys';
 import { POTIONS } from '../src/data/skills';
+import { TOWNS, NODE_TOWN, WEAPON_GOODS, ARMOR_GOODS, GENERAL_GOODS, STORAGE_SIZE, streetDoors, NPC_ART, TOWN_W, TOWN_GATE_X } from '../src/data/towns';
 import { resolveLayers, pickTexture, comboKey, changedSlots, fallbackId } from '../src/data/equipLayers';
 // @ts-ignore 测试运行于 node（tsx），项目未装 @types/node
 import { existsSync } from 'node:fs';
@@ -664,6 +665,69 @@ const free = (w: World) => w.skills.map(() => 0);
   const w = new World(seeded(3), 1, FLOORS, 'warrior'); w.reached.add(4); w.gold = 1000;
   ok(w.teleport(nodeOfFloor(4)!.node.floor!) === null && w.floorIndex === 4, '点击入口沿用 teleport 规则传送');
   ok(!!w.teleport(nodeOfFloor(0)!.node.floor!), '传送冷却仍生效');
+}
+
+{ // R14 阶段 A：城镇 / NPC 商店 / 仓库 / 技能页
+  const w = new World(seeded(5), 20, FLOORS, 'warrior'); w.gold = 100000;
+  ok(Object.values(NODE_TOWN).every(t => !!TOWNS[t]) && REGIONS.every(r => r.nodes.filter(n => n.kind === 'town').every(n => NODE_TOWN[n.id])), '每个地图城镇节点都对应城镇');
+  ok(w.enterTown('bichi') === null && w.town === 'bichi', '进入比奇城');
+  const hp0 = w.hero!.hp; w.spawn(ENEMIES[Object.keys(ENEMIES)[0]], 'enemy', w.hero!.x + 30, 0); run(w, 5);
+  ok(w.hero!.hp === hp0, '安全区：城内不受伤害');
+  ok(w.leaveTown() === null && w.town === null && w.floorIndex === 0, '出城 → 第 1 层');
+  ok(w.enterTown('bichi') === null && w.town === 'bichi', '再回城');
+  const drops = new Set(Object.values(ENEMIES).filter(e => e.tier === 'boss').flatMap(e => (e.drops ?? []).map(d => d.item)));
+  const shopItems = [...WEAPON_GOODS, ...ARMOR_GOODS].map(g => g.item);
+  const bossOnly = ['xiuluo', 'pohun', 'xiangmo', 'tulong', 'longwen', 'luoyang'].filter(i => ITEMS[i]);
+  ok(drops.size > 0 && shopItems.every(i => ITEMS[i]?.slot && !bossOnly.includes(i)) && [...WEAPON_GOODS, ...ARMOR_GOODS].every(g => g.official !== null), '武器/衣服店只卖原版 NPC 有售价的商店装，不卖首领装');
+  ok([...WEAPON_GOODS, ...ARMOR_GOODS, ...GENERAL_GOODS].every(g => g.price > (ITEMS[g.item].price ?? 0)), '买价 > 卖回价（不能刷钱）');
+  ok(WEAPON_GOODS.every(g => g.official !== null && g.price === Math.round(g.official * 0.25) && /21cq|tayewan/.test(g.src)), '武器价 = 原版价×0.25，带来源');
+  const g0 = w.gold, b0 = w.bag.length; ok(w.buyGoods('bq_weapon', 'short_sword') === null && w.gold === g0 - 250 && w.bag.length === b0 + 1, '武器店购买短剑 250 金');
+  ok(!!w.buyGoods('bq_weapon', 'xiuluo'), '武器店不卖修罗（首领装）');
+  const g1 = w.gold; const got = w.sellItem(w.bag.length - 1); ok(got === ITEMS.short_sword.price && w.gold === g1 + got, '卖给 NPC 按售价');
+  w.buyGoods('bq_armor', 'cloth'); const it = w.bag[w.bag.length - 1];
+  ok(w.deposit(w.bag.length - 1) === null && w.storage.length === 1, '仓库存入');
+  const w2 = new World(seeded(6), 20, FLOORS, 'warrior', JSON.parse(JSON.stringify(w.toSave())));
+  ok(w2.storage.length === 1 && w2.storage[0].uid === it.uid, '仓库跨刷新（存档）保留');
+  ok(w2.withdraw(0) === null && w2.storage.length === 0 && w2.bag.some(x => x.uid === it.uid), '仓库取回');
+  ok(STORAGE_SIZE === 40, '仓库 40 格 [适配]');
+  const old: any = JSON.parse(JSON.stringify(w.toSave())); delete old.storage; delete old.skillOrder;
+  const w3 = new World(seeded(7), 20, FLOORS, 'warrior', old); ok(w3.storage.length === 0 && w3.skills.length === w.skills.length && w3.skillOrder.length === 0, '旧存档（无仓库/顺序）兼容');
+  w.reached.add(3); w.teleportReadyAt = 0; ok(w.townTeleport(3) === null && w.town === null && w.floorIndex === 3, '传送员：城内传送到已到达层');
+  // 技能页：拖放排序 + 自动优先级
+  const s = learnAll(new World(seeded(8), 40, FLOORS, 'warrior')); const ids = s.skills.map(k => k.id);
+  s.moveSkill(ids[ids.length - 1], 0); ok(s.skills[0].id === ids[ids.length - 1] && s.skills[0].key === 'F1', '技能拖到 F1');
+  const s2 = new World(seeded(9), 40, FLOORS, 'warrior', JSON.parse(JSON.stringify(s.toSave()))); ok(s2.skills[0].id === ids[ids.length - 1], '快捷栏顺序存档保留');
+  Settings.autoSkills = null; Settings.autoTouched = null as any; const a = Settings.skillsFor('mage');
+  if (a.length >= 2) { Settings.moveAutoSkill(a[1], -1, 'mage'); const b = Settings.skillsFor('mage'); ok(b[0] === a[1] && b[1] === a[0], '自动技能优先级上移'); }
+  Settings.autoSkills = null;
+}
+
+{ // R14 官方装备表接入：商店低级装 / 新件进资料掉落 / 职业限制
+  const { officialDrops, NAME_TO_ITEM } = await import('../src/data/drops');
+  const { EQUIP_META } = await import('../src/data/equip-official');
+  const all = Object.values(ENEMIES).flatMap(e => officialDrops(e.id) ?? []).map(d => d.item);
+  const newIds = Object.keys(EQUIP_META).filter(id => EQUIP_META[id].official !== '自创');
+  ok(newIds.every(id => Object.values(NAME_TO_ITEM).includes(id)), '官方装备表每件（非自创）都有官方名映射');
+  ok(all.some(i => EQUIP_META[i]?.tier === 'woma' && !['magic_staff', 'tao_sword', 'lianyu', 'jingzhongyue', 'wujigun'].includes(i)), '新增沃玛级首饰/头盔进入资料掉落');
+  ok([...WEAPON_GOODS, ...ARMOR_GOODS].every(g => !EQUIP_META[g.item]?.tier || EQUIP_META[g.item].tier === 'base'), '商店装都不是沃玛/祖玛/赤月级');
+  ok(['iron_sword', 'medium_armor', 'helmet'].every(i => [...WEAPON_GOODS, ...ARMOR_GOODS].some(g => g.item === i)), '铁剑/中型盔甲/青铜头盔上架');
+  const m = new World(seeded(3), 40, FLOORS, 'mage'); m.bag.push(m.makeItem('shengzhan_helm')); ok(m.equipItem(m.bag.length - 1) === '职业不符', '法师穿圣战头盔 → 职业不符');
+}
+
+{ // R14 横版长街：走到门口进店
+  const w = new World(seeded(11), 20, FLOORS, 'warrior'); w.enterTown('bichi');
+  const ds = streetDoors('bichi');
+  ok(ds.length === 10 && ds.some(d => d.npc.kind === 'veteran'), '比奇长街 10 家门面（含比奇老兵）');
+  ok(ds.every((d, i) => d.x > TOWN_GATE_X + 100 && d.x < TOWN_W && (i === 0 || d.x - ds[i - 1].x > 2 * 120)), '门面在街内且不重叠');
+  ok(TOWN_W === 3840 && ds[0].art === 'veteran' && ds[0].x === 192 && ds[9].art === 'storage' && ds[9].x === Math.round(5472 * 2 / 3), '店位按素材 K 章：老兵…仓库，中心 x=(288+576i)×2/3');
+  ok(Object.values(NPC_ART).every(a => existsSync(`public/assets/town/npc_${a}.png`)) && ['bg_far.jpg', 'ground_strip.jpg', 'street_near_1.png', 'street_near_2.png', 'street_near_3.png', ...Object.values(NPC_ART).map(a => `shop_${a}.png`)].every(f => existsSync('public/assets/town/' + f)), 'NPC 立绘与城镇背景文件都在');
+  ok(w.alive('enemy').length === 0 && w.ground.length === 0, '进城清掉野外怪/地上物品');
+  const target = ds[3]; let n = 0; while (w.hero!.x < target.x - 50 && n++ < 400) w.step(0.05, { dx: 1, dy: 0 });
+  ok(w.nearDoor()?.npc.id === target.npc.id, `向右走到 ${target.npc.name} 门口触发该 NPC`);
+  ok(!w.atTownGate(), '不在城门');
+  n = 0; while (!w.atTownGate() && n++ < 800) w.step(0.05, { dx: -1, dy: 0 });
+  ok(w.atTownGate() && w.nearDoor() === null && w.town === 'bichi', '向左走回城门（仍在城内，门口才出城）');
+  ok(w.leaveTown() === null && w.town === null && w.alive('enemy').length > 0, '城门出城后重新刷怪');
 }
 
 { // 5.1 双戒双镯 + 存档迁移
