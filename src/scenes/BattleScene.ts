@@ -19,7 +19,8 @@ import { playCombatAnim } from '../ui/combatAnim';
 import { CardView } from '../ui/CardView';
 import { Hud } from '../ui/Hud';
 import { PanelMode } from '../ui/Panel';
-import { TOWNS, TOWN_W, TOWN_GATE_X, NPC_ART, STREET_ART_K, streetDoors } from '../data/towns';
+import { TOWNS, TOWN_GATE_X, NPC_ART, STREET_ART_K, streetDoors, TOWN_LAYOUT, townWidth, NPC_SCALE } from '../data/towns';
+import { TOWN_ASSETS } from '../assets-manifest';
 import * as fx from '../ui/Fx';
 import { Settings, SaveStore } from '../settings';
 import type { UIScene } from './UIScene';
@@ -172,31 +173,51 @@ export class BattleScene extends Phaser.Scene {
     for (const [uid, v] of [...this.views]) if (!v.unit.isHero && !v.unit.summon) { v.destroy(); this.views.delete(uid); }
     this.groundObjs.forEach(os => os.forEach(o => o.destroy())); this.groundObjs.clear(); this.floorUids = [];
     this.bgImgs.forEach(b => b.setVisible(false)); this.portal.setVisible(false); this.merchant.setVisible(false);
-    const K = STREET_ART_K, need = ['bg_far', 'ground_strip', 'street_near_1', 'street_near_2', 'street_near_3', ...Object.values(NPC_ART).flatMap(a => ['npc_' + a, 'shop_' + a])].filter(k => !this.textures.exists(k));
-    if (need.length) { need.forEach(k => this.load.image(k, `assets/town/${k}.${k === 'bg_far' || k === 'ground_strip' ? 'jpg' : 'png'}`)); this.load.once('complete', () => { if (this.world.town === id) this.buildStreet(id); }); this.load.start(); }
-    const C = this.street = this.add.container(0, 0).setDepth(3), W = TOWN_W, has = (k: string) => this.textures.exists(k);
-    // 远景（0.3x 视差，固定在屏幕上平铺滚动）
-    if (has('bg_far')) { const far = hdFixed(this.add.tileSprite(-(MAX_LW - 1280) / 2, 0, MAX_LW, 720, 'bg_far').setOrigin(0).setScrollFactor(0).setTileScale(K)); this.streetFar = far; C.add(far); }
-    else { const far = hdFixed(this.add.graphics().setScrollFactor(0)); far.fillGradientStyle(0x6ab0ff, 0x6ab0ff, 0xc8e8a0, 0xc8e8a0, 1).fillRect(-(MAX_LW - 1280) / 2, 0, MAX_LW, 720); C.add(far); }
-    // 地面（原 y=720~1080 → 480~720，平铺）
-    if (has('ground_strip')) C.add(this.add.tileSprite(0, 720 * K, W, 360 * K, 'ground_strip').setOrigin(0).setTileScale(K));
-    else C.add(this.add.rectangle(0, 720 * K, W, 360 * K, 0x9a8a70).setOrigin(0));
-    // 近景店铺带：三段拼成整街；缺图时用单个 shop_<id> 门面（0.85 倍，底边 y=760）
-    // 点街面任意处：走到那里（手机横屏左右走）
-    C.add(this.add.rectangle(0, 0, W, 720, 0, 0.001).setOrigin(0).setInteractive().on('pointerdown', (p: Phaser.Input.Pointer) => this.walkTo(p.worldX, 'walk')));
-    const near = [1, 2, 3].every(i => has('street_near_' + i));
-    if (near) [1, 2, 3].forEach(i => C.add(this.add.image(1920 * (i - 1) * K, 0, 'street_near_' + i).setOrigin(0).setScale(K)));
-    for (const d of streetDoors(id)) {
-      const n = d.npc;
-      if (!near) { if (has('shop_' + d.art)) C.add(this.add.image(d.x, 760 * K, 'shop_' + d.art).setOrigin(0.5, 1).setScale(0.85 * K)); else C.add(this.add.rectangle(d.x, 760 * K, 544 * K, 612 * K, 0x6a4a2a).setOrigin(0.5, 1).setStrokeStyle(3, 0xd4a64a)); }
-      C.add(this.add.text(d.x, 250, n.name.replace(/（.*）/, ''), { fontFamily: FONT, fontSize: '17px', color: '#ffe8a0', stroke: '#1a1008', strokeThickness: 4 }).setOrigin(0.5));
-      if (has('npc_' + d.art)) C.add(this.add.image(d.x, 1040 * K, 'npc_' + d.art).setOrigin(0.5, 1).setScale(0.45 * K));
-      C.add(this.add.rectangle(d.x, 100, 300, 760 * K - 100, 0, 0.001).setOrigin(0.5, 0).setInteractive({ useHandCursor: true }).on('pointerdown', () => this.walkTo(d.x, n.id)));
+    const L = TOWN_LAYOUT[id];
+    if (L) {
+      // 大城：单张长背景 + 摆位表门面/立绘（docs/art-requests.md L-P1/P2/P3；资源 assets-manifest TOWN_ASSETS）
+      const K = STREET_ART_K, need = Object.keys(TOWN_ASSETS).filter(k => !this.textures.exists(k) && (k === L.bg || L.items.some(i => i.shop === k || i.npcArt === k)));
+      if (need.length) { need.forEach(k => this.load.image(k, TOWN_ASSETS[k])); this.load.once('complete', () => { if (this.world.town === id) this.buildStreet(id); }); this.load.start(); }
+      const C = this.street = this.add.container(0, 0).setDepth(3), W = townWidth(id), has = (k: string) => this.textures.exists(k);
+      if (has(L.bg)) C.add(this.add.image(0, 0, L.bg).setOrigin(0).setScale(K).setName('townBg'));
+      else C.add(this.add.rectangle(0, 0, W, 720, 0x6a5a40).setOrigin(0));
+      C.add(this.add.rectangle(0, 0, W, 720, 0, 0.001).setOrigin(0).setInteractive().on('pointerdown', (p: Phaser.Input.Pointer) => this.walkTo(p.worldX, 'walk')));
+      for (const it of L.items) {
+        const x = it.x * K, n = it.npc ? TOWNS[id].npcs.find(v => v.id === it.npc) : undefined;
+        if (it.shop) { if (has(it.shop)) C.add(this.add.image(x, 760 * K, it.shop).setOrigin(0.5, 1).setScale(L.shopScale * K).setName('shop:' + it.shop)); else C.add(this.add.rectangle(x, 760 * K, 540 * K, 720 * K, 0x6a4a2a).setOrigin(0.5, 1)); }
+        if (it.npcArt && has(it.npcArt)) C.add(this.add.image((it.npcX ?? it.x) * K, 1040 * K, it.npcArt).setOrigin(0.5, 1).setScale(NPC_SCALE * K).setName('npc:' + it.npcArt));
+        const label = it.label ?? n?.name.replace(/（.*）/, '') ?? '';
+        C.add(this.add.text(x, it.shop ? 250 : 380, label, { fontFamily: FONT, fontSize: '17px', color: n ? '#ffe8a0' : '#b8b0a0', stroke: '#1a1008', strokeThickness: 4 }).setOrigin(0.5));
+        if (n) C.add(this.add.rectangle(x, 100, 200, 760 * K - 100, 0, 0.001).setOrigin(0.5, 0).setInteractive({ useHandCursor: true }).on('pointerdown', () => this.walkTo(x, n.id)));
+      }
+    } else {
+      const K = STREET_ART_K, need = ['bg_far', 'ground_strip', 'street_near_1', 'street_near_2', 'street_near_3', ...Object.values(NPC_ART).flatMap(a => ['npc_' + a, 'shop_' + a])].filter(k => !this.textures.exists(k));
+      if (need.length) { need.forEach(k => this.load.image(k, `assets/town/${k}.${k === 'bg_far' || k === 'ground_strip' ? 'jpg' : 'png'}`)); this.load.once('complete', () => { if (this.world.town === id) this.buildStreet(id); }); this.load.start(); }
+      const C = this.street = this.add.container(0, 0).setDepth(3), W = townWidth(id), has = (k: string) => this.textures.exists(k);
+      // 远景（0.3x 视差，固定在屏幕上平铺滚动）
+      if (has('bg_far')) { const far = hdFixed(this.add.tileSprite(-(MAX_LW - 1280) / 2, 0, MAX_LW, 720, 'bg_far').setOrigin(0).setScrollFactor(0).setTileScale(K)); this.streetFar = far; C.add(far); }
+      else { const far = hdFixed(this.add.graphics().setScrollFactor(0)); far.fillGradientStyle(0x6ab0ff, 0x6ab0ff, 0xc8e8a0, 0xc8e8a0, 1).fillRect(-(MAX_LW - 1280) / 2, 0, MAX_LW, 720); C.add(far); }
+      // 地面（原 y=720~1080 → 480~720，平铺）
+      if (has('ground_strip')) C.add(this.add.tileSprite(0, 720 * K, W, 360 * K, 'ground_strip').setOrigin(0).setTileScale(K));
+      else C.add(this.add.rectangle(0, 720 * K, W, 360 * K, 0x9a8a70).setOrigin(0));
+      // 近景店铺带：三段拼成整街；缺图时用单个 shop_<id> 门面（0.85 倍，底边 y=760）
+      // 点街面任意处：走到那里（手机横屏左右走）
+      C.add(this.add.rectangle(0, 0, W, 720, 0, 0.001).setOrigin(0).setInteractive().on('pointerdown', (p: Phaser.Input.Pointer) => this.walkTo(p.worldX, 'walk')));
+      const near = [1, 2, 3].every(i => has('street_near_' + i));
+      if (near) [1, 2, 3].forEach(i => C.add(this.add.image(1920 * (i - 1) * K, 0, 'street_near_' + i).setOrigin(0).setScale(K)));
+      for (const d of streetDoors(id)) {
+        const n = d.npc;
+        if (!near) { if (has('shop_' + d.art)) C.add(this.add.image(d.x, 760 * K, 'shop_' + d.art).setOrigin(0.5, 1).setScale(0.85 * K)); else C.add(this.add.rectangle(d.x, 760 * K, 544 * K, 612 * K, 0x6a4a2a).setOrigin(0.5, 1).setStrokeStyle(3, 0xd4a64a)); }
+        C.add(this.add.text(d.x, 250, n.name.replace(/（.*）/, ''), { fontFamily: FONT, fontSize: '17px', color: '#ffe8a0', stroke: '#1a1008', strokeThickness: 4 }).setOrigin(0.5));
+        if (has('npc_' + d.art)) C.add(this.add.image(d.x, 1040 * K, 'npc_' + d.art).setOrigin(0.5, 1).setScale(0.45 * K));
+        C.add(this.add.rectangle(d.x, 100, 300, 760 * K - 100, 0, 0.001).setOrigin(0.5, 0).setInteractive({ useHandCursor: true }).on('pointerdown', () => this.walkTo(d.x, n.id)));
+      }
     }
     // 西端出城路牌
-    C.add(this.add.text(36, GROUND_Y - 150, '◀\n出城', { fontFamily: FONT, fontSize: '22px', color: '#ffe8a0', align: 'center', stroke: '#000', strokeThickness: 5 }).setOrigin(0.5)
+    this.street!.add(this.add.text(36, GROUND_Y - 150, '◀\n出城', { fontFamily: FONT, fontSize: '22px', color: '#ffe8a0', align: 'center', stroke: '#000', strokeThickness: 5 }).setOrigin(0.5)
       .setInteractive({ useHandCursor: true }).on('pointerdown', () => this.walkTo(TOWN_GATE_X + 40, 'gate')));
     this.streetHint = this.add.text(0, GROUND_Y - 400, '', { fontFamily: FONT, fontSize: '20px', color: '#ffffff', fontStyle: 'bold', stroke: '#2a0a5a', strokeThickness: 5 }).setOrigin(0.5).setDepth(60);
+    this.cameras.main.setBounds(0, 0, townWidth(id), 720);
     this.hud?.setFloor(t.name, []); const hv = this.world.hero && this.views.get(this.world.hero.uid); if (hv) hv.x = this.world.hero!.x;
     this.cameras.main.centerOn(this.world.hero?.x ?? 640, 360); this.cameras.main.fadeIn(500);
   }

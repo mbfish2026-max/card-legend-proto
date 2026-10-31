@@ -19,7 +19,7 @@ import { MINE_FLOORS, MINE_CAST, MINE_RESPAWN, MINE_RADIUS, mineX, minePurity, O
 import { WORLD, FLOORS, Floor, FARM_RESPAWN, FARM_SAFE_DIST, nextFloorOf, SIDE_FLOORS, DEPTH_STEP, prevLayerOf, prevFloorOf, floorWidth, OLD_MAP_W, summonMulAt } from '../data/world';
 /** 任务 A：待机怪离主角超过「半屏 + 2 屏」即休眠 */
 export const SLEEP_DIST = 640 + 2 * 1280;
-import { TOWNS, townFloors, townOfFloor, returnTownOf, STORAGE_SIZE, TOWN_W, TOWN_GATE_X, GATE_RANGE, TOWN_SPAWN_X, DOOR_RANGE, streetDoors } from '../data/towns';
+import { TOWNS, townFloors, townOfFloor, returnTownOf, STORAGE_SIZE, townWidth, TOWN_GATE_X, GATE_RANGE, TOWN_SPAWN_X, DOOR_RANGE, streetDoors } from '../data/towns';
 import { CONSUMABLE } from '../data/items-town';
 import { WOMA_FLOOR_NAME, WOMA_SECTIONS, WOMA_DOOR_X, HORN_MOB_CHANCE, HORN_MOBS, RING_MIN_LEVEL, RingQuest, ringReward, IDENT_MIN_LEVEL, IDENT_PRICE, IDENT_POOL, identValue } from '../data/r14b';
 import { QUESTS, ACHIEVES, QuestDef, AchieveDef } from '../data/quests';
@@ -814,7 +814,7 @@ export class World {
     this.events.push({ type: 'log', text: `进入 ${TOWNS[t].name}（安全区）：左右走到店铺门口进店，西端城门出城` }); return null;
   }
   /** 长街：当前站在哪家店门口（null=不在门口） */
-  nearDoor() { const h = this.hero; if (!this.town || !h) return null; return streetDoors(this.town).find(d => Math.abs(d.x - h.x) <= DOOR_RANGE) ?? null; }
+  nearDoor() { const h = this.hero; if (!this.town || !h) return null; let best: ReturnType<typeof streetDoors>[number] | null = null; for (const d of streetDoors(this.town)) if (Math.abs(d.x - h.x) <= DOOR_RANGE && (!best || Math.abs(d.x - h.x) < Math.abs(best.x - h.x))) best = d; return best; }
   atTownGate() { const h = this.hero; return !!this.town && !!h && h.x <= TOWN_GATE_X + GATE_RANGE; }
   /** 出城：去指定层（需已到达或为 0 层），默认本城区域第一层 */
   leaveTown(f?: number): string | null {
@@ -1431,7 +1431,7 @@ export class World {
     this.time += dt;
     if (this.town) { // R14 安全区：城内只左右走，不结算战斗
       const h = this.hero; if (!h) return; const dx = Math.sign(inp.dx), dy = Math.sign(inp.dy); h.moving = !!(dx || dy);
-      if (dx) { h.facing = dx as 1 | -1; h.x = Math.max(24, Math.min(TOWN_W - h.width / 2, h.x + dx * WORLD.heroSpeed * dt)); }
+      if (dx) { h.facing = dx as 1 | -1; h.x = Math.max(24, Math.min(townWidth(this.town) - h.width / 2, h.x + dx * WORLD.heroSpeed * dt)); }
       if (dy) h.y = Math.max(WORLD.laneMin, Math.min(WORLD.laneMax, h.y + dy * WORLD.heroLaneSpeed * dt));
       return;
     }

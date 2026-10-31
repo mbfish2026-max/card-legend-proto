@@ -4,7 +4,7 @@ import { ASSETS, SFX } from '../assets-manifest';
 import { ITEMS } from '../data/items';
 import { CLASSES, CLASS_IDS, ClassId } from '../data/classes';
 import { FONT } from '../data/fx';
-import { Settings, SaveStore } from '../settings';
+import { Settings, SaveStore, Slots, fmtPlay, fmtDate } from '../settings';
 import { STARTER } from '../data/books';
 import { renderSettingsView } from '../ui/SettingsView';
 import { queueCritical, queueImages, imagePending, floorKeys, PreloadScene } from '../loader';
@@ -53,15 +53,18 @@ export class TitleScene extends Phaser.Scene {
     txt(this, 640, 120, '卡 牌 传 奇', 72, '#ffd24a', { fontStyle: 'bold', strokeThickness: 8 }).setOrigin(0.5);
     txt(this, 640, 190, IS_MOBILE ? '横版卡牌动作 · 原型（触屏：屏幕虚拟按键操作）' : '横版卡牌动作 · 原型', 20, '#e8d8b0').setOrigin(0.5);
     if (!IS_MOBILE) txt(this, 640, 218, 'A/D 移动（可后退） · W/空格 传送门 · S 回上层 · F1-F5 技能 · 1-4 药水 · B 背包 · T 商人', 15, '#bfb39a').setOrigin(0.5);
-    if (qs.get('title') === 'class') this.classSelect(); else this.mainMenu();
+    if (this.game.registry.get('openSlots')) { this.game.registry.set('openSlots', false); this.slotsScreen(); }
+    else if (qs.get('title') === 'class') this.classSelect(); else this.mainMenu();
   }
   clear() { this.layer?.destroy(true); this.layer = this.add.container(0, 0); return this.layer; }
   mainMenu() {
     const L = this.clear(), has = SaveStore.has(), save = SaveStore.load();
-    L.add([...button(this, 640, 320, 280, 56, '新 游 戏', () => this.classSelect())]);
+    // 新游戏不覆盖当前槽：当前槽有存档时换到第一个空槽；全满则去存档位界面选择
+    L.add([...button(this, 640, 320, 280, 56, '新 游 戏', () => { if (has) { const e = Slots.firstEmpty(); if (!e) { this.slotsScreen('存档位已满：请先删除一个存档'); return; } Slots.select(e); } this.classSelect(); })]);
     L.add([...button(this, 640, 395, 280, 56, '继 续', () => save && this.startBattle({ save }), 22, has && !!save)]);
     if (save) L.add(txt(this, 640, 432, `${CLASSES[save.cls].name}  Lv${save.level}  第 ${floorNo(save.floorIndex)} 层  金币 ${save.gold}`, 14, '#cfc0a0').setOrigin(0.5, 0));
-    L.add([...button(this, 640, 490, 280, 56, '设 置', () => this.settings())]);
+    L.add([...button(this, 640, 490, 280, 56, `存 档 位（${Slots.active()}）`, () => this.slotsScreen())]);
+    L.add([...button(this, 640, 565, 280, 56, '设 置', () => this.settings())]);
     L.add(txt(this, 640, 690, '素材：魔兽世界图标/音效（仅供个人原型）+ AI 生成立绘与背景', 13, '#999').setOrigin(0.5));
   }
   /** 进战斗前等待目标层关键资源（继续存档可能在高层），显示进度条 */
@@ -90,6 +93,25 @@ export class TitleScene extends Phaser.Scene {
       cls: this.setCls, learned: (() => { const sv = SaveStore.load(); if (sv?.cls === this.setCls) return sv.learned ? new Set([...sv.learned, STARTER[this.setCls]]) : undefined; return new Set([STARTER[this.setCls]]); })(), rerender: () => this.settings(), onPickClass: c => { this.setCls = c; this.settings(); },
       footer: [{ label: '返回', w: 200, fn: () => this.mainMenu() }],
     });
+  }
+  /** 多存档位：选择/新建/删除（二次确认）/改名；每格显示职业、等级、层数、最后游玩、游玩时长 */
+  slotsScreen(note = '', armDel = 0) {
+    const L = this.clear(), list = Slots.list(), rowH = Math.min(84, 520 / list.length), top = 110;
+    L.add(this.add.rectangle(640, 395, 1000, 640, 0x15100b, 0.96).setStrokeStyle(3, 0xd4a64a));
+    L.add(txt(this, 640, 98, '存 档 位', 26, '#ffd24a', { fontStyle: 'bold' }).setOrigin(0.5).setName('slots-title'));
+    list.forEach((sl, k) => {
+      const y = top + 40 + k * rowH + rowH / 2, d = sl.data;
+      L.add(this.add.rectangle(640, y, 960, rowH - 8, sl.active ? 0x3a2c14 : 0x221a10).setStrokeStyle(2, sl.active ? 0xffd24a : 0x6a5a3a).setName('slot:' + sl.i));
+      L.add(txt(this, 180, y - 12, `${sl.i}. ${sl.name}${sl.active ? '（当前）' : ''}`, 18, sl.active ? '#ffe8a0' : '#e8d8b0').setOrigin(0, 0.5));
+      L.add(txt(this, 180, y + 14, d ? `${CLASSES[d.cls]?.name ?? d.cls}  Lv${d.level}  第 ${floorNo(d.floorIndex)} 层  ·  最后游玩 ${fmtDate(sl.lastAt)}  ·  时长 ${fmtPlay(sl.playMs)}` : '空', 14, d ? '#cfc0a0' : '#8a7a5a').setOrigin(0, 0.5));
+      let x = 1070;
+      const btn = (w: number, label: string, fn: () => void) => { L.add([...button(this, x - w / 2, y, w, Math.min(44, rowH - 16), label, fn, 15)]); x -= w + 10; };
+      if (d) btn(90, armDel === sl.i ? '确认删除' : '删除', () => armDel === sl.i ? (Slots.remove(sl.i), this.slotsScreen(`已删除 ${sl.name}`)) : this.slotsScreen(`再点一次「确认删除」删除 ${sl.name}，不可恢复`, sl.i));
+      btn(80, '改名', () => { const n = globalThis.prompt?.('存档名称（最多 16 字）', sl.name); if (n != null) { Slots.rename(sl.i, n); this.slotsScreen(); } });
+      btn(90, d ? '选择' : '新建', () => { Slots.select(sl.i); if (d) this.mainMenu(); else this.classSelect(); });
+    });
+    if (note) L.add(txt(this, 640, 676, note, 15, armDel ? '#ff9a7a' : '#cfc0a0').setOrigin(0.5).setName('slots-note'));
+    L.add([...button(this, 640, 712 - 10, 160, 36, '返回', () => this.mainMenu(), 16)]);
   }
   classSelect() {
     const L = this.clear();
