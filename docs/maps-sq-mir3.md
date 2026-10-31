@@ -28,3 +28,8 @@
 | 77 | 异界裂隙·禁地·尸上行 | fengmo (0.76,0.74) | — | https://woool.52pk.com/data/101222.shtml |
 | 78 | 异界裂隙·禁地·魔穴 | fengmo (0.93,0.74) | 禁地魔王（刷新 6 小时→[适配]36 分钟） | https://woool.17173.com/content/2014-11-30/20141130225158263.shtml |
 | 79 | 异界裂隙·潘夜神殿 | chiyue (0.5,0.18) | 潘夜牛魔王（刷新 未查到） | https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml |
+
+
+## 美术接入（feat/balance-sys）
+
+63 张立绘已接入（art=怪物 id），第8批背景按 docs/art-requests.md 合层表映射到 bg_floor57–80。

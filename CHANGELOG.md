@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## sq-mir3 美术接入（feat/balance-sys）
+
+- 63 个传世/传奇3 怪物与 BOSS 立绘（art/maps-sq-mir3 第1–7批）接入：`assets-manifest.ts` 增加同名 key，`units.ts` 中 SQMIR3 怪 art 改为自身 id（原占位贴图列保留作记录）。
+- 第8批 10 张合层背景按交付表接入 bg_floor57–80（57–58、60–61、62–66、69–73、74–75、76–79 共图）。
+- 测试：tests/balance-sys.test.ts（立绘文件存在、背景映射）。
+
 ## 平衡系统 阶段1+2（feat/balance-sys）
 - 经验：怪物经验改为 21cq 官方值 ÷10（src/data/monsterExp.ts，55 只匹配，余者对数回归拟合，标 未查到[适配]）；层倍率按 plan-60h 段时长反推每级击杀数；叠加等级差衰减 高3/6/10 级 ×0.7/0.4/0.1；任务/环经验封顶 0.3×本层所需。升级表不变。
 - 主线锚点 1→50（src/data/balance.ts MAIN_ANCHORS），支线取官方怪等级最近的主线锚点。
