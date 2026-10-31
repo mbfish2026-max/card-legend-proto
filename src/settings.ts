@@ -124,9 +124,50 @@ function clampZoom(z: number) {
   const n = Math.round(z / ZOOM_STEP) * ZOOM_STEP;
   return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, +n.toFixed(2)));
 }
-export const SaveStore = {
-  has() { return !!ls()?.getItem(SAVE_KEY); },
-  load(): SaveData | null { try { const s = JSON.parse(ls()?.getItem(SAVE_KEY) ?? 'null'); return s?.v === 1 ? s : null; } catch { return null; } },
-  write(d: SaveData) { ls()?.setItem(SAVE_KEY, JSON.stringify(d)); },
-  clear() { ls()?.removeItem(SAVE_KEY); },
+/** 多存档位：槽 1 仍用旧键 fcl_save_v1（旧存档/导出格式零改动即为槽 1），其余槽 fcl_save_v1_s<n>；元数据（当前槽/名称/最后游玩/游玩时长）存 fcl_slots_v1。设置 fcl_settings_v1 全局共享，不分槽 */
+export const SLOT_MIN = 5, SLOT_MAX = 10, BACKUP_KEY = 'fcl_save_v1_backup', META_KEY = 'fcl_slots_v1';
+export interface SlotMeta { name?: string; lastAt?: number; playMs?: number }
+interface Meta { active: number; count: number; slots: Record<string, SlotMeta> }
+export const slotKey = (i: number) => i === 1 ? SAVE_KEY : `${SAVE_KEY}_s${i}`;
+const clampCount = (n: unknown) => typeof n === 'number' && Number.isFinite(n) ? Math.max(SLOT_MIN, Math.min(SLOT_MAX, Math.round(n))) : SLOT_MIN;
+let lastWrite = 0; // 本次会话上次写盘时刻：累计游玩时长（间隔 >5 分钟视为挂起，不计）
+const PLAY_GAP = 5 * 60_000;
+export const Slots = {
+  meta(): Meta {
+    const L = ls(); let m: Meta | null = null;
+    try { const r = JSON.parse(L?.getItem(META_KEY) ?? 'null'); if (r && typeof r === 'object') m = { active: Number(r.active) || 1, count: clampCount(r.count), slots: r.slots && typeof r.slots === 'object' ? r.slots : {} }; } catch { /* 坏元数据重建 */ }
+    if (!m) { // 首次：旧存档即槽 1；另存一份备份键（已有备份不覆盖）
+      m = { active: 1, count: SLOT_MIN, slots: {} };
+      const old = L?.getItem(SAVE_KEY); if (old && L && L.getItem(BACKUP_KEY) == null) L.setItem(BACKUP_KEY, old);
+      L?.setItem(META_KEY, JSON.stringify(m));
+    }
+    if (m.active < 1 || m.active > m.count) m.active = 1;
+    return m;
+  },
+  put(m: Meta) { ls()?.setItem(META_KEY, JSON.stringify(m)); },
+  count() { return this.meta().count; },
+  setCount(n: number) { const m = this.meta(), c = clampCount(n), used = this.list().filter(x => x.data).map(x => x.i); m.count = Math.max(c, ...used); /* 不缩掉有存档的槽 */ this.put(m); return m.count; },
+  active() { return this.meta().active; },
+  select(i: number) { const m = this.meta(); if (i < 1 || i > m.count) return false; m.active = i; this.put(m); lastWrite = 0; return true; },
+  read(i: number): SaveData | null { try { const s = JSON.parse(ls()?.getItem(slotKey(i)) ?? 'null'); return s?.v === 1 ? s : null; } catch { return null; } },
+  list() { const m = this.meta(); return Array.from({ length: m.count }, (_, k) => { const i = k + 1, sm = m.slots[i] ?? {}; return { i, active: i === m.active, name: sm.name || `存档 ${i}`, lastAt: sm.lastAt ?? null, playMs: sm.playMs ?? 0, data: this.read(i) }; }); },
+  firstEmpty() { return this.list().find(x => !x.data)?.i ?? null; },
+  rename(i: number, name: string) { const m = this.meta(); if (i < 1 || i > m.count) return false; const n = name.trim().slice(0, 16); m.slots[i] = { ...m.slots[i], name: n || undefined }; this.put(m); return true; },
+  /** 删除需 UI 二次确认；只清本槽存档与元数据，备份键不动 */
+  remove(i: number) { const m = this.meta(); if (i < 1 || i > m.count) return false; ls()?.removeItem(slotKey(i)); delete m.slots[i]; this.put(m); if (i === m.active) lastWrite = 0; return true; },
 };
+export const SaveStore = {
+  has() { return !!ls()?.getItem(slotKey(Slots.active())); },
+  load(): SaveData | null { return Slots.read(Slots.active()); },
+  write(d: SaveData, now = Date.now()) {
+    const m = Slots.meta(), i = m.active, sm = { ...m.slots[i] };
+    if (lastWrite && now - lastWrite > 0 && now - lastWrite < PLAY_GAP) sm.playMs = (sm.playMs ?? 0) + (now - lastWrite);
+    lastWrite = now; sm.lastAt = now; m.slots[i] = sm;
+    ls()?.setItem(slotKey(i), JSON.stringify(d)); Slots.put(m);
+  },
+  /** 清当前槽（新游戏/通关）；名称保留，时长清零 */
+  clear() { const m = Slots.meta(); ls()?.removeItem(slotKey(m.active)); m.slots[m.active] = { name: m.slots[m.active]?.name }; Slots.put(m); lastWrite = 0; },
+};
+/** 显示用：游玩时长 */
+export const fmtPlay = (ms: number) => { const mn = Math.floor(ms / 60000); return mn < 60 ? `${mn} 分钟` : `${Math.floor(mn / 60)} 小时 ${mn % 60} 分`; };
+export const fmtDate = (t: number | null) => { if (!t) return '—'; const d = new Date(t), p = (n: number) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; };

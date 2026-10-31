@@ -30,7 +30,7 @@ import { ENEMIES } from '../data/units';
 import { FLOORS, floorNo } from '../data/world';
 import { World as WorldCls } from '../combat/World';
 import { BOOKS } from '../data/books';
-import { TOWNS, NODE_TOWN, STORAGE_SIZE, NPC_ART } from '../data/towns';
+import { TOWNS, NODE_TOWN, STORAGE_SIZE, NPC_ART, npcArtOf } from '../data/towns';
 import { CONSUMABLE } from '../data/items-town';
 import { Settings, DEFAULT_AUTO_SKILLS } from '../settings';
 import { equipLook } from './EquipLayers';
@@ -288,7 +288,7 @@ export class Panel {
     if (!t) { R.add(txt(s, 640, top + 200, '不在城内', 20, '#fff').setOrigin(0.5)); return; }
     if (s.textures.exists('bg_town')) R.add(s.add.image(640, top + 240, 'bg_town').setDisplaySize(996, 460).setAlpha(0.35));
     R.add(txt(s, 160, top + 14, `金币 ${w.gold}   安全区`, 14, '#ffd24a'));
-    const cur = this.npcDef(), art = cur && 'npc_' + NPC_ART[cur.kind];
+    const cur = this.npcDef(), art = cur && npcArtOf(this.world().town, cur.id, cur.kind);
     if (art && s.textures.exists(art)) R.add(s.add.image(240, top + 400, art).setOrigin(0.5, 1).setDisplaySize(200, 250));
     else if (cur) { R.add(s.add.rectangle(240, top + 275, 200, 250, 0x2a2018).setStrokeStyle(2, 0x6a5a28)); R.add(txt(s, 240, top + 275, cur.name.replace(/（.*）/, ''), 16, '#ffe8a0').setOrigin(0.5)); }
     R.add([...button(s, 240, top + 448, 170, 36, '回到街上', () => this.close(), 16)]);
@@ -296,10 +296,10 @@ export class Panel {
     if (!n) { R.add(txt(s, X, top + 90, `${t.name}\n选择左侧 NPC。\n来源：${t.src}`, 14, '#ddd', { wordWrap: { width: 600 } })); return; }
     R.add(txt(s, X - 180, top + 44, `${n.name}${n.pos ? `  原版坐标 ${n.pos}` : ''}${n.note ? `  ${n.note}` : ''}`, 13, '#ffe8a0', { wordWrap: { width: this.npcNeedsBag() ? 400 : 700 } }));
     // 长列表滚动：行先按列收集，最后每列只画可视窗口（NPC_VIS 行）+ 滚动条（scrollList.ts）
-    const cols = new Map<number, { i: number; a: [string, string, string, () => void, boolean, string | undefined, number] }[]>();
+    const cols = new Map<number, { i: number; a: [string, string, string, () => void, boolean, string | undefined, number?] }[]>();
     const row = (i: number, name: string, sub: string, label: string, fn: () => void, ok: boolean, icon?: string, X = 340, nfs = 14) => {
       if (!cols.has(X)) cols.set(X, []); cols.get(X)!.push({ i, a: [name, sub, label, fn, ok, icon, nfs] }); };
-    const drawRow = (slot: number, X: number, [name, sub, label, fn, ok, icon, nfs]: [string, string, string, () => void, boolean, string | undefined, number], scroll: boolean) => {
+    const drawRow = (slot: number, X: number, [name, sub, label, fn, ok, icon, nfs = 14]: [string, string, string, () => void, boolean, string | undefined, number?], scroll: boolean) => {
       const y = top + 100 + slot * 50;
       R.add(s.add.rectangle(X + 110, y, 230, 44, 0x0a0806).setStrokeStyle(1, 0x4a3a28));
       if (icon && s.textures.exists('item_' + icon)) R.add(s.add.image(X + 16, y, 'item_' + icon).setDisplaySize(36, 36));
@@ -499,7 +499,7 @@ export class Panel {
     const w = this.world();
     renderSettingsView(this.s, R, top, {
       cls: w.cls, learned: w.learned, rerender: () => this.render(),
-      footer: [{ label: '保存并返回标题', w: 200, fn: () => { this.close(); this.onTitle(); } }, { label: '继续游戏', w: 160, fn: () => this.close() }],
+      footer: [{ label: '保存并返回标题', w: 180, fn: () => { this.close(); this.onTitle(); } }, { label: '切换存档', w: 140, fn: () => { this.close(); this.s.game.registry.set('openSlots', true); this.onTitle(); } }, { label: '继续游戏', w: 140, fn: () => this.close() }],
     });
   }
   showTip(it: InvItem, x: number, y: number, touch = false) {
