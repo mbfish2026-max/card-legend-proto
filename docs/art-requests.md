@@ -106,3 +106,9 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 - `map_world_big`：2400×1400 世界大地图（区域中心坐标见 src/data/map.ts REGIONS.x/y）
 - `map_region_<id>`：960×320 区域小地图，id = bichi / woma / dushe / zuma / cangyue / fengmo / chiyue
 - `map_entry_town` / `map_entry_cave` / `map_entry_dungeon` / `map_entry_exit`：64×64 入口图标（城镇/洞穴/副本/出口）
+### R14 城镇 / NPC / 技能页（未提供时代码画占位色块与文字）
+- `bg_town`：960×360 城镇背景（比奇城，可按城镇加 `bg_town_<id>`：bichi / mengzhong / bairimen / cangyue / fengmo）
+- `npc_<kind>`：128×128 NPC 头像，kind = potion / weapon / armor / jewelry / book / general / smith / storage / teleport
+- `icon_hp_strong` `icon_mp_strong` `icon_sun_water` `icon_return_scroll` `icon_dungeon_scroll` `icon_woma_horn`：64×64 消耗品图标（目前复用药瓶/卷轴图标）
+- 技能页：`ui_drag_handle` 24×24 拖动把手、`ui_check_on/off` 24×24 勾选框（目前用文字 ≡ / ☑）
+

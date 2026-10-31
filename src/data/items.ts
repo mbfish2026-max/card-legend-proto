@@ -1,6 +1,7 @@
 import { ItemDef, Slot } from '../combat/types';
 import { CLASSES } from './classes';
 import { BOOKS, bookItemId } from './books';
+import { TOWN_ITEMS } from './items-town';
 // 物品表：中文名 + 图标。equip=基础属性；req=需求等级；price=出售价（商人收购价）
 const I = 'assets/items/';
 export const SLOTS: Slot[] = ['weapon', 'helmet', 'armor', 'necklace', 'ring', 'bracelet', 'boots'];
@@ -111,3 +112,6 @@ for (const b of Object.values(BOOKS)) {
   const sk = CLASSES[b.cls].skills.find(x => x.id === b.skill)!;
   ITEMS[bookItemId(b.skill)] = { id: bookItemId(b.skill), name: `${sk.name}（技能书）`, icon: sk.icon, price: Math.round(b.price / 2), book: b.skill };
 }
+
+// R14 城镇/消耗品新物品
+Object.assign(ITEMS, TOWN_ITEMS);

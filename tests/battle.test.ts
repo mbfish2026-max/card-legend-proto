@@ -9,6 +9,7 @@ import { REGIONS, floorBoss, regionOf, entrances, nodeOfFloor, clampView, zoomAt
 import { detectMobile } from '../src/mobile';
 import { StepGate, stepDir, HoldKeys, HOLD } from '../src/input/stepKeys';
 import { POTIONS } from '../src/data/skills';
+import { TOWNS, NODE_TOWN, WEAPON_GOODS, ARMOR_GOODS, GENERAL_GOODS, STORAGE_SIZE } from '../src/data/towns';
 import { Settings, DEFAULT_AUTO_SKILLS, ZOOM_MIN, ZOOM_MAX, ZOOM_STEP, fitScale } from '../src/settings';
 let pass = 0; const ok = (c: boolean, m: string) => { if (!c) { console.error('FAIL', m); throw new Error(m); } pass++; console.log('ok', m); };
 function seeded(s: number) { return () => (s = (s * 16807) % 2147483647) / 2147483647; }
@@ -589,6 +590,41 @@ const free = (w: World) => w.skills.map(() => 0);
   const w = new World(seeded(3), 1, FLOORS, 'warrior'); w.reached.add(4); w.gold = 1000;
   ok(w.teleport(nodeOfFloor(4)!.node.floor!) === null && w.floorIndex === 4, '点击入口沿用 teleport 规则传送');
   ok(!!w.teleport(nodeOfFloor(0)!.node.floor!), '传送冷却仍生效');
+}
+
+{ // R14 阶段 A：城镇 / NPC 商店 / 仓库 / 技能页
+  const w = new World(seeded(5), 20, FLOORS, 'warrior'); w.gold = 100000;
+  ok(Object.values(NODE_TOWN).every(t => !!TOWNS[t]) && REGIONS.every(r => r.nodes.filter(n => n.kind === 'town').every(n => NODE_TOWN[n.id])), '每个地图城镇节点都对应城镇');
+  ok(w.enterTown('bichi') === null && w.town === 'bichi', '进入比奇城');
+  const hp0 = w.hero!.hp; w.spawn(ENEMIES[Object.keys(ENEMIES)[0]], 'enemy', w.hero!.x + 30, 0); run(w, 5);
+  ok(w.hero!.hp === hp0, '安全区：城内不受伤害');
+  ok(w.leaveTown() === null && w.town === null && w.floorIndex === 0, '出城 → 第 1 层');
+  ok(w.enterTown('bichi') === null && w.town === 'bichi', '再回城');
+  const drops = new Set(Object.values(ENEMIES).filter(e => e.tier === 'boss').flatMap(e => (e.drops ?? []).map(d => d.item)));
+  const shopItems = [...WEAPON_GOODS, ...ARMOR_GOODS].map(g => g.item);
+  const bossOnly = ['xiuluo', 'pohun', 'xiangmo', 'tulong', 'longwen', 'luoyang'].filter(i => ITEMS[i]);
+  ok(drops.size > 0 && shopItems.every(i => ITEMS[i]?.slot && !bossOnly.includes(i)) && [...WEAPON_GOODS, ...ARMOR_GOODS].every(g => g.official !== null), '武器/衣服店只卖原版 NPC 有售价的商店装，不卖首领装');
+  ok([...WEAPON_GOODS, ...ARMOR_GOODS, ...GENERAL_GOODS].every(g => g.price > (ITEMS[g.item].price ?? 0)), '买价 > 卖回价（不能刷钱）');
+  ok(WEAPON_GOODS.every(g => g.official !== null && g.price === Math.round(g.official * 0.25) && /21cq|tayewan/.test(g.src)), '武器价 = 原版价×0.25，带来源');
+  const g0 = w.gold, b0 = w.bag.length; ok(w.buyGoods('bq_weapon', 'short_sword') === null && w.gold === g0 - 250 && w.bag.length === b0 + 1, '武器店购买短剑 250 金');
+  ok(!!w.buyGoods('bq_weapon', 'xiuluo'), '武器店不卖修罗（首领装）');
+  const g1 = w.gold; const got = w.sellItem(w.bag.length - 1); ok(got === ITEMS.short_sword.price && w.gold === g1 + got, '卖给 NPC 按售价');
+  w.buyGoods('bq_armor', 'cloth'); const it = w.bag[w.bag.length - 1];
+  ok(w.deposit(w.bag.length - 1) === null && w.storage.length === 1, '仓库存入');
+  const w2 = new World(seeded(6), 20, FLOORS, 'warrior', JSON.parse(JSON.stringify(w.toSave())));
+  ok(w2.storage.length === 1 && w2.storage[0].uid === it.uid, '仓库跨刷新（存档）保留');
+  ok(w2.withdraw(0) === null && w2.storage.length === 0 && w2.bag.some(x => x.uid === it.uid), '仓库取回');
+  ok(STORAGE_SIZE === 40, '仓库 40 格 [适配]');
+  const old: any = JSON.parse(JSON.stringify(w.toSave())); delete old.storage; delete old.skillOrder;
+  const w3 = new World(seeded(7), 20, FLOORS, 'warrior', old); ok(w3.storage.length === 0 && w3.skills.length === w.skills.length && w3.skillOrder.length === 0, '旧存档（无仓库/顺序）兼容');
+  w.reached.add(3); w.teleportReadyAt = 0; ok(w.townTeleport(3) === null && w.town === null && w.floorIndex === 3, '传送员：城内传送到已到达层');
+  // 技能页：拖放排序 + 自动优先级
+  const s = learnAll(new World(seeded(8), 40, FLOORS, 'warrior')); const ids = s.skills.map(k => k.id);
+  s.moveSkill(ids[ids.length - 1], 0); ok(s.skills[0].id === ids[ids.length - 1] && s.skills[0].key === 'F1', '技能拖到 F1');
+  const s2 = new World(seeded(9), 40, FLOORS, 'warrior', JSON.parse(JSON.stringify(s.toSave()))); ok(s2.skills[0].id === ids[ids.length - 1], '快捷栏顺序存档保留');
+  Settings.autoSkills = null; Settings.autoTouched = null as any; const a = Settings.skillsFor('mage');
+  if (a.length >= 2) { Settings.moveAutoSkill(a[1], -1, 'mage'); const b = Settings.skillsFor('mage'); ok(b[0] === a[1] && b[1] === a[0], '自动技能优先级上移'); }
+  Settings.autoSkills = null;
 }
 
 console.log(`全部通过 ${pass} 项`);
