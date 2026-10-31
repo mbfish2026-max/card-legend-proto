@@ -690,3 +690,20 @@ thunder_sword 雷霆剑、break_strike 破击剑法、shield_break 破盾斩、v
 | bg_floor78 | 异界裂隙·禁地·尸上行 | `public/assets/bg/bg_floor78.jpg`（1920×1080 JPG，下 40% 空地面） | 借用相邻原层背景 | [来源](https://woool.52pk.com/data/101222.shtml) |
 | bg_floor79 | 异界裂隙·禁地·魔穴 | `public/assets/bg/bg_floor79.jpg`（1920×1080 JPG，下 40% 空地面） | 借用相邻原层背景 | [来源](https://woool.17173.com/content/2014-11-30/20141130225158263.shtml) |
 | bg_floor80 | 异界裂隙·潘夜神殿 | `public/assets/bg/bg_floor80.jpg`（1920×1080 JPG，下 40% 空地面） | 借用相邻原层背景 | [来源](https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml) |
+
+
+## art/maps-sq-mir3 交付·第 2 批（尸卫+蚂蚁，9 张）
+
+路径：`public/assets/portraits/<id>_full.png`，透明 PNG，最长边 960。预览：`docs/art-gap-preview/sq_mir3_batch2.jpg`。
+
+| 文件 | 尺寸 | 名称 | 来源 |
+|---|---|---|---|
+| sq_shiwei_full.png | 720x960 | 尸卫 | 复用 art/sq-mir3 的 shiwei_full.png |
+| sq_shiwei_yong_full.png | 706x960 | 尸卫勇士 | 复用 art/sq-mir3 的 shiwei_brave_full.png |
+| sq_shiwei_qiang_full.png | 759x960 | 枪尸卫 | 复用 art/sq-mir3 的 shiwei_spear_full.png |
+| sq_shiwei_zhan_full.png | 739x960 | 尸卫战将 | 复用 art/sq-mir3 的 shiwei_general_full.png |
+| sq_bat_full.png | 960x707 | 蝙蝠 | 新画（原创，据常见蝙蝠外形，具体外观未查到/推测） |
+| m3_ant_warrior_full.png | 882x960 | 蚂蚁战士 | 复用 art/sq-mir3 的 ant_warrior_full.png |
+| m3_ant_armor_full.png | 960x673 | 盔甲蚂蚁 | 复用 art/sq-mir3 的 ant_armored_full.png |
+| m3_ant_bomb_full.png | 960x490 | 爆毒蚂蚁 | 复用 art/sq-mir3 的 ant_poison_full.png |
+| m3_ant_tao_full.png | 783x960 | 蚂蚁道士 | 复用 art/sq-mir3 的 ant_taoist_full.png |
