@@ -1,4 +1,4 @@
-import { COMPANION_UNLOCK_LEVEL, heartFeedValue, RAGE_MAX, HEART_STORE_MAX, RECRUIT_DIALOG } from '../data/companion';
+import { COMPANION_UNLOCK_LEVEL, comboFor, BOOK_PAGE, BRM_BOOK, GOLD_BAR, PAGES_PER_BOOK, COMBO_LEVEL, heartFeedValue, RAGE_MAX, HEART_STORE_MAX, RECRUIT_DIALOG } from '../data/companion';
 import { fmtExp, scaledExp } from '../data/expCurve';
 import Phaser from 'phaser';
 import type { World } from '../combat/World';
@@ -266,6 +266,10 @@ export class Panel {
     if (n.kind === 'book') { R.add(txt(s, X, top + 74, '书店：本职业有售技能书', 13, '#9fd')); w.shopBooks().forEach((b, i) => { const id = 'book_' + b.skill, learned = w.learned.has(b.skill);
       row(i, ITEMS[id].name, `${b.price} 金 ${learned ? '已学会' : ''}`, '购买', () => buy(w.buyBook(b.skill), ITEMS[id].name), !learned && w.gold >= b.price, id); }); }
     if (n.kind === 'jewelry') R.add(txt(s, X, top + 90, '首饰店存货：未查到（原版只能买到别人卖的）。\n点击右侧背包物品出售。', 13, '#9fd'));
+    if (n.kind === 'dragon') { R.add(txt(s, X, top + 66, '龙人：英雄 43 级，带 2 本白日门技能书和 2 根金条来，我教你们合击。', 13, '#9fd'));
+      const c = w.companion, cb = c ? comboFor(w.cls, c.cls) : undefined;
+      row(0, '合成白日门技能书', `书页 ${w.countItem(BOOK_PAGE)}/${PAGES_PER_BOOK} [适配]`, '合成', () => { const e = w.craftBrmBook(); this.onChange(e ?? '获得白日门技能书', !e); this.render(); }, w.countItem(BOOK_PAGE) >= PAGES_PER_BOOK);
+      row(1, cb ? `合击秘籍·${cb.name}` : '合击秘籍（需英雄）', c ? `英雄 Lv${c.level}/${COMBO_LEVEL} · 书 ${w.countItem(BRM_BOOK)}/2 · 金条 ${w.countItem(GOLD_BAR)}/2${c.combo?.includes(cb!.id) ? ' · 已学会' : ''}` : '先在老兵处领取英雄', '学习', () => { const e = w.learnCombo(); this.onChange(e ?? `学会 ${cb?.name}`, !e); this.render(); }, !!c && !c.combo?.includes(cb!.id)); }
     if (n.kind === 'veteran') { R.add(txt(s, X, top + 66, '老兵：城里安全，西门出城；要去哪我送你。', 13, '#9fd'));
       const c = w.companion; // 合击版 #2 英雄获取（40 级，免费）
       if (c) row(0, `英雄 ${c.name}`, `${CLASSES[c.cls].name} Lv${c.level} · ${c.out ? '召唤中' : '已收回'}`, c.out ? '收回' : '召唤', () => { c.out = !c.out; if (!c.out) c.recallAt = w.time; this.render(); }, true, undefined, X + 250);

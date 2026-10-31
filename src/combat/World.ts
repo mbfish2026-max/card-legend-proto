@@ -1,4 +1,4 @@
-import { CompanionState, migrateCompanion, companionGainExp, COMPANION_BAG, COMPANION_UNLOCK_LEVEL, newCompanion, feedHeart, heartFeedValue, HEART_STORE_MAX, RAGE_MAX } from '../data/companion';
+import { CompanionState, migrateCompanion, companionGainExp, COMPANION_BAG, COMPANION_UNLOCK_LEVEL, newCompanion, feedHeart, heartFeedValue, HEART_STORE_MAX, RAGE_MAX, COMBO_LEVEL, COMBO_GOLD_BARS, BRM_BOOK, BOOK_PAGE, GOLD_BAR, PAGES_PER_BOOK, comboFor, HEART_ITEM } from '../data/companion';
 import { BOOKS, BookDef, BOOK_DROP, BOOK_RATES, STARTER, bookItemId } from '../data/books';
 // 纯逻辑世界模块（无 Phaser 依赖，可在 node 中单测）：职业/等级成长、分层横版地图、怪物 AI、
 // 自动战斗与技能、召唤物、掉落/背包/装备/商店、死亡复活、存档序列化。
@@ -778,6 +778,25 @@ export class World {
     if (c.heartStore >= HEART_STORE_MAX) return '火龙之心已满'; const got = feedHeart(c, it.item);
     if ((it.qty ?? 1) > 1) it.qty!--; else this.bag.splice(bagIdx, 1);
     this.events.push({ type: 'log', text: `火龙之心 +${got}（${c.heartStore}/${HEART_STORE_MAX}）`, color: 'green' }, { type: 'inventory' }); return null;
+  }
+  /** 背包内某物品总数（含堆叠） */
+  countItem(id: string): number { return this.bag.reduce((n, b) => n + (b.item === id ? b.qty ?? 1 : 0), 0); }
+  private takeItems(id: string, n: number) { for (let i = this.bag.length - 1; i >= 0 && n > 0; i--) { const b = this.bag[i]; if (b.item !== id) continue; const q = b.qty ?? 1, k = Math.min(q, n); n -= k; if (q > k) b.qty = q - k; else this.bag.splice(i, 1); } }
+  private makeSimple(id: string): InvItem { const d = ITEMS[id]; return { uid: this.nextItem++, item: id, name: d.name, rarity: 'common' as any, stats: {}, req: 0, price: d.price ?? 0 }; }
+  /** 合击版 #7：龙人处 书页 → 白日门技能书 [适配] */
+  craftBrmBook(): string | null {
+    if (this.town !== 'bairimen') return '请到白日门找龙人'; if (this.countItem(BOOK_PAGE) < PAGES_PER_BOOK) return `需要书页 ×${PAGES_PER_BOOK}`;
+    if (this.bag.length >= WORLD.bagSize) return '背包已满'; this.takeItems(BOOK_PAGE, PAGES_PER_BOOK); this.bag.push(this.makeSimple(BRM_BOOK)); this.events.push({ type: 'inventory' }); return null;
+  }
+  /** 合击版 #7：英雄 43 级 + 2 本白日门技能书 + 金条 2 → 学会合击、获得火龙之心（H1；秘籍双击学习简化为直接学会 [适配]） */
+  learnCombo(): string | null {
+    const c = this.companion; if (!c) return '还没有英雄'; if (this.town !== 'bairimen') return '请到白日门找龙人';
+    if (c.level < COMBO_LEVEL) return `英雄需要 ${COMBO_LEVEL} 级`; const cb = comboFor(this.cls, c.cls)!;
+    if (c.combo?.includes(cb.id)) return `已学会 ${cb.name}`;
+    if (this.countItem(BRM_BOOK) < 2) return '需要白日门技能书 ×2'; if (this.countItem(GOLD_BAR) < COMBO_GOLD_BARS) return `需要金条 ×${COMBO_GOLD_BARS}`;
+    this.takeItems(BRM_BOOK, 2); this.takeItems(GOLD_BAR, COMBO_GOLD_BARS); (c.combo ??= []).push(cb.id);
+    if (!c.equip.heart) c.equip.heart = this.makeSimple(HEART_ITEM);
+    this.events.push({ type: 'log', text: `英雄学会合击「${cb.name}」，获得火龙之心`, color: 'green' }, { type: 'inventory' }); return null;
   }
   takeFromCompanion(idx: number): string | null {
     const c = this.companion; if (!c) return '还没有英雄'; const it = c.bag[idx]; if (!it) return '没有物品';

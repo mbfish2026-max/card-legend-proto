@@ -118,3 +118,24 @@ export function rageTick(_c: CompanionState, _dt: number): void { /* 占位 */ }
 export function canUnleash(c: CompanionState): boolean { return hasHeart(c) && c.out && c.rage >= RAGE_MAX; }
 /** TODO(战斗开发)：爆发期间持续消耗、同目标同范围释放、耗尽作废（H1）；此处只清槽占位 */
 export function unleash(c: CompanionState): boolean { if (!canUnleash(c)) return false; c.rage = 0; return true; }
+
+// ===== #7 龙人合书（合击秘籍） =====
+/** 官方：英雄 43 级，到白日门龙人处交 2 本白日门技能书 + 金条 2 根（H1）/金刚石（H5）→ 合击秘籍 → 获得火龙之心 */
+export const COMBO_LEVEL = 43;
+export const COMBO_GOLD_BARS = 2;
+export const BRM_BOOK = 'brm_book', BOOK_PAGE = 'book_page', GOLD_BAR = 'gold_bar';
+/** [适配] 书页合成白日门技能书所需页数（官方未查到）；各组合所需具体书名官方未查到 → 统一用「白日门技能书」 */
+export const PAGES_PER_BOOK = 10;
+ITEMS[BRM_BOOK] ??= { id: BRM_BOOK, name: '白日门技能书', icon: 'assets/items/INV_Misc_Gem_Pearl_01.png', price: 500, rage: 1000 };
+ITEMS[BOOK_PAGE] ??= { id: BOOK_PAGE, name: '书页', icon: 'assets/items/INV_Misc_Gem_Pearl_01.png', price: 20, rage: 100 };
+ITEMS[GOLD_BAR] ??= { id: GOLD_BAR, name: '金条', icon: 'assets/items/INV_Misc_Gem_Pearl_01.png', price: 1000 };
+/** 6 种组合（H1/H5 名称官方；数值未查到） */
+export const COMBOS: { id: string; name: string; pair: [ClassId, ClassId] }[] = [
+  { id: 'pohun', name: '破魂斩', pair: ['warrior', 'warrior'] },
+  { id: 'huolong', name: '火龙气焰', pair: ['mage', 'mage'] },
+  { id: 'shihun', name: '噬魂沼泽', pair: ['taoist', 'taoist'] },
+  { id: 'leiting', name: '雷霆一击', pair: ['warrior', 'mage'] },
+  { id: 'mori', name: '末日审判', pair: ['mage', 'taoist'] },
+  { id: 'pixing', name: '劈星斩', pair: ['warrior', 'taoist'] },
+];
+export function comboFor(a: ClassId, b: ClassId) { return COMBOS.find(c => (c.pair[0] === a && c.pair[1] === b) || (c.pair[0] === b && c.pair[1] === a)); }

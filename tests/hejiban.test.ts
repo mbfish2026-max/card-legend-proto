@@ -38,3 +38,14 @@ console.log(`合击版 #2 通过（${pass}）`);
   c.rage = 50; const w2 = W(40, 'warrior', w.toSave()); ok(w2.companion!.heartStore === HEART_STORE_MAX && w2.companion!.rage === 50, '怒槽/储量存档');
 }
 console.log(`合击版 #5 通过（${pass}）`);
+{ // #7 龙人合书
+  const w = W(45, 'warrior'); w.recruitCompanion('mage', '法'); const c = w.companion!; w.enterTown('bairimen', true);
+  const mk = (id: string, qty = 1) => ({ uid: Math.random(), item: id, name: id, rarity: 'common' as any, stats: {}, req: 0, price: 0, qty });
+  w.bag.push(mk('book_page', 20), mk('gold_bar'), mk('gold_bar'));
+  ok(w.craftBrmBook() === null && w.craftBrmBook() === null && w.countItem('brm_book') === 2 && w.countItem('book_page') === 0, '20 书页合 2 本白日门书');
+  ok(w.learnCombo()?.includes('43') === true, '英雄 43 级前不可学');
+  c.level = 43; ok(w.learnCombo() === null && c.combo!.includes('leiting') && c.equip.heart?.item === 'fire_heart' && w.countItem('gold_bar') === 0, '战+法学会雷霆一击并获得火龙之心');
+  ok(w.learnCombo()?.includes('已学会') === true, '不可重复学');
+  ok(W(45, 'warrior', w.toSave()).companion!.combo!.includes('leiting'), '合击存档');
+}
+console.log(`合击版 #7 通过（${pass}）`);

@@ -184,3 +184,7 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 - 火龙之心图标（暂用 INV_Misc_Gem_Pearl_01）
 - 蝎尾/鹿茸/阴阳仙草/九花玉露/九花雪露/元神丹/回气糕/补气丹 图标 ×8（暂用 INV_Misc_Food_15）
 - 黄色怒槽 HUD 条（暂为老兵面板文字）
+
+## 合击版 #7（feat/hj-books）
+- 龙人立绘/店面（暂用首饰店位与立绘）
+- 白日门技能书、书页、金条图标（暂用 Pearl）
