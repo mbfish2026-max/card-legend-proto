@@ -953,3 +953,20 @@ thunder_sword 雷霆剑、break_strike 破击剑法、shield_break 破盾斩、v
 上文 art/maps-sq-mir3 第2–7批中标为「复用」的行，已由「重画·第1–8组」各章取代。所有 sq_/m3_ 小怪、9 个借用他怪 art 的单位，以及 boss_evil_pincer（原图与 pincer_bug 同构图、只换了颜色），现在都是独立新画。src 里的 `art` 字段仍指向旧图，本分支不改 src，需要开发把它们改成各自的 id。
 
 需改 `art` 的单位：hj_guard、wolong_guard、fire_dragon_guard、leiyan_spider、cave_skel_warrior、cave_skel_general、axe_skeleton、cave_bat、cave_maggot，以及 dark_warrior、dung_beetle、fire_woma、giant_worm、horn_fly、mine_zombie、pincer_bug、wedge_moth、woma_brave、woma_general。SQMIR3_BOSS 元组的第 4/5 字段也引用了其他 BOSS 的图（例如蚂蚁将军→boss_evil_pincer），但这些 BOSS 都已有自己的 `<id>_full.png`，建议一并改为自身 id。
+
+## 新手地图传奇原有怪物立绘（art/novice-monsters，2026-10-31）
+
+先对照 src/data/units.ts 和 docs/monsters-official.md：鹿（deer）、僵尸（zombie）、半兽人（orc）已经有立绘，这次跳过。下面 6 只是新画的，每只单独一张，没有复用已有图。都是透明底 PNG，最长边 960，卡通半身、粗描边，放在 public/assets/portraits/。数值和刷新地点来自 21cq（1.76 版资料站）。外观是 21cq 上查不到的，按名字自己设计，标「推测」。
+
+| id | 中文名 | 来源 | 原版等级/HP/攻击/经验 | 原版刷新 | 建议层位 | 文件 | 尺寸 | 外观 |
+|---|---|---|---|---|---|---|---|---|
+| hen | 鸡 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=\14) | 5 / 5 / 1-1 / 5 | 比奇省 | 第1层 幽暗森林（和鹿同档） | hen_full.png | 883x960 | 推测 |
+| scarecrow | 稻草人 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=\21) | 10 / 15 / 1-2 / 12，不死系 | 比奇省 | 第1层 | scarecrow_full.png | 960x955 | 推测 |
+| hook_cat | 多钩猫 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=\24) | 13 / 22 / 2-4 / 17 | 比奇省 | 第1层 | hook_cat_full.png | 960x940 | 推测 |
+| rake_cat | 钉耙猫 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=\26) | 13 / 23 / 2-4 / 18 | 比奇省 | 第1层 | rake_cat_full.png | 900x960 | 推测 |
+| forest_yeti | 森林雪人 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=\28) | 16 / 36 / 7-10 / 30 | 比奇省 | 第1层末到第2层 | forest_yeti_full.png | 925x960 | 推测 |
+| man_eater_flower | 食人花 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=\30) | 20 / 28 / 6-9 / 28 | 比奇省 | 第2层 | man_eater_flower_full.png | 928x960 | 推测 |
+
+- 羊：21cq 怪物 ID 1–40 里没有，未查到，所以没画。
+- 本作数值曲线和原版不同，表里的"建议层位"是推测；这次只加了立绘，units.ts 没改。
+- 预览拼图：docs/art-gap-preview/novice_monsters.jpg
