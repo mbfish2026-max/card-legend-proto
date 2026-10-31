@@ -117,7 +117,7 @@ export const FOE_BAND = { atk: [0.9, 0.97, 1.02, 1.04, 0.97], hp: [1, 1, 1.9, 1.
   /** 普通怪移动速度倍率（贴近远程职业） */ spd: [1, 1, 1.6, 1.4, 1],
   /** 普通怪魔御 = 防御 × 该倍率（缺省魔御=防御；官方怪物有独立魔御 MAC，本作数值未查到） */ mdef: [1, 1, 1, 1, 1],
   /** 召唤物仇恨是否生效（0 = 该段普通怪不被召唤物拉走，仍追主角；替身法符不受影响） */ petAggro: [1, 1, 1, 1, 1],
-  /** 层内普通怪密度倍率（1=不变；1.3=每 10 只追加约 3 只同种）[适配] */ dens: [1, 1.5, 1, 1, 1] };
+  /** 层内普通怪密度倍率（1=不变；1.3=每 10 只追加约 3 只同种）[适配] */ dens: [1, 1, 1, 1, 1] };
 export const floorBand = (f: number) => fb(FLOOR_TARGET_LV[f] ?? 1);
 const fb = (L: number) => Math.min(4, Math.max(0, Math.floor((L - 1) / 10)));
 export const foeStatsAt = (id: string, f: number): { level: number; hp: number; atk: number; def: number } | null => {
