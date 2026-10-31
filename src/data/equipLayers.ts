@@ -26,6 +26,16 @@ export const EQUIP_CLASSES: Record<string, ClassLayerCfg> = {
     weapon: { wood_sword: 'weapon/wood_sword.png', iron_sword: 'weapon/iron_sword.png', dragon_sword: 'weapon/dragon_sword.png' },
     alias: { magic_staff: 'iron_sword', tao_sword: 'iron_sword' },
   },
+  mage: {
+    armor: { cloth: 'armor/cloth.png', armor: 'armor/armor.png' },
+    weapon: { wood_sword: 'weapon/wood_sword.png', iron_sword: 'weapon/iron_sword.png', dragon_sword: 'weapon/dragon_sword.png', magic_staff: 'weapon/magic_staff.png' },
+    alias: { tao_sword: 'iron_sword' },
+  },
+  taoist: {
+    armor: { cloth: 'armor/cloth.png', armor: 'armor/armor.png' },
+    weapon: { wood_sword: 'weapon/wood_sword.png', iron_sword: 'weapon/iron_sword.png', dragon_sword: 'weapon/dragon_sword.png', tao_sword: 'weapon/tao_sword.png' },
+    alias: { magic_staff: 'iron_sword' },
+  },
 };
 
 /** 规范「兜底规则」：未知衣服/武器按需求等级挑档 */
