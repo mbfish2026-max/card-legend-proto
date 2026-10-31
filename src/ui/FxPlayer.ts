@@ -55,6 +55,13 @@ export const FX_DEFS: Record<string, FxDef> = {
   fx_holy_armor_cast: D(20, 'ADD', 56, ['holy_armor']),
   fx_holy_armor_loop: D(11, 'ADD', 11, ['holy_armor'], { loop: true }),
   fx_mass_heal_burst: D(20, 'ADD', 55, ['mass_heal']),
+  // 合击（阶段 B）：目标卡中心播放，第 6 帧（0.3s）为命中/最亮帧；shihun/mori 末 4 帧可循环作持续尾段（本次仅播一次）
+  fx_combo_pohun: D(20, 'ADD', 60, ['combo']),
+  fx_combo_huolong: D(20, 'ADD', 60, ['combo']),
+  fx_combo_shihun: D(20, 'ADD', 30, ['combo']),
+  fx_combo_leiting: D(20, 'ADD', 60, ['combo']),
+  fx_combo_mori: D(20, 'ADD', 60, ['combo']),
+  fx_combo_pixing: D(20, 'ADD', 60, ['combo']),
 };
 /** 普攻挥砍按职业着色 */
 export const SLASH_TINT: Record<string, number> = { warrior: 0xffb060, mage: 0xa08cff, taoist: 0xc0f070 };
