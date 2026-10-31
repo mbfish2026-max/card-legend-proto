@@ -94,6 +94,14 @@ export const ENEMIES: Record<string, UnitDef> = {
   fire_woma: n('fire_woma', '火焰沃玛', 20, 1100, 48, 14, 270, [G(0.6), { item: 'mp_mid', chance: 0.3 }], { art: 'fire_woma', deathSfx: 'death2', oilChance: 0.02 }),
   dark_warrior: n('dark_warrior', '暗黑战士', 21, 1300, 47, 18, 290, [G(0.6), { item: 'hp_mid', chance: 0.3 }], { art: 'dark_warrior', deathSfx: 'death2', oilChance: 0.02 }),
   mine_zombie: n('mine_zombie', '僵尸', 14, 1000, 40, 13, 225, [G(0.6), { item: 'hp_mid', chance: 0.3 }], { art: 'mine_zombie', speed: 75, atkInterval: 1.5, width: 135, deathSfx: 'ghoul_death', card: card({ anchorX: 0.58 }) }),
+  // feat/maps-batch3 新怪：等级按「通关顺序普通怪等级递增」取 [适配]（21cq 官方 26–60 级区间与本作压缩曲线不符）；数值 [适配]，掉落走 DROPS_AS/官方表，缺图借用相近立绘
+  pincer_bug: n('pincer_bug', '钳虫', 16, 780, 39, 12, 205, [G(0.6), { item: 'hp_mid', chance: 0.3 }], { art: 'centipede', deathSfx: 'death' }),
+  giant_worm: n('giant_worm', '巨型蠕虫', 16, 900, 36, 13, 210, [G(0.6), { item: 'mp_mid', chance: 0.3 }], { art: 'black_maggot', speed: 70, deathSfx: 'ghoul_death' }),
+  wedge_moth: n('wedge_moth', '楔蛾', 18, 820, 42, 12, 230, [G(0.6), { item: 'mp_mid', chance: 0.3 }], { art: 'jump_bee', deathSfx: 'death' }),
+  horn_fly: n('horn_fly', '角蝇', 18, 800, 43, 12, 235, [G(0.6), { item: 'hp_mid', chance: 0.3 }], { art: 'jump_bee', deathSfx: 'death' }),
+  boss_evil_pincer: b('boss_evil_pincer', 'boss_chulong', '邪恶钳虫', 18, 5000, 56, 17, 1800, [{ item: 'helmet', chance: 0.6 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1)], { deathSfx: 'death' }),
+  boss_evil_snake: b('boss_evil_snake', 'boss_white_boar', '邪恶毒蛇', 22, 8000, 70, 21, 3000, [{ item: 'gold_ring', chance: 0.8 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'death' }),
+  boss_shimu_lich: b('boss_shimu_lich', 'boss_lich', '石墓尸王', 22, 8500, 72, 21, 3200, [{ item: 'armor', chance: 1 }, { item: 'pearl', chance: 0.6 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'ghoul_death' }),
 };
 /** feat/maps-more：同名官方怪的掉落沿用已有 21cq 表（id 不同仅因数值按层位区分）；无表的标「未查到」只给 [适配] 金币/药水 */
 /** [适配] 新洞穴怪的难度系数（攻/血），按 9 种子模拟调到死亡中位 1–4 */
