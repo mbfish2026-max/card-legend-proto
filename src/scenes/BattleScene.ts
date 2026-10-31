@@ -571,16 +571,13 @@ export class BattleScene extends Phaser.Scene {
   hold = new HoldKeys();
   stepKey(d: number) { if (this.state === 'play' && !this.paused) this.world.queueStep(d); }
   /** 自动技能：按 Settings.autoSkills（或职业推荐）优先级尝试释放；失败静默；手动按键走 onKey 优先占冷却 */
+  lastAuto = ''; autoCount: Record<string, number> = {};
   tryAutoSkills() {
     if (!Settings.autoAttack) return;
     const h = this.world.hero; if (!h?.alive) return;
-    const list = Settings.skillsFor(this.world.cls);
-    for (const id of list) {
-      const si = this.world.skills.findIndex(s => s.id === id);
-      if (si < 0 || this.cds[si] > 0) continue;
-      if (id === 'charm' && !this.world.charmAutoOk()) continue;
-      const r = this.world.cast(si, this.cds, { auto: true });
-      if (!r.ok) continue;
+    const a = this.world.autoCast(Settings.skillsFor(this.world.cls), this.cds, this.lastAuto); if (!a) return;
+    const r = a.r; this.lastAuto = a.id; this.autoCount[a.id] = (this.autoCount[a.id] ?? 0) + 1;
+    {
       const evs = this.world.drainEvents();
       const hv = this.views.get(h.uid);
       if (hv) { hv.windup(h.facing); this.time.delayedCall(FX.windupMs, () => this.skillFx(r.skill, hv, r.targets, evs)); }

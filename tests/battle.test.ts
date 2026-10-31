@@ -2,7 +2,7 @@ declare const process: { env: Record<string, string | undefined> };
 import { World, SaveData, OIL_PRICE, IRON_PRICE, OFFICIAL, mitigate, taoBuffValue, taoBuffDur, SKELETON_OFFICIAL, SUMMON_NAME_COLORS, SUMMON_MAX_LV, SUMMON_LV_KILLS } from '../src/combat/World';
 import { ITEMS, SETS, ENHANCE_MAX, enhanceChance, shatterChance } from '../src/data/items';
 import { WORLD, CARD, Floor, FLOORS } from '../src/data/world';
-import { CLASSES, ClassId, CAST_GAP, COOLDOWN_BEFORE, REBALANCE, MANA_BEFORE } from '../src/data/classes';
+import { CLASSES, ClassId, CAST_GAP, COOLDOWN_BEFORE, REBALANCE, MANA_BEFORE, SKILL_CD, CD_BEFORE_LIGHT } from '../src/data/classes';
 import { ENEMIES, DIFF } from '../src/data/units';
 import { QUESTS, ACHIEVES } from '../src/data/quests';
 import { REGIONS, floorBoss, regionOf, entrances, nodeOfFloor, clampView, zoomAt, WORLD_W, WORLD_H } from '../src/data/map';
@@ -1009,15 +1009,35 @@ const free = (w: World) => w.skills.map(() => 0);
   const s = w.toSave(); ok(s.town === 'xinshou' && new World(seeded(1), 1, FLOORS, 'warrior', s).town === 'xinshou', '存档记住所在城镇');
   const old: any = { ...s, floorIndex: 3 }; delete old.town; const o = new World(seeded(1), 1, FLOORS, 'warrior', old); ok(o.town === null && o.floorIndex === 3, '旧档（无 town 字段）保持原层');
 }
-{ // 取消冷却：官方无独立冷却，只保留公共施法间隔
+{ // 轻量冷却（feat/skill-cd-light）：各技能 1.5–6s 冷却 + 保留 0.8s 公共施法间隔
   const act = (Object.keys(CLASSES) as ClassId[]).flatMap(c => CLASSES[c].skills.filter(s => !s.passive));
-  ok(act.every(s => s.cooldown === CAST_GAP) && COOLDOWN_BEFORE.summon_beast === 15 && COOLDOWN_BEFORE.magic_shield === 20, `所有主动技能冷却 = 公共施法间隔 ${CAST_GAP}s（改前值保留在 COOLDOWN_BEFORE）`);
+  ok(act.every(s => s.cooldown === SKILL_CD[s.id] && s.cooldown >= 1.5 && s.cooldown <= 6 && CD_BEFORE_LIGHT[s.id] === CAST_GAP), `所有主动技能各有冷却 1.5–6s（${act.map(s => s.name + s.cooldown).join(' ')}）`);
+  ok(SKILL_CD.thrust === 1.5 && SKILL_CD.fire_sword === 4 && SKILL_CD.fireball === 1.5 && SKILL_CD.magic_shield === 6 && SKILL_CD.summon_skeleton === 6 && SKILL_CD.mass_heal === 3 && COOLDOWN_BEFORE.summon_beast === 15 && CAST_GAP === 0.8, '冷却值对照（改前值保留在 COOLDOWN_BEFORE）');
   const w = new World(seeded(2), 30, FLOORS, 'mage'); w.learned.add('thunder'); w.learned.add('hell_fire'); const h = w.hero!; h.mp = h.maxMp = 9999;
-  w.units.push(...[]); w.spawn(ENEMIES.orc, 'enemy', h.x + 200).ai = 'idle'; const cds = w.skills.map(() => 0);
-  const a = w.cast(idx(w, 'fireball'), cds), b = w.cast(idx(w, 'thunder'), cds);
-  ok(a.ok && !b.ok && cds.every(c => c >= CAST_GAP - 1e-9), '同帧不能连放第二个技能（公共间隔）');
-  for (let i = 0; i < cds.length; i++) cds[i] = Math.max(0, cds[i] - CAST_GAP); ok(w.cast(idx(w, 'fireball'), cds).ok, `间隔 ${CAST_GAP}s 后可再次施放同一技能（无独立冷却）`);
-  const ws = new World(seeded(2), 30, FLOORS, 'mage', JSON.parse(JSON.stringify(w.toSave()))); ok(ws.learned.has('hell_fire') && !('cds' in w.toSave()), '冷却不存档，旧档读档正常');
+  { const o = w.spawn(ENEMIES.orc, 'enemy', h.x + 200); o.ai = 'idle'; o.hp = o.maxHp = 1e9; } const cds = w.skills.map(() => 0);
+  const fb = idx(w, 'fireball'), th = idx(w, 'thunder');
+  const a = w.cast(fb, cds), b = w.cast(th, cds);
+  ok(a.ok && !b.ok && cds.every(c => c >= CAST_GAP - 1e-9), '同帧不能连放第二个技能（公共间隔仍在）');
+  const tick = (d: number) => { for (let i = 0; i < cds.length; i++) cds[i] = Math.max(0, cds[i] - d); };
+  tick(CAST_GAP); const c1 = w.cast(fb, cds); ok(!c1.ok && /冷却中/.test((c1 as any).reason), `公共间隔后、冷却内拒绝同技能（${(c1 as any).reason}）`);
+  ok(w.cast(th, cds).ok, '公共间隔后可放其他技能');
+  tick(SKILL_CD.fireball); ok(w.cast(fb, cds).ok, '冷却结束后可再次施放');
+  ok(!w.cast(fb, cds, { auto: true }).ok, '自动施放与手动共用冷却判断');
+  const ws = new World(seeded(2), 30, FLOORS, 'mage', JSON.parse(JSON.stringify(w.toSave()))); ok(ws.learned.has('hell_fire') && !('cds' in w.toSave()) && !JSON.stringify(w.toSave()).includes('"cds"'), '冷却不存档，读档正常');
+}
+{ // 自动施放轮转：多种技能都能放出，不被一个占满
+  const w = new World(seeded(5), 30, FLOORS, 'mage'); for (const id of ['thunder', 'hell_fire', 'big_fireball']) w.learned.add(id); const h = w.hero!; h.mp = h.maxMp = 99999;
+  const e = w.spawn(ENEMIES.orc, 'enemy', h.x + 250); e.ai = 'idle'; e.hp = e.maxHp = 1e9;
+  const list = ['fireball', 'thunder', 'hell_fire', 'big_fireball']; const cds = w.skills.map(() => 0); const cnt: Record<string, number> = {}; let last = '';
+  for (let t = 0; t < 30; t += 0.05) { h.mp = 99999; const r = w.autoCast(list, cds, last); if (r) { last = r.id; cnt[r.id] = (cnt[r.id] ?? 0) + 1; } w.drainEvents(); for (let i = 0; i < cds.length; i++) cds[i] = Math.max(0, cds[i] - 0.05); }
+  const vals = list.map(id => cnt[id] ?? 0), tot = vals.reduce((x, y) => x + y, 0);
+  ok(vals.every(v => v >= 3) && Math.max(...vals) / tot < 0.6, `自动 30s 各技能释放次数 ${list.map((id, i) => id + ':' + vals[i]).join(' ')}`);
+  const wt = new World(seeded(5), 30, FLOORS, 'taoist'); for (const id of ['poison', 'summon_skeleton', 'soul_fire']) wt.learned.add(id); wt.units = wt.units.filter(u => u.isHero); const ht = wt.hero!; ht.mp = ht.maxMp = 99999; const cdt = wt.skills.map(() => 0);
+  { const o = wt.spawn(ENEMIES.orc, 'enemy', ht.x + 250); o.ai = 'idle'; o.hp = o.maxHp = 1e9; }
+  const s1 = wt.autoCast(['summon_skeleton', 'poison', 'soul_fire'], cdt); for (let i = 0; i < cdt.length; i++) cdt[i] = 0;
+  const s2 = wt.autoCast(['summon_skeleton', 'poison', 'soul_fire'], cdt, ''); for (let i = 0; i < cdt.length; i++) cdt[i] = 0;
+  const s3 = wt.autoCast(['summon_skeleton', 'poison', 'soul_fire'], cdt, '');
+  ok(s1?.id === 'summon_skeleton' && s2?.id === 'poison' && s3?.id === 'soul_fire', `轮转保持跳过规则：召唤物已存在跳过、已中毒跳过（${s1?.id}/${s2?.id}/${s3?.id}）`);
 }
 
 console.log('# 诱惑之光');
