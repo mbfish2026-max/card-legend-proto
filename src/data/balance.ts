@@ -112,6 +112,9 @@ export const BOSS_HP_X = 3, BOSS_ATK_X = 0.9, BOSS_DEF_X = 1.1;
 /** [适配] 同层怪物之间保留原有强弱差异：按该怪原面板 ÷ 本层普通怪原面板均值，夹在 0.85–1.15 */
 const ratio = (v: number, avg: number) => Math.max(0.85, Math.min(1.15, avg > 0 ? v / avg : 1));
 /** 第 f 层的怪物面板（f 为 EXEMPT_FLOORS 或越界时返回 null = 用原值） */
+/** balance-battle2 A [适配]（官方未查到）：按层目标等级 10 级段（1–10…41–50+）给普通怪攻/血再乘一层，用来给 0 死亡段加压、过难段减压。改前全 1 */
+export const FOE_BAND = { atk: [1, 1, 1, 1, 1], hp: [1, 1, 1, 1, 1] };
+const fb = (L: number) => Math.min(4, Math.max(0, Math.floor((L - 1) / 10)));
 export const foeStatsAt = (id: string, f: number): { level: number; hp: number; atk: number; def: number } | null => {
   const d = ENEMIES[id]; if (!d || EXEMPT_FLOORS.includes(f) || f < 0 || f >= FLOORS.length) return null;
   const level = monsterLevelAt(id, f), s = formulaStats(FLOOR_TARGET_LV[f] + (d.tier === 'boss' ? 2 : 0)); // [适配] 显示等级（经验衰减用）普通 L_f+0~3、BOSS L_f+5；面板统一按 L_f（BOSS L_f+2）计算，同层强弱差异由 ratio 体现
@@ -120,5 +123,5 @@ export const foeStatsAt = (id: string, f: number): { level: number; hp: number; 
   const avg = (k: 'hp' | 'atk') => ns.reduce((a, x) => a + x[k], 0) / Math.max(1, ns.length);
   // 21–30 死亡压力（怪物侧）[适配]：该段普通怪攻 ×1.15；尸王殿(5) 为战士断崖层，普通怪 ×0.85、BOSS 攻 ×0.7 血 ×0.8（9 种子 sim-band 校准，见 docs/exp-curve.md）
   const L = FLOOR_TARGET_LV[f], pa = f === 5 ? 0.85 : L >= 21 && L <= 30 ? 1.15 : 1;
-  return { level, hp: Math.round(s.hp * ratio(d.hp, avg('hp'))), atk: Math.round(s.atk * pa * ratio(d.atk, avg('atk'))), def: s.def };
+  return { level, hp: Math.round(s.hp * FOE_BAND.hp[fb(L)] * ratio(d.hp, avg('hp'))), atk: Math.round(s.atk * pa * FOE_BAND.atk[fb(L)] * ratio(d.atk, avg('atk'))), def: s.def };
 };
