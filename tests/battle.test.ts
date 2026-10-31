@@ -312,6 +312,20 @@ const free = (w: World) => w.skills.map(() => 0);
   ok(!r2.ok && r2.reason === '射程内敌人均已中毒' && h.mp === mp0 && Math.max(...cds) === 0, '全部已中毒：自动不施放、不耗蓝、不占公共间隔');
   cds = free(w); ok(w.cast(p, cds).ok && h.mp < mp0, '手动施毒不受限（可重复施放）');
 }
+{ // 自动施放召唤：召唤物已存在且血量 ≥ AUTO_RESUMMON_HP 时跳过（不耗魔、不占间隔），后续技能可放；手动不受限
+  for (const sid of ['summon_skeleton', 'summon_beast']) {
+    const w = mk([{ id: 'orc', x: 1300 }], [], 'taoist', 40); tough(w); const h = w.hero!; h.x = 1000; h.mp = h.maxMp = 9999;
+    const k = idx(w, sid), p = idx(w, 'poison');
+    const auto = (cds: number[]) => { for (const i of [k, p]) { if (cds[i] > 0) continue; const r = w.cast(i, cds, { auto: true }); if (r.ok) return i; } return -1; };
+    let cds = free(w); ok(auto(cds) === k && !!w.summon, `${sid} 无召唤物：自动召唤`);
+    const sm = w.summon!; cds = free(w); const mp0 = h.mp!;
+    const r = w.cast(k, cds, { auto: true }); ok(!r.ok && h.mp === mp0 && Math.max(...cds) === 0, `${sid} 满血召唤物：自动跳过、不耗魔、不占间隔`);
+    cds = free(w); ok(auto(cds) === p && (w.alive('enemy')[0].poisonUntil ?? 0) > w.time && w.summon === sm, `${sid} 满血召唤物：自动轮到施毒术`);
+    sm.hp = sm.maxHp * 0.6; cds = free(w); ok(!w.cast(k, cds, { auto: true }).ok, `${sid} 召唤物 60% 血：自动仍跳过`);
+    sm.hp = sm.maxHp * 0.4; cds = free(w); ok(w.cast(k, cds, { auto: true }).ok && sm.hp === sm.maxHp, `${sid} 召唤物 <50% 血：自动重召（回满血）`);
+    cds = free(w); const mp1 = h.mp!; ok(w.cast(k, cds).ok && h.mp! < mp1, `${sid} 手动仍可重复召唤（耗魔）`);
+  }
+}
 { // 平衡：多种子自动脚本（单种子对随机序列太敏感，任何改动 RNG 消耗顺序的提交都会让结果漂移）
   const SEEDS = [3, 7, 11, 19, 23, 42, 57, 88, 101];
   const NEW_BOOKS = ['big_fireball', 'burst_fire', 'hell_fire', 'lightning_flash', 'hell_thunder', 'ghost_shield', 'holy_armor', 'mass_heal'];

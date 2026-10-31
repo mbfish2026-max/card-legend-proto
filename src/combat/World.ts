@@ -67,6 +67,8 @@ export const SUMMON_LV_KILLS = [0, 10, 25, 45, 75, 115, 165, 225];
 export const SUMMON_NAME_COLORS = ['#ffffff', '#a8d8ff', '#7cc0ff', '#4fa3ff', '#2f86f5', '#1f68e0', '#1a4cc4', '#1a33a6'];
 /** [适配] 治愈术主角满血时治疗召唤物的范围：官方未查到，沿用群体治愈术 170px */
 export const HEAL_SUMMON_RANGE = 170;
+/** [适配] 自动施放召唤技能：已有召唤物且血量 ≥ 该比例时跳过（不耗魔、不占公共间隔）；低于则自动重召（= 回满血/替换）。手动不受限 */
+export const AUTO_RESUMMON_HP = 0.5;
 export const BOSS_MECH = new Set(['boss_woma', 'boss_zuma', 'boss_redmoon']);
 /**
  * 诱惑之光（docs/skills-official.md「诱惑之光」）
@@ -747,6 +749,10 @@ export class World {
     const slv = Math.max(0, this.skillLevel(s)), lvF = 1 + 0.1 * slv;
     if (cds[i] > 0) return { ok: false, reason: `${s.name} 冷却中` };
     if ((h.mp ?? 0) < s.mana) return { ok: false, reason: '魔法值不足' };
+    if (s.kind === 'summon' && opts.auto) {
+      const ex = this.summon;
+      if (ex && ex.hp >= ex.maxHp * AUTO_RESUMMON_HP) return { ok: false, reason: `${ex.name}已存在` };
+    }
     let targets: Unit[] = [];
     if (s.kind === 'melee' || s.kind === 'pierce') {
       const side = this.meleeSide(); if (side === null) return { ok: false, reason: '没有可攻击的目标' };
