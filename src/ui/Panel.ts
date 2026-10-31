@@ -49,7 +49,17 @@ export class Panel {
     // R14 横版长街：关闭店铺界面 = 回到街上（出城走西端城门）
     if (this.mode === 'town') this.npc = null;
     this.clearMapInput(); this.sel = null; this.ironIdx = null; this.mode = null; this.root?.destroy(true); this.root = undefined; this.hideTip(); }
+  /** #11 修复：面板打开时升级/得经验不刷新。render 时记录快照，UIScene.update 每帧比对 */
+  private snap = '';
+  statSnap() { const w = this.world(); return `${w.level}:${w.exp}:${JSON.stringify(w.skillTrain)}:${w.learned.size}`; }
+  /** 角色/技能面板数据变了就重绘；返回是否重绘（供测试） */
+  refreshIfStale(): boolean {
+    if (this.mode !== 'bag' && this.mode !== 'skills') return false;
+    if (this.statSnap() === this.snap) return false;
+    this.render(); return true;
+  }
   render() {
+    if (this.mode) this.snap = this.statSnap();
     this.root?.destroy(true); this.hideTip(); this.clearMapInput();
     if (!this.mode) return;
     const s = this.s, R = this.root = s.add.container(0, 0).setDepth(200);
@@ -207,11 +217,14 @@ export class Panel {
       R.add(s.add.rectangle(560, y, 820, rowH - 4, 0x0a0806, 0.9).setStrokeStyle(1, 0x3a2a18));
       if (s.textures.exists('sk_' + k.id)) R.add(s.add.image(178, y, 'sk_' + k.id).setDisplaySize(rowH - 14, rowH - 14));
       const fk = inBar ? `F${barIdx.get(k.id)! + 1}` : k.passive ? '被动' : '未上栏';
-      R.add(txt(s, 212, y - rowH / 2 + 4, `[${fk}] ${k.name}${!learned ? `（未学：${bk?.shop ? '书店购买' : '打怪掉落'}技能书 · 需 Lv${need}）` : locked ? `（需人物 Lv${need}）` : `  ${lv} 级`}`, fs + 2, locked ? '#888' : '#ffe8a0', { strokeThickness: 2 }));
+      R.add(txt(s, 212, y - rowH / 2 + 4, `[${fk}] ${k.name}${!learned ? `（未学：${bk?.shop ? '书店购买' : bk?.drops.length ? '打怪掉落' : '暂未开放获取'}技能书 · 需 Lv${need}）` : locked ? `（需人物 Lv${need}）` : `  ${lv} 级`}`, fs + 2, locked ? '#888' : '#ffe8a0', { strokeThickness: 2 }));
       const lvVals = k.lvMult ? k.lvMult.map(m => Math.round(m * 100) + '%') : k.lvBonus ? k.lvBonus.map(b => '+' + b) : k.accBonus ? k.accBonus.map(b => '准确+' + b) : [0, 1, 2, 3].map(l => `+${l * 10}%`);
-      R.add(txt(s, 212, y - rowH / 2 + 4 + fs + 5, `${k.desc}  各级：${lvVals.map((v, l) => `${l}级${v}`).join(' ')}`.slice(0, 64), fs, locked ? '#777' : '#ddd', { strokeThickness: 2 }));
+      // #11：10 技能时行高 40，压成两行（简述 + 耗魔/冷却/修炼），避免与下一行重叠、挤到右侧按钮
+      const compact = rowH < 50;
+      if (!compact) R.add(txt(s, 212, y - rowH / 2 + 4 + fs + 5, `${k.desc}  各级：${lvVals.map((v, l) => `${l}级${v}`).join(' ')}`.slice(0, 64), fs, locked ? '#777' : '#ddd', { strokeThickness: 2 }));
       const up = lv >= 0 && lv < 3 && k.learn && k.train ? `升级：人物Lv${k.learn[lv + 1]} + 修炼点${k.train[lv]}` : lv === 3 ? '已满级' : '';
-      R.add(txt(s, 212, y - rowH / 2 + 4 + (fs + 5) * 2, `${k.passive ? '无需施放' : `耗魔 ${k.mana}  冷却 ${k.cooldown}s`}  修炼点 ${pts}${k.train ? '/' + k.train[2] : ''}  ${up}`, fs, locked ? '#666' : '#9fd', { strokeThickness: 2 }));
+      if (compact) R.add(txt(s, 212, y - rowH / 2 + 4 + fs + 5, `${k.passive ? '无需施放' : `耗魔${k.mana} 冷却${k.cooldown}s`} 修炼${pts}${k.train ? '/' + k.train[2] : ''} ${up}  ${k.desc}`.slice(0, 46), fs, locked ? '#777' : '#9fd', { strokeThickness: 2 }));
+      else R.add(txt(s, 212, y - rowH / 2 + 4 + (fs + 5) * 2, `${k.passive ? '无需施放' : `耗魔 ${k.mana}  冷却 ${k.cooldown}s`}  修炼点 ${pts}${k.train ? '/' + k.train[2] : ''}  ${up}`, fs, locked ? '#666' : '#9fd', { strokeThickness: 2 }));
       // 修炼进度条（官方：修炼点达到下一级要求 + 人物等级达到即自动升级）
       if (k.train && lv >= 0 && lv < 3) { const p = Math.min(1, pts / k.train[lv]); R.add(s.add.rectangle(212, y + rowH / 2 - 6, 220, 4, 0x333333).setOrigin(0, 0.5)); R.add(s.add.rectangle(212, y + rowH / 2 - 6, 220 * p, 4, 0x55cc77).setOrigin(0, 0.5)); }
       if (inBar) {

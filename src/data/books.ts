@@ -25,6 +25,12 @@ export const BOOKS: Record<string, BookDef> = {
   fire_wall: { skill: 'fire_wall', cls: 'mage', shop: false, drops: [LICH, ...WOMA], price: P(24) },
   magic_shield: { skill: 'magic_shield', cls: 'mage', shop: false, drops: [LICH, ...WOMA], price: P(31) },
   ice_roar: { skill: 'ice_roar', cls: 'mage', shop: false, drops: [LICH, ...ZUMA, 'boss_redmoon'], price: P(35) },
+  // #11 新法师书：学习等级按官方；价格 未查到 → [适配] P(学习等级)；shop:false、drops:[] = 暂未接入书店/掉落（系统开发另做）
+  big_fireball: { skill: 'big_fireball', cls: 'mage', shop: false, drops: [], price: P(19) },
+  burst_fire: { skill: 'burst_fire', cls: 'mage', shop: false, drops: [], price: P(22) },
+  hell_fire: { skill: 'hell_fire', cls: 'mage', shop: false, drops: [], price: P(16) },
+  lightning_flash: { skill: 'lightning_flash', cls: 'mage', shop: false, drops: [], price: P(26) },
+  hell_thunder: { skill: 'hell_thunder', cls: 'mage', shop: false, drops: [], price: P(30) },
   // 道士：治愈(初始)/精神力/施毒/灵魂火符/召唤骷髅 书店有售；神兽 掉落
   spirit_force: { skill: 'spirit_force', cls: 'taoist', shop: true, drops: [], price: P(9) },
   poison: { skill: 'poison', cls: 'taoist', shop: true, drops: [LICH, ...WOMA], price: P(14) },

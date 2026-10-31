@@ -9,6 +9,7 @@ import { REGIONS, floorBoss, regionOf, entrances, nodeOfFloor, clampView, zoomAt
 import { detectMobile } from '../src/mobile';
 import { StepGate, stepDir, HoldKeys, HOLD } from '../src/input/stepKeys';
 import { POTIONS } from '../src/data/skills';
+import { BOOKS, bookItemId } from '../src/data/books';
 import { TOWNS, NODE_TOWN, WEAPON_GOODS, ARMOR_GOODS, GENERAL_GOODS, STORAGE_SIZE, streetDoors, NPC_ART, TOWN_W, TOWN_GATE_X } from '../src/data/towns';
 import { resolveLayers, pickTexture, comboKey, changedSlots, fallbackId } from '../src/data/equipLayers';
 // @ts-ignore 测试运行于 node（tsx），项目未装 @types/node
@@ -278,6 +279,8 @@ const free = (w: World) => w.skills.map(() => 0);
       // R11 技能书：达到等级且金币有余就买，背包里的书能学就学（学会后快捷栏重排，冷却重置）
       for (const b of w.shopBooks()) { const sk = w.skillPool.find(x => x.id === b.skill)!; if (!w.learned.has(b.skill) && w.level >= w.needLevel(sk) && w.gold >= b.price && !w.bag.some(x => ITEMS[x.item]?.book === b.skill)) w.buyBook(b.skill); }
       for (let i = w.bag.length - 1; i >= 0; i--) if (ITEMS[w.bag[i].item]?.book && w.learnBook(i).startsWith('学会')) { cds = w.skills.map(() => 0); learnLog.push(`${w.level}级${w.skillPool.find(x => x.id === [...w.learned].pop())!.name}@${w.floorIndex + 1}层`); }
+      // #11 可选对照（NEWBOOKS=1）：模拟新法师书已接入——达到官方学习等级即学会
+      if (process.env.NEWBOOKS) for (const b of Object.values(BOOKS)) if (b.cls === w.cls && !b.shop && !b.drops.length && !w.learned.has(b.skill) && w.level >= w.needLevel(w.skillPool.find(x => x.id === b.skill)!)) { w.learned.add(b.skill); cds = w.skills.map(() => 0); }
       // 去城镇商人补药（简化：金币够就买）
       // 有可学的书店技能书时攒钱（药只补到 1 瓶）
       const saving = w.shopBooks().some(b => !w.learned.has(b.skill) && w.level >= w.needLevel(w.skillPool.find(x => x.id === b.skill)!)); const cap = saving ? 1 : 3;
@@ -333,8 +336,8 @@ const free = (w: World) => w.skills.map(() => 0);
 { // 技能键：主动 F1~Fn，被动 P，且不占用 W/A/S/D
   const actives = (Object.keys(CLASSES) as ClassId[]).flatMap(c => CLASSES[c].skills.filter(s => !s.passive));
   const keys = actives.map(s => s.key);
-  ok(keys.every(k => /^F[1-5]$/.test(k)) && !keys.some(k => 'WASD'.includes(k)), `三职业主动技能键均为 F1~F5（${[...new Set(keys)].join(',')}）`);
-  ok(CLASSES.warrior.skills.filter(s => !s.passive).length === 4 && CLASSES.mage.skills.filter(s => !s.passive).length === 5, '战士 4 主动 / 法师 5 主动');
+  ok(keys.every(k => /^F([1-9]|10)$/.test(k)) && !keys.some(k => 'WASD'.includes(k)), `三职业主动技能键均为 F1~F10（${[...new Set(keys)].join(',')}）`);
+  ok(CLASSES.warrior.skills.filter(s => !s.passive).length === 4 && CLASSES.mage.skills.filter(s => !s.passive).length === 10, '战士 4 主动 / 法师 10 主动（#11）');
   ok(POTIONS.every(p => !keys.includes(p.key)), '药水 1-4 与技能键不冲突');
 }
 { // S 键：起点返回上一层
@@ -473,7 +476,7 @@ const free = (w: World) => w.skills.map(() => 0);
     const bt = Settings.autoTouched; Settings.autoSkills = null; Settings.autoTouched = null;
     Settings.toggleAutoSkill('thrust', 'warrior');
     ok(!Settings.skillsFor('warrior').includes('thrust'), '战士取消刺杀生效');
-    ok(Settings.skillsFor('mage').length === 5 && Settings.skillsFor('taoist').length === 5, '法师/道士仍为推荐默认');
+    ok(Settings.skillsFor('mage').length === 10 && Settings.skillsFor('taoist').length === 5, '法师/道士仍为推荐默认');
     Settings.toggleAutoSkill('fireball', 'mage');
     ok(!Settings.skillsFor('mage').includes('fireball') && !Settings.skillsFor('warrior').includes('thrust'), '两职业改动互不覆盖');
     Settings.autoTouched = bt;
@@ -832,5 +835,36 @@ const free = (w: World) => w.skills.map(() => 0);
   const sv = JSON.parse(JSON.stringify(w.toSave())); for (const it of Object.values(sv.equip ?? {}) as any[]) if (it) delete it.stats.mdef;
   const re = new World(seeded(2), 1, FLOORS, 'taoist', sv); ok(re.stats().mdef === m2, `旧档（装备无 mdef 字段）读档后魔御推导一致：${re.stats().mdef}`);
   ok(mitigate(50, 20, 0, 1) === 50, '怪物魔御 0 时法术不被防御减免');
+}
+{ // #11 法师 5 技能：官方学习等级/修炼点；耗魔 D×3 [适配]；魔法伤害走魔御；冷却；射程；技能书
+  const NEW: [string, number, number[], number][] = [['big_fireball', 19, [8000, 14000, 25000], 9], ['burst_fire', 22, [3000, 6000, 18000], 45], ['hell_fire', 16, [1000, 4000, 8000], 30], ['lightning_flash', 26, [3000, 6000, 12000], 75], ['hell_thunder', 30, [4000, 8000, 12000], 105]];
+  for (const [id, lv, tr, mana] of NEW) {
+    const d = CLASSES.mage.skills.find(s => s.id === id)!;
+    ok(d.learn![0] === lv && JSON.stringify(d.train) === JSON.stringify(tr) && d.mana === mana && d.stat === 'mag', `${d.name}：官方学习 Lv${lv}、修炼点 ${tr.join('/')}，耗魔 ${mana}`);
+    const lo = mk([{ id: 'orc', x: 900 }], [], 'mage', lv - 1); lo.hero!.x = 600; ok(!lo.cast(idx(lo, id), free(lo)).ok, `${d.name} ${lv - 1} 级不可用`);
+    const w = mk([{ id: 'orc', x: 900 }], [], 'mage', lv); tough(w); w.hero!.x = 600; ok(w.skillLevel(pool(w, id)) === 0, `${d.name} ${lv} 级解锁为 0 级`);
+    w.skillTrain[id] = tr[0]; w.level = Math.max(lv, d.learn![1]); ok(w.skillLevel(pool(w, id)) === 1, `${d.name} 修炼点 ${tr[0]} + Lv${d.learn![1]} → 1 级`);
+    const mp0 = w.hero!.mp!, cds = free(w), r = w.cast(idx(w, id), cds);
+    ok(r.ok && w.hero!.mp === mp0 - mana && cds[idx(w, id)] === d.cooldown, `${d.name} 施放扣魔 ${mana}，进入冷却 ${d.cooldown}s`);
+    ok(!w.cast(idx(w, id), cds).ok, `${d.name} 冷却中不能再放`);
+    // 魔御：同一怪物魔御 0 vs 40，伤害下降（固定随机）
+    const dmg = (mdef: number) => { const x = mk([{ id: 'orc', x: 900 }], [], 'mage', 40); tough(x); x.hero!.x = 600; x.rng = () => 0.5; x.alive('enemy')[0].mdef = mdef; x.alive('enemy')[0].def = 999; x.cast(idx(x, id), free(x)); return (x.drainEvents().find(e => e.type === 'damage') as any).amount as number; };
+    const a0 = dmg(0), a40 = dmg(40); ok(a0 > a40 && a0 > 1, `${d.name} 为魔法伤害：无视防御 999，魔御 40 减伤（${a0} → ${a40}）`);
+    const far = mk([{ id: 'orc', x: 600 + d.range! + CARD + 200 }], [], 'mage', 40); far.hero!.x = 600; ok(!far.cast(idx(far, id), free(far)).ok, `${d.name} 射程外不可施放`);
+  }
+  const L = (id: string, xs: number[]) => { const w = mk(xs.map(x => ({ id: 'orc', x })), [], 'mage', 40); tough(w); w.hero!.x = 600; return w.cast(idx(w, id), free(w)) as any; };
+  ok(L('big_fireball', [900, 1000]).targets.length === 1, '大火球单体');
+  ok(L('burst_fire', [900, 1000, 1500]).targets.length === 2, '爆裂火焰命中目标及其左右 1 卡内敌人，远处不中');
+  ok(L('hell_fire', [900, 1000, 1500]).targets.length === 2, '地狱火命中前方 2.5 卡内全部敌人');
+  ok(L('lightning_flash', [900, 1000, 1200, 2200]).targets.length === 3, '疾光电影直线穿透射程内全部敌人');
+  ok(L('hell_thunder', [900, 300, 1000, 2000]).targets.length === 3, '地狱雷光以自身为中心，两侧都命中');
+  // 技能书：新书可学（官方等级），但暂不在书店、不掉落
+  const m = new World(seeded(3), 25, FLOORS, 'mage');
+  for (const [id] of NEW) { const b = ITEMS[bookItemId(id)]; ok(!!b?.book, `${id} 有技能书物品`); }
+  m.bag.push({ item: bookItemId('lightning_flash') } as any); ok(m.learnBook(m.bag.length - 1).includes('需等级 26'), '疾光电影书 25 级不能学');
+  m.bag.push({ item: bookItemId('big_fireball') } as any); ok(m.learnBook(m.bag.length - 1) === '学会了 大火球' && m.skills.some(s => s.id === 'big_fireball'), '大火球书 19+ 级可学并上快捷栏');
+  ok(NEW.every(([id]) => !BOOKS[id].shop && BOOKS[id].drops.length === 0), '新书暂不进书店/掉落（待系统接入）');
+  const old = new World(seeded(1), 40, FLOORS, 'mage', JSON.parse(JSON.stringify({ ...new World(seeded(1), 40, FLOORS, 'mage').toSave(), learned: undefined })));
+  ok(NEW.every(([id]) => !old.learned.has(id)) && old.learned.has('thunder'), '旧档（无 learned）不会白送新技能');
 }
 console.log(`全部通过 ${pass} 项`);
