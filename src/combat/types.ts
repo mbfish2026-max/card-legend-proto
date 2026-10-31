@@ -46,6 +46,7 @@ export type BattleEvent =
   | { type: 'leash'; uid: number }
   | { type: 'leap'; uid: number }
   | { type: 'floor'; index: number; name: string }
+  | { type: 'town'; id: string }
   | { type: 'cleared' }
   | { type: 'win' }
   | { type: 'exp'; amount: number }

@@ -16,7 +16,7 @@ import { ENEMIES } from '../data/units';
 import { FLOORS } from '../data/world';
 import { World as WorldCls } from '../combat/World';
 import { BOOKS } from '../data/books';
-import { TOWNS, NODE_TOWN, STORAGE_SIZE } from '../data/towns';
+import { TOWNS, NODE_TOWN, STORAGE_SIZE, NPC_ART } from '../data/towns';
 import { CONSUMABLE } from '../data/items-town';
 import { Settings, DEFAULT_AUTO_SKILLS } from '../settings';
 import { equipLook } from './EquipLayers';
@@ -39,10 +39,13 @@ export class Panel {
   /** R14 城镇：当前选中的 NPC id */
   npc: string | null = null;
   constructor(public s: Phaser.Scene, public world: () => World, public onChange: (msg?: string, green?: boolean) => void, public onTitle: () => void) {}
+  /** 长街门口进店：打开该 NPC 的商店/功能界面 */
+  openNpc(id: string) { this.mode = 'town'; this.npc = id; this.sel = null; this.region = null; this.render(); }
   get open() { return this.mode !== null; }
   toggle(m: PanelMode) { if (this.mode === m) this.close(); else { this.mode = m; this.sel = null; this.region = null; this.render(); } }
   close() {
-    if (this.mode === 'town') { const w = this.world(); if (w.town) { const e = w.leaveTown(); this.onChange(e ?? '出城'); this.onTeleport?.(); } }
+    // R14 横版长街：关闭店铺界面 = 回到街上（出城走西端城门）
+    if (this.mode === 'town') this.npc = null;
     this.clearMapInput(); this.sel = null; this.ironIdx = null; this.mode = null; this.root?.destroy(true); this.root = undefined; this.hideTip(); }
   render() {
     this.root?.destroy(true); this.hideTip(); this.clearMapInput();
@@ -229,20 +232,19 @@ export class Panel {
   // ---------- R14 城镇 ----------
   private npcDef() { const t = TOWNS[this.world().town ?? '']; return t?.npcs.find(n => n.id === this.npc); }
   npcKind() { return this.mode === 'town' ? this.npcDef()?.kind : undefined; }
-  private npcNeedsBag() { const k = this.npcKind(); return !!k && k !== 'teleport' && k !== 'book'; }
+  private npcNeedsBag() { const k = this.npcKind(); return !!k && k !== 'teleport' && k !== 'book' && k !== 'veteran'; }
   private renderTown(R: Phaser.GameObjects.Container, top: number) {
     const s = this.s, w = this.world(), t = TOWNS[w.town ?? ''];
     if (!t) { R.add(txt(s, 640, top + 200, '不在城内', 20, '#fff').setOrigin(0.5)); return; }
     if (s.textures.exists('bg_town')) R.add(s.add.image(640, top + 240, 'bg_town').setDisplaySize(996, 460).setAlpha(0.35));
-    R.add(txt(s, 160, top + 44, `金币 ${w.gold}   安全区：不会受到伤害`, 14, '#ffd24a'));
-    t.npcs.forEach((n, i) => {
-      const y = top + 84 + i * 40;
-      R.add([...button(s, 240, y, 170, 34, `${this.npc === n.id ? '▶' : ''}${n.name.replace(/（.*）/, '')}`, () => { this.npc = n.id; this.render(); }, 13)]);
-    });
-    R.add([...button(s, 240, top + 448, 170, 36, '出城', () => { const e = w.leaveTown(); this.onChange(e ?? '出城', !e); if (!e) { this.mode = null; this.close(); this.onTeleport?.(); } }, 16)]);
+    R.add(txt(s, 160, top + 14, `金币 ${w.gold}   安全区`, 14, '#ffd24a'));
+    const cur = this.npcDef(), art = cur && 'npc_' + NPC_ART[cur.kind];
+    if (art && s.textures.exists(art)) R.add(s.add.image(240, top + 400, art).setOrigin(0.5, 1).setDisplaySize(200, 250));
+    else if (cur) { R.add(s.add.rectangle(240, top + 275, 200, 250, 0x2a2018).setStrokeStyle(2, 0x6a5a28)); R.add(txt(s, 240, top + 275, cur.name.replace(/（.*）/, ''), 16, '#ffe8a0').setOrigin(0.5)); }
+    R.add([...button(s, 240, top + 448, 170, 36, '回到街上', () => this.close(), 16)]);
     const n = this.npcDef(), X = 340;
     if (!n) { R.add(txt(s, X, top + 90, `${t.name}\n选择左侧 NPC。\n来源：${t.src}`, 14, '#ddd', { wordWrap: { width: 600 } })); return; }
-    R.add(txt(s, X, top + 50, `${n.name}${n.pos ? `  原版坐标 ${n.pos}` : ''}${n.note ? `  ${n.note}` : ''}`, 14, '#ffe8a0', { wordWrap: { width: 600 } }));
+    R.add(txt(s, X - 180, top + 44, `${n.name}${n.pos ? `  原版坐标 ${n.pos}` : ''}${n.note ? `  ${n.note}` : ''}`, 13, '#ffe8a0', { wordWrap: { width: this.npcNeedsBag() ? 400 : 700 } }));
     const row = (i: number, name: string, sub: string, label: string, fn: () => void, ok: boolean, icon?: string) => {
       const y = top + 100 + i * 50;
       R.add(s.add.rectangle(X + 110, y, 230, 44, 0x0a0806).setStrokeStyle(1, 0x4a3a28));
@@ -260,13 +262,14 @@ export class Panel {
     if (n.kind === 'book') { R.add(txt(s, X, top + 74, '书店：本职业有售技能书', 13, '#9fd')); w.shopBooks().forEach((b, i) => { const id = 'book_' + b.skill, learned = w.learned.has(b.skill);
       row(i, ITEMS[id].name, `${b.price} 金 ${learned ? '已学会' : ''}`, '购买', () => buy(w.buyBook(b.skill), ITEMS[id].name), !learned && w.gold >= b.price, id); }); }
     if (n.kind === 'jewelry') R.add(txt(s, X, top + 90, '首饰店存货：未查到（原版只能买到别人卖的）。\n点击右侧背包物品出售。', 13, '#9fd'));
-    if (n.kind === 'teleport') { const fl = [...w.reached].sort((a, b) => a - b).slice(0, 8);
+    if (n.kind === 'veteran') R.add(txt(s, X, top + 66, '老兵：城里安全，西门出城；要去哪我送你。', 13, '#9fd'));
+    if (n.kind === 'teleport' || n.kind === 'veteran') { const fl = [...w.reached].sort((a, b) => a - b).slice(0, 8);
       fl.forEach((f, i) => row(i, w.floors[f].name, `${w.teleportCost(f)} 金 · 冷却 ${WorldCls.TELEPORT_CD}s`, '传送', () => { const e = w.townTeleport(f); this.onChange(e ?? `传送到 ${w.floors[f].name}`, !e); if (!e) { this.mode = null; this.close(); this.onTeleport?.(); } else this.render(); }, w.gold >= w.teleportCost(f))); }
     if (n.kind === 'storage') {
       R.add(txt(s, X, top + 74, `仓库 ${w.storage.length}/${STORAGE_SIZE}：点仓库取回，点背包存入`, 13, '#9fd'));
       for (let i = 0; i < STORAGE_SIZE; i++) { const it = w.storage[i], x = X + 20 + (i % 5) * 46, y = top + 116 + Math.floor(i / 5) * 46;
         this.slotBox(R, x, y, 42, it, '', () => { const e = w.withdraw(i); this.onChange(e ?? `取回 ${it!.name}`, !e); }, 'st_' + i); }
-    } else if (this.npcNeedsBag()) R.add(txt(s, X, top + 452, '点击右侧背包物品 → 卖给该 NPC（按售价）', 13, '#9fd'));
+    } else if (this.npcNeedsBag()) R.add(txt(s, X, top + 420, '点右侧背包物品\n→ 卖给该 NPC', 13, '#9fd'));
   }
   /** 世界地图视口（拖动/缩放状态，跨重绘保留） */
   view: View | null = null;
@@ -354,7 +357,7 @@ export class Panel {
       c.on('pointerdown', () => {
         sfx(s, 'click', 0.4);
         if (n.kind === 'exit' && n.to) { this.region = n.to; this.render(); return; }
-        if (n.kind === 'town' && NODE_TOWN[n.id]) { const e = w.enterTown(NODE_TOWN[n.id]); if (e) { this.onChange(e); return; } this.clearMapInput(); this.mode = 'town'; this.npc = null; this.render(); this.onChange(`进入 ${n.name}`, true); return; }
+        if (n.kind === 'town' && NODE_TOWN[n.id]) { const e = w.enterTown(NODE_TOWN[n.id]); if (e) { this.onChange(e); return; } this.clearMapInput(); this.mode = null; this.close(); this.onTeleport?.(); this.onChange(`进入 ${n.name}`, true); return; }
         if (f === undefined) { this.onChange(`${n.name}：暂未开放`); return; }
         if (here) { this.onChange('你已在此地图'); return; }
         if (!reached) { this.onChange('到达该层后解锁传送'); return; }

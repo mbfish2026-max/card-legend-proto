@@ -9,7 +9,7 @@ import { REGIONS, floorBoss, regionOf, entrances, nodeOfFloor, clampView, zoomAt
 import { detectMobile } from '../src/mobile';
 import { StepGate, stepDir, HoldKeys, HOLD } from '../src/input/stepKeys';
 import { POTIONS } from '../src/data/skills';
-import { TOWNS, NODE_TOWN, WEAPON_GOODS, ARMOR_GOODS, GENERAL_GOODS, STORAGE_SIZE } from '../src/data/towns';
+import { TOWNS, NODE_TOWN, WEAPON_GOODS, ARMOR_GOODS, GENERAL_GOODS, STORAGE_SIZE, streetDoors, NPC_ART, TOWN_W, TOWN_GATE_X } from '../src/data/towns';
 import { resolveLayers, pickTexture, comboKey, changedSlots, fallbackId } from '../src/data/equipLayers';
 // @ts-ignore 测试运行于 node（tsx），项目未装 @types/node
 import { existsSync } from 'node:fs';
@@ -693,6 +693,21 @@ const free = (w: World) => w.skills.map(() => 0);
   Settings.autoSkills = null; Settings.autoTouched = null as any; const a = Settings.skillsFor('mage');
   if (a.length >= 2) { Settings.moveAutoSkill(a[1], -1, 'mage'); const b = Settings.skillsFor('mage'); ok(b[0] === a[1] && b[1] === a[0], '自动技能优先级上移'); }
   Settings.autoSkills = null;
+}
+
+{ // R14 横版长街：走到门口进店
+  const w = new World(seeded(11), 20, FLOORS, 'warrior'); w.enterTown('bichi');
+  const ds = streetDoors('bichi');
+  ok(ds.length === 10 && ds.some(d => d.npc.kind === 'veteran'), '比奇长街 10 家门面（含比奇老兵）');
+  ok(ds.every((d, i) => d.x > TOWN_GATE_X + 200 && d.x < TOWN_W && (i === 0 || d.x - ds[i - 1].x > 220)), '门面在街内且不重叠');
+  ok(Object.values(NPC_ART).every(a => existsSync(`public/assets/town/npc_${a}.png`)) && existsSync('public/assets/town/bg_bichi_town.jpg'), 'NPC 立绘与城镇背景文件都在');
+  ok(w.alive('enemy').length === 0 && w.ground.length === 0, '进城清掉野外怪/地上物品');
+  const target = ds[3]; let n = 0; while (w.hero!.x < target.x - 50 && n++ < 400) w.step(0.05, { dx: 1, dy: 0 });
+  ok(w.nearDoor()?.npc.id === target.npc.id, `向右走到 ${target.npc.name} 门口触发该 NPC`);
+  ok(!w.atTownGate(), '不在城门');
+  n = 0; while (!w.atTownGate() && n++ < 800) w.step(0.05, { dx: -1, dy: 0 });
+  ok(w.atTownGate() && w.nearDoor() === null && w.town === 'bichi', '向左走回城门（仍在城内，门口才出城）');
+  ok(w.leaveTown() === null && w.town === null && w.alive('enemy').length > 0, '城门出城后重新刷怪');
 }
 
 console.log(`全部通过 ${pass} 项`);

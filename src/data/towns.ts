@@ -1,6 +1,6 @@
 import { REGIONS } from './map';
 /** R14 城镇与 NPC。来源/未查到见 docs/towns-npcs-official.md */
-export type NpcKind = 'potion' | 'weapon' | 'armor' | 'jewelry' | 'book' | 'general' | 'smith' | 'storage' | 'teleport';
+export type NpcKind = 'potion' | 'weapon' | 'armor' | 'jewelry' | 'book' | 'general' | 'smith' | 'storage' | 'teleport' | 'veteran';
 /** 商品：item 物品 id；official 原版价（null = 未查到）；price 本作买价 */
 export interface Goods { item: string; official: number | null; price: number; src: string }
 export interface NpcDef { id: string; name: string; kind: NpcKind; pos?: string; goods?: Goods[]; note?: string }
@@ -25,7 +25,8 @@ export const TOWNS: Record<string, TownDef> = {
     npc('bq_general', '杂货铺老板', 'general', '278,298', { goods: GENERAL_GOODS }),
     npc('bq_smith', '铁匠铺老板', 'smith', '302,219'),
     npc('bq_storage', '仓库保管员', 'storage', '301,257'),
-    npc('bq_tele', '传送员', 'teleport', undefined, { note: '[适配] 原版位置未查到' })] },
+    npc('bq_tele', '传送员', 'teleport', undefined, { note: '[适配] 原版位置未查到' }),
+    npc('bq_veteran', '比奇老兵', 'veteran', undefined, { note: '城门老兵：新手指引 + 传送（原版比奇老兵承担传送；坐标未查到）' })] },
   mengzhong: { id: 'mengzhong', name: '盟重土城', region: 'zuma', src: T2, npcs: [...basic('mz'), npc('mz_weapon', '铁匠铺老板（武器）', 'weapon', '329,314', { goods: WEAPON_GOODS })] },
   bairimen: { id: 'bairimen', name: '白日门', region: 'chiyue', src: '未查到', npcs: basic('brm') },
   cangyue: { id: 'cangyue', name: '苍月岛', region: 'cangyue', src: '未查到', npcs: basic('cy') },
@@ -38,3 +39,12 @@ export function townFloors(t: string): number[] { const r = REGIONS.find(x => x.
 /** 某层所在区域的城镇（地牢逃脱卷）；没有返回 bichi */
 export function townOfFloor(f: number): string { const r = REGIONS.find(x => x.floors.includes(f)); return Object.values(TOWNS).find(t => t.region === r?.id)?.id ?? 'bichi'; }
 export const STORAGE_SIZE = 40;
+
+/** R14 横版长街：街宽 = 3 屏；西端城门（出城），店铺门面沿街等距排开 */
+export const TOWN_W = 1280 * 3, TOWN_GATE_X = 150, TOWN_SPAWN_X = 330, DOOR_RANGE = 110;
+/** NPC 立绘文件 id（public/assets/town/npc_<id>.png） */
+export const NPC_ART: Record<NpcKind, string> = { potion: 'pharmacist', weapon: 'weapon', armor: 'clothes', jewelry: 'jewelry', book: 'book', general: 'grocer', smith: 'blacksmith', storage: 'storage', teleport: 'teleporter', veteran: 'veteran' };
+export function streetDoors(t: string): { npc: NpcDef; x: number }[] {
+  const ns = TOWNS[t]?.npcs ?? [], a = 560, b = TOWN_W - 260;
+  return ns.map((npc, i) => ({ npc, x: Math.round(ns.length > 1 ? a + i * (b - a) / (ns.length - 1) : (a + b) / 2) }));
+}

@@ -12,6 +12,7 @@ import { ClassId, CLASSES } from '../data/classes';
 import { CardView } from '../ui/CardView';
 import { Hud } from '../ui/Hud';
 import { PanelMode } from '../ui/Panel';
+import { TOWNS, TOWN_W, TOWN_GATE_X, NPC_ART, streetDoors } from '../data/towns';
 import * as fx from '../ui/Fx';
 import { Settings, SaveStore } from '../settings';
 import type { UIScene } from './UIScene';
@@ -142,6 +143,56 @@ export class BattleScene extends Phaser.Scene {
     this.tweens.add({ targets: this.portalHint, y: -242, duration: 500, yoyo: true, repeat: -1 });
     c.add([arch, core, swirl, ...rings, motes, t, this.portalHint]); this.portal = c;
   }
+  // ===== R14 横版长街城镇 =====
+  street?: Phaser.GameObjects.Container; streetHint?: Phaser.GameObjects.Text; townTarget: { x: number; id: string } | null = null;
+  /** 城镇长街：背景（占位：bg_town_street_<id> 远/中/近三层未到时用单屏 bg_bichi_town 拼接+色块），店铺门面 + NPC 立绘，西端城门 */
+  buildStreet(id: string) {
+    this.clearStreet(); const t = TOWNS[id]; if (!t) return;
+    for (const [uid, v] of [...this.views]) if (!v.unit.isHero && !v.unit.summon) { v.destroy(); this.views.delete(uid); }
+    this.groundObjs.forEach(os => os.forEach(o => o.destroy())); this.groundObjs.clear(); this.floorUids = [];
+    this.bgImgs.forEach(b => b.setVisible(false)); this.portal.setVisible(false); this.merchant.setVisible(false);
+    const need = ['bg_bichi_town', ...Object.values(NPC_ART).map(a => 'npc_' + a)].filter(k => !this.textures.exists(k));
+    if (need.length) { need.forEach(k => this.load.image(k, `assets/town/${k}.${k.startsWith('bg') ? 'jpg' : 'png'}`)); this.load.once('complete', () => { if (this.world.town === id) this.buildStreet(id); }); this.load.start(); }
+    const C = this.street = this.add.container(0, 0).setDepth(3), W = TOWN_W;
+    // 远景：天空渐变 + 城墙（占位）；单屏背景图按屏拼接（交替镜像）当中景占位
+    const far = this.add.graphics().setScrollFactor(0.4); far.fillGradientStyle(0x2a3a5a, 0x2a3a5a, 0x7a6a50, 0x7a6a50, 1).fillRect(-200, 0, W, 720); C.add(far);
+    if (this.textures.exists('bg_bichi_town')) for (let x = 0; x < W; x += 1280) C.add(this.add.image(x + 640, 300, 'bg_bichi_town').setDisplaySize(1280, 720).setFlipX((x / 1280) % 2 === 1).setTint(0xb0b0b0).setScrollFactor(0.7));
+    const road = this.add.graphics(); road.fillStyle(0x5a5048, 1).fillRect(0, GROUND_Y - 40, W, 400); road.lineStyle(2, 0x3a342e, 0.6);
+    for (let x = 0; x < W; x += 90) road.strokeRect(x, GROUND_Y - 40, 90, 46); C.add(road);
+    // 西端城门（出城）
+    const gate = this.add.graphics(); gate.fillStyle(0x4a4e58).fillRect(TOWN_GATE_X - 90, GROUND_Y - 300, 40, 300).fillRect(TOWN_GATE_X + 50, GROUND_Y - 300, 40, 300).fillRect(TOWN_GATE_X - 100, GROUND_Y - 330, 200, 40);
+    gate.fillStyle(0x1a1410).fillRect(TOWN_GATE_X - 50, GROUND_Y - 290, 100, 290); C.add(gate);
+    C.add(this.add.text(TOWN_GATE_X, GROUND_Y - 352, '城门 · 出城', { fontFamily: FONT, fontSize: '20px', color: '#ffe8a0', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5));
+    gate.setInteractive(new Phaser.Geom.Rectangle(TOWN_GATE_X - 100, GROUND_Y - 330, 200, 330), Phaser.Geom.Rectangle.Contains).on('pointerdown', () => this.walkTo(TOWN_GATE_X, 'gate'));
+    // 店铺门面（占位：shop_<kind> 素材未到时画屋顶+门+招牌）
+    for (const d of streetDoors(id)) {
+      const n = d.npc, f = this.add.container(d.x, GROUND_Y - 40), key = 'shop_' + n.kind, art = 'npc_' + NPC_ART[n.kind];
+      if (this.textures.exists(key)) f.add(this.add.image(0, 0, key).setOrigin(0.5, 1).setDisplaySize(300, 340));
+      else { const g = this.add.graphics(); g.fillStyle(0x6a4a2a).fillRect(-130, -260, 260, 260); g.fillStyle(0x8a2018).fillTriangle(-160, -260, 160, -260, 0, -330); g.fillStyle(0x2a1a10).fillRect(-45, -150, 90, 150); g.lineStyle(3, 0xd4a64a).strokeRect(-130, -260, 260, 260); f.add(g); }
+      f.add(this.add.rectangle(0, -230, 200, 36, 0x1a1008, 0.9).setStrokeStyle(2, 0xd4a64a));
+      f.add(this.add.text(0, -230, n.name.replace(/（.*）/, ''), { fontFamily: FONT, fontSize: '18px', color: '#ffe8a0' }).setOrigin(0.5));
+      if (this.textures.exists(art)) f.add(this.add.image(80, 0, art).setOrigin(0.5, 1).setDisplaySize(112, 140));
+      const hit = this.add.rectangle(0, -150, 280, 320, 0, 0.001).setInteractive({ useHandCursor: true }).on('pointerdown', () => this.walkTo(d.x, n.id));
+      f.add(hit); C.add(f);
+    }
+    this.streetHint = this.add.text(0, GROUND_Y - 400, '', { fontFamily: FONT, fontSize: '20px', color: '#ffffff', fontStyle: 'bold', stroke: '#2a0a5a', strokeThickness: 5 }).setOrigin(0.5).setDepth(60);
+    this.hud?.setFloor(t.name, []); const hv = this.world.hero && this.views.get(this.world.hero.uid); if (hv) hv.x = this.world.hero!.x;
+    this.cameras.main.centerOn(this.world.hero?.x ?? 640, 360); this.cameras.main.fadeIn(500);
+  }
+  clearStreet() {
+    if (!this.street) return; this.street.destroy(true); this.street = undefined; this.streetHint?.destroy(); this.streetHint = undefined; this.townTarget = null;
+    this.bgImgs.forEach(b => b.setVisible(true)); this.portal.setVisible(true); this.merchant.setVisible(true);
+  }
+  /** 点击门面/城门：走过去，到达后进店/出城 */
+  walkTo(x: number, id: string) { if (this.paused || this.state !== 'play' || !this.world.town) return; const h = this.world.hero; if (h && Math.abs(h.x - x) < 100) this.townArrive(id); else this.townTarget = { x, id }; }
+  townArrive(id: string) { if (id === 'gate') this.leaveTownNow(); else { this.sfx('click'); this.ui.panel.openNpc(id); } }
+  townUse() { const w = this.world; if (this.paused) return; if (w.atTownGate()) return this.leaveTownNow(); const d = w.nearDoor(); if (d) this.townArrive(d.npc.id); else this.log('走到店铺门口再进店；西端城门出城'); }
+  leaveTownNow() { const e = this.world.leaveTown(); if (e) this.log(e); this.handle(this.world.drainEvents()); this.saveGame(); }
+  updateStreet() {
+    if (!this.street || !this.streetHint) return; const w = this.world, h = w.hero; if (!h) return;
+    const d = w.nearDoor(), g = w.atTownGate(), act = IS_MOBILE ? '点门面' : 'W/空格';
+    this.streetHint.setVisible(!!d || g).setText(g ? `${act} 出城` : d ? `${act} 进入 ${d.npc.name.replace(/（.*）/, '')}` : '').setX(g ? TOWN_GATE_X : d?.x ?? 0);
+  }
   /** 商人：本层起点的小摊（背景层，不参与战斗） */
   buildMerchant() {
     const c = this.add.container(MERCHANT_X, GROUND_Y - 70).setDepth(5);
@@ -169,11 +220,11 @@ export class BattleScene extends Phaser.Scene {
     if (this.state === 'win') { if (k === ' ') { this.sfx('click'); this.toTitle(); } return; }
     if (k === 'ESCAPE') { if (this.paused) this.ui.panel.close(); else this.openPanel('settings'); return; }
     if (k === 'B' || k === 'C' || k === 'I') return this.openPanel('bag');
-    if (k === 'T') return this.openPanel('shop');
+    if (k === 'T') { if (this.world.town) { this.townUse(); return; } return this.openPanel('shop'); }
     if (k === 'K') return this.openPanel('skills');
     if (k === 'Q') return this.openPanel('quests');
     if (this.paused || this.state !== 'play') return;
-    if (k === ' ' || k === 'W') { this.usePortal(); return; }
+    if (k === ' ' || k === 'W') { if (this.world.town) this.townUse(); else this.usePortal(); return; }
     if (k === 'S') { if (!this.fading && this.world.hero && this.world.floorIndex > 0 && this.world.hero.x <= WORLD.heroStartX + 150) { this.fading = true; this.cameras.main.fadeOut(400, 0, 0, 0); this.cameras.main.once('camerafadeoutcomplete', () => { this.fading = false; this.world.prevFloor(); }); } else this.log('在本层起点按 S 返回上一层'); return; }
     const h = this.world.hero; if (!h) return;
     const si = this.world.skills.findIndex(s => s.key === k);
@@ -306,6 +357,7 @@ export class BattleScene extends Phaser.Scene {
       else if (e.type === 'leap') this.views.get(e.uid)?.leap(WORLD.leapSec * 1000);
       else if (e.type === 'leash') { const v = this.views.get(e.uid); if (v) fx.floatNumber(this, v.cx, v.cy - v.h * 0.3, v.h, '脱离战斗', FX.statusColor, 0.6); }
       else if (e.type === 'floor') this.enterFloor(e.index, e.name);
+      else if (e.type === 'town') this.buildStreet(e.id);
       else if (e.type === 'cleared') this.log('首领已被击败！出口已开启，向右前往下一层');
       else if (e.type === 'win') this.end();
       else if (e.type === 'exp') { this.expTotal += e.amount; this.log(`获得 经验 ${e.amount}`, true); }
@@ -379,6 +431,7 @@ export class BattleScene extends Phaser.Scene {
   }
   /** 进入新一层：淡入，换背景，清掉旧怪物与地上物品，刷新本层怪物；角色/召唤物保留 */
   enterFloor(i: number, name: string) {
+    this.clearStreet();
     for (const [uid, v] of [...this.views]) if (!v.unit.isHero && !(v.unit.summon && this.world.units.includes(v.unit))) { v.destroy(); this.views.delete(uid); }
     this.groundObjs.forEach(os => os.forEach(o => o.destroy())); this.groundObjs.clear();
     this.floorUids = this.world.alive('enemy').map(u => u.uid);
@@ -475,7 +528,9 @@ export class BattleScene extends Phaser.Scene {
     if (this.skillsDirty && !this.paused) { this.skillsDirty = false; this.cds = this.world.skills.map(() => 0); this.scene.stop('UI'); this.scene.launch('UI'); }
     if (this.state !== 'win' && !this.paused) {
       const pad = this.ui?.pad;
-      const dx = this.state === 'play' ? (this.hold.dir(performance.now()) || (pad?.dx ?? 0)) : 0;
+      let dx = this.state === 'play' ? (this.hold.dir(performance.now()) || (pad?.dx ?? 0)) : 0;
+      if (dx) this.townTarget = null;
+      else if (this.townTarget && this.world.town && this.world.hero) { const d = this.townTarget.x - this.world.hero.x; if (Math.abs(d) < 12) { const t = this.townTarget; this.townTarget = null; this.townArrive(t.id); } else dx = Math.sign(d); }
       const dy = this.state === 'play' ? Math.sign((k.DOWN.isDown ? 1 : 0) - (k.UP.isDown ? 1 : 0) + (pad?.dy ?? 0)) : 0;
       if (this.state === 'play') this.tryAutoSkills();
       this.world.step(dt, { dx, dy, use: this.useNext, autoAttack: Settings.autoAttack }); this.useNext = false;
@@ -485,6 +540,7 @@ export class BattleScene extends Phaser.Scene {
     this.handle(this.world.drainEvents());
     this.layoutQueue();
     this.views.forEach(v => { v.sync(); v.anim(time); v.setDepth(10 + v.unit.y / 1000 + (v.unit.isHero ? 0.0005 : 0)); });
+    this.updateStreet();
     this.portal.setAlpha(!this.world.cleared ? 0.35 : 1);
     this.portalHint?.setVisible(this.world.atExit && this.state === 'play' && !(this.world.floor.boss && this.world.alive('enemy').some(u => u.tier === 'boss')));
     this.hud?.setExp(this.world.level, this.world.exp, this.world.expNext);

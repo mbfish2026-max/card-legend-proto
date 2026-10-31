@@ -7,7 +7,7 @@ import { CLASSES, ClassId, SkillDef } from '../data/classes';
 import { ITEMS, SLOTS, SETS, ENHANCE_SLOTS, ENHANCE_MAX, ENHANCE_STAT, IRON_PRICE, IRON_MAX_PURITY, enhanceChance, shatterChance } from '../data/items';
 import { HERO, ENEMIES, EXP_PER_LEVEL, SUMMON, SUMMON_BEAST } from '../data/units';
 import { WORLD, FLOORS, Floor } from '../data/world';
-import { TOWNS, townFloors, townOfFloor, STORAGE_SIZE } from '../data/towns';
+import { TOWNS, townFloors, townOfFloor, STORAGE_SIZE, TOWN_W, TOWN_GATE_X, TOWN_SPAWN_X, DOOR_RANGE, streetDoors } from '../data/towns';
 import { CONSUMABLE } from '../data/items-town';
 import { QUESTS, ACHIEVES, QuestDef, AchieveDef } from '../data/quests';
 
@@ -556,9 +556,15 @@ export class World {
     if (this.town === t) return null;
     if (!free && this.inCombat()) return '战斗中无法回城';
     this.town = t; this.stepTarget = null; this.stepQueued = 0;
-    const h = this.hero; if (h) { h.hp = h.maxHp; h.mp = h.maxMp; }
-    this.events.push({ type: 'log', text: `进入 ${TOWNS[t].name}（安全区）` }); return null;
+    const h = this.hero; if (h) { h.hp = h.maxHp; h.mp = h.maxMp; h.x = TOWN_SPAWN_X; h.y = WORLD.laneMin + (WORLD.laneMax - WORLD.laneMin) / 2; }
+    // 横版长街：清掉野外怪物/地上物品（出城时重新刷层）
+    this.units = this.units.filter(u => u.isHero || u.summon); this.ground = []; this.zones = [];
+    this.events.push({ type: 'town', id: t });
+    this.events.push({ type: 'log', text: `进入 ${TOWNS[t].name}（安全区）：左右走到店铺门口进店，西端城门出城` }); return null;
   }
+  /** 长街：当前站在哪家店门口（null=不在门口） */
+  nearDoor() { const h = this.hero; if (!this.town || !h) return null; return streetDoors(this.town).find(d => Math.abs(d.x - h.x) <= DOOR_RANGE) ?? null; }
+  atTownGate() { const h = this.hero; return !!this.town && !!h && h.x <= TOWN_GATE_X + DOOR_RANGE; }
   /** 出城：去指定层（需已到达或为 0 层），默认本城区域第一层 */
   leaveTown(f?: number): string | null {
     if (!this.town) return '不在城内';
@@ -767,7 +773,12 @@ export class World {
   step(dt: number, inp: Input = { dx: 0, dy: 0 }) {
     if (this.done) return;
     this.time += dt;
-    if (this.town) return; // R14 安全区：城内不结算战斗
+    if (this.town) { // R14 安全区：城内只左右走，不结算战斗
+      const h = this.hero; if (!h) return; const dx = Math.sign(inp.dx), dy = Math.sign(inp.dy); h.moving = !!(dx || dy);
+      if (dx) { h.facing = dx as 1 | -1; h.x = Math.max(h.width / 2, Math.min(TOWN_W - h.width / 2, h.x + dx * WORLD.heroSpeed * dt)); }
+      if (dy) h.y = Math.max(WORLD.laneMin, Math.min(WORLD.laneMax, h.y + dy * WORLD.heroLaneSpeed * dt));
+      return;
+    }
     const h = this.hero;
     const fighting = this.alive('enemy').some(u => u.ai === 'chase');
     if (h) {
