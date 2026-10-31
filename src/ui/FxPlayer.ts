@@ -21,7 +21,7 @@ export const FX_DEFS: Record<string, FxDef> = {
   fx_fireball_fly: D(20, 'ADD', 57, ['fireball'], { loop: true }),
   fx_fireball_hit: D(20, 'ADD', 58, ['fireball']),
   fx_half_moon_sweep: D(20, 'ADD', 57, ['half_moon']),
-  fx_heal_pillar: D(16, 'ADD', 56, ['heal']),
+  fx_heal_pillar: D(16, 'ADD', 56, ['heal', 'mass_heal']),
   fx_ice_roar_burst: D(20, 'NORMAL', 57, ['ice_roar']),
   fx_magic_shield_cast: D(20, 'ADD', 56, ['magic_shield']),
   fx_magic_shield_loop: D(12, 'ADD', 11, ['magic_shield'], { loop: true }),
@@ -37,7 +37,20 @@ export const FX_DEFS: Record<string, FxDef> = {
   fx_summon_circle: D(16, 'NORMAL', 9, ['summon_skeleton']),
   fx_summon_pillar: D(16, 'ADD', 56, ['summon_skeleton', 'summon_beast']),
   fx_thrust_hit: D(24, 'ADD', 58, ['thrust']),
-  fx_thunder_strike: D(20, 'ADD', 60, ['thunder']),
+  // #11 法师新技能专属（v3）
+  fx_big_fireball_fly: D(20, 'ADD', 57, ['big_fireball'], { loop: true }),
+  fx_big_fireball_hit: D(20, 'ADD', 58, ['big_fireball']),
+  fx_burst_fire_blast: D(20, 'ADD', 58, ['burst_fire']),
+  fx_hell_fire_line: D(20, 'ADD', 57, ['hell_fire']),
+  fx_lightning_flash_beam: D(24, 'ADD', 59, ['lightning_flash']),
+  fx_hell_thunder_burst: D(20, 'ADD', 57, ['hell_thunder']),
+  fx_thunder_strike: D(20, 'ADD', 60, ['thunder', 'hell_thunder']),
+  // #12 道士新技能专属（v4）
+  fx_ghost_shield_cast: D(20, 'ADD', 56, ['ghost_shield']),
+  fx_ghost_shield_loop: D(11, 'ADD', 11, ['ghost_shield'], { loop: true }),
+  fx_holy_armor_cast: D(20, 'ADD', 56, ['holy_armor']),
+  fx_holy_armor_loop: D(11, 'ADD', 11, ['holy_armor'], { loop: true }),
+  fx_mass_heal_burst: D(20, 'ADD', 55, ['mass_heal']),
 };
 /** 普攻挥砍按职业着色 */
 export const SLASH_TINT: Record<string, number> = { warrior: 0xffb060, mage: 0xa08cff, taoist: 0xc0f070 };
