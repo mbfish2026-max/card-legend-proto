@@ -12,6 +12,7 @@ export const ASSETS: Record<string, string> = {
   cave_skel_warrior: P + 'cave_skel_warrior_full.png', cave_skel_general: P + 'cave_skel_general_full.png', axe_skeleton: P + 'axe_skeleton_full.png', cave_bat: P + 'cave_bat_full.png', cave_maggot: P + 'cave_maggot_full.png', hj_guard: P + 'hj_guard_full.png', wolong_guard: P + 'wolong_guard_full.png', fire_dragon_guard: P + 'fire_dragon_guard_full.png', leiyan_spider: P + 'leiyan_spider_full.png',
   // 卡牌半身/全身立绘（AI 生成 + 绿幕抠图，透明 PNG）
   hero: P + 'warrior_full.png', mage: P + 'mage_full.png', taoist: P + 'taoist_full.png',
+  hen: P + 'hen_full.png', scarecrow: P + 'scarecrow_full.png', hook_cat: P + 'hook_cat_full.png', rake_cat: P + 'rake_cat_full.png', forest_yeti: P + 'forest_yeti_full.png', man_eater_flower: P + 'man_eater_flower_full.png',
   deer: P + 'deer_full.png', wolf: P + 'wolf_full.png', bat: P + 'bat_full.png', spider: P + 'spider_full.png',
   skeleton: P + 'skeleton_full.png', zombie: P + 'zombie_full.png', orc: P + 'orc_full.png', darkmage: P + 'darkmage_full.png',
   boss_lich: P + 'boss_lich_full.png',

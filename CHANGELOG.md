@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## feat/balance-sys 技能书 extraDrops 钩子
+- drop-plan.ts 新增空表 `BOSS_EXTRA_DROPS` + `applyExtraDrops`（只认 BOSS、已存在物品，几率夹 0–1，不重复）；数据归战斗开发，不断言具体技能书。tests/extra-drops.test.ts。
+
+## feat/balance-sys 9:27 新手怪
+- 注：第 1 层（兽人要塞）放雪人/食人花后，battle 模拟出现个别种子未通关（法师 1 种子、战士种子 11 卡 29 级），故第 1 层暂保持原布局；食人花数值已入表但未投放，待决定。
+- 新增鸡/稻草人/多钩猫/钉耙猫/森林雪人/食人花，各用专属立绘（*_full.png）。官方 21cq 1.76 值写入 NOVICE_OFFICIAL / OFFICIAL_MON_EXP，折算 NOVICE_SCALE [适配]；羊未查到不加。
+- 第 0 层：鸡/稻草人/双猫进前中段，森林雪人 ×2 做层尾守关（新 `Spawn.tail`，缩放不复制，计入目标总量）；第 0 层 15 只（旧 13），每屏 ≤6。第 1 层暂保持原布局（投放雪人/食人花会让 battle 模拟个别种子未通关，待决定）。新手怪掉落 [适配]：布衣/木剑/铁靴进第 0 层。
+- 第 0 层蝙蝠移出；首章入口不跳级（测试：任意新手怪单杀 < 当前级经验 1/3）。
+- docs/monsters-official.md 新手怪折算前后表（gen:monsters）、docs/floor-scale.md 更新；tests/novice-monsters.test.ts。
+
 ## 城内 NPC 长列表可滚动（传送员 / 比奇老兵等）
 - 传送员、老兵的传送列表原来只显示前 8 个且超出面板；现在列出全部已到达楼层（最多 83 项），每列可视 7 行，超出即可滚动：手机触摸拖动、电脑滚轮/拖动。
 - 只画可视窗口内的行（隐藏行不存在，不会被误点）；可滚动列的按钮改为抬起触发，拖动超过 8px 不算点击；右侧滚动条 + 「▲ 上面还有 N 项 / ▼ 下面还有 N 项」提示。

@@ -16,11 +16,38 @@ const n = (id: string, name: string, level: number, hp: number, atk: number, def
 const b = (id: string, art: string, name: string, level: number, hp: number, atk: number, def: number, exp: number, drops: DropEntry[], extra: Partial<UnitDef> = {}): UnitDef =>
   ({ id, art, name, level, hp: Math.round(hp * DIFF.bossHp), atk: Math.round(atk * 1.4 * DIFF.bossAtk), def, exp, drops, atkInterval: 1.5, range: 8, speed: 70, width: 190, height: 260, tier: 'boss', card: bossCard(), ...extra });
 const G = (c: number): DropEntry => ({ item: 'gold', chance: c });
+/** 新手怪官方值（21cq 1.76）与折算 [适配]，见 docs/monsters-official.md「新手怪」 */
+export const NOVICE_OFFICIAL: Record<string, { name: string; lv: number; hp: number; atk: [number, number]; def: number; exp: number }> = {
+  hen: { name: '鸡', lv: 5, hp: 5, atk: [1, 1], def: 0, exp: 5 },
+  scarecrow: { name: '稻草人', lv: 10, hp: 15, atk: [1, 2], def: 0, exp: 12 },
+  hook_cat: { name: '多钩猫', lv: 13, hp: 22, atk: [2, 4], def: 0, exp: 17 },
+  rake_cat: { name: '钉耙猫', lv: 13, hp: 23, atk: [2, 4], def: 0, exp: 18 },
+  forest_yeti: { name: '森林雪人', lv: 16, hp: 36, atk: [7, 10], def: 2, exp: 30 },
+  man_eater_flower: { name: '食人花', lv: 20, hp: 28, atk: [6, 9], def: 2, exp: 28 },
+};
+export const NOVICE_SCALE = (o: { lv: number; hp: number; atk: [number, number]; def: number }) =>
+  ({ level: Math.max(1, Math.min(6, Math.round(0.3 * o.lv))), hp: Math.round(50 + 2.5 * o.hp), atk: Math.round(5 + 0.8 * (o.atk[0] + o.atk[1]) / 2), def: o.def });
+const NOVICE_DROPS: Record<string, DropEntry[]> = {
+  hen: [{ item: 'chicken', chance: 0.5 }, G(0.4)],
+  scarecrow: [G(0.5), { item: 'hp_small', chance: 0.2 }, { item: 'cloth', chance: 0.06 }],
+  hook_cat: [G(0.5), { item: 'hp_small', chance: 0.25 }, { item: 'wood_sword', chance: 0.06 }],
+  rake_cat: [G(0.5), { item: 'hp_small', chance: 0.25 }, { item: 'iron_ring', chance: 0.06 }],
+  forest_yeti: [G(0.6), { item: 'hp_small', chance: 0.3 }, { item: 'boots', chance: 0.06 }],
+  man_eater_flower: [G(0.6), { item: 'mp_small', chance: 0.3 }, { item: 'bracelet', chance: 0.06 }],
+};
+function novice(): Record<string, UnitDef> {
+  return Object.fromEntries(Object.entries(NOVICE_OFFICIAL).map(([id, o]) => { const v = NOVICE_SCALE(o);
+    return [id, n(id, o.name, v.level, v.hp, v.atk, v.def, o.exp, NOVICE_DROPS[id], { deathSfx: id === 'hen' ? 'death' : 'death2' })]; }));
+}
 export const ENEMIES: Record<string, UnitDef> = {
   // 第1层 幽暗森林
   deer: n('deer', '鹿', 1, 60, 6, 0, 22, [{ item: 'meat', chance: 0.5 }, G(0.5), { item: 'cloth', chance: 0.12 }], { deathSfx: 'deer_death' }),
   bat: n('bat', '蝙蝠', 2, 80, 9, 1, 28, [G(0.5), { item: 'hp_small', chance: 0.25 }, { item: 'boots', chance: 0.08 }], { deathSfx: 'death', card: card({ figureScale: 1.0 }) }),
   wolf: n('wolf', '狼', 3, 140, 12, 2, 40, [{ item: 'chicken', chance: 0.4 }, { item: 'hp_small', chance: 0.3 }, { item: 'iron_ring', chance: 0.12 }, { item: 'wood_sword', chance: 0.1 }], { deathSfx: 'death2', card: card({ anchorX: 0.56 }) }),
+  // 9:27 新手怪（官方 21cq 1.76：鸡 Lv5 HP5 攻1-1 经验5；稻草人 Lv10 HP15 攻1-2 经验12；多钩猫 Lv13 HP22 攻2-4 经验17；钉耙猫 Lv13 HP23 攻2-4 经验18；
+  // 森林雪人 Lv16 HP36 攻7-10 防2 经验30；食人花 Lv20 HP28 攻6-9 防2 经验28）。折算 [适配]（NOVICE_SCALE）：本作原始面板 hp = 50 + 2.5×官方HP，atk = 5 + 0.8×官方平均攻，
+  // def = 官方防，等级 = clamp(round(0.3×官方等级), 1, 6)；再经 n() 的 DIFF 倍率。第 0 层豁免公式面板 → 直接用此值；第 1 层起由 foeStatsAt 按层目标等级重算。掉落官方未查到 → [适配]
+  ...novice(),
   // 首图削弱 [适配]：血 900→680（-24%）、攻 20→13（-35%），9 种子网格搜索选出（中位数 3/2/1、最大 9）；首图可反复刷
   wolf_king: b('wolf_king', 'boss_wolf_king', '狼王', 6, 680, 13, 5, 260, [{ item: 'iron_sword', chance: 1 }, { item: 'helmet', chance: 0.8 }, { item: 'hp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'death2' }),
   // R11 第3层 蛛网晶洞（数值随层位调整：沿用原第 3 层强度）

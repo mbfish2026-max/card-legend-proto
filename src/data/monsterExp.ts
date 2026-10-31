@@ -3,6 +3,7 @@
  * 键 = 本作怪物 id；[名字, 官方等级, 官方经验]。不在表内的怪物 = 未查到，按官方等级—经验回归拟合 [适配]（balance.ts officialExpOf）
  */
 export const OFFICIAL_MON_EXP: Record<string, readonly [string, number, number]> = {
+  hen: ['鸡', 5, 5], scarecrow: ['稻草人', 10, 12], hook_cat: ['多钩猫', 13, 17], rake_cat: ['钉耙猫', 13, 18], forest_yeti: ['森林雪人', 16, 30], man_eater_flower: ['食人花', 20, 28],
   axe_skeleton: ['掷斧骷髅', 18, 90],
   bat: ['蝙蝠', 5, 5],
   black_boar: ['黑野猪', 35, 380],

@@ -44,3 +44,18 @@ export const RELOCATE_TO = 'boss_lich', RELOCATE_MAX = 0.25; // 下移几率上�
     add.push([item, Math.min(RELOCATE_MAX, DROPS_BEFORE[id].find(d => d.item === item)!.chance)]); }
 for (const [id, add] of Object.entries(DROP_ADD)) { const u = ENEMIES[id]; if (!u) continue;
   for (const [item, chance] of add) if (ITEMS[item] && !(u.drops ??= []).some(d => d.item === item)) u.drops.push({ item, chance }); }
+
+/**
+ * 技能书 extraDrops 钩子（balance-sys）：BOSS 掉落表的额外条目入口，**数据归战斗开发**（技能书来源/爆率）。
+ * 本分支只放空表 + 接线：键 = BOSS id，值 = [物品 id, 几率 0–1][]。非 BOSS、未知物品、重复物品一律忽略；几率夹到 0–1。
+ * 在越级封顶/补源之后追加（不受封顶影响），旧存档不受影响（只改掉落表）。
+ */
+export const BOSS_EXTRA_DROPS: Record<string, [string, number][]> = {};
+export function applyExtraDrops(table: Record<string, [string, number][]> = BOSS_EXTRA_DROPS): string[] {
+  const added: string[] = [];
+  for (const [id, add] of Object.entries(table)) { const u = ENEMIES[id]; if (!u || u.tier !== 'boss') continue;
+    for (const [item, chance] of add) { if (!ITEMS[item] || !(chance > 0) || (u.drops ??= []).some(d => d.item === item)) continue;
+      u.drops.push({ item, chance: Math.min(1, chance) }); added.push(`${id}:${item}`); } }
+  return added;
+}
+applyExtraDrops();

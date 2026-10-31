@@ -36,15 +36,16 @@ export const WORLD = {
   deathGoldLoss: 0.1,          // 死亡损失金币比例
   summonLane: -36,             // 召唤物站位（纵深偏后）
 };
-export interface Spawn { id: string; x: number; y?: number }
+export interface Spawn { id: string; x: number; y?: number; /** 层尾守关怪：缩放时不循环复制，固定放在 BOSS 前（9:27 森林雪人） */ tail?: boolean }
 export interface Floor { name: string; spawns: Spawn[]; /** 层宽（屏数，1 屏 = 1280px）；缺省按 floorScale 规则自动赋值 */ widthScreens?: number; boss?: boolean; bg?: string; /** 来源链接 */ src?: string; /** 官方多层图中的第几层（1 起） */ depth?: number; /** 图群 id */ group?: string; /** 官方子层名 */ sub?: string; /** R11 对应原版区域（docs/legend-research.md「地图递进」） */ zone?: string; /** 练级图：小怪死后定时原地刷新（[适配]，见 FARM_RESPAWN） */ farm?: boolean }
 /** 练级图小怪刷新间隔（秒）。官方各图刷怪间隔未查到 → [适配] 20s，且主角在 400px 内时顺延，避免贴脸刷出 */
 export const FARM_RESPAWN = 20, FARM_SAFE_DIST = 400;
 export const FLOORS: Floor[] = [
   { name: '幽暗森林', bg: 'bg_floor1', boss: true, farm: true, zone: '比奇省·新手村周边（原版 1–7 级）', spawns: [
-    { id: 'deer', x: 800 }, { id: 'deer', x: 900, y: 20 },
-    { id: 'bat', x: 1500 }, { id: 'wolf', x: 1620, y: -15 },
-    { id: 'wolf', x: 2300 }, { id: 'bat', x: 2400, y: -20 }, { id: 'deer', x: 2480, y: 15 },
+    { id: 'hen', x: 800 }, { id: 'deer', x: 900, y: 20 }, // 9:27 新手怪：6 只循环包 + 层尾雪人 ×2（缩放后 13+2=15）
+    { id: 'scarecrow', x: 1500 }, { id: 'hook_cat', x: 1620, y: -15 },
+    { id: 'wolf', x: 2300 }, { id: 'rake_cat', x: 2400, y: -20 },
+    { id: 'forest_yeti', x: 2800, tail: true }, { id: 'forest_yeti', x: 2850, y: 18, tail: true },
     { id: 'wolf_king', x: 3350 } ] },
   { name: '兽人要塞', bg: 'bg_floor4', boss: true, zone: '沃玛森林·半兽人出没（原版 8–14 级）', spawns: [
     { id: 'orc', x: 800 }, { id: 'orc', x: 910, y: 20 },
@@ -263,15 +264,16 @@ export const ENTRANCE_CLEAR = 800;
 const isBossId = (id: string) => ENEMIES[id]?.tier === 'boss';
 /** 旧 3 屏布局 → 新宽：普通怪按「包」（间距 ≤300px 为一包）循环复制、包中心沿 [800, BOSS−700] 均匀铺开；BOSS 保持离右端同样距离 */
 export function scaleSpawns(old: Spawn[], ws: number): Spawn[] {
-  const W = ws * 1280, norm = old.filter(s => !isBossId(s.id)).sort((a, b) => a.x - b.x), boss = old.filter(s => isBossId(s.id));
+  const W = ws * 1280, tail = old.filter(s => s.tail && !isBossId(s.id)), norm = old.filter(s => !isBossId(s.id) && !s.tail).sort((a, b) => a.x - b.x), boss = old.filter(s => isBossId(s.id));
   const packs: Spawn[][] = []; for (const s of norm) { const p = packs[packs.length - 1]; if (p && s.x - p[p.length - 1].x <= 300) p.push(s); else packs.push([s]); }
   const out: Spawn[] = boss.map(b => ({ ...b, x: W - (OLD_MAP_W - b.x) }));
-  if (!packs.length) return out;
-  const target = Math.min(Math.floor(norm.length * 2.5), Math.max(Math.ceil(norm.length * 1.8), Math.round(norm.length * monsterMult(ws))));
+  if (!packs.length) return out.concat(tail);
+  const N = norm.length + tail.length, target = Math.max(1, Math.min(Math.floor(N * 2.5), Math.max(Math.ceil(N * 1.8), Math.round(N * monsterMult(ws)))) - tail.length); // 层尾怪计入总量
   const list: Spawn[][] = []; let n = 0;
   for (let k = 0; n < target; k++) { const p = packs[k % packs.length].slice(0, target - n); list.push(p); n += p.length; }
   const firstBoss = boss.length ? Math.min(...out.map(b => b.x)) : W - WORLD.exitMargin;
-  const lo = ENTRANCE_CLEAR, hi = Math.max(lo + 400, firstBoss - 700), step = list.length > 1 ? (hi - lo) / (list.length - 1) : 0;
+  const tailX = firstBoss - 500; tail.forEach((s, k) => out.push({ ...s, x: tailX + k * 120 }));
+  const lo = ENTRANCE_CLEAR, hi = Math.max(lo + 400, firstBoss - 700 - (tail.length ? 300 : 0)), step = list.length > 1 ? (hi - lo) / (list.length - 1) : 0;
   list.forEach((p, k) => { const x0 = Math.round(lo + k * step), base = p[0].x; for (const s of p) out.push({ ...s, x: Math.min(W - 200, x0 + (s.x - base)) }); });
   return out.sort((a, b) => a.x - b.x);
 }
