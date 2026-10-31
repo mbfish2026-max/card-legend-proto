@@ -311,7 +311,7 @@ export class BattleScene extends Phaser.Scene {
     if (k === 'M') return this.openPanel('map');
     if (k === 'N') { Settings.muted = !Settings.muted; Settings.apply(this.sound); Settings.save(); this.log(Settings.muted ? '已静音' : '已取消静音'); return; }
     if (this.state === 'win') { if (k === ' ') { this.sfx('click'); this.toTitle(); } return; }
-    if (k === 'ESCAPE') { if (this.paused) this.ui.panel.close(); else this.openPanel('settings'); return; }
+    if (k === 'ESCAPE') { if (this.paused && this.ui.panel.back()) return; if (this.paused) this.ui.panel.close(); else this.openPanel('settings'); return; }
     if (k === 'B' || k === 'C' || k === 'I') return this.openPanel('bag');
     if (k === 'T') { if (this.world.town) { this.townUse(); return; } return this.openPanel('shop'); }
     if (k === 'K') return this.openPanel('skills');
