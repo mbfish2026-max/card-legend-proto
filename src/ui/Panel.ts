@@ -1,3 +1,4 @@
+import { RING_MIN_LEVEL, IDENT_PRICE, IDENT_MIN_LEVEL } from '../data/r14b';
 import { fmtExp, scaledExp } from '../data/expCurve';
 import Phaser from 'phaser';
 import type { World } from '../combat/World';
@@ -261,7 +262,7 @@ export class Panel {
     const n = this.npcDef(), X = 340;
     if (!n) { R.add(txt(s, X, top + 90, `${t.name}\n选择左侧 NPC。\n来源：${t.src}`, 14, '#ddd', { wordWrap: { width: 600 } })); return; }
     R.add(txt(s, X - 180, top + 44, `${n.name}${n.pos ? `  原版坐标 ${n.pos}` : ''}${n.note ? `  ${n.note}` : ''}`, 13, '#ffe8a0', { wordWrap: { width: this.npcNeedsBag() ? 400 : 700 } }));
-    const row = (i: number, name: string, sub: string, label: string, fn: () => void, ok: boolean, icon?: string) => {
+    const row = (i: number, name: string, sub: string, label: string, fn: () => void, ok: boolean, icon?: string, X = 340) => {
       const y = top + 100 + i * 50;
       R.add(s.add.rectangle(X + 110, y, 230, 44, 0x0a0806).setStrokeStyle(1, 0x4a3a28));
       if (icon && s.textures.exists('item_' + icon)) R.add(s.add.image(X + 16, y, 'item_' + icon).setDisplaySize(36, 36));
@@ -274,11 +275,16 @@ export class Panel {
     if (n.kind === 'general') { const sold = w.oilBoughtFloor === w.floorIndex, k = n.goods?.length ?? 0;
       row(k, '祝福油', `${OIL_PRICE} 金 · 每层限购 1`, '购买', () => buy(w.buyOil(), '祝福油'), !sold && w.gold >= OIL_PRICE, 'bless_oil'); }
     if (n.kind === 'smith') { row(0, '黑铁矿石[+1]', `${IRON_PRICE} 金 · 强化装备`, '购买', () => buy(w.buyIron(), '黑铁矿石'), w.gold >= IRON_PRICE, 'black_iron');
-      R.add(txt(s, X, top + 160, '修理：本作装备无持久度 [适配]，无需修理。\n强化：背包点黑铁矿石，再点装备栏。', 13, '#9fd')); }
+      R.add(txt(s, X, top + 160, '修理：本作装备无持久度 [适配]，无需修理。\n强化：背包点黑铁矿石，再点装备栏。', 13, '#9fd'));
+      const sl = (Object.keys(w.equip) as (keyof typeof w.equip)[]).filter(k => w.equip[k]).slice(0, 8); // R14 #17 鉴定（S12：35 级，1–3 条）
+      sl.forEach((k, i) => { const it = w.equip[k]!; row(i, it.name, it.ided ? `已鉴定 ${it.ided} 条` : `鉴定 ${IDENT_PRICE} 金 · ${IDENT_MIN_LEVEL} 级`, '鉴定', () => { const e = w.identify(k); this.onChange(e ?? `鉴定 ${it.name}`, !e); this.render(); }, !it.ided && w.level >= IDENT_MIN_LEVEL && w.gold >= IDENT_PRICE, it.item, X + 250); }); }
     if (n.kind === 'book') { R.add(txt(s, X, top + 74, '书店：本职业有售技能书', 13, '#9fd')); w.shopBooks().forEach((b, i) => { const id = 'book_' + b.skill, learned = w.learned.has(b.skill);
       row(i, ITEMS[id].name, `${b.price} 金 ${learned ? '已学会' : ''}`, '购买', () => buy(w.buyBook(b.skill), ITEMS[id].name), !learned && w.gold >= b.price, id); }); }
     if (n.kind === 'jewelry') R.add(txt(s, X, top + 90, '首饰店存货：未查到（原版只能买到别人卖的）。\n点击右侧背包物品出售。', 13, '#9fd'));
-    if (n.kind === 'veteran') R.add(txt(s, X, top + 66, '老兵：城里安全，西门出城；要去哪我送你。', 13, '#9fd'));
+    if (n.kind === 'veteran') { R.add(txt(s, X, top + 66, '老兵：城里安全，西门出城；要去哪我送你。', 13, '#9fd'));
+      const q = w.ringQ, done = (e: string | null, m: string) => { this.onChange(e ?? m, !e); this.render(); }; // R14 #17 环式任务（S12：20 级起）
+      if (!q) row(0, `环式任务 第${w.ringDone + 1}环`, w.level < RING_MIN_LEVEL ? `${RING_MIN_LEVEL} 级开放` : '随机去过的楼层清怪', '接取', () => done(w.ringAccept(), '接到环式任务'), w.level >= RING_MIN_LEVEL, undefined, X + 250);
+      else row(0, `第${q.n}环 ${q.name} ${q.prog}/${q.need}`, `${w.floors[q.floor].name}`, '交付', () => done(w.ringClaim(), '环式任务完成'), q.prog >= q.need, undefined, X + 250); }
     if (n.kind === 'teleport' || n.kind === 'veteran') { const fl = [...w.reached].sort((a, b) => a - b).slice(0, 8);
       fl.forEach((f, i) => row(i, w.floors[f].name, `${w.teleportCost(f)} 金 · 冷却 ${WorldCls.TELEPORT_CD}s`, '传送', () => { const e = w.townTeleport(f); this.onChange(e ?? `传送到 ${w.floors[f].name}`, !e); if (!e) { this.mode = null; this.close(); this.onTeleport?.(); } else this.render(); }, w.gold >= w.teleportCost(f))); }
     if (n.kind === 'storage') {

@@ -169,7 +169,7 @@ export class BattleScene extends Phaser.Scene {
     for (const d of streetDoors(id)) {
       const n = d.npc;
       if (!near) { if (has('shop_' + d.art)) C.add(this.add.image(d.x, 760 * K, 'shop_' + d.art).setOrigin(0.5, 1).setScale(0.85 * K)); else C.add(this.add.rectangle(d.x, 760 * K, 544 * K, 612 * K, 0x6a4a2a).setOrigin(0.5, 1).setStrokeStyle(3, 0xd4a64a)); }
-      C.add(this.add.text(d.x, 120, n.name.replace(/（.*）/, ''), { fontFamily: FONT, fontSize: '17px', color: '#ffe8a0', stroke: '#1a1008', strokeThickness: 4 }).setOrigin(0.5));
+      C.add(this.add.text(d.x, 250, n.name.replace(/（.*）/, ''), { fontFamily: FONT, fontSize: '17px', color: '#ffe8a0', stroke: '#1a1008', strokeThickness: 4 }).setOrigin(0.5));
       if (has('npc_' + d.art)) C.add(this.add.image(d.x, 1040 * K, 'npc_' + d.art).setOrigin(0.5, 1).setScale(0.45 * K));
       C.add(this.add.rectangle(d.x, 100, 300, 760 * K - 100, 0, 0.001).setOrigin(0.5, 0).setInteractive({ useHandCursor: true }).on('pointerdown', () => this.walkTo(d.x, n.id)));
     }

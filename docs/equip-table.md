@@ -23,7 +23,7 @@
 | iron_sword | 铁剑 | 武器 | — | 等级 10 | 4 | 通用 | 攻5-9 | 攻击+14 | https://www.21cq.com/mir/View.aspx?id=85 |
 | magic_staff | 魔杖 | 武器 | 沃玛 | 等级 26 | 6 | 通用 | 攻5-9 魔2-5 | 魔法+16 攻击+3 | https://www.21cq.com/mir/View.aspx?id=100 |
 | tao_sword | 银蛇剑 | 武器 | 沃玛 | 等级 26 | 6 | 通用 | 攻7-14 道1-3 准确+1 | 道术+14 攻击+6 | https://www.21cq.com/mir/View.aspx?id=101 |
-| dragon_sword | 屠龙刀 | 武器 | — | 等级 34 | 15 | 通用 | 攻5-35 | 攻击+45 魔法+20 道术+20 | https://www.21cq.com/mir/View.aspx?id=108 |
+| dragon_sword | 屠龙刀 | 武器 | — | 等级 34 | 34 | 战士 | 攻5-35 | 攻击+50 | https://www.21cq.com/mir/View.aspx?id=108 |
 | short_sword | 短剑 | 武器 | — | 等级 10 | 10 | 通用 | 攻3-11 | 攻击+16 | https://www.21cq.com/mir/View.aspx?id=84 |
 | bronze_sword | 青铜剑 | 武器 | — | 等级 5 | 5 | 通用 | 攻3-7 | 攻击+10 | https://www.21cq.com/mir/View.aspx?id=83 |
 | dagger | 匕首 | 武器 | — | 等级 1 | 1 | 通用 | 未查到 | 攻击+8 | https://www.21cq.com/mir/View.aspx?id=81 |

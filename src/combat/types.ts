@@ -36,7 +36,7 @@ export interface BossState { stage: number; dazeUntil: number; crazyUntil: numbe
 export type Rarity = 'common' | 'magic' | 'rare';
 export interface ItemDef { id: string; name: string; icon: string; potion?: number; slot?: Slot; equip?: Partial<Stats>; req?: number; price?: number; set?: string; /** 技能书：对应技能 id */ book?: string; /** 职业限制（空 = 通用） */ cls?: ('warrior' | 'mage' | 'taoist')[] }
 /** 背包/装备栏里的一件物品 */
-export interface InvItem { uid: number; item: string; name: string; rarity: Rarity; slot?: Slot; stats: Partial<Stats>; req: number; price: number; luck?: number; /** 强化等级 0..7 */ enhance?: number; /** 黑铁矿石纯度 1..5 */ purity?: number; /** 堆叠数量（黑铁等） */ qty?: number }
+export interface InvItem { uid: number; item: string; name: string; rarity: Rarity; slot?: Slot; stats: Partial<Stats>; req: number; price: number; luck?: number; /** 强化等级 0..7 */ enhance?: number; /** R14 鉴定词条数 1–3 */ ided?: number; /** 黑铁矿石纯度 1..5 */ purity?: number; /** 堆叠数量（黑铁等） */ qty?: number }
 export interface GroundItem { gid: number; item: string; name: string; rarity: Rarity; x: number; y: number; landAt: number; atk: number; hp: number; amount: number; inv?: InvItem }
 export type BattleEvent =
   | { type: 'attack'; source: number; target: number; skill?: string }
