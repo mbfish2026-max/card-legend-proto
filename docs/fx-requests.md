@@ -43,3 +43,58 @@
 - common_hitspark 放大后在卡上仍偏细，属点状星芒风格。
 - 「参考不足」项：fireball_fly、fire_wall、ice_roar、rush、passive_glint、heal_pillar、poison_fly、soul_fire_fly、summon_beast_circle。
 - magic_shield r=112 正好包卡；ice_roar 按目标逐个播放。
+
+## #11 法师新技能特效需求（2026-10-31，当前复用旧图集 + Graphics 兜底，素材到位后在 FX_DEFS 注册即可）
+| 文件名 | 技能id | 阶段 | 帧数 | 帧尺寸 | 帧率 | 循环 | 锚点类型 | pivot px | 混合模式 | 时长ms | 说明 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| fx_big_fireball_fly.png | big_fireball | projectile | 6 | 192×96 | 20 | 是 | screen-line | 144,48 | ADD | 300（循环周期） | 大火球弹道，比火球大约 1.6 倍、拖尾更长，朝右；触发：施法后 150ms 从法杖前端飞出；命中点：目标卡中心（cx,cy）；现用 fx_fireball_fly |
+| fx_big_fireball_hit.png | big_fireball | hit | 8 | 256×256 | 20 | 否 | target | 128,128 | ADD | 400 | 单体大爆炸（橙红火团+火星）；触发：弹道到达；命中点：目标卡中心；现用 fx_fireball_hit ×1.4 |
+| fx_burst_fire_blast.png | burst_fire | hit | 10 | 512×256 | 20 | 否 | target | 256,200 | ADD | 500 | 爆裂火焰：首个目标为中心的地面爆炸，横向覆盖约 3 张卡（±170px）；触发：施法前摇结束；命中点：首目标脚下；范围内其余目标叠 hitspark；现用 fx_common_explosion ×1.6 |
+| fx_hell_fire_line.png | hell_fire | hit | 10 | 512×192 | 20 | 否 | caster | 0,160 | ADD | 500 | 地狱火：从施法者前沿向前喷出的地面火浪，长约 425px（5 格≈2.5 卡），可 flipX；触发：前摇结束；命中点：沿途每个目标脚下（逐个延迟 60ms）；现用 fx_fire_wall_loop 500ms |
+| fx_lightning_flash_beam.png | lightning_flash | hit | 8 | 768×128 | 24 | 否 | caster | 0,64 | ADD | 333 | 疾光电影：水平白蓝闪电光束，长约 680px（4 卡）贯穿前方，可 flipX、scaleX 适配；触发：前摇结束；命中点：光束经过的全部目标中心；现用每目标 fx_thunder_strike |
+| fx_hell_thunder_burst.png | hell_thunder | hit | 10 | 1024×384 | 20 | 否 | caster | 512,320 | ADD | 500 | 地狱雷光：以自身为中心 5×5（左右各约 425px）的蓝紫雷暴环+落雷；触发：前摇结束；命中点：范围内每个目标再叠 thunder_strike（逐个延迟 50ms）；现用每目标 fx_thunder_strike + Graphics 圆环 |
+
+## #12 道士新技能特效需求（2026-10-31，当前复用魔法盾图集着色 / 治愈光柱 + Graphics 兜底，素材到位后在 FX_DEFS 注册即可）
+| 文件名 | 技能id | 阶段 | 帧数 | 帧尺寸 | 帧率 | 循环 | 锚点类型 | pivot px | 混合模式 | 时长ms | 说明 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| fx_ghost_shield_cast.png | ghost_shield | cast | 16 | 256×256 | 20 | 否 | caster | 128,128 | ADD | 800 | 幽灵盾施放：蓝紫幽光符印自脚下升起包裹主角；触发：施法即刻；命中点：主角卡中心；现用 fx_magic_shield_cast 着色 0xb08cff，缺图 fx.holyLight |
+| fx_ghost_shield_loop.png | ghost_shield | loop | 12 | 256×256 | 11 | 是 | caster | 128,128 | ADD | 持续时间（30+10×技能等级+5×⌊道术/10⌋ 秒） | 幽灵盾持续：淡紫半透明护罩，跟随主角；现用 fx_magic_shield_loop 着色 |
+| fx_holy_armor_cast.png | holy_armor | cast | 16 | 256×256 | 20 | 否 | caster | 128,128 | ADD | 800 | 神圣战甲术施放：金色甲片光环合拢；触发：施法即刻；命中点：主角卡中心；现用 fx_magic_shield_cast 着色 0xffd860，缺图 fx.holyLight |
+| fx_holy_armor_loop.png | holy_armor | loop | 12 | 256×256 | 11 | 是 | caster | 128,128 | ADD | 持续时间（同上公式） | 神圣战甲术持续：金色护甲微光，跟随主角；现用 fx_magic_shield_loop 着色 |
+| fx_mass_heal_burst.png | mass_heal | hit | 12 | 512×256 | 20 | 否 | caster | 256,220 | ADD | 600 | 群体治愈术：以主角为中心绿色治愈光环，横向覆盖 ±170px（1 卡）；触发：施法即刻；命中点：主角及范围内每个召唤物叠治愈光柱（逐个延迟 80ms）；现用每目标 fx_heal_pillar，缺图 fx.holyLight |
+
+## #11 产出记录（特效 Bot，2026-10-31，分支 fx/mage-fx）
+资源位于 public/assets/fx/，全部为 ADD 混合，按 1× 使用；帧尺寸和 pivot 从 JSON 读取。
+
+| 文件 | 帧 | 帧尺寸 | pivot | fps | 触发 / 命中 |
+|---|---|---|---|---|---|
+| fx_big_fireball_fly | 6（循环） | 192×96 | 144,48 | 20 | 施法后 150ms 从法杖前端飞出（前置 fx_fireball_cast 复用） |
+| fx_big_fireball_hit | 8 | 256×256 | 128,128 | 20 | 弹道到达，目标卡中心 |
+| fx_burst_fire_blast | 10 | 512×256 | 256,200 | 20 | 前摇结束，首目标脚下；其余目标 +60ms 叠 hitspark |
+| fx_hell_fire_line | 10 | 512×192 | 0,160 | 20 | 施法者前沿脚下，可 flip；火浪前锋 250ms 推进到约 440px |
+| fx_lightning_flash_beam | 8 | 768×128 | 0,64 | 24 | 施法者前沿 cy，可 flip；第 1 帧（≈42ms）全部命中 |
+| fx_hell_thunder_burst | 10 | 1024×384 | 512,320 | 20 | 施法者脚下；目标逐个 +50ms 叠 thunder_strike |
+
+已知不足：
+- 地狱火火焰偏低（约膝高）；疾光电影光束偏细。
+- 爆裂火焰、地狱火、大火球飞行、地狱雷光环为「参考不足」，按通用风格制作。
+- 伤害仍按原逻辑立即结算（done()），未与特效帧对齐。
+## #12 产出记录（特效 Bot，2026-10-31，分支 fx/taoist-fx）
+资源位于 public/assets/fx/，全部为 ADD 混合，按 1× 使用，不需要再着色。
+
+| 文件 | 帧 | 帧尺寸 | pivot | fps | 循环 | 触发 / 命中 |
+|---|---|---|---|---|---|---|
+| fx_ghost_shield_cast | 16 | 256×256 | 128,128 | 20 | 否 | 施法即刻，主角卡中心；符印环自脚下升起后护罩张开，播完接 loop |
+| fx_ghost_shield_loop | 12 | 256×256 | 128,128 | 11 | 是 | 跟随主角，持续 buff 时长 |
+| fx_holy_armor_cast | 16 | 256×256 | 128,128 | 20 | 否 | 施法即刻；8 片金甲合拢，护罩成型，十字闪 |
+| fx_holy_armor_loop | 12 | 256×256 | 128,128 | 11 | 是 | 跟随主角 |
+| fx_mass_heal_burst | 12 | 512×256 | 256,220 | 20 | 否 | 主角脚下 (cx, y)；光环约 375ms 扩到 ±190px；每目标仍叠 fx_heal_pillar（间隔 80ms） |
+
+缺图时的兜底：回落到 fx_magic_shield_* 着色，再回落 fx.holyLight。
+已知不足：参考帧里没有这三个技能，造型为原创；loop 的幽光点在循环接缝处有轻微跳变。
+
+## #诱惑之光（feat/charm，2026-10-31）
+- 施放：`fx_charm_light`（目标身上粉紫色光环/心形光点，约 0.6s，单体）。未注册/缺失 → `playFx` 返回 null，回落 `fx.holyLight`（Graphics 圣光占位），不崩溃。
+- 宠物标识：当前用卡面粉色着色 + 粉色等级字占位；需要 `ui_pet_badge`（卡面角标）时在 CardView 接入。
+- 飘字：诱惑成功（粉）/诱惑失败（灰）/免疫（灰）/叛变（红），用现有 floatNumber，无需素材。
+- 音效：复用 `shockwave`。

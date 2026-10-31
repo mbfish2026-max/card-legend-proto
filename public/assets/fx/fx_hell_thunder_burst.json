@@ -1,0 +1,271 @@
+{
+ "frames": {
+  "fx_hell_thunder_burst_00": {
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 1024,
+    "h": 384
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 1024,
+    "h": 384
+   },
+   "sourceSize": {
+    "w": 1024,
+    "h": 384
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8333
+   }
+  },
+  "fx_hell_thunder_burst_01": {
+   "frame": {
+    "x": 0,
+    "y": 384,
+    "w": 1024,
+    "h": 384
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 1024,
+    "h": 384
+   },
+   "sourceSize": {
+    "w": 1024,
+    "h": 384
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8333
+   }
+  },
+  "fx_hell_thunder_burst_02": {
+   "frame": {
+    "x": 0,
+    "y": 768,
+    "w": 1024,
+    "h": 384
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 1024,
+    "h": 384
+   },
+   "sourceSize": {
+    "w": 1024,
+    "h": 384
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8333
+   }
+  },
+  "fx_hell_thunder_burst_03": {
+   "frame": {
+    "x": 0,
+    "y": 1152,
+    "w": 1024,
+    "h": 384
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 1024,
+    "h": 384
+   },
+   "sourceSize": {
+    "w": 1024,
+    "h": 384
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8333
+   }
+  },
+  "fx_hell_thunder_burst_04": {
+   "frame": {
+    "x": 0,
+    "y": 1536,
+    "w": 1024,
+    "h": 384
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 1024,
+    "h": 384
+   },
+   "sourceSize": {
+    "w": 1024,
+    "h": 384
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8333
+   }
+  },
+  "fx_hell_thunder_burst_05": {
+   "frame": {
+    "x": 0,
+    "y": 1920,
+    "w": 1024,
+    "h": 384
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 1024,
+    "h": 384
+   },
+   "sourceSize": {
+    "w": 1024,
+    "h": 384
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8333
+   }
+  },
+  "fx_hell_thunder_burst_06": {
+   "frame": {
+    "x": 0,
+    "y": 2304,
+    "w": 1024,
+    "h": 384
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 1024,
+    "h": 384
+   },
+   "sourceSize": {
+    "w": 1024,
+    "h": 384
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8333
+   }
+  },
+  "fx_hell_thunder_burst_07": {
+   "frame": {
+    "x": 0,
+    "y": 2688,
+    "w": 1024,
+    "h": 384
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 1024,
+    "h": 384
+   },
+   "sourceSize": {
+    "w": 1024,
+    "h": 384
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8333
+   }
+  },
+  "fx_hell_thunder_burst_08": {
+   "frame": {
+    "x": 0,
+    "y": 3072,
+    "w": 1024,
+    "h": 384
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 1024,
+    "h": 384
+   },
+   "sourceSize": {
+    "w": 1024,
+    "h": 384
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8333
+   }
+  },
+  "fx_hell_thunder_burst_09": {
+   "frame": {
+    "x": 0,
+    "y": 3456,
+    "w": 1024,
+    "h": 384
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 1024,
+    "h": 384
+   },
+   "sourceSize": {
+    "w": 1024,
+    "h": 384
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.8333
+   }
+  }
+ },
+ "meta": {
+  "app": "card-legend fx proc (python numpy/Pillow)",
+  "image": "fx_hell_thunder_burst.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 1024,
+   "h": 3840
+  },
+  "scale": "1",
+  "fx": {
+   "w": 1024,
+   "h": 384,
+   "n": 10,
+   "fps": 20,
+   "loop": false,
+   "pivot": [
+    512,
+    320
+   ],
+   "anchor": "caster",
+   "skill": "hell_thunder",
+   "phase": "hit",
+   "blend": "ADD",
+   "ms": 500,
+   "cols": 1
+  }
+ }
+}

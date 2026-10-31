@@ -17,6 +17,7 @@ const WM = 'https://www.betermondo.com/a/2502/1375986.html';
 export const REGIONS: Region[] = [
   { id: 'bichi', name: '比奇省', floors: [0, 4, 5], x: 500, y: 950, icon: 'map_node_bichi', nodes: [
     { id: 'bichi_town', name: '比奇城', kind: 'town', safe: true, x: 0.55, y: 0.5, src: SINA_BQ },
+    { id: 'bichi_xinshou', name: '银杏村（新手村）', kind: 'town', safe: true, x: 0.8, y: 0.88, orig: '(623,600)', src: 'http://sscq.oss-cn-hangzhou.aliyuncs.com/game/datainfo/hzfXGJXY8LQ.html' },
     { id: 'bichi_newbie', name: '新手村周边', kind: 'cave', floor: 0, x: 0.75, y: 0.75, orig: '未查到', src: S21(4) },
     { id: 'bichi_orc', name: '兽人古墓', kind: 'cave', floor: 4, x: 0.25, y: 0.2, orig: '(147,33)', src: S21(4) },
     { id: 'bichi_mine', name: '废矿/僵尸洞→尸王殿', kind: 'dungeon', floor: 5, x: 0.85, y: 0.35, orig: '(664,214)', src: 'https://blog.sina.com.cn/s/blog_4e0d83f10102y172.html' },
