@@ -31,9 +31,12 @@ export class VirtualPad {
     // 右下：技能扇形
     const ox = 1252, oy = 600, rad = 170;
     const n = Math.max(1, skills.length);
+    // #11 >5 技能：内外两圈各最多 5 个
+    const two = n > 5, br = two ? 40 : n > 4 ? 46 : 52;
     skills.forEach((k, i) => {
-      const a = Math.PI + (i / Math.max(1, n - 1)) * (Math.PI * 0.55), x = ox + Math.cos(a) * rad, y = oy + Math.sin(a) * rad * 0.85;
-      btn(x, y, n > 4 ? 46 : 52, k.key, 'sk_' + k.id, () => onKey(k.key)); this.skillBtns.push({ x, y, r: n > 4 ? 46 : 52 });
+      const ring = two && i >= 5 ? 1 : 0, j = ring ? i - 5 : i, m = two ? (ring ? n - 5 : 5) : n, r0 = two ? (ring ? 265 : 150) : rad;
+      const a = Math.PI + (j / Math.max(1, m - 1)) * (Math.PI * 0.55), x = ox + Math.cos(a) * r0, y = oy + Math.sin(a) * r0 * 0.85;
+      btn(x, y, br, k.key, 'sk_' + k.id, () => onKey(k.key)); this.skillBtns.push({ x, y, r: br });
     });
     // 右上：药水
     POTIONS.forEach((p, i) => btn(935 + i * 96, 160, 45, p.key, 'potion_' + i, () => onKey(p.key)));

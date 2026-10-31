@@ -1,3 +1,4 @@
+import '../src/data/r14b';
 // 官方装备表 v1 单测：字段完整 / id 唯一 / 旧 id 保留 / 分层映射 / 文档一致 / 套装计件 / 职业限制
 declare const process: { exit(c: number): never };
 // @ts-ignore 测试运行于 node（tsx），项目未装 @types/node
@@ -54,3 +55,7 @@ ok(readFileSync(new URL('../docs/equip-table.md', import.meta.url), 'utf8') === 
 }
 if (fails) { console.log(`装备表测试失败 ${fails} 项`); process.exit(1); }
 console.log('装备表测试全部通过');
+import { renderMonsters } from '../src/data/monsters-doc';
+import { ENEMIES as EN } from '../src/data/units';
+{ const md = readFileSync(new URL('../docs/monsters-official.md', import.meta.url), 'utf8');
+  ok(md === renderMonsters() && Object.keys(EN).every(id => md.includes(`| ${id} |`)), 'R14 #15 逐怪表覆盖全部怪物且与数据一致（npm run gen:monsters）'); }

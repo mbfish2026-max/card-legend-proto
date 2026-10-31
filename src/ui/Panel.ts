@@ -1,3 +1,4 @@
+import { RING_MIN_LEVEL, IDENT_PRICE, IDENT_MIN_LEVEL } from '../data/r14b';
 import { fmtExp, scaledExp } from '../data/expCurve';
 import Phaser from 'phaser';
 import type { World } from '../combat/World';
@@ -48,7 +49,17 @@ export class Panel {
     // R14 横版长街：关闭店铺界面 = 回到街上（出城走西端城门）
     if (this.mode === 'town') this.npc = null;
     this.clearMapInput(); this.sel = null; this.ironIdx = null; this.mode = null; this.root?.destroy(true); this.root = undefined; this.hideTip(); }
+  /** #11 修复：面板打开时升级/得经验不刷新。render 时记录快照，UIScene.update 每帧比对 */
+  private snap = '';
+  statSnap() { const w = this.world(); return `${w.level}:${w.exp}:${JSON.stringify(w.skillTrain)}:${w.learned.size}`; }
+  /** 角色/技能面板数据变了就重绘；返回是否重绘（供测试） */
+  refreshIfStale(): boolean {
+    if (this.mode !== 'bag' && this.mode !== 'skills') return false;
+    if (this.statSnap() === this.snap) return false;
+    this.render(); return true;
+  }
   render() {
+    if (this.mode) this.snap = this.statSnap();
     this.root?.destroy(true); this.hideTip(); this.clearMapInput();
     if (!this.mode) return;
     const s = this.s, R = this.root = s.add.container(0, 0).setDepth(200);
@@ -206,11 +217,14 @@ export class Panel {
       R.add(s.add.rectangle(560, y, 820, rowH - 4, 0x0a0806, 0.9).setStrokeStyle(1, 0x3a2a18));
       if (s.textures.exists('sk_' + k.id)) R.add(s.add.image(178, y, 'sk_' + k.id).setDisplaySize(rowH - 14, rowH - 14));
       const fk = inBar ? `F${barIdx.get(k.id)! + 1}` : k.passive ? '被动' : '未上栏';
-      R.add(txt(s, 212, y - rowH / 2 + 4, `[${fk}] ${k.name}${!learned ? `（未学：${bk?.shop ? '书店购买' : '打怪掉落'}技能书 · 需 Lv${need}）` : locked ? `（需人物 Lv${need}）` : `  ${lv} 级`}`, fs + 2, locked ? '#888' : '#ffe8a0', { strokeThickness: 2 }));
+      R.add(txt(s, 212, y - rowH / 2 + 4, `[${fk}] ${k.name}${!learned ? `（未学：${bk?.shop ? '书店购买' : bk?.drops.length ? '打怪掉落' : '暂未开放获取'}技能书 · 需 Lv${need}）` : locked ? `（需人物 Lv${need}）` : `  ${lv} 级`}`, fs + 2, locked ? '#888' : '#ffe8a0', { strokeThickness: 2 }));
       const lvVals = k.lvMult ? k.lvMult.map(m => Math.round(m * 100) + '%') : k.lvBonus ? k.lvBonus.map(b => '+' + b) : k.accBonus ? k.accBonus.map(b => '准确+' + b) : [0, 1, 2, 3].map(l => `+${l * 10}%`);
-      R.add(txt(s, 212, y - rowH / 2 + 4 + fs + 5, `${k.desc}  各级：${lvVals.map((v, l) => `${l}级${v}`).join(' ')}`.slice(0, 64), fs, locked ? '#777' : '#ddd', { strokeThickness: 2 }));
+      // #11：10 技能时行高 40，压成两行（简述 + 耗魔/冷却/修炼），避免与下一行重叠、挤到右侧按钮
+      const compact = rowH < 50;
+      if (!compact) R.add(txt(s, 212, y - rowH / 2 + 4 + fs + 5, `${k.desc}  各级：${lvVals.map((v, l) => `${l}级${v}`).join(' ')}`.slice(0, 64), fs, locked ? '#777' : '#ddd', { strokeThickness: 2 }));
       const up = lv >= 0 && lv < 3 && k.learn && k.train ? `升级：人物Lv${k.learn[lv + 1]} + 修炼点${k.train[lv]}` : lv === 3 ? '已满级' : '';
-      R.add(txt(s, 212, y - rowH / 2 + 4 + (fs + 5) * 2, `${k.passive ? '无需施放' : `耗魔 ${k.mana}  冷却 ${k.cooldown}s`}  修炼点 ${pts}${k.train ? '/' + k.train[2] : ''}  ${up}`, fs, locked ? '#666' : '#9fd', { strokeThickness: 2 }));
+      if (compact) R.add(txt(s, 212, y - rowH / 2 + 4 + fs + 5, `${k.passive ? '无需施放' : `耗魔${k.mana} 间隔${k.cooldown}s`} 修炼${pts}${k.train ? '/' + k.train[2] : ''} ${up}  ${k.desc}`.slice(0, 46), fs, locked ? '#777' : '#9fd', { strokeThickness: 2 }));
+      else R.add(txt(s, 212, y - rowH / 2 + 4 + (fs + 5) * 2, `${k.passive ? '无需施放' : `耗魔 ${k.mana}  施法间隔 ${k.cooldown}s`}  修炼点 ${pts}${k.train ? '/' + k.train[2] : ''}  ${up}`, fs, locked ? '#666' : '#9fd', { strokeThickness: 2 }));
       // 修炼进度条（官方：修炼点达到下一级要求 + 人物等级达到即自动升级）
       if (k.train && lv >= 0 && lv < 3) { const p = Math.min(1, pts / k.train[lv]); R.add(s.add.rectangle(212, y + rowH / 2 - 6, 220, 4, 0x333333).setOrigin(0, 0.5)); R.add(s.add.rectangle(212, y + rowH / 2 - 6, 220 * p, 4, 0x55cc77).setOrigin(0, 0.5)); }
       if (inBar) {
@@ -230,7 +244,7 @@ export class Panel {
         } else R.add(txt(s, 975, y, '手动', 12, '#888').setOrigin(0.5));
       }
     });
-    R.add(txt(s, 160, top + 452, `▲▼/拖动≡ 调整快捷栏；☑自动 与设置页同一份，#n 为自动优先级。学习等级/修炼点取自 1.76 官方，修炼满足后自动升级；耗魔×3、冷却为卡牌适配。等级加成 ×${w.skillScale().toFixed(2)}`, 12, '#aaa', { wordWrap: { width: 960 } }));
+    R.add(txt(s, 160, top + 452, `▲▼/拖动≡ 调整快捷栏；☑自动 与设置页同一份，#n 为自动优先级。学习等级/修炼点取自 1.76 官方，修炼满足后自动升级；耗魔×3、无冷却，仅公共施法间隔 0.8s（适配）。等级加成 ×${w.skillScale().toFixed(2)}`, 12, '#aaa', { wordWrap: { width: 960 } }));
   }
   // ---------- R14 城镇 ----------
   private npcDef() { const t = TOWNS[this.world().town ?? '']; return t?.npcs.find(n => n.id === this.npc); }
@@ -248,7 +262,7 @@ export class Panel {
     const n = this.npcDef(), X = 340;
     if (!n) { R.add(txt(s, X, top + 90, `${t.name}\n选择左侧 NPC。\n来源：${t.src}`, 14, '#ddd', { wordWrap: { width: 600 } })); return; }
     R.add(txt(s, X - 180, top + 44, `${n.name}${n.pos ? `  原版坐标 ${n.pos}` : ''}${n.note ? `  ${n.note}` : ''}`, 13, '#ffe8a0', { wordWrap: { width: this.npcNeedsBag() ? 400 : 700 } }));
-    const row = (i: number, name: string, sub: string, label: string, fn: () => void, ok: boolean, icon?: string) => {
+    const row = (i: number, name: string, sub: string, label: string, fn: () => void, ok: boolean, icon?: string, X = 340) => {
       const y = top + 100 + i * 50;
       R.add(s.add.rectangle(X + 110, y, 230, 44, 0x0a0806).setStrokeStyle(1, 0x4a3a28));
       if (icon && s.textures.exists('item_' + icon)) R.add(s.add.image(X + 16, y, 'item_' + icon).setDisplaySize(36, 36));
@@ -261,11 +275,16 @@ export class Panel {
     if (n.kind === 'general') { const sold = w.oilBoughtFloor === w.floorIndex, k = n.goods?.length ?? 0;
       row(k, '祝福油', `${OIL_PRICE} 金 · 每层限购 1`, '购买', () => buy(w.buyOil(), '祝福油'), !sold && w.gold >= OIL_PRICE, 'bless_oil'); }
     if (n.kind === 'smith') { row(0, '黑铁矿石[+1]', `${IRON_PRICE} 金 · 强化装备`, '购买', () => buy(w.buyIron(), '黑铁矿石'), w.gold >= IRON_PRICE, 'black_iron');
-      R.add(txt(s, X, top + 160, '修理：本作装备无持久度 [适配]，无需修理。\n强化：背包点黑铁矿石，再点装备栏。', 13, '#9fd')); }
+      R.add(txt(s, X, top + 160, '修理：本作装备无持久度 [适配]，无需修理。\n强化：背包点黑铁矿石，再点装备栏。', 13, '#9fd'));
+      const sl = (Object.keys(w.equip) as (keyof typeof w.equip)[]).filter(k => w.equip[k]).slice(0, 8); // R14 #17 鉴定（S12：35 级，1–3 条）
+      sl.forEach((k, i) => { const it = w.equip[k]!; row(i, it.name, it.ided ? `已鉴定 ${it.ided} 条` : `鉴定 ${IDENT_PRICE} 金 · ${IDENT_MIN_LEVEL} 级`, '鉴定', () => { const e = w.identify(k); this.onChange(e ?? `鉴定 ${it.name}`, !e); this.render(); }, !it.ided && w.level >= IDENT_MIN_LEVEL && w.gold >= IDENT_PRICE, it.item, X + 250); }); }
     if (n.kind === 'book') { R.add(txt(s, X, top + 74, '书店：本职业有售技能书', 13, '#9fd')); w.shopBooks().forEach((b, i) => { const id = 'book_' + b.skill, learned = w.learned.has(b.skill);
       row(i, ITEMS[id].name, `${b.price} 金 ${learned ? '已学会' : ''}`, '购买', () => buy(w.buyBook(b.skill), ITEMS[id].name), !learned && w.gold >= b.price, id); }); }
     if (n.kind === 'jewelry') R.add(txt(s, X, top + 90, '首饰店存货：未查到（原版只能买到别人卖的）。\n点击右侧背包物品出售。', 13, '#9fd'));
-    if (n.kind === 'veteran') R.add(txt(s, X, top + 66, '老兵：城里安全，西门出城；要去哪我送你。', 13, '#9fd'));
+    if (n.kind === 'veteran') { R.add(txt(s, X, top + 66, '老兵：城里安全，西门出城；要去哪我送你。', 13, '#9fd'));
+      const q = w.ringQ, done = (e: string | null, m: string) => { this.onChange(e ?? m, !e); this.render(); }; // R14 #17 环式任务（S12：20 级起）
+      if (!q) row(0, `环式任务 第${w.ringDone + 1}环`, w.level < RING_MIN_LEVEL ? `${RING_MIN_LEVEL} 级开放` : '随机去过的楼层清怪', '接取', () => done(w.ringAccept(), '接到环式任务'), w.level >= RING_MIN_LEVEL, undefined, X + 250);
+      else row(0, `第${q.n}环 ${q.name} ${q.prog}/${q.need}`, `${w.floors[q.floor].name}`, '交付', () => done(w.ringClaim(), '环式任务完成'), q.prog >= q.need, undefined, X + 250); }
     if (n.kind === 'teleport' || n.kind === 'veteran') { const fl = [...w.reached].sort((a, b) => a - b).slice(0, 8);
       fl.forEach((f, i) => row(i, w.floors[f].name, `${w.teleportCost(f)} 金 · 冷却 ${WorldCls.TELEPORT_CD}s`, '传送', () => { const e = w.townTeleport(f); this.onChange(e ?? `传送到 ${w.floors[f].name}`, !e); if (!e) { this.mode = null; this.close(); this.onTeleport?.(); } else this.render(); }, w.gold >= w.teleportCost(f))); }
     if (n.kind === 'storage') {

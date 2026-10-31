@@ -4,13 +4,14 @@ import { BOOKS, BookDef, BOOK_DROP, BOOK_RATES, STARTER, bookItemId } from '../d
 // 自动战斗与技能、召唤物、掉落/背包/装备/商店、死亡复活、存档序列化。
 import { BattleEvent, EquipSlot, GroundItem, InvItem, Rarity, Slot, Stats, Team, Unit, UnitDef } from './types';
 import { POTIONS } from '../data/skills';
-import { CLASSES, ClassId, SkillDef } from '../data/classes';
+import { CLASSES, ClassId, SkillDef, CAST_GAP } from '../data/classes';
 import { ITEMS, SLOTS, SETS, equipSlotsFor, EQUIP_VERSION, ENHANCE_SLOTS, ENHANCE_MAX, ENHANCE_STAT, IRON_PRICE, IRON_MAX_PURITY, enhanceChance, shatterChance } from '../data/items';
 import { HERO, ENEMIES, SUMMON, SUMMON_BEAST } from '../data/units';
 import { EXP_PER_LEVEL, EXP_VERSION, migrateExp, scaledExp, fmtExp } from '../data/expCurve';
 import { WORLD, FLOORS, Floor } from '../data/world';
-import { TOWNS, townFloors, townOfFloor, STORAGE_SIZE, TOWN_W, TOWN_GATE_X, GATE_RANGE, TOWN_SPAWN_X, DOOR_RANGE, streetDoors } from '../data/towns';
+import { TOWNS, townFloors, townOfFloor, returnTownOf, STORAGE_SIZE, TOWN_W, TOWN_GATE_X, GATE_RANGE, TOWN_SPAWN_X, DOOR_RANGE, streetDoors } from '../data/towns';
 import { CONSUMABLE } from '../data/items-town';
+import { WOMA_FLOOR_NAME, WOMA_SECTIONS, WOMA_DOOR_X, HORN_MOB_CHANCE, HORN_MOBS, RING_MIN_LEVEL, RingQuest, ringReward, IDENT_MIN_LEVEL, IDENT_PRICE, IDENT_POOL, identValue } from '../data/r14b';
 import { QUESTS, ACHIEVES, QuestDef, AchieveDef } from '../data/quests';
 
 export const CRIT_CHANCE = 0.15, CRIT_MULT = 1.8;
@@ -28,8 +29,10 @@ export interface SaveData {
   learned?: string[];
   /** R11 地图顺序版本：缺省 = 旧顺序，读档时迁移层号 */
   mapV?: 2 | 3;
+  /** 城镇返回：存档时所在城镇/新手村（缺省 = 旧档，保持在原层） */
+  town?: string | null;
   /** R14 仓库物品 / 快捷栏技能顺序 */
-  storage?: InvItem[]; skillOrder?: string[];
+  storage?: InvItem[]; skillOrder?: string[]; ringQ?: RingQuest | null; ringDone?: number;
   /** 合击版 #1 英雄（伙伴）；缺省 = 旧档/未领取 */
   companion?: CompanionState | null;
   /** 装备结构版本：缺省/1 = 单戒单镯旧档，2 = 双戒双镯 */
@@ -44,8 +47,17 @@ export const FLOOR_MIGRATE_V3 = [0, 1, 2, 4, 5, 8, 9, 12];
 /** 商店祝福油价格（较贵，每层限购 1） */
 export const OIL_PRICE = 400;
 export { IRON_PRICE } from '../data/items';
+/** 新书接入（#11/#12 书）：无 learned 字段的旧档迁移时不白送这些技能（保持接入前行为） */
+const LATE_BOOKS: Record<string, true> = { big_fireball: true, burst_fire: true, hell_fire: true, lightning_flash: true, hell_thunder: true, ghost_shield: true, holy_armor: true, mass_heal: true };
 export type CastResult = { ok: true; targets: number[]; skill: string; kind: string } | { ok: false; reason: string };
 /** R13 官方 BOSS 机制（来源见 docs/combat-official.md）：沃玛教主/祖玛教主/赤月恶魔由 bossStep 接管攻击 */
+/**
+ * #12 幽灵盾/神圣战甲术（docs/skills-official.md #12）：
+ * 增益 官方（新浪 2003 实测）= 0~(2 + ⌊目标等级/7⌋) 加在上限；[适配] 取区间中值 ×3（同装备防/魔御系数）= round(1.5 × (2 + ⌊等级/7⌋))
+ * 持续 官方（21cq 盛大火炬引擎）= 30 + 10×技能等级 + 5×道术下限 + 随机；[适配] 道术单值 ÷10 当下限、去随机：30 + 10×slv + 5×⌊道术/10⌋ 秒
+ */
+export const taoBuffValue = (level: number) => Math.round(1.5 * (2 + Math.floor(level / 7)));
+export const taoBuffDur = (slv: number, tao: number) => 30 + 10 * Math.max(0, slv) + 5 * Math.floor(tao / 10);
 export const BOSS_MECH = new Set(['boss_woma', 'boss_zuma', 'boss_redmoon']);
 /** R13 官方参数 */
 export const OFFICIAL = {
@@ -127,14 +139,18 @@ export class World {
         save = { ...save, floorIndex: m(save.floorIndex ?? 0) }; this.reached = new Set([...this.reached].map(m)); this.bossKilled = new Set([...this.bossKilled].map(m));
       }
       // 旧存档兼容：已达到学习等级的技能视为已学
-      this.storage = [...(save.storage ?? [])]; this.skillOrder = [...(save.skillOrder ?? [])]; this.companion = migrateCompanion(save.companion);
-      this.learned = new Set(save.learned ?? this.skillPool.filter(s => this.level >= (s.unlock ?? s.learn?.[0] ?? 1)).map(s => s.id));
+      this.storage = [...(save.storage ?? [])]; this.skillOrder = [...(save.skillOrder ?? [])]; this.ringQ = save.ringQ ?? null; this.ringDone = save.ringDone ?? 0; this.companion = migrateCompanion(save.companion);
+      // #11：旧档推导排除尚无获取途径的新书技能（shop:false 且无掉落）
+      this.learned = new Set(save.learned ?? this.skillPool.filter(s => this.level >= (s.unlock ?? s.learn?.[0] ?? 1) && !(s.id in LATE_BOOKS) && (!BOOKS[s.id] || BOOKS[s.id].shop || BOOKS[s.id].drops.length)).map(s => s.id));
     }
     this.learned.add(this.starter);
     this.expNext = EXP_PER_LEVEL(this.level);
     this.spawnHero();
     this.loadFloor(save ? Math.min(save.floorIndex, this.floors.length - 1) : 0);
+    if (save?.town && TOWNS[save.town]) this.enterTown(save.town, true);
   }
+  /** 新档：出生在新手村（银杏村） */
+  startInVillage() { this.enterTown('xinshou', true); }
   /** 兼容旧接口：已拾取的装备（背包+身上） */
   get inventory() { return [...Object.values(this.equip), ...this.bag].filter((x): x is InvItem => !!x && !!x.slot); }
   get classDef() { return CLASSES[this.cls]; }
@@ -285,6 +301,7 @@ export class World {
     this.bag.splice(bagIdx, 1); this.events.push({ type: 'inventory' }); return true;
   }
   onKillQuest(enemyId: string) {
+    if (this.ringQ && this.ringQ.target === enemyId && this.ringQ.prog < this.ringQ.need && ++this.ringQ.prog >= this.ringQ.need) this.events.push({ type: 'log', text: `环式任务可交付（找老兵）`, color: 'green' });
     for (const q of QUESTS) {
       if (this.questDone.has(q.id) || q.target !== enemyId) continue;
       // 悬赏在对应层或已到达该层后可累计（适配：不强制人必须在该层）
@@ -333,16 +350,12 @@ export class World {
     this.units.push(u); return u;
   }
   loadFloor(i: number) { this.stepTarget = null; this.stepQueued = 0;
-    this.floorIndex = i; this.cleared = false; this.ground = []; this.zones = []; this.reached.add(i); this.checkAchieves();
+    this.floorIndex = i; this.cleared = false; this.womaPending = null; this.womaSec = -1; this.womaWarnAt = -99; this.ground = []; this.zones = []; this.reached.add(i); this.checkAchieves();
     this.units = this.units.filter(u => u.isHero || u.summon);
     const h = this.hero; if (h) { h.x = WORLD.heroStartX; h.y = 0; h.facing = 1; }
     const s = this.summon; if (s) { s.x = WORLD.heroStartX - 110; s.y = WORLD.summonLane; }
     for (const sp of this.floor.spawns) {
-      if (sp.id === 'boss_woma' && this.bossKilled.has(i)) { // R14 #14：再次挑战沃玛教主需沃玛号角（首次免号角 [适配]）
-        const h = this.bag.findIndex(x => x.item === 'woma_horn');
-        if (h < 0) { this.events.push({ type: 'log', text: '沃玛教主未现身：需要沃玛号角（背包）' }); continue; }
-        this.bag.splice(h, 1); this.events.push({ type: 'log', text: '吹响沃玛号角，沃玛教主现身！' }, { type: 'inventory' });
-      }
+      if (sp.id === 'boss_woma' && this.floor.name === WOMA_FLOOR_NAME) { this.womaPending = { x: sp.x, y: sp.y ?? 0 }; continue; } // R14 #14：教主之家需号角
       this.spawn(ENEMIES[sp.id], 'enemy', sp.x, sp.y ?? 0);
     }
     this.events.push({ type: 'floor', index: i, name: this.floor.name });
@@ -386,7 +399,7 @@ export class World {
     if (!target.alive) return 0;
     const crit = canCrit && this.rng() < (source?.isHero ? this.critChance() : CRIT_CHANCE);
     if (crit) amount *= CRIT_MULT;
-    if (!ignoreDef) amount = mitigate(amount, target.def ?? 0, target.mdef ?? target.def ?? 0, magic);
+    if (!ignoreDef) { const up = (u?: number, v?: number) => u && u > this.time ? v ?? 0 : 0; amount = mitigate(amount, (target.def ?? 0) + up(target.defUpUntil, target.defUp), (target.mdef ?? target.def ?? 0) + up(target.mdefUpUntil, target.mdefUp), magic); }
     if (target.redUntil && target.redUntil > this.time) amount *= 1 + OFFICIAL.redAmp; // R13 红毒
     if (target.armorUntil && target.armorUntil > this.time) amount *= 1 - (target.armorReduce ?? 0.5);
     amount = Math.max(1, Math.round(amount));
@@ -466,7 +479,10 @@ export class World {
       // R13：有资料的怪逐本按资料爆率（1/N）独立判定；无资料的怪沿用 [适配] 首领/普通几率随机一本
       if (u.id in BOOK_RATES) { for (const b of pool) if (this.lootRng() < BOOK_RATES[u.id][b.skill]) { extra.push({ id: bookItemId(b.skill) }); break; } }
       else if (pool.length && this.lootRng() < (u.tier === 'boss' ? BOOK_DROP.boss : BOOK_DROP.normal)) extra.push({ id: bookItemId(pool[Math.floor(this.lootRng() * pool.length)].skill) }); }
-    if (u.setDrop?.length && this.lootRng() < (u.setChance ?? 1)) extra.push({ id: u.setDrop[Math.floor(this.lootRng() * u.setDrop.length)] });
+    if (u.setDrop?.length && this.lootRng() < (u.setChance ?? 1)) { const own = u.setDrop.filter(id => ITEMS[id]?.cls?.includes(this.cls)), pool = own.length ? own : u.setDrop; extra.push({ id: pool[Math.floor(this.lootRng() * pool.length)] }); } // R14 #13：职业套优先掉本职业
+    if (this.womaPending) { const has = this.bag.some(x => x.item === 'woma_horn') || this.ground.some(g => g.item === 'woma_horn');
+      if (!has && HORN_MOBS.includes(u.id) && this.lootRng() < HORN_MOB_CHANCE) extra.push({ id: 'woma_horn' });
+    } // R14 #14：号角 [适配] 8%；清怪保底见 womaTick
     // 黑铁：Boss 必掉 1 块纯度 1–3；普通怪 8% 掉纯度 1（lootRng，不影响平衡模拟主序列）
     if (u.tier === 'boss') extra.push({ id: 'black_iron', purity: 1 + Math.floor(this.lootRng() * 3) });
     else if (this.lootRng() < 0.05) extra.push({ id: 'black_iron', purity: 1 });
@@ -479,7 +495,7 @@ export class World {
       this.ground.push(...items); this.events.push({ type: 'drop', uid: u.uid, x: u.x, y: u.y, items });
     }
     this.gainExp(scaledExp(u.exp ?? 10, this.floorIndex));
-    if (!this.alive('enemy').length && !this.cleared) { this.cleared = true; this.events.push({ type: 'cleared' }); }
+    if (!this.alive('enemy').length && !this.cleared && !this.womaPending) { this.cleared = true; this.events.push({ type: 'cleared' }); }
   }
   gainExp(n: number) {
     if (this.companion?.out && companionGainExp(this.companion, n, this.level)) this.events.push({ type: 'log', text: `英雄 ${this.companion.name} 升到 ${this.companion.level} 级`, color: 'green' });
@@ -658,6 +674,8 @@ export class World {
     this.skillOrder = ids; this.events.push({ type: 'learned', skill: id });
   }
 
+  /** buff 持续秒数（#12 幽灵盾/神甲按道术；其余沿用 duration + durPerLv×等级） */
+  buffDuration(s: SkillDef) { const slv = Math.max(0, this.skillLevel(s)); return s.buffStat ? taoBuffDur(slv, this.hero?.tao ?? 0) : (s.duration ?? 8) + (s.durPerLv ?? 0) * slv; }
   // ---------- 技能 ----------
   cast(i: number, cds: number[]): CastResult {
     const s = this.skills[i], h = this.hero;
@@ -676,6 +694,15 @@ export class World {
     } else if (s.kind === 'ranged' || s.kind === 'dot' || s.kind === 'zone') {
       const side = this.rangedSide(s.range ?? 500); if (side === null) return { ok: false, reason: '射程内没有目标' };
       h.facing = side as 1 | -1; targets = [this.queue(side)[0]];
+    } else if (s.kind === 'line') {
+      // 地狱火/疾光电影：直线 [适配] 选边后命中该方向射程内全部敌人（穿透）
+      const side = this.rangedSide(s.range ?? 500); if (side === null) return { ok: false, reason: '射程内没有目标' };
+      h.facing = side as 1 | -1; targets = this.queue(side).filter(e => this.gap(h, e) <= (s.range ?? 500));
+    } else if (s.kind === 'blast') {
+      // 爆裂火焰：3×3 [适配] 以首个目标为中心，左右 splash 像素内敌人一并命中
+      const side = this.rangedSide(s.range ?? 500); if (side === null) return { ok: false, reason: '射程内没有目标' };
+      h.facing = side as 1 | -1; const t0 = this.queue(side)[0];
+      targets = [t0, ...this.alive('enemy').filter(e => e !== t0 && Math.abs(e.x - t0.x) <= (s.splash ?? 170))];
     } else if (s.kind === 'aoe') {
       targets = this.alive('enemy').filter(e => Math.max(0, this.gap(h, e)) <= (s.range ?? 400));
       if (!targets.length) return { ok: false, reason: '范围内没有目标' };
@@ -688,7 +715,9 @@ export class World {
       if (!targets.length) return { ok: false, reason: '附近没有等级低于自己的目标' };
     }
     if (s.kind === 'buff' && s.reduce && (h.armorUntil ?? 0) > this.time) return { ok: false, reason: `${s.name}持续中（官方：持续期间重复开启无效）` };
-    h.mp = (h.mp ?? 0) - s.mana; cds[i] = s.cooldown;
+    if (s.buffStat && ((s.buffStat === 'def' ? h.defUpUntil : h.mdefUpUntil) ?? 0) > this.time) return { ok: false, reason: `${s.name}持续中（沿用魔法盾：持续期间重复开启无效）` };
+    if (s.area) targets = [h, ...this.units.filter(u => u.summon && u.alive && Math.abs(u.x - h.x) <= s.area!)];
+    h.mp = (h.mp ?? 0) - s.mana; for (let j = 0; j < cds.length; j++) cds[j] = Math.max(cds[j], CAST_GAP); cds[i] = Math.max(cds[i], s.cooldown); // 公共施法间隔（取消冷却）
     this.events.push({ type: 'attack', source: h.uid, target: targets[0]?.uid ?? h.uid, skill: s.id });
     this.addTrain(s, 100);
     const pw = this.power(s.stat) * this.skillScale() * (s.lvMult ? 1 : lvF);
@@ -698,7 +727,13 @@ export class World {
         h.armorUntil = this.time + dur; h.armorReduce = OFFICIAL.shieldReduce[Math.min(3, slv)];
         this.events.push({ type: 'log', text: `${s.name}：受到伤害降低 ${Math.round(h.armorReduce * 100)}%，持续 ${dur} 秒` });
       }
-      if (s.heal) this.heal(h, pw * s.heal);
+      if (s.buffStat) {
+        // #12 官方说明「5×5 友方」；21cq 资料称宝宝不受益 → 只作用于主角
+        const v = taoBuffValue(this.level), d = this.buffDuration(s);
+        if (s.buffStat === 'def') { h.defUpUntil = this.time + d; h.defUp = v; } else { h.mdefUpUntil = this.time + d; h.mdefUp = v; }
+        this.events.push({ type: 'log', text: `${s.name}：${s.buffStat === 'def' ? '防御' : '魔御'} +${v}，持续 ${d} 秒` });
+      }
+      if (s.heal) { if (s.area) for (const t of targets) this.heal(t, pw * s.heal); else this.heal(h, pw * s.heal); }
     } else if (s.kind === 'summon') {
       const beast = s.id === 'summon_beast';
       const base = beast ? SUMMON_BEAST : SUMMON;
@@ -770,7 +805,7 @@ export class World {
     if (this.bag.length >= WORLD.bagSize) return '背包已满'; c.bag.splice(idx, 1); this.bag.push(it); this.events.push({ type: 'inventory' }); return null;
   }
   toSave(): SaveData {
-    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], eqV: EQUIP_VERSION, expV: EXP_VERSION , companion: this.companion ? JSON.parse(JSON.stringify(this.companion)) : null };
+    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, town: this.town, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], ringQ: this.ringQ, ringDone: this.ringDone, eqV: EQUIP_VERSION, expV: EXP_VERSION, companion: this.companion ? JSON.parse(JSON.stringify(this.companion)) : null  };
   }
 
   /** 点按一格：滑行中的按键全部排队（同向最多 10 格，反向则替换队列），每次按键都会走一格 */
@@ -819,7 +854,46 @@ export class World {
   }
   private autoDamage(h: Unit) { const c = this.classDef; return h.atk + (c.autoStat === 'atk' ? 0 : this.power(c.autoStat) * 0.6); }
 
+  // ===== R14 #14 沃玛寺庙多层 =====
+  womaPending: { x: number; y: number } | null = null; womaSec = -1; womaWarnAt = -99;
+  womaSection() { const h = this.hero; if (!h || this.floor.name !== WOMA_FLOOR_NAME) return null; return WOMA_SECTIONS.findIndex(s => h.x < s.until); }
+  womaTick() {
+    const h = this.hero; if (!h || this.town || this.floor.name !== WOMA_FLOOR_NAME) return;
+    const sec = this.womaSection()!; if (sec !== this.womaSec) { this.womaSec = sec; this.events.push({ type: 'log', text: `进入 ${WOMA_SECTIONS[sec].name}`, color: 'green' }); }
+    if (!this.womaPending) return;
+    let k = this.bag.findIndex(x => x.item === 'woma_horn');
+    if (k < 0 && !this.alive('enemy').length) { this.ground = this.ground.filter(g => g.item !== 'woma_horn'); this.bag.push(this.makeItem('woma_horn')); k = this.bag.length - 1; this.events.push({ type: 'log', text: '获得沃玛号角（清怪保底）', color: 'green' }); } // [适配] 背包满也给
+    if (h.x < WOMA_DOOR_X - h.width / 2) return;
+    if (k < 0) { h.x = WOMA_DOOR_X - h.width / 2 - 1; if (this.time - this.womaWarnAt > 3) { this.womaWarnAt = this.time; this.events.push({ type: 'log', text: '教主之家大门紧闭：需要沃玛号角（沃玛战士/卫士掉落）', color: 'white' }); } return; }
+    this.bag.splice(k, 1); const p = this.womaPending; this.womaPending = null;
+    this.spawn(ENEMIES.boss_woma, 'enemy', p.x, p.y); this.events.push({ type: 'log', text: '吹响沃玛号角，教主之家大门打开，沃玛教主现身！', color: 'green' }, { type: 'inventory' });
+  }
+  // ===== R14 #17 环式任务 / 鉴定 =====
+  ringQ: RingQuest | null = null; ringDone = 0;
+  ringAccept(): string | null {
+    if (this.level < RING_MIN_LEVEL) return `环式任务 ${RING_MIN_LEVEL} 级开放`;
+    if (this.ringQ) return '已有环式任务';
+    const fs = [...this.reached].filter(f => this.floors[f]?.spawns.some(sp => ENEMIES[sp.id]?.tier !== 'boss'));
+    if (!fs.length) return '没有可去的楼层';
+    const f = fs[Math.floor(this.lootRng() * fs.length)], ts = [...new Set(this.floors[f].spawns.map(sp => sp.id).filter(id => ENEMIES[id]?.tier !== 'boss'))];
+    const t = ts[Math.floor(this.lootRng() * ts.length)];
+    this.ringQ = { n: this.ringDone + 1, floor: f, target: t, name: ENEMIES[t].name, need: 5 + Math.min(this.ringDone, 10), prog: 0 }; return null;
+  }
+  ringClaim(): string | null {
+    const q = this.ringQ; if (!q) return '没有环式任务'; if (q.prog < q.need) return `进度 ${q.prog}/${q.need}`;
+    const r = ringReward(q.n, q.floor); this.gold += r.gold; this.gainExp(scaledExp(r.exp, q.floor)); this.ringDone = q.n; this.ringQ = null;
+    this.events.push({ type: 'log', text: `完成第 ${q.n} 环：+${r.gold} 金`, color: 'green' }); return null;
+  }
+  identify(slot: EquipSlot): string | null {
+    const it = this.equip[slot]; if (!it) return '该栏位为空';
+    if (this.level < IDENT_MIN_LEVEL) return `鉴定 ${IDENT_MIN_LEVEL} 级开放`;
+    if (it.ided) return '已鉴定'; if (this.gold < IDENT_PRICE) return '金币不足';
+    this.gold -= IDENT_PRICE; const n = 1 + Math.floor(this.lootRng() * 3), pool: string[] = [...IDENT_POOL], got: string[] = [];
+    for (let i = 0; i < n; i++) { const k = pool.splice(Math.floor(this.lootRng() * pool.length), 1)[0] as keyof typeof it.stats; const v = identValue(k, it.req); it.stats[k] = (it.stats[k] ?? 0) + v; got.push(`${k}+${v}`); }
+    it.ided = n; this.events.push({ type: 'inventory' }, { type: 'log', text: `鉴定 ${it.name}：${got.join(' ')}`, color: 'green' }); return null;
+  }
   step(dt: number, inp: Input = { dx: 0, dy: 0 }) {
+    this.womaTick();
     if (this.done) return;
     this.time += dt;
     if (this.town) { // R14 安全区：城内只左右走，不结算战斗
@@ -1004,6 +1078,13 @@ export class World {
         }
       }
     }
+  }
+  /** 每张战斗层起点都有「回城/回村」入口：原路回到进来的城镇（未查到官方连接的统一回本区域主城） */
+  returnTownName(): string { return TOWNS[returnTownOf(this.floorIndex)].name; }
+  atReturnGate(): boolean { const h = this.hero; return !this.town && !!h && h.x <= WORLD.heroStartX + 150; }
+  returnToTown(): string | null {
+    if (this.town) return '已在城内'; if (!this.atReturnGate()) return '回城入口在本层起点（左侧）';
+    if (this.inCombat()) return '战斗中无法回城'; return this.enterTown(returnTownOf(this.floorIndex));
   }
   /** S 键：在本层起点附近返回上一层（出生在上一层出口前） */
   prevFloor(): boolean {

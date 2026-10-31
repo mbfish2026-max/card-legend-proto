@@ -25,12 +25,23 @@ export const BOOKS: Record<string, BookDef> = {
   fire_wall: { skill: 'fire_wall', cls: 'mage', shop: false, drops: [LICH, ...WOMA], price: P(24) },
   magic_shield: { skill: 'magic_shield', cls: 'mage', shop: false, drops: [LICH, ...WOMA], price: P(31) },
   ice_roar: { skill: 'ice_roar', cls: 'mage', shop: false, drops: [LICH, ...ZUMA, 'boss_redmoon'], price: P(35) },
+  // #11 新法师书（新书接入）：地狱火/大火球 进书店（官方系统价 1000/2000，见 thelegendofmir2.com）；其余按 21cq 怪物掉落表
+  // drops 列官方掉落怪（项目内存在的 id）；有资料怪的爆率取 BOOK_RATES（21cq 1/N），见 docs/skills-official.md「新书接入与再平衡」
+  big_fireball: { skill: 'big_fireball', cls: 'mage', shop: true, drops: ['skeleton_lord', LICH, 'woma_guard'], price: P(19) },
+  burst_fire: { skill: 'burst_fire', cls: 'mage', shop: false, drops: ['skeleton_lord', LICH, 'woma_guard'], price: P(22) },
+  hell_fire: { skill: 'hell_fire', cls: 'mage', shop: true, drops: ['skeleton_lord', LICH, 'woma_guard'], price: P(16) },
+  lightning_flash: { skill: 'lightning_flash', cls: 'mage', shop: false, drops: [LICH], price: P(26) },
+  hell_thunder: { skill: 'hell_thunder', cls: 'mage', shop: false, drops: [LICH, 'woma_guard', 'boss_redmoon', 'boss_chulong', 'boss_white_boar', 'boss_bull_king', 'hongmo_pig', 'boss_hongmo'], price: P(30) },
   // 道士：治愈(初始)/精神力/施毒/灵魂火符/召唤骷髅 书店有售；神兽 掉落
   spirit_force: { skill: 'spirit_force', cls: 'taoist', shop: true, drops: [], price: P(9) },
   poison: { skill: 'poison', cls: 'taoist', shop: true, drops: [LICH, ...WOMA], price: P(14) },
   soul_fire: { skill: 'soul_fire', cls: 'taoist', shop: true, drops: [LICH, ...WOMA], price: P(18) },
   summon_skeleton: { skill: 'summon_skeleton', cls: 'taoist', shop: true, drops: [], price: 100 },
   summon_beast: { skill: 'summon_beast', cls: 'taoist', shop: false, drops: [LICH, ...ZUMA, 'boss_redmoon'], price: P(35) },
+  // #12 新道士书（新书接入）：幽灵盾/神圣战甲术 [适配] 进书店（官方书店是否有售 未查到；官方为尸王/骷髅精灵/沃玛卫士掉落，保留）；群体治疗术按沃玛教主 S9 + 21cq 掉落
+  ghost_shield: { skill: 'ghost_shield', cls: 'taoist', shop: true, drops: ['skeleton_lord', LICH, 'woma_guard'], price: P(22) },
+  holy_armor: { skill: 'holy_armor', cls: 'taoist', shop: true, drops: [LICH, 'woma_guard'], price: P(25) },
+  mass_heal: { skill: 'mass_heal', cls: 'taoist', shop: false, drops: [LICH, 'boss_woma', 'boss_white_boar', 'hongmo_pig'], price: P(33) },
 };
 /** [适配] 掉落率（原版未查到）：首领 25%，普通怪 2%；只掉本职业、尚未学会的书 */
 export const BOOK_DROP = { boss: 0.25, normal: 0.02 };
