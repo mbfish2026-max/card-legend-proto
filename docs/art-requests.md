@@ -1105,3 +1105,17 @@ public/assets/ui/UI-Tooltip-Border.png
 - 用途：替换地图里的回城/出口入口「小房子」。只加了素材，src 没改，接入要另外改代码。
 - **状态：已满足、已接入（feat/balance-sys 任务B）**：`assets-manifest` 注册 `portal_exit` / `portal_exit_sheet`（SHEETS 256×384 切 4 帧），BattleScene 每层最左端播 `portal_exit_loop` 8fps 循环、origin (0.5,1)、显示 150×225（约主角 1.6 倍高）；贴图缺失时退回程序绘制椭圆。文案「传送门：返回 XXX」，第 1 层返回小村。测试 tests/back-portal.test.ts。
 - 预览：docs/art-gap-preview/portal_preview.jpg（上排深色底，下排棋盘格底，用来检查边缘）
+
+## L. 大城街景（docs/towns-plan.md，2026-10-31，待美术）
+
+规格同 K 章：横版长街 5760×1080 每 3 屏，游戏内按 2/3 缩到 720 高；门面可单独出图，3:4 透明 PNG。NPC 立绘同现有 npc_* 规格。
+
+| 优先级 | 城 | 街景 | 门面 | NPC 立绘 |
+|---|---|---|---|---|
+| P1 | 盟重土城 | `bg_town_mengzhong` 7680×1080（4 屏），土城黄土墙、东端沙巴克城门远景 | 武器/铁匠铺、药店、书店、仓库(王家)、服装、首饰、杂货(罗家铺子)、客栈、肉店、炼金师 | 盟重老兵、书店老板、药店老板、武器店老板、仓库保管员 |
+| P2 | 白日门 | `bg_town_bairimen` 5760×1080（3 屏） | 武器、药店、仓库、首饰、服装、神秘书商、神秘铁匠 | 向导、神秘书商、神秘铁匠（龙人已有） |
+| P3 | 封魔谷据点 | `bg_town_fengmo` 3840×1080（2 屏） | 通用 basic 门面换色 | 老兵（可复用比奇老兵换色） |
+| P3 | 苍月岛 | `bg_town_cangyue` 3840×1080（2 屏），码头 | 通用 basic 门面换色 | — |
+
+- 城门 / 西端出口要留传送门位置（portal_exit 可复用）。
+- 每个门面上方留招牌区，文字由程序写。
