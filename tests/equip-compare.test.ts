@@ -1,0 +1,16 @@
+import { compareLines, UP, DOWN } from '../src/ui/equipCompare';
+let n = 0; const ok = (c: boolean, m: string) => { if (!c) { throw new Error('FAIL ' + m); } n++; };
+const mk = (uid: number, slot: any, stats: any, name = 'x' + uid): any => ({ uid, item: 'x', name, rarity: 'common', slot, stats, req: 1, price: 1 });
+const w1 = mk(1, 'weapon', { atk: 10, mag: 2 }, '木剑'), w2 = mk(2, 'weapon', { atk: 15, hp: 5 });
+let L = compareLines(w2, { weapon: w1 });
+ok(L[0][0] === '对比身上：木剑', '标题');
+ok(L.some(([t, c]) => t.includes('攻击 +5') && c === UP), '涨绿'); ok(L.some(([t, c]) => t.includes('魔法 -2') && c === DOWN), '降红'); ok(L.some(([t]) => t.includes('生命 +5')), '新增属性');
+ok(compareLines(w1, { weapon: w1 }).length === 0, '已穿戴自身不对比');
+ok(compareLines(w2, {})[0][0] === '对比身上：未穿戴', '空位未穿戴');
+const r = mk(3, 'ring', { atk: 2 }), rl = mk(4, 'ring', { atk: 3 });
+L = compareLines(r, { ring1: rl });
+ok(L[0][0].startsWith('对比左戒指') && L.some(([t, c]) => t.includes('攻击 -1') && c === DOWN) && L.some(([t]) => t.includes('右戒指：未穿戴')), '戒指双位');
+ok(compareLines(mk(5, 'bracelet', {}), {}).length === 2, '手镯双位');
+ok(compareLines(mk(6, 'weapon', { atk: 10, mag: 2 }), { weapon: w1 }).some(([t]) => t.includes('属性相同')), '属性相同');
+ok(compareLines(mk(7, undefined, {}), { weapon: w1 }).length === 0, '杂物不对比');
+console.log(`装备对比测试全部通过 ${n} 项`);
