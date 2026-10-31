@@ -111,12 +111,12 @@ const free = (w: World) => w.skills.map(() => 0);
   w.ground.push(w.rollDrop('helmet', 'common', h.x, h.y)); w.time += 1; w.step(0.05); ok(w.ground.length === 1, '背包满时不拾取');
 }
 { // 5 层 + 每层 Boss + 出口封印
-  ok(FLOORS.length >= 5 && FLOORS.every(f => f.boss && f.spawns.some(s => ENEMIES[s.id].tier === 'boss')), `共 ${FLOORS.length} 层，每层末尾有 Boss`);
+  ok(FLOORS.length >= 8 && FLOORS.slice(5).map(f => f.name).join() === '沃玛寺庙,祖玛阁,赤月魔穴' && FLOORS.every(f => f.boss && f.spawns.some(s => ENEMIES[s.id].tier === 'boss')), `共 ${FLOORS.length} 层，每层末尾有 Boss`);
   ok(new Set(FLOORS.map(f => f.bg)).size === FLOORS.length, '每层背景不同');
   const w = new World(seeded(3), 30, FLOORS); const h = w.hero!;
   h.x = w.exitX; w.step(0.05); ok(w.floorIndex === 0, 'Boss 未死出口封印');
   for (let i = 0; i < FLOORS.length; i++) { for (const u of w.alive('enemy')) w.kill(u); w.hero!.x = w.exitX; w.step(0.05); }
-  ok(w.done, '依次通过 5 层 → 胜利');
+  ok(w.done, `依次通过 ${FLOORS.length} 层 → 胜利`);
 }
 { // 死亡复活 + 存档读档
   const w = mk([{ id: 'wolf', x: 3000 }], [], 'mage', 5); w.gold = 100; w.kill(w.hero!); ok(!w.hero, '主角死亡');
@@ -148,7 +148,7 @@ const free = (w: World) => w.skills.map(() => 0);
 }
 { // 难度曲线：怪物强度倍率已上调
   ok(DIFF.atk > 1 && DIFF.bossAtk > 1 && ENEMIES.boss_lich.atk > ENEMIES.orc_chief.atk, '难度倍率上调且首领逐层变强');
-  ok(['wolf_king', 'spider_queen', 'skeleton_lord', 'orc_chief', 'boss_lich'].every(id => ENEMIES[id].art?.startsWith('boss_')), '每层首领有专属立绘');
+  ok(['wolf_king', 'spider_queen', 'skeleton_lord', 'orc_chief', 'boss_lich', 'boss_woma', 'boss_zuma', 'boss_redmoon'].every(id => ENEMIES[id].art?.startsWith('boss_')), '每层首领有专属立绘');
 }
 { // 手机检测：UA / 触屏小屏 / URL 覆盖
   const fw = (ua: string, coarse: boolean, sw: number, sh: number, search = '', tp = 0) => ({ location: { search }, navigator: { userAgent: ua, maxTouchPoints: tp }, matchMedia: () => ({ matches: coarse }), screen: { width: sw, height: sh } }) as any;
@@ -355,9 +355,11 @@ const free = (w: World) => w.skills.map(() => 0);
   const c = mk([], [], 'mage', 25); for (const id of SETS.chiyue.pieces) { c.bag.push(c.makeItem(id)); c.equipItem(c.bag.length - 1); }
   ok(c.luck() === 1, '赤月 3 件：幸运+1');
   ok(Object.values(SETS).every(st => st.pieces.every(id => ENEMIES && id.startsWith('set_'))), '套装物品 ID 规范');
-  const b = mk([{ id: 'orc_chief', x: 800 }]); const boss = b.alive('enemy')[0]; b.kill(boss);
-  const ids = b.ground.map(g => g.item);
-  ok(ids.includes('bless_oil') && ids.some(i => SETS.woma.pieces.includes(i)), `兽人酋长掉落祝福油 + 沃玛套装 1 件（${ids.join(',')}）`);
+  for (const [bid, sid] of [['boss_woma', 'woma'], ['boss_zuma', 'zuma'], ['boss_redmoon', 'chiyue']] as const) {
+    const t = mk([{ id: bid, x: 800 }]); t.kill(t.alive('enemy')[0]); const ids = t.ground.map(g => g.item);
+    ok(ids.includes('bless_oil') && ids.some(i => SETS[sid].pieces.includes(i)), `${ENEMIES[bid].name} 掉落祝福油 + ${SETS[sid].name}套装 1 件`);
+  }
+  const b = mk([{ id: 'boss_woma', x: 800 }]); b.kill(b.alive('enemy')[0]);
   b.hero!.x = 800; for (let i = 0; i < 40; i++) b.step(0.05); ok(b.bag.some(x => SETS.woma.pieces.includes(x.item)), '套装可拾取进背包');
   const shop = mk([]); shop.gold = OIL_PRICE * 2;
   ok(shop.buyOil() === null && shop.bag.some(x => x.item === 'bless_oil') && shop.gold === OIL_PRICE, `商店可买祝福油（${OIL_PRICE} 金）`);

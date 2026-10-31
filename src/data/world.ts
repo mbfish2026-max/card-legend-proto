@@ -62,4 +62,19 @@ export const FLOORS: Floor[] = [
     { id: 'darkmage', x: 1450 }, { id: 'zombie', x: 1550, y: -15 }, { id: 'skeleton', x: 1650 },
     { id: 'darkmage', x: 2250 }, { id: 'darkmage', x: 2350, y: 15 },
     { id: 'skeleton', x: 3150, y: -20 }, { id: 'boss_lich', x: 3380 } ] },
+  { name: '沃玛寺庙', bg: 'bg_floor6', boss: true, spawns: [
+    { id: 'woma_warrior', x: 800 }, { id: 'woma_warrior', x: 910, y: 20 },
+    { id: 'woma_guard', x: 1550 }, { id: 'woma_warrior', x: 1650, y: -15 },
+    { id: 'woma_guard', x: 2300 }, { id: 'woma_warrior', x: 2400, y: 15 },
+    { id: 'boss_woma', x: 3350 } ] },
+  { name: '祖玛阁', bg: 'bg_floor7', boss: true, spawns: [
+    { id: 'zuma_statue', x: 800 }, { id: 'zuma_statue', x: 910, y: 20 },
+    { id: 'zuma_guard', x: 1550 }, { id: 'zuma_statue', x: 1650, y: -15 },
+    { id: 'zuma_guard', x: 2300 }, { id: 'zuma_statue', x: 2400, y: 15 },
+    { id: 'boss_zuma', x: 3350 } ] },
+  { name: '赤月魔穴', bg: 'bg_floor8', boss: true, spawns: [
+    { id: 'blood_zombie', x: 800 }, { id: 'redmoon_spider', x: 910, y: 20 },
+    { id: 'blood_zombie', x: 1550 }, { id: 'redmoon_spider', x: 1650, y: -15 },
+    { id: 'blood_zombie', x: 2300 }, { id: 'redmoon_spider', x: 2400, y: 15 },
+    { id: 'boss_redmoon', x: 3380 } ] },
 ];

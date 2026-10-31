@@ -9,11 +9,15 @@ export const ASSETS: Record<string, string> = {
   skeleton: P + 'skeleton_full.png', zombie: P + 'zombie_full.png', orc: P + 'orc_full.png', darkmage: P + 'darkmage_full.png',
   boss_lich: P + 'boss_lich_full.png',
   boss_wolf_king: P + 'boss_wolf_king_full.png', boss_spider_queen: P + 'boss_spider_queen_full.png', boss_skeleton_lord: P + 'boss_skeleton_lord_full.png', boss_orc_chief: P + 'boss_orc_chief_full.png',
+  // R3 新怪/Boss：同名占位副本，美术交付后直接覆盖
+  woma_guard: P + 'woma_guard_full.png', boss_woma: P + 'boss_woma_full.png', zuma_statue: P + 'zuma_statue_full.png',
+  boss_zuma: P + 'boss_zuma_full.png', blood_zombie: P + 'blood_zombie_full.png', boss_redmoon: P + 'boss_redmoon_full.png',
   merchant: P + 'INV_Misc_Head_Human_02.png',
   // 每层场景背景（AI 生成，1280×720）
   bg: 'assets/ui/bg_dungeon.jpg',
   bg_floor1: 'assets/bg/bg_floor1.jpg', bg_floor2: 'assets/bg/bg_floor2.jpg', bg_floor3: 'assets/bg/bg_floor3.jpg',
   bg_floor4: 'assets/bg/bg_floor4.jpg', bg_floor5: 'assets/bg/bg_floor5.jpg',
+  bg_floor6: 'assets/bg/bg_floor6.jpg', bg_floor7: 'assets/bg/bg_floor7.jpg', bg_floor8: 'assets/bg/bg_floor8.jpg',
   potion_0: 'assets/potions/INV_Potion_51.png', potion_1: 'assets/potions/INV_Potion_54.png',
   potion_2: 'assets/potions/INV_Potion_72.png', potion_3: 'assets/potions/INV_Potion_75.png',
   menu_0: 'assets/portraits/INV_Misc_Head_Human_01.png', menu_1: 'assets/items/INV_Misc_Bag_08.png',

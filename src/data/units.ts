@@ -30,9 +30,21 @@ export const ENEMIES: Record<string, UnitDef> = {
   // 第4层 兽人要塞
   orc: n('orc', '兽人战士', 13, 800, 40, 12, 170, [G(0.6), { item: 'hp_mid', chance: 0.3 }, { item: 'armor', chance: 0.05 }, { item: 'bracelet', chance: 0.1 }], { deathSfx: 'death2' }),
   darkmage: n('darkmage', '黑暗法师', 14, 600, 50, 8, 190, [G(0.6), { item: 'mp_mid', chance: 0.3 }, { item: 'magic_staff', chance: 0.08 }, { item: 'pearl', chance: 0.08 }], { deathSfx: 'death', atkInterval: 1.6, oilChance: 0.03 }),
-  orc_chief: b('orc_chief', 'boss_orc_chief', '兽人酋长', 17, 5200, 60, 16, 1400, [{ item: 'armor', chance: 1 }, { item: 'gold_ring', chance: 1 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'death2', setDrop: ['set_woma_helm', 'set_woma_necklace', 'set_woma_bracelet'] }),
+  orc_chief: b('orc_chief', 'boss_orc_chief', '兽人酋长', 17, 5200, 60, 16, 1400, [{ item: 'armor', chance: 1 }, { item: 'gold_ring', chance: 1 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'death2' }),
   // 第5层 尸王殿
-  boss_lich: b('boss_lich', 'boss_lich', '尸王', 22, 9000, 75, 20, 3000, [{ item: 'dragon_sword', chance: 1 }, { item: 'armor', chance: 1 }, { item: 'gold_ring', chance: 0.7 }, { item: 'pearl', chance: 0.7 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1)], { deathSfx: 'lich_death', setDrop: ['set_zuma_helm', 'set_zuma_ring', 'set_zuma_boots'] }),
+  boss_lich: b('boss_lich', 'boss_lich', '尸王', 22, 9000, 75, 20, 3000, [{ item: 'dragon_sword', chance: 1 }, { item: 'armor', chance: 1 }, { item: 'gold_ring', chance: 0.7 }, { item: 'pearl', chance: 0.7 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1)], { deathSfx: 'lich_death' }),
+  // R3 第6层 沃玛寺庙（参考传奇沃玛寺庙；怪物/数值为本作重新设计）
+  woma_warrior: n('woma_warrior', '沃玛战士', 20, 1000, 48, 14, 230, [G(0.6), { item: 'hp_mid', chance: 0.3 }, { item: 'armor', chance: 0.04 }], { art: 'orc', deathSfx: 'death2', oilChance: 0.02 }),
+  woma_guard: n('woma_guard', '沃玛卫士', 21, 1200, 52, 16, 260, [G(0.6), { item: 'mp_mid', chance: 0.3 }, { item: 'gold_ring', chance: 0.04 }], { deathSfx: 'death2', oilChance: 0.02 }),
+  boss_woma: b('boss_woma', 'boss_woma', '沃玛教主', 24, 10000, 80, 22, 3500, [{ item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'death2', setDrop: ['set_woma_helm', 'set_woma_necklace', 'set_woma_bracelet'] }),
+  // R3 第7层 祖玛阁
+  zuma_statue: n('zuma_statue', '祖玛雕像', 24, 1300, 58, 18, 320, [G(0.6), { item: 'hp_mid', chance: 0.3 }, { item: 'bone_helm', chance: 0.04 }], { deathSfx: 'skeleton_death', speed: 85, oilChance: 0.02 }),
+  zuma_guard: n('zuma_guard', '祖玛卫士', 25, 1500, 62, 20, 360, [G(0.6), { item: 'mp_mid', chance: 0.3 }, { item: 'pearl', chance: 0.04 }], { art: 'orc', deathSfx: 'death2', oilChance: 0.02 }),
+  boss_zuma: b('boss_zuma', 'boss_zuma', '祖玛教主', 28, 12000, 88, 24, 4500, [{ item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'skeleton_death', setDrop: ['set_zuma_helm', 'set_zuma_ring', 'set_zuma_boots'] }),
+  // R3 第8层 赤月魔穴
+  blood_zombie: n('blood_zombie', '血僵尸', 28, 1700, 68, 22, 420, [G(0.6), { item: 'hp_mid', chance: 0.35 }], { deathSfx: 'ghoul_death', speed: 75, atkInterval: 1.5, oilChance: 0.02 }),
+  redmoon_spider: n('redmoon_spider', '赤月蜘蛛', 29, 1400, 75, 18, 440, [G(0.6), { item: 'mp_mid', chance: 0.3 }], { art: 'spider', deathSfx: 'death', oilChance: 0.02 }),
+  boss_redmoon: b('boss_redmoon', 'boss_redmoon', '赤月恶魔', 32, 15000, 95, 26, 6000, [{ item: 'dragon_sword', chance: 0.5 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'lich_death', setDrop: ['set_chiyue_necklace', 'set_chiyue_ring', 'set_chiyue_bracelet'] }),
 };
 /** 道士召唤骷髅（金色卡底，友方） */
 export const SUMMON: UnitDef = { id: 'summon_skeleton', art: 'skeleton', name: '骷髅', level: 1, hp: 200, atk: 10, def: 4, atkInterval: 1.3, range: 6, speed: 0, width: 120, height: 170, tier: 'player',

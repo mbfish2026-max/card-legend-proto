@@ -31,3 +31,16 @@
 
 ## D. UI
 | ui/set_badge.png 48×48 | 套装激活角标（绿色发光） | 文字代替 |
+
+## E. R3 新层（已放同名占位，直接覆盖即可）
+| 文件 | 内容 |
+|---|---|
+| portraits/woma_guard_full.png | 沃玛卫士 |
+| portraits/boss_woma_full.png | 沃玛教主（Boss） |
+| portraits/zuma_statue_full.png | 祖玛雕像 |
+| portraits/boss_zuma_full.png | 祖玛教主（Boss） |
+| portraits/blood_zombie_full.png | 血僵尸 |
+| portraits/boss_redmoon_full.png | 赤月恶魔（Boss） |
+| bg/bg_floor6.jpg | 沃玛寺庙 |
+| bg/bg_floor7.jpg | 祖玛阁 |
+| bg/bg_floor8.jpg | 赤月魔穴 |
