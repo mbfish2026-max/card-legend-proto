@@ -8,6 +8,9 @@ import { QUESTS, ACHIEVES } from '../src/data/quests';
 import { detectMobile } from '../src/mobile';
 import { StepGate, stepDir, HoldKeys, HOLD } from '../src/input/stepKeys';
 import { POTIONS } from '../src/data/skills';
+import { resolveLayers, pickTexture, comboKey, changedSlots, fallbackId } from '../src/data/equipLayers';
+// @ts-ignore 测试运行于 node（tsx），项目未装 @types/node
+import { existsSync } from 'node:fs';
 import { Settings, DEFAULT_AUTO_SKILLS, ZOOM_MIN, ZOOM_MAX, ZOOM_STEP, fitScale } from '../src/settings';
 let pass = 0; const ok = (c: boolean, m: string) => { if (!c) { console.error('FAIL', m); throw new Error(m); } pass++; console.log('ok', m); };
 function seeded(s: number) { return () => (s = (s * 16807) % 2147483647) / 2147483647; }
@@ -560,6 +563,29 @@ const free = (w: World) => w.skills.map(() => 0);
   const f = mk([]); for (let i = 0; i < 8; i++) f.reached.add(i); f.checkAchieves();
   ok(f.achieves.has('a_floors_8'), '到达 8 层成就');
   ok(ACHIEVES.length >= 7, '成就定义齐全');
+}
+
+{ // 装备上身分层（docs/equip-layers.md）
+  const it = (item: string, slot: any, req = 1) => ({ uid: 1, item, name: item, rarity: 'common', slot, stats: {}, req, price: 1 } as any);
+  const ls = resolveLayers('warrior', { armor: it('cloth', 'armor'), weapon: it('iron_sword', 'weapon', 4), helmet: it('helmet', 'helmet') });
+  ok(ls.map(l => l.slot).join() === 'body,armor,weapon', '映射：叠加顺序 body→armor→weapon，头盔不出层');
+  ok(ls[2].url === 'assets/equip/warrior/weapon/iron_sword.png' && ls.every(l => l.dx === 0 && l.dy === 0 && l.scale === 1), '映射：文件名=装备 id，左上零偏移');
+  ok(ls.every(l => existsSync('public/' + l.url)), '战士映射到的素材文件存在');
+  ok(resolveLayers('warrior', { weapon: it('magic_staff', 'weapon', 6) })[1].id === 'iron_sword', '战士拿魔杖兜底铁剑');
+  ok(fallbackId('armor', 20) === 'armor' && fallbackId('weapon', 2) === 'wood_sword' && fallbackId('weapon', 30) === 'dragon_sword', '未知装备按等级兜底');
+  ok(resolveLayers('mage', { weapon: it('magic_staff', 'weapon') }).length === 0, '法师无素材 → 无层（原立绘）');
+  const none = () => false, all = () => true;
+  ok(pickTexture('warrior', 'hero', ls, all, k => k.includes('weapon')).key === 'hero', '缺素材/加载失败回退原立绘');
+  ok(pickTexture('warrior', 'hero', ls, none, none).state === 'pending' && pickTexture('warrior', 'hero', ls, none, none).key === 'hero', '加载中先显示原立绘');
+  ok(pickTexture('warrior', 'hero', ls, all, none).key === comboKey('warrior', ls) && comboKey('warrior', ls) === 'eqc_warrior_body+cloth+iron_sword', '全部就绪用合成缓存 key');
+  const ls2 = resolveLayers('warrior', { armor: it('cloth', 'armor'), weapon: it('dragon_sword', 'weapon', 15) });
+  ok(changedSlots(ls, ls2).join() === 'weapon', '换武器只影响武器层');
+  ok(changedSlots(ls, resolveLayers('warrior', {})).join() === 'body,armor,weapon' && resolveLayers('warrior', {}).length === 0, '全脱 → 回原立绘');
+  const w = mk([]); w.equipItem(0);
+  const old = new World(seeded(1), 1, [{ name: 't', spawns: [] }], 'warrior', (({ equip, ...r }) => r)(w.toSave()) as any);
+  ok(resolveLayers(old.cls, old.equip).length === 0 && resolveLayers('warrior', undefined).length === 0, '旧存档/无装备照常（无层）');
+  const w2 = mk([]); w2.bag.push(it('dragon_sword', 'weapon', 1)); const wi = w2.bag.length - 1;
+  { const a = comboKey('warrior', resolveLayers('warrior', w2.equip)); w2.equipItem(wi); const b = comboKey('warrior', resolveLayers('warrior', w2.equip)); w2.unequip('weapon'); const c2 = comboKey('warrior', resolveLayers('warrior', w2.equip)); ok(a !== b && c2 === a, '穿/脱武器后组合签名刷新并可还原'); }
 }
 
 console.log(`全部通过 ${pass} 项`);

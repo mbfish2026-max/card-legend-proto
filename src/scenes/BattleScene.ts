@@ -70,7 +70,7 @@ export class BattleScene extends Phaser.Scene {
     this.registry.set('fxCls', this.world.cls); this.registry.set('fxLearned', [...this.world.learned]);
     this.buildPortal(this.world.exitX); this.buildMerchant();
     const h = this.world.hero!;
-    this.views.set(h.uid, new CardView(this, h));
+    this.views.set(h.uid, new CardView(this, h)); this.refreshHeroLook();
     this.cameras.main.setBounds(0, 0, W, 720).startFollow(this.views.get(h.uid)!, true, 0.12, 0.12, 0, 120).setDeadzone(320, 720);
     this.keys = this.input.keyboard!.addKeys('LEFT,RIGHT,UP,DOWN,A,D') as any;
     // F1~F4 技能：阻止浏览器默认行为（F1 帮助等）；不占用 F5 等其它功能键
@@ -320,7 +320,7 @@ export class BattleScene extends Phaser.Scene {
         const u = this.world.units.find(x => x.uid === e.uid);
         if (u && !this.views.has(u.uid)) { const v = new CardView(this, u); v.setAlpha(0); this.tweens.add({ targets: v, alpha: 1, duration: 400 }); this.views.set(u.uid, v); this.sfx('summon2'); }
       } else if (e.type === 'respawn') this.onRespawn();
-      else if (e.type === 'inventory') { if (this.ui?.panel?.open) this.ui.panel.render(); }
+      else if (e.type === 'inventory') { this.refreshHeroLook(); if (this.ui?.panel?.open) this.ui.panel.render(); }
       else if (e.type === 'log') this.log(e.text, e.color === 'green');
     }
   }
@@ -343,9 +343,11 @@ export class BattleScene extends Phaser.Scene {
     this.overlay = [dim, t, t2];
     this.time.delayedCall(3000, () => { this.world.respawn(); this.handle(this.world.drainEvents()); });
   }
+  /** 装备上身：主角卡立绘按当前衣服/武器刷新（懒加载层图） */
+  refreshHeroLook() { const h = this.world.hero; const v = h && this.views.get(h.uid); v?.refreshEquip(this.world.cls, this.world.equip); }
   onRespawn() {
     this.overlay.forEach(o => o.destroy()); this.overlay = [];
-    const h = this.world.hero!; const v = new CardView(this, h); this.views.set(h.uid, v);
+    const h = this.world.hero!; const v = new CardView(this, h); this.views.set(h.uid, v); this.refreshHeroLook();
     this.cameras.main.startFollow(v, true, 0.12, 0.12, 0, 120).setDeadzone(320, 720); this.cameras.main.fadeIn(500);
     this.state = 'play'; this.sfx('heal'); this.log('你在本层起点复活了'); this.saveGame();
   }

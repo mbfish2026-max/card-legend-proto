@@ -16,6 +16,7 @@ import { ENEMIES } from '../data/units';
 import { FLOORS } from '../data/world';
 import { World as WorldCls } from '../combat/World';
 import { BOOKS } from '../data/books';
+import { equipLook } from './EquipLayers';
 
 export type PanelMode = 'bag' | 'shop' | 'skills' | 'settings' | 'map' | 'quests';
 export const RARITY_HEX: Record<string, string> = { common: '#ffffff', magic: '#5aa8ff', rare: '#ffb020' };
@@ -82,7 +83,9 @@ export class Panel {
     const s = this.s, w = this.world(), c = CLASSES[w.cls], cx = 330, size = 60;
     // 中间立绘，左右两列装备栏
     R.add(s.add.rectangle(cx, top + 210, 170, 260, c.bg).setStrokeStyle(2, 0xb8a070));
-    if (s.textures.exists(c.art)) { const im = s.add.image(cx, top + 330, c.art).setOrigin(0.5, 1); im.setScale(Math.min(250 / im.height, 200 / im.width)); R.add(im); }
+    // 装备上身预览：衣服/武器分层合成；缺素材回退原立绘，层图就绪后重绘面板
+    const look = equipLook(s, w.cls, c.art, w.equip, () => { if (this.mode === 'bag' && this.root === R) this.render(); });
+    if (s.textures.exists(look.key)) { const im = s.add.image(cx, top + 330, look.key).setOrigin(0.5, 1).setName('equipPreview'); im.setScale(Math.min(250 / im.height, 200 / im.width)); R.add(im); }
     const pos: Record<Slot, [number, number]> = { helmet: [cx - 130, top + 90], necklace: [cx - 130, top + 160], weapon: [cx - 130, top + 230], bracelet: [cx - 130, top + 300],
       armor: [cx + 130, top + 90], ring: [cx + 130, top + 160], boots: [cx + 130, top + 230] } as any;
     for (const sl of SLOTS) {
@@ -291,6 +294,17 @@ export class Panel {
     if (touch) lines.push([this.mode === 'shop' ? '再点一次：出售' : it.slot && this.sel?.startsWith('eq_') ? '再点一次：卸下' : it.slot ? '再点一次：装备' : '不可装备', '#9fd']);
     const c = this.tip = s.add.container(Math.min(x, 1280 - 230), Math.max(10, Math.min(y, 720 - lines.length * 20 - 20))).setDepth(300);
     const bg = s.add.rectangle(0, 0, 220, lines.length * 20 + 16, 0x05060c, 0.95).setOrigin(0).setStrokeStyle(2, 0x9a9aa8);
+    // 背包预览：悬停/选中背包里的衣服或武器时，在提示框旁显示「试穿」效果（不改真实装备）
+    if (it.slot === 'armor' || it.slot === 'weapon') {
+      const cls = w.cls, art = CLASSES[cls].art, eq = { ...w.equip, [it.slot]: it };
+      const look = equipLook(s, cls, art, eq, () => { if (this.tip === c) this.showTip(it, x, y, touch); });
+      if (look.state === 'composed') {
+        const px = c.x + 220 + 110 > 1280 ? -116 : 226;
+        c.add(s.add.rectangle(px, 0, 110, 150, 0x05060c, 0.95).setOrigin(0).setStrokeStyle(2, 0x9a9aa8));
+        const im = s.add.image(px + 55, 146, look.key).setOrigin(0.5, 1).setName('bagPreview'); im.setScale(Math.min(140 / im.height, 104 / im.width)); c.add(im);
+        c.add(txt(s, px + 55, 4, '试穿', 12, '#9fd', { strokeThickness: 2 }).setOrigin(0.5, 0));
+      }
+    }
     c.add(bg); lines.forEach(([t, col], i) => c.add(txt(s, 10, 8 + i * 20, t, i === 0 ? 16 : 14, col, { strokeThickness: 2, fontStyle: i === 0 ? 'bold' : '' })));
   }
   hideTip() { this.tip?.destroy(true); this.tip = undefined; }
