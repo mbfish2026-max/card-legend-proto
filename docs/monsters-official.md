@@ -21,8 +21,8 @@
 | zuma_statue | 祖玛雕像 | normal | 10.祖玛阁 | 祖玛雕像 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=153) |
 | zuma_guard | 祖玛卫士 | normal | 10.祖玛阁 | 祖玛卫士 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=156) |
 | boss_zuma | 祖玛教主 | boss | 10.祖玛阁 | 祖玛教主 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=160) |
-| blood_zombie | 血僵尸 | normal | 13.赤月魔穴 84.恶魔祭坛 | 未查到 | 未查到 |
-| redmoon_spider | 赤月蜘蛛 | normal | 13.赤月魔穴 20.保卫家园 84.恶魔祭坛 | 未查到 | 未查到 |
+| blood_zombie | 血僵尸 | normal | 13.赤月魔穴 83.恶魔祭坛 | 未查到 | 未查到 |
+| redmoon_spider | 赤月蜘蛛 | normal | 13.赤月魔穴 20.保卫家园 83.恶魔祭坛 | 未查到 | 未查到 |
 | boss_redmoon | 赤月恶魔 | boss | 13.赤月魔穴 | 赤月恶魔 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=180) |
 | hj_guard | 家园守卫 | normal | 20.保卫家园 21.卧龙山庄 24.魔龙血域 | 未查到 | 未查到 |
 | boss_hj_home | 魔龙守将 | boss | 20.保卫家园 | 未查到 | 未查到 |
@@ -33,14 +33,14 @@
 | fire_dragon_guard | 火龙守卫 | normal | 23.火龙神殿 24.魔龙血域 | 未查到 | 未查到 |
 | boss_fire_dragon | 火龙 | boss | 23.火龙神殿 | 未查到 | 未查到 |
 | boss_molong | 魔龙教主 | boss | 24.魔龙血域 | 未查到 | 未查到 |
-| rake_cat_king | 钉耙猫王 | normal | 82.白日门·雪域 | 未查到 | 未查到 |
-| orc_commander | 半兽统领 | normal | 82.白日门·雪域 | 未查到 | 未查到 |
-| evil_lich | 恶灵尸王 | normal | 83.骨魔洞五层 | 未查到 | 未查到 |
-| hawk_guard | 鹰卫 | normal | 82.白日门·雪域 | 未查到 | 未查到 |
-| boss_yeti_king | 雪人王 | boss | 82.白日门·雪域 | 未查到 | 未查到 |
-| boss_huangquan | 黄泉教主 | boss | 83.骨魔洞五层 | 未查到 | 未查到 |
-| boss_twinhead_kong | 双头金刚 | boss | 84.恶魔祭坛 | 未查到 | 未查到 |
-| boss_twinhead_blood | 双头血魔 | boss | 84.恶魔祭坛 | 未查到 | 未查到 |
+| rake_cat_king | 钉耙猫王 | normal | 81.白日门·雪域 | 未查到 | 未查到 |
+| orc_commander | 半兽统领 | normal | 81.白日门·雪域 | 未查到 | 未查到 |
+| evil_lich | 恶灵尸王 | normal | 82.骨魔洞五层 | 未查到 | 未查到 |
+| hawk_guard | 鹰卫 | normal | 81.白日门·雪域 | 未查到 | 未查到 |
+| boss_yeti_king | 雪人王 | boss | 81.白日门·雪域 | 未查到 | 未查到 |
+| boss_huangquan | 黄泉教主 | boss | 82.骨魔洞五层 | 未查到 | 未查到 |
+| boss_twinhead_kong | 双头金刚 | boss | 83.恶魔祭坛 | 未查到 | 未查到 |
+| boss_twinhead_blood | 双头血魔 | boss | 83.恶魔祭坛 | 未查到 | 未查到 |
 | red_snake | 红蛇 | normal | 4.毒蛇山谷 | 红蛇 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=92) |
 | tiger_snake | 虎蛇 | normal | 4.毒蛇山谷 | 虎蛇 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=94) |
 | scorpion | 蝎子 | normal | 4.毒蛇山谷 16.骷髅洞·洞穴一层 17.骷髅洞·洞穴二层 57.异界裂隙·将军坟东一层 58.异界裂隙·将军坟东二层 | 蝎子 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=45) |
