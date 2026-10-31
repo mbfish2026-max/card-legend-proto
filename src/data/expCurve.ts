@@ -40,7 +40,9 @@ const BASE_MULT = floorExpMult(FLOOR_LEVEL_ANCHORS);
 /** [适配] 新层经验衰减：多 6 张图会让角色整体超前升级（模拟 9 种子死亡全 0），故新层经验 ×此值 */
 export const NEW_FLOOR_EXP_DAMP = 0.3;
 export const NEW_FLOOR_MULT_NEIGHBORS: readonly [number, number][] = [[4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5]];
-export const FLOOR_EXP_MULT: number[] = [...BASE_MULT, ...NEW_FLOOR_MULT_NEIGHBORS.map(([a, b]) => NEW_FLOOR_EXP_DAMP * Math.sqrt(BASE_MULT[a] * BASE_MULT[b])), ...floorExpMult(HJ_FLOOR_ANCHORS)];
+/** [适配] feat/maps-batch2 下标 24–33：沃玛寺庙 3 层取 原第7/8 层（石墓/沃玛），矿区 5 层与山谷矿区 2 层取 原第4/5 层（白骨墓穴/尸王殿）几何平均 ×衰减 */
+export const BATCH2_MULT_NEIGHBORS: readonly [number, number][] = [[7, 8], [7, 8], [7, 8], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5]];
+export const FLOOR_EXP_MULT: number[] = [...BASE_MULT, ...NEW_FLOOR_MULT_NEIGHBORS.map(([a, b]) => NEW_FLOOR_EXP_DAMP * Math.sqrt(BASE_MULT[a] * BASE_MULT[b])), ...floorExpMult(HJ_FLOOR_ANCHORS), ...BATCH2_MULT_NEIGHBORS.map(([a, b]) => NEW_FLOOR_EXP_DAMP * Math.sqrt(BASE_MULT[a] * BASE_MULT[b]))];
 /** 第 floor 层获得的经验（怪物 def.exp / 悬赏 exp 为旧曲线下的基准值） */
 export const scaledExp = (base: number, floor: number): number => {
   if (base <= 0) return 0;

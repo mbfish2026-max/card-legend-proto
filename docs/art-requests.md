@@ -361,6 +361,20 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 2. 怪物立绘 5 张：骷髅战士、骷髅战将、掷斧骷髅、洞蛆、山洞蝙蝠（现复用已有贴图）。
 3. 特效：掷斧骷髅飞斧弹道 1 个。
 
+## feat/maps-batch2（plan-60h B2）
+
+规格按 L 章：怪物立绘 `public/assets/portraits/<id>_full.png`，透明底 PNG，最长边 960；接入时 ASSETS 加 `<id>` 并把 units 的 art 指向它。现均复用已有贴图（括号内）。
+
+| id | 官方名 | 文件 | 现占位 | 来源 |
+|---|---|---|---|---|
+| dung_beetle | 粪虫 | `public/assets/portraits/dung_beetle_full.png` | zombie | [21cq 沃玛寺庙一层](https://www.21cq.com/mir/Map.aspx?id=313) |
+| woma_brave | 沃玛勇士 | `public/assets/portraits/woma_brave_full.png` | woma_warrior | [21cq](https://www.21cq.com/mir/Map.aspx?id=313) |
+| woma_general | 沃玛战将 | `public/assets/portraits/woma_general_full.png` | woma_warrior | [21cq](https://www.21cq.com/mir/Map.aspx?id=313) |
+| fire_woma | 火焰沃玛 | `public/assets/portraits/fire_woma_full.png` | woma_warrior | [21cq](https://www.21cq.com/mir/Map.aspx?id=313) |
+| dark_warrior | 暗黑战士 | `public/assets/portraits/dark_warrior_full.png` | woma_warrior | [21cq 沃玛寺庙二层](https://www.21cq.com/mir/Map.aspx?id=314) |
+| mine_zombie | 僵尸（21cq 僵尸1–5 合一 [适配]） | `public/assets/portraits/mine_zombie_full.png` | zombie | [21cq 废矿入口](https://www.21cq.com/mir/Map.aspx?id=401) |
+
+背景 3 套（1920×1080 起，jpg）：沃玛寺庙（bg_floor25–27，现占位 bg_floor6）、比奇矿区（bg_floor28–32，现占位 bg_floor5）、毒蛇矿区（bg_floor33–34，现占位 bg_floor5）。
 
 ## 传奇世界/传奇3 新增地图怪立绘（art/sq-mir3）
 
