@@ -275,8 +275,8 @@ export class World {
   }
 
   /** 点按一格：滑行中的按键全部排队（同向最多 10 格，反向则替换队列），每次按键都会走一格 */
-  stepTarget: number | null = null; stepQueued = 0;
-  queueStep(d: number) { const h = this.hero; if (!h || !d) return; if (this.stepTarget === null) this.stepTarget = h.x + Math.sign(d) * WORLD.stepPx; else { const sd = Math.sign(d); this.stepQueued = Math.sign(this.stepQueued) === sd ? Math.min(10, Math.abs(this.stepQueued) + 1) * sd : (Math.sign(this.stepTarget - h.x) === sd ? sd : sd); } }
+  stepTarget: number | null = null; stepQueued = 0; stepAge = 0;
+  queueStep(d: number) { const h = this.hero; if (!h || !d) return; if (this.stepTarget === null) { this.stepAge = 0; this.stepTarget = h.x + Math.sign(d) * WORLD.stepPx; } else { const sd = Math.sign(d); this.stepQueued = Math.sign(this.stepQueued) === sd ? Math.min(10, Math.abs(this.stepQueued) + 1) * sd : (Math.sign(this.stepTarget - h.x) === sd ? sd : sd); } }
   private moveHero(h: Unit, inp: Input, dt: number) {
     if (inp.step) this.queueStep(inp.step);
     let speed = WORLD.heroSpeed, sdx = 0;
@@ -291,9 +291,11 @@ export class World {
       // 可直接穿过怪物卡牌（不阻挡、不推开）；穿到怪身后后，怪会转身/跳跃追到新的一侧
       h.x = Math.max(h.width / 2, Math.min(WORLD.mapWidth - h.width / 2, nx));
     }
-    if (this.stepTarget !== null && (inp.dx || !sdx || Math.abs(h.x - this.stepTarget) < 0.5 || h.x === x0)) {
+    if (this.stepTarget !== null) this.stepAge += dt;
+    // 超时保险：补间被打断/卡住（如被暂停、帧率抖动）也必定释放，不会永久 busy
+    if (this.stepTarget !== null && (this.stepAge > WORLD.stepSec * 3 || inp.dx || !sdx || Math.abs(h.x - this.stepTarget) < 0.5 || h.x === x0)) {
       this.stepTarget = null; // 到达 / 被地图边界挡住：结束本格
-      if (this.stepQueued) { const sd = Math.sign(this.stepQueued); this.stepTarget = h.x + sd * WORLD.stepPx; this.stepQueued -= sd; }
+      if (this.stepQueued) { const sd = Math.sign(this.stepQueued); this.stepTarget = h.x + sd * WORLD.stepPx; this.stepQueued -= sd; this.stepAge = 0; }
     }
     if (dy) h.y = Math.max(WORLD.laneMin, Math.min(WORLD.laneMax, h.y + dy * WORLD.heroLaneSpeed * dt));
   }

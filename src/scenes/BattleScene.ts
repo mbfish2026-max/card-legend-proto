@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { IS_MOBILE } from '../mobile';
+import { StepGate, stepDir } from '../input/stepKeys';
 import { World, SaveData } from '../combat/World';
 import { BattleEvent, GroundItem, Unit } from '../combat/types';
 import { POTIONS } from '../data/skills';
@@ -68,11 +69,20 @@ export class BattleScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, W, 720).startFollow(this.views.get(h.uid)!, true, 0.12, 0.12, 0, 120).setDeadzone(320, 720);
     this.keys = this.input.keyboard!.addKeys('LEFT,RIGHT,UP,DOWN,A,D') as any;
     // F1~F4 技能：阻止浏览器默认行为（F1 帮助等）；不占用 F5 等其它功能键
+    // 左右一格：window 原生 keydown 直接入队（不依赖 repeat 标志 / keyup / Phaser JustDown，兼容远程控制）
+    const gate = new StepGate(150);
+    const onWinKey = (e: KeyboardEvent) => {
+      const d = stepDir(e); if (!d) return;
+      e.preventDefault(); if (gate.accept(e, performance.now())) this.stepKey(d);
+    };
+    window.addEventListener('keydown', onWinKey, true);
+    this.events.once('shutdown', () => window.removeEventListener('keydown', onWinKey, true));
+    // 其它键（F1~F4 技能等）：阻止 F1 帮助等默认行为；不占用 F5 等其它功能键
     this.input.keyboard!.on('keydown', (e: KeyboardEvent) => {
-      if (/^(a|d|ArrowLeft|ArrowRight)$/i.test(e.key) || e.code === 'KeyA' || e.code === 'KeyD') { if (!e.repeat) this.stepKey(e.code === 'KeyD' || e.key === 'ArrowRight' ? 1 : -1); return; } if (/^F[1-4]$/.test(e.key)) e.preventDefault(); this.onKey(e.key.toUpperCase()); });
+      if (stepDir(e)) return; if (/^F[1-4]$/.test(e.key)) e.preventDefault(); this.onKey(e.key.toUpperCase()); });
     this.input.keyboard!.addCapture('F1,F2,F3,F4');
     // 失焦/切后台时清空按键状态，避免 keyup 丢失导致方向键"卡住"或失灵
-    const reset = () => { this.input.keyboard?.resetKeys(); this.ui?.pad?.reset?.(); };
+    const reset = () => { gate.reset(); this.input.keyboard?.resetKeys(); this.ui?.pad?.reset?.(); };
     window.addEventListener('blur', reset); document.addEventListener('visibilitychange', reset); this.game.events.on('blur', reset);
     this.events.once('shutdown', () => { window.removeEventListener('blur', reset); document.removeEventListener('visibilitychange', reset); this.game.events.off('blur', reset); });
     this.handle(this.world.drainEvents());

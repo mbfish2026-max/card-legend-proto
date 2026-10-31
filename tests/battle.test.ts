@@ -3,6 +3,7 @@ import { WORLD, Floor, FLOORS } from '../src/data/world';
 import { CLASSES, ClassId } from '../src/data/classes';
 import { ENEMIES, DIFF } from '../src/data/units';
 import { detectMobile } from '../src/mobile';
+import { StepGate, stepDir } from '../src/input/stepKeys';
 import { POTIONS } from '../src/data/skills';
 import { Settings } from '../src/settings';
 let pass = 0; const ok = (c: boolean, m: string) => { if (!c) { console.error('FAIL', m); throw new Error(m); } pass++; console.log('ok', m); };
@@ -228,5 +229,23 @@ const free = (w: World) => w.skills.map(() => 0);
   ok(Math.abs(fh.x - z - 3 * WORLD.stepPx) < 1e-6 && fh.x > ex, `贴脸点 D ×3 穿过怪物走到身后（${Math.round(fh.x - z)}px，不推开：怪位移 ${Math.round(en.x - ex)}）`);
   run(f, 3); ok(f.meleeSide() === -1 && en.facing === 1, '穿过后怪转身追到新的一侧并继续近战');
   f.queueStep(-1); run(f, 0.3); ok(fh.x < z + 3 * WORLD.stepPx - 50, '穿过后点 A 立即后退');
+}
+
+{ // 远程控制键盘事件：keyup 丢失 / repeat 误标 / code 为空，每次合理间隔的 keydown 都应走一格
+  const run = (evs: any[], gapMs = 300) => {
+    const w = mk([], [{ name: 'x', spawns: [] }]); const h = w.hero!; h.x = 1000; const g = new StepGate(150); let t = 0, n = 0;
+    for (const e of evs) { const d = stepDir(e); if (d && g.accept(e, t)) { w.queueStep(d); n++; } for (let k = 0; k < gapMs / 20; k++) w.step(0.02, { dx: 0, dy: 0 }); t += gapMs; }
+    return { moved: Math.round(h.x - 1000), n };
+  };
+  const R = { key: 'ArrowRight', code: 'ArrowRight', keyCode: 39 }, L = { key: 'ArrowLeft', code: 'ArrowLeft', keyCode: 37 };
+  let r = run([R, R, R, R]); ok(r.moved === 400, `只有 keydown 无 keyup：连按 4 次右走 4 格（${r.moved}px）`);
+  r = run([R, { ...R, repeat: true }, { ...R, repeat: true }, { ...R, repeat: true }]); ok(r.moved === 400, `首次后全部 repeat=true（keyup 丢失）：仍各走一格（${r.moved}px）`);
+  r = run([{ repeat: true, ...R }, { ...R, repeat: true }]); ok(r.moved === 200, `没有先前非 repeat 的 repeat=true 序列也生效（${r.moved}px）`);
+  r = run([{ key: 'Unidentified', code: '', keyCode: 39 }, { code: '', keyCode: 39 }, { key: 'Unidentified', code: 'Unidentified', keyCode: 37 }]); ok(r.moved === 100, `code 为空只有 keyCode：右右左 = +1 格（${r.moved}px）`);
+  r = run([R, L, R, L, L]); ok(r.moved === -100, `左右交替（keyup 全丢）每次都生效（${r.moved}px）`);
+  r = run([{ key: 'd' }, { key: 'D' }, { key: 'a', code: 'KeyA' }]); ok(r.moved === 100, `a/A/d/D 识别（${r.moved}px）`);
+  r = run(Array(10).fill({ ...R, repeat: true }), 30); ok(r.n >= 1 && r.n <= 3, `按住自动重复(30ms) 被节流到 ≥150ms 一格（触发 ${r.n} 次）`);
+  const w = mk([], [{ name: 'x', spawns: [] }]); w.hero!.x = 1000; w.queueStep(1); w.stepTarget = 99999; for (let k = 0; k < 40; k++) w.step(0.02, { dx: 0, dy: 0 });
+  ok(w.stepTarget === null, '补间卡住/被打断：stepTarget 超时自动释放，不会永久 busy');
 }
 console.log(`全部通过 ${pass} 项`);
