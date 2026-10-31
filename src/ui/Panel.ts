@@ -1,3 +1,5 @@
+import { clampOff, visibleRange, dragOff, wheelOff, isTap, thumb } from './scrollList';
+const NPC_VIS = 7;
 import { COMPANION_MODE_NAME } from '../data/companion';
 import { COMPANION_UNLOCK_LEVEL, comboFor, BOOK_PAGE, BRM_BOOK, GOLD_BAR, PAGES_PER_BOOK, COMBO_LEVEL, heartFeedValue, RAGE_MAX, HEART_STORE_MAX, RECRUIT_DIALOG } from '../data/companion';
 import { toLogic, toLogicX, MAX_LW } from '../render';
@@ -273,14 +275,14 @@ export class Panel {
         } else R.add(txt(s, 975, y, '手动', 12, '#888').setOrigin(0.5));
       }
     });
-    if (IS_MOBILE) R.add(txt(s, 160, top + 450, '▲▼ 调整快捷栏顺序；☑自动 勾选后自动施放，↑↓ 调优先级', 18, '#9fd')); else R.add(txt(s, 160, top + 452, `▲▼/拖动≡ 调整快捷栏；☑自动 与设置页同一份，#n 为自动优先级。学习等级/修炼点取自 1.76 官方，修炼满足后自动升级；耗魔×3；轻量冷却 1.5–6s + 公共施法间隔 0.8s（适配）。等级加成 ×${w.skillScale().toFixed(2)}`, 12, '#aaa', { wordWrap: { width: 960 } }));
+    if (IS_MOBILE) R.add(txt(s, 160, top + 450, '▲▼ 调整快捷栏顺序；☑自动 勾选后自动施放，↑↓ 调优先级', 18, '#9fd')); else R.add(txt(s, 160, top + 444, `▲▼/拖动≡ 调整快捷栏；☑自动 与设置页同一份，#n 为自动优先级。学习等级/修炼点取自 1.76 官方，修炼满足后自动升级；耗魔×3；轻量冷却 1.5–6s + 公共施法间隔 0.8s（适配）。等级加成 ×${w.skillScale().toFixed(2)}`, 12, '#aaa', { wordWrap: { width: 960 } }));
   }
   // ---------- R14 城镇 ----------
   private npcDef() { const t = TOWNS[this.world().town ?? '']; return t?.npcs.find(n => n.id === this.npc); }
   npcKind() { return this.mode === 'town' ? this.npcDef()?.kind : undefined; }
   private npcNeedsBag() { const k = this.npcKind(); return !!k && k !== 'teleport' && k !== 'book' && k !== 'veteran'; }
   private renderTown(R: Phaser.GameObjects.Container, top: number) {
-    const s = this.s, w = this.world(), t = TOWNS[w.town ?? ''];
+    const s = this.s, w = this.world(), t = TOWNS[w.town ?? '']; this.scrollInfo = {};
     if (!t) { R.add(txt(s, 640, top + 200, '不在城内', 20, '#fff').setOrigin(0.5)); return; }
     if (s.textures.exists('bg_town')) R.add(s.add.image(640, top + 240, 'bg_town').setDisplaySize(996, 460).setAlpha(0.35));
     R.add(txt(s, 160, top + 14, `金币 ${w.gold}   安全区`, 14, '#ffd24a'));
@@ -288,16 +290,42 @@ export class Panel {
     if (art && s.textures.exists(art)) R.add(s.add.image(240, top + 400, art).setOrigin(0.5, 1).setDisplaySize(200, 250));
     else if (cur) { R.add(s.add.rectangle(240, top + 275, 200, 250, 0x2a2018).setStrokeStyle(2, 0x6a5a28)); R.add(txt(s, 240, top + 275, cur.name.replace(/（.*）/, ''), 16, '#ffe8a0').setOrigin(0.5)); }
     R.add([...button(s, 240, top + 448, 170, 36, '回到街上', () => this.close(), 16)]);
-    const n = this.npcDef(), X = 340;
+    const n = this.npcDef(), X = 340, n0 = n!;
     if (!n) { R.add(txt(s, X, top + 90, `${t.name}\n选择左侧 NPC。\n来源：${t.src}`, 14, '#ddd', { wordWrap: { width: 600 } })); return; }
     R.add(txt(s, X - 180, top + 44, `${n.name}${n.pos ? `  原版坐标 ${n.pos}` : ''}${n.note ? `  ${n.note}` : ''}`, 13, '#ffe8a0', { wordWrap: { width: this.npcNeedsBag() ? 400 : 700 } }));
+    // 长列表滚动：行先按列收集，最后每列只画可视窗口（NPC_VIS 行）+ 滚动条（scrollList.ts）
+    const cols = new Map<number, { i: number; a: [string, string, string, () => void, boolean, string | undefined] }[]>();
     const row = (i: number, name: string, sub: string, label: string, fn: () => void, ok: boolean, icon?: string, X = 340) => {
-      const y = top + 100 + i * 50;
+      if (!cols.has(X)) cols.set(X, []); cols.get(X)!.push({ i, a: [name, sub, label, fn, ok, icon] }); };
+    const drawRow = (slot: number, X: number, [name, sub, label, fn, ok, icon]: [string, string, string, () => void, boolean, string | undefined], scroll: boolean) => {
+      const y = top + 100 + slot * 50;
       R.add(s.add.rectangle(X + 110, y, 230, 44, 0x0a0806).setStrokeStyle(1, 0x4a3a28));
       if (icon && s.textures.exists('item_' + icon)) R.add(s.add.image(X + 16, y, 'item_' + icon).setDisplaySize(36, 36));
       R.add(txt(s, X + 40, y - 17, name, 14, '#fff')); R.add(txt(s, X + 40, y + 2, sub, 11, '#ccc', { strokeThickness: 2 }));
-      R.add([...button(s, X + 196, y, 50, 30, label, fn, 13, ok)]);
+      const b = button(s, X + 196, y, 50, 30, label, fn, 13, ok); R.add([...b]);
+      // 可滚动列：按下不立即触发，抬起且拖动 ≤ 阈值才算点击（防滚动误触）
+      if (scroll && ok) { b[0].removeAllListeners('pointerdown').on('pointerdown', () => { this.tapArm = b[0]; }).on('pointerup', () => { if (this.tapArm === b[0] && isTap(this.drag?.moved ?? 0)) { sfx(s, 'click'); fn(); } this.tapArm = null; }); b[0].setData('scrollBtn', label); }
     };
+    const flushCols = () => { for (const [X, list] of cols) {
+      const n = list.reduce((m, r) => Math.max(m, r.i + 1), 0), byI = new Map(list.map(r => [r.i, r.a]));
+      if (n <= NPC_VIS) { for (const r of list) drawRow(r.i, X, r.a, false); continue; }
+      const key = `${n0.id}@${X}`, off = this.npcScroll[key] = clampOff(this.npcScroll[key] ?? 0, n, NPC_VIS), [a, b2] = visibleRange(off, n, NPC_VIS);
+      for (let i = a; i < b2; i++) { const r = byI.get(i); if (r) drawRow(i - a, X, r, true); }
+      const trackY = top + 78, trackH = NPC_VIS * 50, th = thumb(off, n, NPC_VIS, trackH);
+      R.add(s.add.rectangle(X + 232, trackY + trackH / 2, 6, trackH, 0x332a1c).setName('scrollTrack'));
+      R.add(s.add.rectangle(X + 232, trackY + th.y + th.h / 2, 6, th.h, 0xd4a64a).setName('scrollThumb'));
+      if (a > 0) R.add(txt(s, X + 110, top + 70, `▲ 上面还有 ${a} 项`, 11, '#ffd060').setOrigin(0.5));
+      if (b2 < n) R.add(txt(s, X + 110, top + 100 + NPC_VIS * 50 - 22, `▼ 下面还有 ${n - b2} 项（滑动/滚轮）`, 11, '#ffd060').setOrigin(0.5));
+      const inCol = (p: Phaser.Input.Pointer) => { const l = this.toPanel(p); return l.x >= X && l.x <= X + 240 && l.y >= trackY && l.y <= trackY + trackH; };
+      const set = (o: number) => { const v = clampOff(o, n, NPC_VIS); if (v !== this.npcScroll[key]) { this.npcScroll[key] = v; this.render(); } };
+      const onDown = (p: Phaser.Input.Pointer) => { if (inCol(p)) this.drag = { key, y0: this.toPanel(p).y, off0: off, moved: 0 }; };
+      const onMove = (p: Phaser.Input.Pointer) => { const d = this.drag; if (!d || d.key !== key || !p.isDown) return; const dy = this.toPanel(p).y - d.y0; d.moved = Math.max(d.moved, Math.abs(dy)); if (!isTap(d.moved)) set(dragOff(d.off0, dy, 50, n, NPC_VIS)); };
+      const onUp = () => { s.time.delayedCall(0, () => { this.drag = null; }); };
+      const onWheel = (p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => { if (inCol(p)) set(wheelOff(this.npcScroll[key], dy, n, NPC_VIS)); };
+      s.input.on('pointerdown', onDown); s.input.on('pointermove', onMove); s.input.on('pointerup', onUp); s.input.on('wheel', onWheel);
+      this.mapOff.push(() => { s.input.off('pointerdown', onDown); s.input.off('pointermove', onMove); s.input.off('pointerup', onUp); s.input.off('wheel', onWheel); });
+      this.scrollInfo[X] = { key, n, vis: NPC_VIS, off };
+    } };
     const buy = (e: string | null, nm: string) => { if (!e) sfx(s, 'coin'); this.onChange(e ?? `购买 ${nm}`, !e); this.render(); };
     if (n.kind === 'potion') POTIONS.forEach((p, i) => row(i, ITEMS[p.item].name, `${p.price} 金 · 原版 ${i % 2 ? 242 : 88}（S14）持有 ${w.pots[i]}`, '购买', () => buy(w.buyPotion(i), ITEMS[p.item].name), w.gold >= p.price, p.item));
     else if (n.goods) n.goods.forEach((gd, i) => { const d = ITEMS[gd.item]; row(i, d.name + (d.req ? ` 需Lv${d.req}` : ''), `${gd.price} 金 · 原版 ${gd.official ?? '未查到'}${gd.official ? '×0.25' : ' [适配]'}`, '购买', () => buy(w.buyGoods(n.id, gd.item), d.name), w.gold >= gd.price, gd.item); });
@@ -330,8 +358,9 @@ export class Panel {
       else CLASS_IDS.forEach((k, i) => row(i + 1, `领取${CLASSES[k].name}英雄`, w.level < COMPANION_UNLOCK_LEVEL ? `${COMPANION_UNLOCK_LEVEL} 级开放 · 免费` : RECRUIT_DIALOG[i % 2].slice(0, 14) + '…', '领取', () => {
         const nm = CLASSES[k].name + '英雄'; // [适配] 起名用默认名（输入框后续做）
         const e = w.recruitCompanion(k, nm); this.onChange(e ?? `获得英雄 ${nm}`, !e); this.render(); }, w.level >= COMPANION_UNLOCK_LEVEL, undefined, X + 250)); }
-    if (n.kind === 'teleport' || n.kind === 'veteran') { const fl = [...w.reached].sort((a, b) => a - b).slice(0, 8);
+    if (n.kind === 'teleport' || n.kind === 'veteran') { const fl = [...w.reached].sort((a, b) => a - b); // 不再截断前 8 个：全部可滚动
       fl.forEach((f, i) => row(i, w.floors[f].name, `${w.teleportCost(f)} 金 · 冷却 ${WorldCls.TELEPORT_CD}s`, '传送', () => { const e = w.townTeleport(f); this.onChange(e ?? `传送到 ${w.floors[f].name}`, !e); if (!e) { this.mode = null; this.close(); this.onTeleport?.(); } else this.render(); }, w.gold >= w.teleportCost(f))); }
+    flushCols();
     if (n.kind === 'storage') {
       R.add(txt(s, X, top + 74, `仓库 ${w.storage.length}/${STORAGE_SIZE}：点仓库取回，点背包存入`, 13, '#9fd'));
       for (let i = 0; i < STORAGE_SIZE; i++) { const it = w.storage[i], x = X + 20 + (i % 5) * 46, y = top + 116 + Math.floor(i / 5) * 46;
@@ -340,6 +369,11 @@ export class Panel {
   }
   /** 世界地图视口（拖动/缩放状态，跨重绘保留） */
   view: View | null = null;
+  /** NPC 面板长列表：每列滚动偏移（行）、拖动状态、待触发按钮、当前可滚动列信息（测试/e2e 读） */
+  npcScroll: Record<string, number> = {}; drag: { key: string; y0: number; off0: number; moved: number } | null = null; tapArm: unknown = null;
+  scrollInfo: Record<number, { key: string; n: number; vis: number; off: number }> = {};
+  /** 指针 → 面板逻辑坐标（手机端 root 有缩放/平移） */
+  toPanel(p: Phaser.Input.Pointer) { const r = this.root, k = this.mscale || 1; const lx = toLogicX(p.x), ly = toLogic(p.y); return r ? { x: (lx - r.x) / (r.scaleX || k), y: (ly - r.y) / (r.scaleY || k) } : { x: lx, y: ly }; }
   private mapOff: (() => void)[] = [];
   private clearMapInput() { this.mapOff.forEach(f => f()); this.mapOff = []; }
   /** 传送到某个入口层（沿用 World.teleport 的费用/冷却/战斗中禁用规则） */
