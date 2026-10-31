@@ -286,23 +286,34 @@ export class BattleScene extends Phaser.Scene {
         if (fb && this.textures.exists('fx_fireball_cast')) this.time.delayedCall(150, go); else go();
         return;
       } return done();
-      // #11 法师新技能：专属特效待美术（docs/fx-requests.md #11），暂复用现有图集，缺图回落 Graphics
+      // #11 法师新技能：专属图集（docs/fx-requests.md #11 / v3），缺图回落旧图集或 Graphics
       case 'big_fireball': if (tv[0]) {
         const t = tv[0], x0 = hv.cx + dir * hv.w * 0.4, y0 = hv.cy - 20;
-        const hit = () => { this.sfx('fireball_impact', 0.7); if (!playFx(this, 'fx_fireball_hit', t.cx, t.cy, { scale: 1.4 })) fx.explosion(this, t.cx, t.cy, t.h * 0.5); done(); };
-        if (!flyFx(this, 'fx_fireball_fly', x0, y0, t.cx, t.cy, hit)) fx.projectile(this, x0, y0, t.cx, t.cy, 'fire', hit);
+        const hit = () => { this.sfx('fireball_impact', 0.7); if (!playFx(this, 'fx_big_fireball_hit', t.cx, t.cy) && !playFx(this, 'fx_fireball_hit', t.cx, t.cy, { scale: 1.4 })) fx.explosion(this, t.cx, t.cy, t.h * 0.5); done(); };
+        playFx(this, 'fx_fireball_cast', x0, y0, { decorative: true });
+        const go = () => { if (!flyFx(this, 'fx_big_fireball_fly', x0, y0, t.cx, t.cy, hit) && !flyFx(this, 'fx_fireball_fly', x0, y0, t.cx, t.cy, hit)) fx.projectile(this, x0, y0, t.cx, t.cy, 'fire', hit); };
+        if (this.textures.exists('fx_fireball_cast')) this.time.delayedCall(150, go); else go();
         return;
       } return done();
       case 'burst_fire': if (tv[0]) {
-        const t = tv[0]; if (!playFx(this, 'fx_common_explosion', t.cx, t.cy, { scale: 1.6 })) fx.explosion(this, t.cx, t.cy, 170, 0xffdd55, 0xff4400);
-        tv.forEach(v => fx.hitSpark(this, v.cx, v.cy));
+        const t = tv[0];
+        if (!playFx(this, 'fx_burst_fire_blast', t.cx, t.y) && !playFx(this, 'fx_common_explosion', t.cx, t.cy, { scale: 1.6 })) fx.explosion(this, t.cx, t.cy, 170, 0xffdd55, 0xff4400);
+        tv.forEach((v, i) => { if (i === 0) return; this.time.delayedCall(60, () => { if (v.active && !playFx(this, 'fx_common_hitspark', v.cx, v.cy)) fx.hitSpark(this, v.cx, v.cy); }); });
       } return done();
-      case 'hell_fire': tv.forEach((v, i) => this.time.delayedCall(i * 60, () => { if (!v.active) return; if (!playFx(this, 'fx_fire_wall_loop', v.cx, v.y, { ms: 500 })) fx.fireWall(this, v.cx, v.cy + 40); }));
+      case 'hell_fire': {
+        if (!playFx(this, 'fx_hell_fire_line', hv.cx + dir * hv.w / 2, hv.y, { flip: dir < 0 }))
+          tv.forEach((v, i) => this.time.delayedCall(i * 60, () => { if (!v.active) return; if (!playFx(this, 'fx_fire_wall_loop', v.cx, v.y, { ms: 500 })) fx.fireWall(this, v.cx, v.cy + 40); }));
         return done();
+      }
       case 'lightning_flash': case 'hell_thunder': {
-        const shake = () => { if (!FxQuality.low) this.cameras.main.shake(140, 0.005); };
-        tv.forEach((v, i) => this.time.delayedCall(i * (skill === 'hell_thunder' ? 50 : 30), () => { if (v.active && !playFx(this, 'fx_thunder_strike', v.cx, v.y)) fx.lightning(this, v.cx, v.y - 600, v.cy); }));
-        if (skill === 'hell_thunder') fx.explosion(this, hv.cx, hv.cy, sk?.range ?? 425, 0xbfe4ff, 0x4a7dff);
+        const ht = skill === 'hell_thunder', shake = () => { if (!FxQuality.low) this.cameras.main.shake(140, 0.005); };
+        if (!ht) {
+          if (!playFx(this, 'fx_lightning_flash_beam', hv.cx + dir * hv.w / 2, hv.cy, { flip: dir < 0 }))
+            tv.forEach((v, i) => this.time.delayedCall(i * 30, () => { if (v.active && !playFx(this, 'fx_thunder_strike', v.cx, v.y)) fx.lightning(this, v.cx, v.y - 600, v.cy); }));
+        } else {
+          if (!playFx(this, 'fx_hell_thunder_burst', hv.cx, hv.y)) fx.explosion(this, hv.cx, hv.cy, sk?.range ?? 425, 0xbfe4ff, 0x4a7dff);
+          tv.forEach((v, i) => this.time.delayedCall(i * 50, () => { if (v.active && !playFx(this, 'fx_thunder_strike', v.cx, v.y)) fx.lightning(this, v.cx, v.y - 600, v.cy); }));
+        }
         shake(); return done();
       }
       case 'thunder': if (tv[0]) {
