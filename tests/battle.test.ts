@@ -154,6 +154,10 @@ const free = (w: World) => w.skills.map(() => 0);
   ok(detectMobile(fw('Mozilla/5.0 (Linux; Android 14; Pixel 8) Mobile', true, 412, 915)), 'Android UA 识别为手机');
   ok(!detectMobile(fw('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/130', false, 1920, 1080)), '桌面浏览器不显示虚拟按键');
   ok(detectMobile(fw('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Safari', true, 1024, 1366, '', 5)), 'iPadOS（伪装 Mac）识别为触屏');
+  ok(detectMobile(fw('Mozilla/5.0 (Linux; Android 13; wv) Version/4.0 Chrome/116 XWEB MicroMessenger/8.0.47 WeChat', false, 360, 800)), '微信内置浏览器识别为手机');
+  ok(detectMobile(fw('Mozilla/5.0 (X11; Linux x86_64) Chrome/129', false, 412, 915, '', 5)), '手机“桌面版网站”UA：触屏+小屏 仍识别为手机');
+  ok(detectMobile(fw('Mozilla/5.0 (Windows NT 10.0) Chrome/129', true, 800, 1280, '', 10)), '触屏+粗指针 识别为手机/平板');
+  ok(!detectMobile(fw('Mozilla/5.0 (Windows NT 10.0) Chrome/129', false, 1920, 1080, '', 10)), '大屏触控笔记本(细指针)不显示虚拟按键');
   ok(!detectMobile(fw('iPhone', true, 390, 844, '?mobile=0')) && detectMobile(fw('Chrome', false, 1920, 1080, '?mobile=1')), '?mobile= 参数可强制覆盖');
 }
 { // 传送门：requireUse 时站在出口不按空格不切层，按下后切层

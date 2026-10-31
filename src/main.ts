@@ -2,14 +2,14 @@ import Phaser from 'phaser';
 import { TitleScene } from './scenes/TitleScene';
 import { BattleScene } from './scenes/BattleScene';
 import { UIScene } from './scenes/UIScene';
-import { IS_MOBILE, setupMobile } from './mobile';
+import { IS_MOBILE, setupMobile, enableMobileOnTouch } from './mobile';
 import { Settings } from './settings';
 import { FxQuality } from './ui/Fx';
 Settings.load();
 // 虚拟按键：手机端 showPadMobile===null 即默认开（Settings.wantPad），不写死进存档，避免电脑设置污染手机
 if (Settings.lowFx === null) Settings.lowFx = IS_MOBILE;
 FxQuality.low = !!Settings.lowFx;
-setupMobile();
+setupMobile(); enableMobileOnTouch();
 // 逻辑分辨率固定 1280×720，Scale.FIT 等比缩放居中，适配不同手机比例（画布像素与 devicePixelRatio 无关，手机上不会按 3x 渲染）
 const game = new Phaser.Game({
   type: Phaser.AUTO, width: 1280, height: 720, parent: 'game', backgroundColor: '#111', pixelArt: true,
