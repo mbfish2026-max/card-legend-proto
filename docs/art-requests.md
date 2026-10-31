@@ -1106,6 +1106,34 @@ public/assets/ui/UI-Tooltip-Border.png
 - **状态：已满足、已接入（feat/balance-sys 任务B）**：`assets-manifest` 注册 `portal_exit` / `portal_exit_sheet`（SHEETS 256×384 切 4 帧），BattleScene 每层最左端播 `portal_exit_loop` 8fps 循环、origin (0.5,1)、显示 150×225（约主角 1.6 倍高）；贴图缺失时退回程序绘制椭圆。文案「传送门：返回 XXX」，第 1 层返回小村。测试 tests/back-portal.test.ts。
 - 预览：docs/art-gap-preview/portal_preview.jpg（上排深色底，下排棋盘格底，用来检查边缘）
 
+## L. 大城街景（docs/towns-plan.md，2026-10-31，待美术）
+
+规格同 K 章：横版长街 5760×1080 每 3 屏，游戏内按 2/3 缩到 720 高；门面可单独出图，3:4 透明 PNG。NPC 立绘同现有 npc_* 规格。
+
+| 优先级 | 城 | 街景 | 门面 | NPC 立绘 |
+|---|---|---|---|---|
+| P1 | 盟重土城 | `bg_town_mengzhong` 7680×1080（4 屏），土城黄土墙、东端沙巴克城门远景 | 武器/铁匠铺、药店、书店、仓库(王家)、服装、首饰、杂货(罗家铺子)、客栈、肉店、炼金师 | 盟重老兵、书店老板、药店老板、武器店老板、仓库保管员 |
+| P2 | 白日门 | `bg_town_bairimen` 5760×1080（3 屏） | 武器、药店、仓库、首饰、服装、神秘书商、神秘铁匠 | 向导、神秘书商、神秘铁匠（龙人已有） |
+| P3 | 封魔谷据点 | `bg_town_fengmo` 3840×1080（2 屏） | 通用 basic 门面换色 | 老兵（可复用比奇老兵换色） |
+| P3 | 苍月岛 | `bg_town_cangyue` 3840×1080（2 屏），码头 | 通用 basic 门面换色 | — |
+
+- 城门 / 西端出口要留传送门位置（portal_exit 可复用）。
+- 每个门面上方留招牌区，文字由程序写。
+
+## W 世界大地图（docs/world-map-plan.md，WoW 式两级地图）
+全部为新图，未有现成素材；风格与现有立绘一致（暗金传奇风，俯视手绘地图）。
+| 文件 | 尺寸 | 说明 |
+|---|---|---|
+| world_map_{0..3}_{0..1}.jpg | 1024×1152 ×8 块（拼 4096×2304） | 连续大陆底图，分块（推荐）；或整图 world_map.jpg 4096×2304 |
+| world_region_{bichi,woma,dushe,zuma,cangyue,fengmo,chiyue,hejiban}.jpg | 2048×1152 | 区域放大插画（每区 1 张，节点摆在其上） |
+| world_fog.png | 512×512 可平铺，带透明 | 迷雾覆盖 |
+| icon_wm_town.png / icon_wm_cave.png / icon_wm_dungeon.png / icon_wm_boss.png / icon_wm_portal.png / icon_wm_rift.png / icon_wm_player.png / icon_wm_locked.png | 128×128 透明 | 城、洞穴、副本、BOSS、传送点、异界裂隙、玩家标记、未探索 |
+| wm_frame.png | 9-slice 96×96 | 面板/确认卡边框 |
+摆位坐标表格式（美术交付时一并回填）：
+| 区域 id | 底图多边形（4096×2304 像素，顺时针） | 标签锚点 | 区域主色 | 插画内节点 node id | 节点 x,y（2048×1152 像素） |
+|---|---|---|---|---|---|
+| bichi | (x1,y1) (x2,y2) … | (x,y) | #c8a050 | bichi_town | (x,y) |
+大陆相对位置（适配）：比奇西南、沃玛其北、毒蛇其东、盟重最东荒漠、白日门西北雪山、封魔东北峡谷、苍月东海外岛、合击/魔龙盟重以北。
 ## L-P1. 盟重土城街景（art/towns 分支交付）
 
 规格来源：feat/balance-sys 分支 docs/art-requests.md 第 L 章，以及 docs/towns-plan.md 的盟重排序。所有素材都是原创生成，没有用、也没有描摹任何 WoW 或传奇原作素材。画风对齐 art/town 分支的比奇街道。

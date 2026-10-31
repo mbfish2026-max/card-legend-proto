@@ -38,10 +38,16 @@ export const TOWNS: Record<string, TownDef> = {
     npc('bq_storage', '仓库保管员', 'storage', '301,257'),
     npc('bq_tele', '传送员', 'teleport', undefined, { note: '[适配] 原版位置未查到' }),
     npc('bq_veteran', '比奇老兵', 'veteran', undefined, { note: '城门老兵：新手指引 + 传送（原版比奇老兵承担传送；坐标未查到）' })] },
-  mengzhong: { id: 'mengzhong', name: '盟重土城', region: 'zuma', src: T2, npcs: [...basic('mz'), npc('mz_weapon', '铁匠铺老板（武器）', 'weapon', '329,314', { goods: WEAPON_GOODS })] },
-  bairimen: { id: 'bairimen', name: '白日门', region: 'chiyue', src: '未查到', npcs: [...basic('brm'), npc('brm_dragon', '龙人', 'dragon', undefined, { note: '合击秘籍（H1）；坐标未查到' })] },
-  cangyue: { id: 'cangyue', name: '苍月岛', region: 'cangyue', src: '未查到', npcs: basic('cy') },
-  fengmo: { id: 'fengmo', name: '封魔谷', region: 'fengmo', src: '未查到', npcs: basic('fm') },
+  mengzhong: { id: 'mengzhong', name: '盟重土城', region: 'zuma', src: T2, npcs: [...basic('mz'), npc('mz_weapon', '铁匠铺老板（武器）', 'weapon', '329,314', { goods: WEAPON_GOODS }),
+    npc('mz_veteran', '盟重老兵', 'veteran', undefined, { note: '城门老兵（坐标未查到）' }), npc('mz_armor', '服装店', 'armor', undefined, { goods: ARMOR_GOODS, note: '[适配] 货单同比奇' }),
+    npc('mz_jewelry', '首饰店', 'jewelry', undefined, { note: '存货未查到：只收购' }), npc('mz_book', '书店老板', 'book')] },
+  bairimen: { id: 'bairimen', name: '白日门', region: 'chiyue', src: '未查到', npcs: [...basic('brm'), npc('brm_dragon', '龙人', 'dragon', undefined, { note: '合击秘籍（H1）；坐标未查到' }),
+    npc('brm_weapon', '武器店', 'weapon', undefined, { goods: WEAPON_GOODS, note: '[适配] 货单同比奇' }), npc('brm_armor', '服装店', 'armor', undefined, { goods: ARMOR_GOODS, note: '[适配]' }),
+    npc('brm_jewelry', '首饰店', 'jewelry', undefined, { note: '存货未查到：只收购' })] },
+  cangyue: { id: 'cangyue', name: '苍月岛', region: 'cangyue', src: '未查到', npcs: [...basic('cy'), npc('cy_weapon', '武器店', 'weapon', undefined, { goods: WEAPON_GOODS, note: '[适配]' }),
+    npc('cy_armor', '服装店', 'armor', undefined, { goods: ARMOR_GOODS, note: '[适配]' }), npc('cy_jewelry', '首饰店', 'jewelry', undefined, { note: '存货未查到：只收购' })] },
+  fengmo: { id: 'fengmo', name: '封魔谷', region: 'fengmo', src: '未查到', npcs: [...basic('fm'), npc('fm_veteran', '封魔谷老兵', 'veteran', undefined, { note: '坐标未查到' }),
+    npc('fm_weapon', '武器店', 'weapon', undefined, { goods: WEAPON_GOODS, note: '[适配]' })] },
 };
 /** 地图城镇节点 id → 城镇 id */
 export const NODE_TOWN: Record<string, string> = { bichi_town: 'bichi', zuma_town: 'mengzhong', chiyue_town: 'bairimen', cangyue_town: 'cangyue', bichi_xinshou: 'xinshou', fengmo_town: 'fengmo', hj_town: 'mengzhong' };
@@ -65,6 +71,40 @@ export const NPC_ART: Record<NpcKind, string> = { potion: 'pharmacist', weapon: 
 export const STREET_ORDER = ['veteran', 'teleporter', 'pharmacist', 'weapon', 'clothes', 'jewelry', 'book', 'grocer', 'blacksmith', 'storage'];
 export const streetSlotX = (i: number) => Math.round((288 + 576 * i) * STREET_ART_K);
 /** 门面列表：按素材顺序放到对应店位；没有该类 NPC 的城镇只占用其已有的店位 */
-export function streetDoors(t: string): { npc: NpcDef; x: number; art: string }[] {
+export function streetDoors(t: string): { npc: NpcDef; x: number; art: string; shop?: string; npcArt?: string }[] {
+  const L = TOWN_LAYOUT[t]; if (L) return L.items.filter(it => it.npc).map(it => ({ npc: TOWNS[t].npcs.find(n => n.id === it.npc)!, x: Math.round(it.x * STREET_ART_K), art: NPC_ART[TOWNS[t].npcs.find(n => n.id === it.npc)!.kind], shop: it.shop, npcArt: it.npcArt })).sort((a, b) => a.x - b.x);
   return (TOWNS[t]?.npcs ?? []).map(npc => ({ npc, art: NPC_ART[npc.kind], x: streetSlotX(STREET_ORDER.indexOf(NPC_ART[npc.kind])) })).sort((a, b) => a.x - b.x);
 }
+
+/** 大城长街（docs/art-requests.md L-P1/P2/P3 摆位表，背景原尺寸坐标；门面底边 y=760、NPC 脚底 y=1040，origin (0.5,1)；游戏内 ×STREET_ART_K）
+ *  npc：可进入的 NPC id（缺省 = 装饰门面，不可进入：客栈/肉店/炼金师、白日门神秘书商/神秘铁匠「未接线」）；shop 门面图；npcArt 立绘；npcX 立绘位置 */
+export interface StreetItem { x: number; npc?: string; shop?: string; npcArt?: string; npcX?: number; label?: string }
+export interface TownLayout { bg: string; artW: number; shopScale: number; items: StreetItem[] }
+export const NPC_SCALE = 0.35;
+export const TOWN_LAYOUT: Record<string, TownLayout> = {
+  mengzhong: { bg: 'bg_town_mengzhong', artW: 7680, shopScale: 1, items: [
+    { x: 520, npc: 'mz_veteran', npcArt: 'npc_mz_veteran' }, { x: 1000, npc: 'mz_general', shop: 'shop_mz_grocer', label: '罗家铺子' },
+    { x: 1300, npc: 'mz_tele', npcArt: 'npc_teleporter' }, { x: 1650, npc: 'mz_storage', shop: 'shop_mz_storage', npcArt: 'npc_mz_storage', npcX: 1880, label: '王家仓库' },
+    { x: 2250, shop: 'shop_mz_inn', label: '悦来客栈' }, { x: 2950, npc: 'mz_weapon', shop: 'shop_mz_weapon', npcArt: 'npc_mz_weapon', npcX: 3200 },
+    { x: 3550, npc: 'mz_armor', shop: 'shop_mz_clothes' }, { x: 4150, npc: 'mz_jewelry', shop: 'shop_mz_jewelry' },
+    { x: 4850, shop: 'shop_mz_alchemist', label: '炼金师' }, { x: 5450, shop: 'shop_mz_butcher', label: '黄家肉店' },
+    { x: 6050, npc: 'mz_potion', shop: 'shop_mz_pharmacy', npcArt: 'npc_mz_pharmacy', npcX: 6290 }, { x: 6700, npc: 'mz_book', shop: 'shop_mz_book', npcArt: 'npc_mz_book', npcX: 6940 }] },
+  bairimen: { bg: 'bg_town_bairimen', artW: 5760, shopScale: 1, items: [
+    { x: 820, npc: 'brm_tele', npcArt: 'npc_brm_guide', label: '向导（传送）' }, { x: 1150, shop: 'shop_brm_mystic_book', npcArt: 'npc_brm_mystic_book', npcX: 1400, label: '神秘书商（未开放）' },
+    { x: 1750, npc: 'brm_weapon', shop: 'shop_brm_weapon' }, { x: 2050, npc: 'brm_general', npcArt: 'npc_grocer' }, { x: 2350, npc: 'brm_storage', shop: 'shop_brm_storage' },
+    { x: 2950, npc: 'brm_potion', shop: 'shop_brm_pharmacy' }, { x: 3550, npc: 'brm_jewelry', shop: 'shop_brm_jewelry' }, { x: 4150, npc: 'brm_armor', shop: 'shop_brm_clothes' },
+    { x: 4800, shop: 'shop_brm_mystic_smith', npcArt: 'npc_brm_mystic_smith', npcX: 5050, label: '神秘铁匠（未开放）' }, { x: 5300, npc: 'brm_dragon', npcArt: 'npc_brm_dragon' }] },
+  fengmo: { bg: 'bg_town_fengmo', artW: 3840, shopScale: 1, items: [
+    { x: 900, npc: 'fm_veteran', npcArt: 'npc_fm_veteran' }, { x: 1400, npc: 'fm_potion', shop: 'shop_fm_potion' }, { x: 1700, npc: 'fm_tele', npcArt: 'npc_teleporter' },
+    { x: 2000, npc: 'fm_weapon', shop: 'shop_fm_weapon' }, { x: 2650, npc: 'fm_storage', shop: 'shop_fm_storage' }, { x: 3250, npc: 'fm_general', shop: 'shop_fm_general' }] },
+  cangyue: { bg: 'bg_town_cangyue', artW: 3840, shopScale: 0.85, items: [
+    { x: 560, npc: 'cy_tele', npcArt: 'npc_teleporter' }, { x: 860, npc: 'cy_weapon', shop: 'shop_cy_weapon' }, { x: 1310, npc: 'cy_general', shop: 'shop_cy_general' },
+    { x: 1760, npc: 'cy_storage', shop: 'shop_cy_storage' }, { x: 2210, npc: 'cy_armor', shop: 'shop_cy_clothes' }, { x: 2660, npc: 'cy_potion', shop: 'shop_cy_potion' },
+    { x: 3110, npc: 'cy_jewelry', shop: 'shop_cy_jewelry' }] }, // 书店 shop_cy_book 不用：每屏 ≤3 门面（towns-plan 取舍，书店无货单）
+};
+/** 街宽（游戏像素）：大城按背景宽，其余（比奇/新手村）TOWN_W */
+export const townWidth = (t: string | null) => { const L = t ? TOWN_LAYOUT[t] : undefined; return L ? Math.round(L.artW * STREET_ART_K) : TOWN_W; };
+/** 某 NPC 在街上的立绘（大城优先用专属立绘；Panel 进店左侧大图用） */
+export const npcArtOf = (t: string | null, npcId: string, kind: NpcKind) => { const it = t ? TOWN_LAYOUT[t]?.items.find(i => i.npc === npcId) : undefined; return it?.npcArt ?? 'npc_' + NPC_ART[kind]; };
+/** 大城用到的全部美术 key（assets-manifest TOWN_ASSETS 由此生成） */
+export const townArtKeys = (t: string) => { const L = TOWN_LAYOUT[t]; return L ? [L.bg, ...L.items.flatMap(i => [i.shop, i.npcArt]).filter((k): k is string => !!k)] : []; };
