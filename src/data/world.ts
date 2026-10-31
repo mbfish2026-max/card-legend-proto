@@ -15,7 +15,8 @@ export const WORLD = {
   alertSec: 0.45,
   chaseSpeedRatio: 0.85,
   returnSpeedRatio: 1.3,
-  leashRange: 6 * CARD,
+  leashRange: 10 * CARD,       // 脱战距离 1700px（>屏宽 1280，怪离开画面后才脱战）；离家上限 ×1.5=2550 < 地图宽 3840
+  leashRegen: 0.01,            // [适配] 脱战返回/待机时每秒回最大血量 1%（中毒时不回，追击中不回）；回位不再回满
   queueSpacing: 0.8,           // 逻辑排队间距（卡宽比例，<1 重叠）；渲染层另做视觉错开，不影响战斗
   leapGap: 120, leapSec: 0.35, leapSpeed: 3.2, leapCd: 2.5, // 近战怪跳跃补位
   visualSpacing: 0.92,         // 渲染：后排至少错开 卡宽×该值，避免卡牌重叠
