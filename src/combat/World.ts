@@ -441,7 +441,7 @@ export class World {
       if (ns.length) {
         u.hp = u.maxHp = Math.min(u.maxHp, Math.round(WORLD.bossHpVsNormal * ns.reduce((a, x) => a + x.hp, 0) / ns.length));
       }
-      u.atkInterval = Math.min(u.atkInterval, WORLD.bossAtkInterval);
+      if (!bs || FLOOR_TARGET_LV[this.floorIndex] >= WORLD.bossMechMinLv) u.atkInterval = Math.min(u.atkInterval, WORLD.bossAtkInterval); // 主线早中期层保留原攻速（1.2s 在 尸王殿 造成死亡螺旋）
     }
     return u; }
   /** 子层：返回同图群上一层（仅非战斗、已到达过该层时可用），出生在起点 */

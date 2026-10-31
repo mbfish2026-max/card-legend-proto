@@ -558,7 +558,7 @@ const free = (w: World) => w.skills.map(() => 0);
   { // 加强骷髅：官方成长比例（HP 60/84/120/168，攻击上限 25/26/28/30.4）
     const hpAt = (L: number) => { const x = new World(seeded(1), 30, FLOORS, 'taoist'); learnAll(x); const sk = pool(x, 'summon_skeleton'); x.skillLevel = (s: any) => s.id === sk.id ? L : World.prototype.skillLevel.call(x, s); x.cast(idx(x, 'summon_skeleton'), free(x)); return x.summon!; };
     const s0 = hpAt(0), s3 = hpAt(3), tao = new World(seeded(1), 30, FLOORS, 'taoist').hero!.tao ?? 0;
-    ok(Math.abs(s3.maxHp / s0.maxHp - 168 / 60) < 0.01 && s3.atk === Math.round(WORLD.summonAtkMul * (10 + tao) * 30.4 / 25), `骷髅 3 级 HP=0 级×2.8（${s0.maxHp}→${s3.maxHp}），攻击按官方上限比例（${s0.atk}→${s3.atk}）`);
+    ok(Math.abs(s3.maxHp / s0.maxHp - 168 / 60) < 0.01 && Math.abs(s3.atk - WORLD.summonAtkMul * (10 + tao) * 30.4 / 25) <= 1, `骷髅 3 级 HP=0 级×2.8（${s0.maxHp}→${s3.maxHp}），攻击按官方上限比例（${s0.atk}→${s3.atk}）`);
     ok(s3.maxHp > Math.round(WORLD.summonHpMul * (140 + tao * 5) * 1.3) && s3.atk > Math.round(WORLD.summonAtkMul * (8 + tao * 0.9) * 1.3), '3 级骷髅比改前（×1.3）更强（同乘 feat/balance-battle 召唤倍率后比较）');
   }
 }

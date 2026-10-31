@@ -37,7 +37,7 @@ export const WORLD = {
   summonHpMul: 0.3, summonAtkMul: 0.3, summonNerfLv: 15, summonNerfFullLv: 25, // feat/balance-battle：道士召唤物血/攻倍率，人物 15 级起线性降到 25 级的 ×0.3（避免断崖） [适配]
   bossAtkEarly: 0.6, bossAtkMid: 1.12, bossAtkLate: 1.15, bossEarlyLv: 15, bossMidLv: 30,
   bossAtkVsNormal: 1.6, bossHpVsNormal: 4, bossAtkInterval: 1.2,
-  bossMechMinLv: 16,          // 主线 BOSS 通用机制起始层目标等级（早期层只保留攻速）[适配]
+  bossMechMinLv: 31,          // 主线 BOSS 通用机制起始层目标等级（早期层只保留攻速）[适配]
   bossEnrageAt: 0.5, bossEnrageAtk: 0.3, bossEnrageSec: 8,
   bossAoeEvery: 12, bossAoePct: 0.18, bossAoeWarn: 1.0, bossAoeRadius: 260,
   bossCallAt: 0.5, bossCallN: 2,
