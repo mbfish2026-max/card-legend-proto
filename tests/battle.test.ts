@@ -970,4 +970,19 @@ console.log('# 诱惑之光');
   { const w = mk([{ id: 'deer', x: 600 }], [], 'mage', 20); const s = w.toSave(); const w2 = new World(seeded(1), 1, w.floors, 'mage', s);
     ok(w2.pets.length === 0 && w2.hero!.alive, '旧档/存档读入无宠物残留'); }
 }
+{ // feat/first-map-farm：首图练级
+  const { FARM_RESPAWN } = await import('../src/data/world');
+  ok(FLOORS[0].farm === true && FLOORS.slice(1).every(f => !f.farm), '只有第 1 层是练级图');
+  ok(ENEMIES.wolf_king.hp < 900 * DIFF.bossHp && ENEMIES.wolf_king.atk < Math.round(20 * 1.4 * DIFF.bossAtk), '狼王已削弱');
+  const w = new World(seeded(5), 3, FLOORS, 'warrior'); w.requireUse = true;
+  const n0 = w.alive('enemy').filter(u => u.tier !== 'boss').length;
+  for (const u of w.alive('enemy')) w.kill(u); w.step(0.05);
+  ok(w.cleared && w.farmQueue.length === n0, '清图后小怪进入刷新队列');
+  w.hero!.x = 3600; for (let t = 0; t < FARM_RESPAWN + 1; t += 0.05) w.step(0.05);
+  ok(w.floorIndex === 0 && w.alive('enemy').filter(u => u.tier !== 'boss').length > 0, '清完仍可刷（小怪刷新，不强制进下一层）');
+  ok(!w.alive('enemy').some(u => u.tier === 'boss'), 'BOSS 不随小怪刷新（重进地图才刷）');
+  w.loadFloor(0); ok(w.alive('enemy').some(u => u.tier === 'boss') && w.farmQueue.length === 0, '重进首图：BOSS 与小怪重置');
+  const w2 = new World(seeded(5), 30, FLOORS, 'warrior'); w2.loadFloor(1); const k = w2.alive('enemy')[0]; w2.kill(k); ok(w2.farmQueue.length === 0, '其他层不刷新');
+  const sv = w.toSave(); ok(new World(seeded(5), 1, FLOORS, 'warrior', sv).floorIndex === 0, '旧档兼容');
+}
 console.log(`全部通过 ${pass} 项`);

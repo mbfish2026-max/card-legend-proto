@@ -7,7 +7,7 @@ import { CLASSES, ClassId, SkillDef, CAST_GAP } from '../data/classes';
 import { ITEMS, SLOTS, SETS, equipSlotsFor, EQUIP_VERSION, ENHANCE_SLOTS, ENHANCE_MAX, ENHANCE_STAT, IRON_PRICE, IRON_MAX_PURITY, enhanceChance, shatterChance } from '../data/items';
 import { HERO, ENEMIES, SUMMON, SUMMON_BEAST } from '../data/units';
 import { EXP_PER_LEVEL, EXP_VERSION, migrateExp, scaledExp, fmtExp } from '../data/expCurve';
-import { WORLD, FLOORS, Floor } from '../data/world';
+import { WORLD, FLOORS, Floor, FARM_RESPAWN, FARM_SAFE_DIST } from '../data/world';
 import { TOWNS, townFloors, townOfFloor, returnTownOf, STORAGE_SIZE, TOWN_W, TOWN_GATE_X, GATE_RANGE, TOWN_SPAWN_X, DOOR_RANGE, streetDoors } from '../data/towns';
 import { CONSUMABLE } from '../data/items-town';
 import { WOMA_FLOOR_NAME, WOMA_SECTIONS, WOMA_DOOR_X, HORN_MOB_CHANCE, HORN_MOBS, RING_MIN_LEVEL, RingQuest, ringReward, IDENT_MIN_LEVEL, IDENT_PRICE, IDENT_POOL, identValue } from '../data/r14b';
@@ -375,7 +375,7 @@ export class World {
     this.units.push(u); return u;
   }
   loadFloor(i: number) { this.stepTarget = null; this.stepQueued = 0;
-    this.floorIndex = i; this.cleared = false; this.womaPending = null; this.womaSec = -1; this.womaWarnAt = -99; this.ground = []; this.zones = []; this.reached.add(i); this.checkAchieves();
+    this.floorIndex = i; this.cleared = false; this.womaPending = null; this.womaSec = -1; this.womaWarnAt = -99; this.ground = []; this.zones = []; this.farmQueue = []; this.reached.add(i); this.checkAchieves();
     this.units = this.units.filter(u => u.isHero || u.summon);
     const h = this.hero; if (h) { h.x = WORLD.heroStartX; h.y = 0; h.facing = 1; }
     this.units.filter(u => u.summon).forEach((s, k) => { s.x = WORLD.heroStartX - 110 - k * 60; s.y = WORLD.summonLane; });
@@ -497,6 +497,7 @@ export class World {
     }
     // 额外掉落：独立随机流 lootRng（不消耗主 rng，保持平衡模拟稳定）。Boss 必掉 1 瓶祝福油；setDrop 随机 1 件套装
     if (u.tier === 'boss') this.bossKilled.add(this.floorIndex);
+    else if (this.floor?.farm && !u.summon) this.farmQueue.push({ id: u.id, x: u.homeX, y: u.homeY, at: this.time + FARM_RESPAWN });
     const extra: { id: string; purity?: number }[] = [];
     if (u.tier === 'boss' || this.lootRng() < (u.oilChance ?? 0)) extra.push({ id: 'bless_oil' });
     // R11 技能书掉落（本职业、未学、背包里也没有）
@@ -921,7 +922,15 @@ export class World {
     for (let i = 0; i < n; i++) { const k = pool.splice(Math.floor(this.lootRng() * pool.length), 1)[0] as keyof typeof it.stats; const v = identValue(k, it.req); it.stats[k] = (it.stats[k] ?? 0) + v; got.push(`${k}+${v}`); }
     it.ided = n; this.events.push({ type: 'inventory' }, { type: 'log', text: `鉴定 ${it.name}：${got.join(' ')}`, color: 'green' }); return null;
   }
+  /** 首图练级：待刷新的小怪 */
+  farmQueue: { id: string; x: number; y: number; at: number }[] = [];
+  private farmTick() { const h = this.hero;
+    for (const q of [...this.farmQueue]) if (q.at <= this.time) {
+      if (h && Math.abs(h.x - q.x) < FARM_SAFE_DIST) { q.at = this.time + 3; continue; }
+      this.farmQueue.splice(this.farmQueue.indexOf(q), 1); this.spawn(ENEMIES[q.id], 'enemy', q.x, q.y); this.cleared = false;
+    } }
   step(dt: number, inp: Input = { dx: 0, dy: 0 }) {
+    if (this.farmQueue.length) this.farmTick();
     this.womaTick();
     if (this.done) return;
     this.time += dt;
