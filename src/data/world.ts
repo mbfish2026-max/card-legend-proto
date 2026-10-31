@@ -267,7 +267,7 @@ export function scaleSpawns(old: Spawn[], ws: number): Spawn[] {
   const packs: Spawn[][] = []; for (const s of norm) { const p = packs[packs.length - 1]; if (p && s.x - p[p.length - 1].x <= 300) p.push(s); else packs.push([s]); }
   const out: Spawn[] = boss.map(b => ({ ...b, x: W - (OLD_MAP_W - b.x) }));
   if (!packs.length) return out;
-  const target = Math.round(norm.length * monsterMult(ws));
+  const target = Math.min(Math.floor(norm.length * 2.5), Math.max(Math.ceil(norm.length * 1.8), Math.round(norm.length * monsterMult(ws))));
   const list: Spawn[][] = []; let n = 0;
   for (let k = 0; n < target; k++) { const p = packs[k % packs.length].slice(0, target - n); list.push(p); n += p.length; }
   const firstBoss = boss.length ? Math.min(...out.map(b => b.x)) : W - WORLD.exitMargin;

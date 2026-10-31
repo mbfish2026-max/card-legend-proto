@@ -1157,15 +1157,17 @@ export class World {
 
   // ===== R14 #14 沃玛寺庙多层 =====
   womaPending: { x: number; y: number } | null = null; womaSec = -1; womaWarnAt = -99;
-  womaSection() { const h = this.hero; if (!h || this.floor.name !== WOMA_FLOOR_NAME) return null; return WOMA_SECTIONS.findIndex(s => h.x < s.until); }
+  womaSection() { const h = this.hero; if (!h || this.floor.name !== WOMA_FLOOR_NAME) return null; const k = this.mapW / OLD_MAP_W; return WOMA_SECTIONS.findIndex(s => h.x < s.until * k); }
+  /** 教主之家门口：按层宽等比（任务 A 层变长后门仍在原相对位置，门后无小怪） */
+  get womaDoorX() { return WOMA_DOOR_X * this.mapW / OLD_MAP_W; }
   womaTick() {
     const h = this.hero; if (!h || this.town || this.floor.name !== WOMA_FLOOR_NAME) return;
     const sec = this.womaSection()!; if (sec !== this.womaSec) { this.womaSec = sec; this.events.push({ type: 'log', text: `进入 ${WOMA_SECTIONS[sec].name}`, color: 'green' }); }
     if (!this.womaPending) return;
     let k = this.bag.findIndex(x => x.item === 'woma_horn');
-    if (k < 0 && !this.alive('enemy').length) { this.ground = this.ground.filter(g => g.item !== 'woma_horn'); this.bag.push(this.makeItem('woma_horn')); k = this.bag.length - 1; this.events.push({ type: 'log', text: '获得沃玛号角（清怪保底）', color: 'green' }); } // [适配] 背包满也给
-    if (h.x < WOMA_DOOR_X - h.width / 2) return;
-    if (k < 0) { h.x = WOMA_DOOR_X - h.width / 2 - 1; if (this.time - this.womaWarnAt > 3) { this.womaWarnAt = this.time; this.events.push({ type: 'log', text: '教主之家大门紧闭：需要沃玛号角（沃玛战士/卫士掉落）', color: 'white' }); } return; }
+    if (k < 0 && !this.alive('enemy').some(u => u.x < this.womaDoorX)) { this.ground = this.ground.filter(g => g.item !== 'woma_horn'); this.bag.push(this.makeItem('woma_horn')); k = this.bag.length - 1; this.events.push({ type: 'log', text: '获得沃玛号角（清怪保底）', color: 'green' }); } // [适配] 背包满也给
+    if (h.x < this.womaDoorX - h.width / 2) return;
+    if (k < 0) { h.x = this.womaDoorX - h.width / 2 - 1; if (this.time - this.womaWarnAt > 3) { this.womaWarnAt = this.time; this.events.push({ type: 'log', text: '教主之家大门紧闭：需要沃玛号角（沃玛战士/卫士掉落）', color: 'white' }); } return; }
     this.bag.splice(k, 1); const p = this.womaPending; this.womaPending = null;
     this.spawn(ENEMIES.boss_woma, 'enemy', p.x, p.y); this.events.push({ type: 'log', text: '吹响沃玛号角，教主之家大门打开，沃玛教主现身！', color: 'green' }, { type: 'inventory' });
   }

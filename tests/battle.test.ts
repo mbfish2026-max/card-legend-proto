@@ -673,10 +673,13 @@ const free = (w: World) => w.skills.map(() => 0);
   { // R14 #14 沃玛寺庙多层 + 号角
     const fi = FLOORS.findIndex(f => f.name === '沃玛寺庙'); const w = new World(seeded(5), 30, FLOORS); w.loadFloor(fi); const h = w.hero!;
     ok(!!w.womaPending && !w.alive('enemy').some(u => u.id === 'boss_woma'), '教主之家未开：沃玛教主不刷');
-    h.x = 2400; w.step(0.05); ok(w.drainEvents().some(e => e.type === 'log' && /三层/.test(e.text)), '分层提示');
-    w.bag = w.bag.filter(x => x.item !== 'woma_horn'); h.x = 3000; w.step(0.05); ok(h.x < 2850 && !!w.womaPending, '无号角被挡在门外');
-    w.bag.push(w.makeItem('woma_horn')); h.x = 2900; w.step(0.05); ok(!w.womaPending && w.alive('enemy').some(u => u.id === 'boss_woma') && !w.bag.some(x => x.item === 'woma_horn'), '吹号角消耗 1 个，教主现身');
+    const D = w.womaDoorX; ok(Math.abs(D - 2850 * w.mapW / 3840) < 1, '教主之家门按层宽等比（任务 A）');
+    h.x = D * 2400 / 2850; w.step(0.05); ok(w.drainEvents().some(e => e.type === 'log' && /三层/.test(e.text)), '分层提示');
+    w.bag = w.bag.filter(x => x.item !== 'woma_horn'); h.x = D + 150; w.step(0.05); ok(h.x < D && !!w.womaPending, '无号角被挡在门外');
+    w.bag.push(w.makeItem('woma_horn')); h.x = D + 50; w.step(0.05); ok(!w.womaPending && w.alive('enemy').some(u => u.id === 'boss_woma') && !w.bag.some(x => x.item === 'woma_horn'), '吹号角消耗 1 个，教主现身');
     const w2 = new World(seeded(6), 30, FLOORS); w2.loadFloor(fi); for (const u of w2.alive('enemy')) w2.kill(u); w2.step(0.05); ok(w2.bag.some(x => x.item === 'woma_horn') && !w2.cleared, '清完小怪保底给号角且未判通关');
+    const w3 = new World(seeded(7), 30, FLOORS); w3.loadFloor(fi); w3.bag = w3.bag.filter(x => x.item !== 'woma_horn'); for (const u of w3.alive('enemy')) if (u.x < w3.womaDoorX) w3.kill(u); w3.step(0.05);
+    ok(w3.bag.some(x => x.item === 'woma_horn'), '门前小怪清完即保底给号角（门后的怪不再卡死，任务 A 层变长回归）');
   }
   { // R14 #17 环式任务 / 鉴定
     const w = mk([{ id: 'zombie', x: 3000 }], [], 'warrior', 19); ok(w.ringAccept()?.includes('20') === true, '环式任务 20 级开放');

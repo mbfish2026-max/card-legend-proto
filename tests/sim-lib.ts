@@ -14,9 +14,11 @@ const learnAll = (w: World) => { w.learned = new Set(CLASSES[w.cls].skills.map(s
 export const SEEDS = [3, 7, 11, 19, 23, 42, 57, 88, 101];
 const NEW_BOOKS = ['big_fireball', 'burst_fire', 'hell_fire', 'lightning_flash', 'hell_thunder', 'ghost_shield', 'holy_armor', 'mass_heal'];
 /** 模拟时长上限（游戏内秒） */
-export const SIM_MAX_T = 7200 * 4;
+export const SIM_MAX_T = 7200 * 6; // 任务 A 层长 ×~2.3：模拟时长上限按比例放宽（仅防死循环的保护上限，非验收指标）
 /** 练级：主线层清完但等级 < 下一层进入等级时，真打重刷本层最多 SIM_REPLAYS 次，之后按本层实测「秒/击杀」虚拟刷怪（只加经验与估算用时，不掉装备、不计死亡）——否则 60h 量级的模拟跑不完 */
 export const SIM_REPLAYS = Number(process.env.SIM_REPLAYS ?? 2);
+/** 同层连死几次后回上一层练 1 级（玩家行为模拟 [适配]） */
+export const SIM_STUCK = 5;
 const band = (lv: number) => Math.min(5, Math.floor((lv - 1) / 10));
 export const simRun = (c: ClassId, seed: number, maxT = SIM_MAX_T) => {
     const w = (process.env.ALL ? learnAll : (x: World) => x)(new World(seeded(seed), 1, FLOORS, c)); let cds = w.skills.map(() => 0); let t = 0, potUsed = 0; const learnLog: string[] = []; let hjCombo = 0, hjHeroDmg = 0, hjAllDmg = 0, hjT = 0, hjOut = 0;
@@ -27,7 +29,13 @@ export const simRun = (c: ClassId, seed: number, maxT = SIM_MAX_T) => {
     while (!w.done && t < maxT) {
       if (floorLv[w.floorIndex] === undefined && !w.town) floorLv[w.floorIndex] = w.level;
       const h = w.hero;
-      if (!h) { if (process.env.SIMDBG && deathAt.length % 25 === 0) console.log('died', w.floorIndex, 'Lv', w.level, (globalThis as any)._near); deathAt.push({ floor: w.floorIndex, lv: w.level }); learnLog.push(`死@${w.floorIndex + 1}层Lv${w.level}`); w.respawn(); continue; }
+      if (!h) { if (process.env.SIMDBG && deathAt.length % 25 === 0) console.log('died', w.floorIndex, 'Lv', w.level, (globalThis as any)._near); deathAt.push({ floor: w.floorIndex, lv: w.level }); learnLog.push(`死@${w.floorIndex + 1}层Lv${w.level}`); w.respawn();
+        // 任务 A 后层更长、怪更多，死亡即整层重刷：同层连死 SIM_STUCK 次 → 模拟玩家「回上一层练 1 级再来」（虚拟刷怪，只加经验与估算用时，死亡照常计数）
+        const fd = deathAt.filter(d => d.floor === w.floorIndex).length, pk = FLOOR_ORDER.indexOf(w.floorIndex);
+        if (fd % SIM_STUCK === 0 && pk > 0) { const pf = FLOOR_ORDER[pk - 1], ids = FLOORS[pf].spawns.map(sp => sp.id).filter(id => ENEMIES[id]?.tier !== 'boss'), lv0 = w.level, spk = 6;
+          let i = 0; while (w.level === lv0 && i < 5000) { const id = ids[i++ % ids.length]; const b = band(w.level); w.gainExp(killExp(id, pf, w.level, monsterLevelAt(id, pf))); virtKills[b]++; virtT[b] += spk; t += spk; }
+          w.drainEvents(); w.recompute(true); learnLog.push(`卡关练级@${pf + 1}层→Lv${w.level}`); }
+        continue; }
       if (h.hp < h.maxHp * 0.4 && w.usePotion(w.pots[1] > 0 ? 1 : 0)) potUsed++;
       if ((h.mp ?? 0) < 40) w.usePotion(w.pots[3] > 0 ? 3 : 2);
       for (let i = 0; i < w.skills.length; i++) { if (w.skills[i].id === 'charm' && !w.charmAutoOk()) continue; w.cast(i, cds); }
