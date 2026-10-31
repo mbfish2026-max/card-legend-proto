@@ -347,7 +347,7 @@ const free = (w: World) => w.skills.map(() => 0);
   // feat/charm：诱惑之光书接入官方掉落（骷髅精灵/尸王/沃玛卫士）后掉落随机序列漂移，法师种子 19 由 10→13（该种子未买到地狱火；模拟中诱惑之光 0 次施放，目标均免疫/等级过高），上限 12→14
   const PASS_MAX_DEATHS = 14;
   const simRun = (c: ClassId, seed: number) => {
-    const w = (process.env.ALL ? learnAll : (x: World) => x)(new World(seeded(seed), 1, FLOORS, c)); let cds = w.skills.map(() => 0); let t = 0, potUsed = 0; const learnLog: string[] = [];
+    const w = (process.env.ALL ? learnAll : (x: World) => x)(new World(seeded(seed), 1, FLOORS, c)); let cds = w.skills.map(() => 0); let t = 0, potUsed = 0; const learnLog: string[] = []; let hjCombo = 0, hjHeroDmg = 0, hjAllDmg = 0, hjT = 0, hjOut = 0;
     while (!w.done && t < 7200) {
       const h = w.hero;
       if (!h) { learnLog.push(`死@${w.floorIndex + 1}层Lv${w.level}`); w.respawn(); continue; }
@@ -376,8 +376,9 @@ const free = (w: World) => w.skills.map(() => 0);
       const saving = w.shopBooks().some(b => !w.learned.has(b.skill) && w.level >= w.needLevel(w.skillPool.find(x => x.id === b.skill)!)); const cap = saving ? 1 : 3;
       while (w.gold >= 60 && w.pots[1] < cap) w.buyPotion(1);
       while (w.gold >= 60 && w.pots[3] < cap) w.buyPotion(3);
-      w.step(0.05, { dx: (() => { const f = w.queue(1)[0]; return f && w.inMelee(h, f) ? 0 : 1; })(), dy: 0 }); w.drainEvents(); t += 0.05; /* 玩家：前方接战时站定输出（可穿怪） */ for (let i = 0; i < cds.length; i++) cds[i] = Math.max(0, cds[i] - 0.05);
+      w.step(0.05, { dx: (() => { const f = w.queue(1)[0]; return f && w.inMelee(h, f) ? 0 : 1; })(), dy: 0 }); { const evs = w.drainEvents(); if (process.env.HJ) { const cu = w.companionUnit?.uid; if (w.level >= 40) hjT += 0.05; if (w.companionUnit) hjOut += 0.05; for (const e of evs) { if (e.type === 'combo') hjCombo++; else if (e.type === 'damage' && (e as any).source !== undefined && w.units.some(u => u.uid === (e as any).target && u.team === 'enemy') || (e.type === 'damage' && (e as any).source === cu && cu !== undefined)) { if ((e as any).source === cu) hjHeroDmg += (e as any).amount; else hjAllDmg += (e as any).amount; } } } } t += 0.05; /* 玩家：前方接战时站定输出（可穿怪） */ for (let i = 0; i < cds.length; i++) cds[i] = Math.max(0, cds[i] - 0.05);
     }
+    if (process.env.HJ_STATS) console.log(`   HJ ${c} 种子${seed}: lv≥40 时长 ${Math.round(hjT)}s 英雄在场 ${Math.round(hjOut)}s 合击 ${hjCombo} 次 英雄伤害占比 ${(100 * hjHeroDmg / Math.max(1, hjHeroDmg + hjAllDmg)).toFixed(1)}% 英雄等级 ${w.companion?.level ?? "-"} Lv≥40后死亡 ${learnLog.filter(x => /死@.*Lv(\d+)/.test(x) && +x.match(/Lv(\d+)/)![1] >= 40).length}`);
     return { deaths: w.deaths, done: w.done, potUsed, t, level: w.level, learnLog };
   };
   const median = (a: number[]) => { const b = [...a].sort((x, y) => x - y); return b[(b.length - 1) >> 1] / 2 + b[b.length >> 1] / 2; };
