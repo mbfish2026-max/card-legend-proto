@@ -1,0 +1,367 @@
+{
+ "frames": {
+  "fx_combo_huolong_00": {
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 768,
+    "h": 384
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 768,
+    "h": 384
+   },
+   "sourceSize": {
+    "w": 768,
+    "h": 384
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5208
+   }
+  },
+  "fx_combo_huolong_01": {
+   "frame": {
+    "x": 0,
+    "y": 384,
+    "w": 768,
+    "h": 384
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 768,
+    "h": 384
+   },
+   "sourceSize": {
+    "w": 768,
+    "h": 384
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5208
+   }
+  },
+  "fx_combo_huolong_02": {
+   "frame": {
+    "x": 0,
+    "y": 768,
+    "w": 768,
+    "h": 384
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 768,
+    "h": 384
+   },
+   "sourceSize": {
+    "w": 768,
+    "h": 384
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5208
+   }
+  },
+  "fx_combo_huolong_03": {
+   "frame": {
+    "x": 0,
+    "y": 1152,
+    "w": 768,
+    "h": 384
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 768,
+    "h": 384
+   },
+   "sourceSize": {
+    "w": 768,
+    "h": 384
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5208
+   }
+  },
+  "fx_combo_huolong_04": {
+   "frame": {
+    "x": 0,
+    "y": 1536,
+    "w": 768,
+    "h": 384
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 768,
+    "h": 384
+   },
+   "sourceSize": {
+    "w": 768,
+    "h": 384
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5208
+   }
+  },
+  "fx_combo_huolong_05": {
+   "frame": {
+    "x": 0,
+    "y": 1920,
+    "w": 768,
+    "h": 384
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 768,
+    "h": 384
+   },
+   "sourceSize": {
+    "w": 768,
+    "h": 384
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5208
+   }
+  },
+  "fx_combo_huolong_06": {
+   "frame": {
+    "x": 0,
+    "y": 2304,
+    "w": 768,
+    "h": 384
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 768,
+    "h": 384
+   },
+   "sourceSize": {
+    "w": 768,
+    "h": 384
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5208
+   }
+  },
+  "fx_combo_huolong_07": {
+   "frame": {
+    "x": 0,
+    "y": 2688,
+    "w": 768,
+    "h": 384
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 768,
+    "h": 384
+   },
+   "sourceSize": {
+    "w": 768,
+    "h": 384
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5208
+   }
+  },
+  "fx_combo_huolong_08": {
+   "frame": {
+    "x": 0,
+    "y": 3072,
+    "w": 768,
+    "h": 384
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 768,
+    "h": 384
+   },
+   "sourceSize": {
+    "w": 768,
+    "h": 384
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5208
+   }
+  },
+  "fx_combo_huolong_09": {
+   "frame": {
+    "x": 0,
+    "y": 3456,
+    "w": 768,
+    "h": 384
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 768,
+    "h": 384
+   },
+   "sourceSize": {
+    "w": 768,
+    "h": 384
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5208
+   }
+  },
+  "fx_combo_huolong_10": {
+   "frame": {
+    "x": 0,
+    "y": 3840,
+    "w": 768,
+    "h": 384
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 768,
+    "h": 384
+   },
+   "sourceSize": {
+    "w": 768,
+    "h": 384
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5208
+   }
+  },
+  "fx_combo_huolong_11": {
+   "frame": {
+    "x": 0,
+    "y": 4224,
+    "w": 768,
+    "h": 384
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 768,
+    "h": 384
+   },
+   "sourceSize": {
+    "w": 768,
+    "h": 384
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5208
+   }
+  },
+  "fx_combo_huolong_12": {
+   "frame": {
+    "x": 0,
+    "y": 4608,
+    "w": 768,
+    "h": 384
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 768,
+    "h": 384
+   },
+   "sourceSize": {
+    "w": 768,
+    "h": 384
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5208
+   }
+  },
+  "fx_combo_huolong_13": {
+   "frame": {
+    "x": 0,
+    "y": 4992,
+    "w": 768,
+    "h": 384
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 768,
+    "h": 384
+   },
+   "sourceSize": {
+    "w": 768,
+    "h": 384
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5208
+   }
+  }
+ },
+ "meta": {
+  "app": "card-legend fx proc (python numpy/Pillow)",
+  "image": "fx_combo_huolong.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 768,
+   "h": 5376
+  },
+  "scale": "1",
+  "fx": {
+   "w": 768,
+   "h": 384,
+   "n": 14,
+   "fps": 20,
+   "loop": false,
+   "pivot": [
+    384,
+    200
+   ],
+   "anchor": "target",
+   "skill": "combo_huolong",
+   "phase": "hit",
+   "blend": "ADD",
+   "ms": 700,
+   "cols": 1
+  }
+ }
+}
