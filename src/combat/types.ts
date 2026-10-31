@@ -66,7 +66,7 @@ export type BattleEvent =
   | { type: 'exp'; amount: number }
   | { type: 'levelup'; level: number }
   | { type: 'summon'; uid: number }
-  | { type: 'combo'; id: string; name: string; source: number; partner: number; target: number; amount: number; hits?: number }
+  | { type: 'combo'; id: string; name: string; source: number; partner: number; target: number; amount: number; hits?: number; /** 表现层：被施加毒/麻痹的目标 uid */ affected?: number[]; /** 表现层：该合击持续状态结束的 world.time */ statusUntil?: number }
   | { type: 'charm'; uid: number; result: 'ok' | 'fail' | 'immune' | 'high' | 'betray' }
   | { type: 'respawn' }
   | { type: 'inventory' }

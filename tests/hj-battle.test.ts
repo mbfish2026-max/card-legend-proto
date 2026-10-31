@@ -153,7 +153,8 @@ const hitsBy = (ev: any[], uid: number, target?: number) => ev.filter(e => e.typ
   { const w3 = W('warrior', 'taoist'); const c = w3.companion!; c.level = 45; c.combo = ['pixing']; c.equip.heart = item('fire_heart'); c.heartStore = 30000; c.rage = RAGE_MAX; const h3 = w3.hero!; h3.hp = h3.maxHp = 1e9;
     const bb = w3.spawn(ENEMIES.boss_molong, 'enemy', h3.x + 150, 0); bb.hp = bb.maxHp = 1e7; bb.ai = 'chase'; bb.atk = 0; w3.unleashCombo(); let cm: any = null;
     for (let i = 0; i < 200 && !cm; i++) { w3.step(0.05); cm = w3.drainEvents().find(x => x.type === 'combo'); }
-    ok(!!cm && !(bb.stunUntil && bb.stunUntil > w3.time) && (bb.vulnUntil ?? 0) > w3.time, 'B BOSS 免疫麻痹（受伤加深仍生效）'); }
+    ok(!!cm && !(bb.stunUntil && bb.stunUntil > w3.time) && (bb.vulnUntil ?? 0) > w3.time, 'B BOSS 免疫麻痹（受伤加深仍生效）');
+    ok(!!cm && !(cm.affected ?? []).includes(bb.uid), 'B BOSS 免疫麻痹：combo 事件 affected 不含 BOSS（不显示麻痹标记）'); }
   for (const u of w.alive('enemy')) w.kill(u); h.x = w.exitX; w.step(0.05); w.step(0.05);
   ok(!w.done && w.town === 'mengzhong', 'B3 清完魔龙血域：回盟重，不判通关');
   const w2 = new World(seeded(9), 55, FLOORS, 'warrior'); w2.loadFloor(23); const sv = JSON.parse(JSON.stringify(w2.toSave()));
