@@ -226,12 +226,31 @@ export class BattleScene extends Phaser.Scene {
     g.setInteractive(new Phaser.Geom.Rectangle(-75, -70, 150, 130), Phaser.Geom.Rectangle.Contains).on('pointerdown', () => this.goBackTown());
     this.merchant = c;
   }
+  /** 阶段4：矿点（代码绘制，docs/art-requests.md「矿点」）；有矿层才显示，挖空时变暗 */
+  mineNode?: Phaser.GameObjects.Container; mineLabel?: Phaser.GameObjects.Text;
+  syncMine() {
+    const w = this.world;
+    if (!this.mineNode) {
+      const g = this.add.graphics();
+      g.fillStyle(0x3a3530, 1); g.fillTriangle(-70, 30, -20, -55, 30, 30); g.fillTriangle(-10, 30, 35, -35, 75, 30);
+      g.fillStyle(0x24211e, 1); g.fillEllipse(0, 30, 160, 22);
+      g.fillStyle(0x15151f, 1); for (const [x, y, r] of [[-30, -5, 10], [10, 5, 8], [40, -8, 7], [-5, -30, 6]]) g.fillCircle(x, y, r);
+      g.lineStyle(2, 0x8a8aff, 0.8); for (const [x, y] of [[-30, -5], [10, 5], [40, -8]]) g.strokeCircle(x, y, 4);
+      this.mineLabel = this.add.text(0, -80, '矿点', { fontSize: '16px', color: '#c8c8ff', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5);
+      this.mineNode = this.add.container(0, GROUND_Y - 30, [g, this.mineLabel]).setDepth(3);
+    }
+    const on = w.hasMine(); this.mineNode.setVisible(on); if (!on) return;
+    this.mineNode.setX(w.mineX()); const cd = w.mineCdLeft();
+    this.mineNode.setAlpha(cd > 0 ? 0.45 : 1);
+    this.mineLabel!.setText(w.mine ? '挖矿中…' : cd > 0 ? `矿脉枯竭 ${cd}s` : w.atMine() ? '矿点（W/空格 挖矿）' : '矿点');
+  }
   gateLabel?: Phaser.GameObjects.Text; rightWall?: Phaser.GameObjects.Rectangle;
   /** 任务 A：按本层宽度显示背景段（交替镜像平铺、不拉伸）、右墙、传送门，并限定相机范围 */
   applyFloorWidth() {
     const W = this.world.mapW;
     this.bgImgs.forEach((b, k) => b.setVisible(!this.street && k * 1280 < (W - 1280) * 0.7 + 1280)); // 背景视差 0.7：最右可见到 (W−1280)×0.7+1280
     this.rightWall?.setX(W - 6); this.portal?.setX(this.world.exitX);
+    this.syncMine();
     this.cameras.main.setBounds(0, 0, W, 720);
   }
   /** 回城/回村入口（原「商人」位置，战斗地图不再有商人） */
@@ -262,7 +281,7 @@ export class BattleScene extends Phaser.Scene {
     // 合击版 A2/A4 [适配] 键位：R 召唤/收回、E 切换状态（官方 Ctrl+E）、G 合击爆发（官方 Ctrl+S，本作 S 已用于回城）
     if (k === 'R' || k === 'E' || k === 'G') { const w = this.world; const e = k === 'R' ? w.toggleCompanion() : k === 'E' ? w.cycleCompanionMode() : w.unleashCombo();
       if (e) this.log(e); this.handle(w.drainEvents()); this.ui?.panel?.open && this.ui.panel.render(); return; }
-    if (k === ' ' || k === 'W') { if (this.world.town) this.townUse(); else this.usePortal(); return; }
+    if (k === ' ' || k === 'W') { if (this.world.town) this.townUse(); else if (this.entranceHere() === 'mine') this.mobileAct(); else this.usePortal(); return; }
     if (k === 'S' && !this.world.town && this.world.atReturnGate() && (this.world.floorIndex === 0 || REGIONS.some(r => r.floors[0] === this.world.floorIndex))) { this.goBackTown(); return; }
     if (k === 'S') { if (!this.fading && this.world.hero && this.world.floorIndex > 0 && this.world.hero.x <= WORLD.heroStartX + 150) { this.fading = true; this.cameras.main.fadeOut(400, 0, 0, 0); this.cameras.main.once('camerafadeoutcomplete', () => { this.fading = false; this.world.prevFloor(); }); } else this.log('在本层起点按 S 返回上一层，或点左侧入口回城'); return; }
     const h = this.world.hero; if (!h) return;
@@ -583,10 +602,11 @@ export class BattleScene extends Phaser.Scene {
   useNext = false; fading = false; portalHint!: Phaser.GameObjects.Text;
   /** 传送门：在出口处按空格 → 黑屏淡出 → 切层（新楼层再淡入） */
   /** 当前位置可触发的入口（手机「进入」大键按此显示文字并执行）：右端出口 / 左端回城或上一层 / 城内门面与城门 */
-  entranceHere(): 'talk' | 'gate' | 'exit' | 'sealed' | 'town' | 'prev' | null {
+  entranceHere(): 'talk' | 'gate' | 'exit' | 'sealed' | 'town' | 'prev' | 'mine' | null {
     const w = this.world; if (w.town) return w.atTownGate() ? 'gate' : w.nearDoor() ? 'talk' : null;
     if (w.atExit) return w.floor.boss && w.alive('enemy').some(u => u.tier === 'boss') ? 'sealed' : 'exit';
     if (w.atReturnGate()) return w.floorIndex === 0 || REGIONS.some(r => r.floors[0] === w.floorIndex) ? 'town' : 'prev';
+    if (w.atMine()) return 'mine'; // 阶段4 挖矿点
     return null;
   }
   /** 手机「进入」键 / 点传送门本体：覆盖桌面 W/空格/T/S 的全部入口（docs/mobile-ui.md 入口对照表） */
@@ -596,6 +616,7 @@ export class BattleScene extends Phaser.Scene {
     if (e === 'talk' || e === 'gate' || this.world.town) return this.townUse();
     if (e === 'exit' || e === 'sealed') return this.usePortal();
     if (e === 'town' || e === 'prev') return this.onKey('S');
+    if (e === 'mine') { this.log(this.world.startMine()); this.handle(this.world.drainEvents()); return; }
     this.log('走到右端传送门进入下一层，或走到左端入口回城/返回上一层；顶栏「回城」可用回城卷');
   }
   usePortal() {
@@ -722,6 +743,7 @@ export class BattleScene extends Phaser.Scene {
     for (const u of foesWithoutView(this.world, uid => this.views.has(uid))) { const v = new CardView(this, u); v.x = u.x; v.setAlpha(0); this.tweens.add({ targets: v, alpha: 1, duration: 400 }); this.views.set(u.uid, v); }
   }
   update(time: number, dms: number) {
+    if (this.mineNode?.visible || this.world.hasMine()) this.syncMine();
     const dt = Math.min(0.05, dms / 1000), k = this.keys;
     if (this.skillsDirty && !this.paused) { this.skillsDirty = false; this.cds = this.world.skills.map(() => 0); this.scene.stop('UI'); this.scene.launch('UI'); }
     if (this.state !== 'win' && !this.paused) {

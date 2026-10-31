@@ -171,8 +171,8 @@ const free = (w: World) => w.skills.map(() => 0);
   // R13：尸王资料掉落不含必掉屠龙，本用例临时注入一条 1/1 屠龙以测试拾取/装备流程
   const L0 = ENEMIES.boss_lich.drops; ENEMIES.boss_lich.drops = [...(L0 ?? []), { item: 'dragon_sword', chance: 1 }];
   const w = mk([{ id: 'boss_lich', x: 2000 }, { id: 'wolf', x: 3500 }], [], 'warrior', 30); const h = w.hero!, b = w.alive('enemy')[0];
-  w.kill(b); ENEMIES.boss_lich.drops = L0; ok(w.ground.length >= 6 && w.ground.some(g => g.item === 'dragon_sword'), 'Boss 掉落多件（含注入的屠龙刀）');
-  run(w, 3); ok(w.ground.length >= 6, '离得远不会自动拾取');
+  w.kill(b); ENEMIES.boss_lich.drops = L0; ok(w.ground.length >= 4 && w.ground.some(g => g.item === 'dragon_sword'), 'Boss 掉落多件（含注入的屠龙刀）'); // 阶段4：尸王不再必掉祝福油+黑铁，6→4
+  const n0 = w.ground.length; run(w, 3); ok(w.ground.length === n0, '离得远不会自动拾取');
   const g = w.ground[0]; h.x = g.x; h.y = g.y; w.time = g.landAt - 0.2; w.step(0.01); ok(w.ground.includes(g), '落地前不可拾取');
   w.step(0.3); ok(!w.ground.includes(g), '落地后靠近自动拾取');
   const pot0 = w.pots[1], allHp = w.ground.filter(x => x.item === 'hp_mid').length + (g.item === 'hp_mid' ? 1 : 0);
@@ -658,12 +658,12 @@ const free = (w: World) => w.skills.map(() => 0);
   wear('set_woma_bracelet'); const s3 = w.stats(); ok(w.setBonuses().length === 2 && s3.def === base.def + 10 + 5 + 5, `沃玛 3 件：防御+5 激活（def ${s3.def}）`);
   ok(w.hero!.maxHp === s3.hp, '套装加成同步到主角属性');
   w.unequip('bracelet1'); ok(w.setBonuses().length === 1 && w.stats().def === base.def + 10, '卸下 1 件：3 件加成失效');
-  const c = mk([], [], 'mage', 25); for (const id of SETS.chiyue.pieces) { c.bag.push(c.makeItem(id)); c.equipItem(c.bag.length - 1); }
+  const c = mk([], [], 'mage', 35); for (const id of SETS.chiyue.pieces) { /* balance-sys 阶段3：赤月套需求 35 */ c.bag.push(c.makeItem(id)); c.equipItem(c.bag.length - 1); }
   ok(c.luck() === 1, '赤月 3 件：幸运+1');
   ok(Object.values(SETS).every(st => st.pieces.every(id => ENEMIES && (id.startsWith('set_') || /^(shengzhan|fashen|tianzun)_/.test(id)))), '套装物品 ID 规范');
   for (const [bid, sid] of [['boss_woma', 'woma'], ['boss_zuma', 'zuma'], ['boss_redmoon', 'shengzhan']] as const) {
     const t = mk([{ id: bid, x: 800 }]); t.kill(t.alive('enemy')[0]); const ids = t.ground.map(g => g.item);
-    ok(ids.includes('bless_oil') && ids.some(i => SETS[sid].pieces.includes(i)), `${ENEMIES[bid].name} 掉落祝福油 + ${SETS[sid].name}套装 1 件`);
+    ok(ids.some(i => SETS[sid].pieces.includes(i)), `${ENEMIES[bid].name} 掉落${SETS[sid].name}套装 1 件`); // 阶段4：祝福油改为高级 BOSS 1/8，见 balance-sys.test
   }
   { // R14 #13 赤月三职业套：按职业掉
     for (const [c, sid] of [['warrior', 'shengzhan'], ['mage', 'fashen'], ['taoist', 'tianzun']] as const) { const t = mk([{ id: 'boss_redmoon', x: 800 }], [], c, 40); t.kill(t.alive('enemy')[0]);
@@ -695,8 +695,8 @@ const free = (w: World) => w.skills.map(() => 0);
   const b = mk([{ id: 'boss_woma', x: 800 }]); b.kill(b.alive('enemy')[0]);
   b.hero!.x = 800; for (let i = 0; i < 40; i++) b.step(0.05); ok(b.bag.some(x => SETS.woma.pieces.includes(x.item)), '套装可拾取进背包');
   const shop = mk([]); shop.gold = OIL_PRICE * 2;
-  ok(shop.buyOil() === null && shop.bag.some(x => x.item === 'bless_oil') && shop.gold === OIL_PRICE, `商店可买祝福油（${OIL_PRICE} 金）`);
-  ok(shop.buyOil() !== null && shop.gold === OIL_PRICE, '同层限购 1 瓶');
+  // 阶段4：祝福油只由高级 BOSS 掉 → 商店停售
+  ok(shop.buyOil() !== null && !shop.bag.some(x => x.item === 'bless_oil') && shop.gold === OIL_PRICE * 2, '商店不再出售祝福油');
 }
 
 
@@ -735,14 +735,13 @@ const free = (w: World) => w.skills.map(() => 0);
   ok(shatterChance(4) === 0 && shatterChance(5) > 0 && enhanceChance(0, 5) > enhanceChance(0, 1), '成功率/破碎概率公式');
   // 商店
   const shop = mk([]); shop.gold = IRON_PRICE * 6;
-  ok(shop.buyIron() === null && shop.bag[0].item === 'black_iron' && shop.bag[0].purity === 1, '商店可买黑铁');
-  for (let i = 0; i < 4; i++) shop.buyIron();
+  ok(shop.buyIron() !== null && shop.bag.length === 0 && shop.gold === IRON_PRICE * 6, '商店不再出售黑铁（阶段4：只能挖矿）');
+  for (let i = 0; i < 5; i++) shop.addIron(1);
   ok((shop.bag[0].qty ?? 1) === 5 && shop.bag.length === 1, '同纯度堆叠');
-  ok(shop.buyIron() !== null, '每层限购 5');
   // Boss 掉落黑铁
   const b = mk([{ id: 'boss_woma', x: 800 }]); b.kill(b.alive('enemy')[0]);
-  ok(b.ground.some(g => g.item === 'black_iron'), 'Boss 掉落黑铁矿石');
-  ok(b.ground.some(g => g.item === 'bless_oil'), 'Boss 仍掉祝福油');
+  ok(!b.ground.some(g => g.item === 'black_iron'), '阶段4：Boss 不掉黑铁矿石');
+  ok(!b.ground.some(g => g.item === 'bless_oil'), '阶段4：沃玛教主（L<28）不掉祝福油');
 }
 
 
@@ -1144,8 +1143,8 @@ console.log('# 诱惑之光');
   const old = w.toSave(); old.bag = Array.from({ length: 30 }, () => w.makeItem('bone'));
   const w2 = new World(seeded(9), 10, FLOORS, 'warrior', old); ok(w2.bag.length === 30 && w2.buyBook !== undefined, '旧档 30 格背包读入不变');
   w.bag = Array.from({ length: 199 }, () => w.makeItem('bone'));
-  ok(w.storage.length === 0 && w.buyOil() === null && w.bag.length === 200, '199 格时仍可购买');
-  ok(w.buyOil() !== null && w.bag.length === 200, '满 200 格不能再买');
+  ok(w.storage.length === 0 && w.addIron(1) && w.bag.length === 200, '199 格时仍可入包');
+  ok(!w.addIron(2) && w.bag.length === 200, '满 200 格不能再入包');
   w.ground.push(w.rollDrop('wood_sword', undefined, w.hero!.x, w.hero!.y)); w.ground[w.ground.length - 1].landAt = 0; w.step(0.05);
   ok(w.bag.length === 200 && w.ground.some(g => g.item === 'wood_sword') && w.drainEvents().some(e => e.type === 'log' && /满/.test((e as any).text)), '满包拾取提示且物品留在地上');
   ok(w.sellItem(0) > 0 && w.bag.length === 199, '满包可出售');

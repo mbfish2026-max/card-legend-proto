@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 祝福油只由高级 BOSS 掉 / 黑铁矿只能挖矿（feat/balance-sys 阶段4 追加）
+- 祝福油：取消「BOSS 必掉」与 oilChance 小怪掉落；只在 OIL_BOSSES（祖玛教主、牛魔王、虹魔教主、赤月恶魔、黄泉教主、双头金刚、双头血魔；1.76 掉油名单 ∩ L≥28 BOSS）按 1/8 [适配] 掉；杂货铺停售（代码保留 SELL_OIL_IRON 开关）。
+- 黑铁矿石：怪物不再掉（原 BOSS 必掉/小怪 5%），铁匠停售；新增最简挖矿 src/data/mining.ts：矿层 28–34 层（比奇矿区五层 + 山谷矿区两层，附官方链接），矿点在层宽 45%，W/空格 或手机大键「挖矿」读条 4s，移动/受伤/施法/死亡打断，产出纯度 1–2（31 层后 1–3），矿脉 300s 刷新，存档 mineCd（旧档兼容）。矿点图代码绘制，见 docs/art-requests.md F。
+- 测试 tests/oil-mine.test.ts（进 npm test）；battle.test 中商店买油/买铁、BOSS 掉铁用例按新规则改为「停售/不掉」；赤月套用例角色等级 25→35（阶段3 赤月套需求 35）。docs/drop-plan.md 增「祝福油 / 黑铁矿」旧→新表。
+
+## 立绘去复用 / 异界裂隙背景（feat/balance-sys art-wire）
+- hj_guard、wolong_guard、fire_dragon_guard、leiyan_spider、cave_skel_warrior、cave_skel_general、axe_skeleton、cave_bat、cave_maggot 改用各自 `<id>_full.png`（main 重画·第1–8组）；其余 10 个已指向自身。
+- 新测试 tests/art-unique.test.ts（进 npm test）：全部怪物立绘文件存在、不同单位不共用（显式允许名单附原因）、56–79 层出怪用自身立绘、bg_floor57–80 → 第 57–80 层且文件存在。
+- 允许共用（缺图）：boss_hj_home↔boss_molong（有意共用），boss_wolong→boss_orc_chief、boss_leiyan/boss_fire_dragon→boss_redmoon（未交付）。
+
 ## BOSS 刷新 / 回城卷轴 / 装备需求 / 掉落计划（feat/balance-sys 任务 B、C、阶段 3、4）
 - 任务B：BOSS 击杀后本层 600s（游戏时间，离线不走）内重进不刷 BOSS，小怪照常全刷，出口照开；冷却写入存档 bossCd，旧档视为无冷却。
 - 任务C：回城卷轴读条 3s [适配]（官方瞬发），移动/受伤/主动施法/死亡打断且不消耗；H 键 / 手机顶栏「回城」/ 背包点击均可用；新角色送 3 张 [适配]，旧档不补发；杂货商有售。

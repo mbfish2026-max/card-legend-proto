@@ -953,3 +953,7 @@ thunder_sword 雷霆剑、break_strike 破击剑法、shield_break 破盾斩、v
 上文 art/maps-sq-mir3 第2–7批中标为「复用」的行，已由「重画·第1–8组」各章取代。所有 sq_/m3_ 小怪、9 个借用他怪 art 的单位，以及 boss_evil_pincer（原图与 pincer_bug 同构图、只换了颜色），现在都是独立新画。src 里的 `art` 字段仍指向旧图，本分支不改 src，需要开发把它们改成各自的 id。
 
 需改 `art` 的单位：hj_guard、wolong_guard、fire_dragon_guard、leiyan_spider、cave_skel_warrior、cave_skel_general、axe_skeleton、cave_bat、cave_maggot，以及 dark_warrior、dung_beetle、fire_woma、giant_worm、horn_fly、mine_zombie、pincer_bug、wedge_moth、woma_brave、woma_general。SQMIR3_BOSS 元组的第 4/5 字段也引用了其他 BOSS 的图（例如蚂蚁将军→boss_evil_pincer），但这些 BOSS 都已有自己的 `<id>_full.png`，建议一并改为自身 id。
+
+## F. 矿点（阶段4 挖矿，feat/balance-sys）
+- 现状：BattleScene.syncMine() 代码绘制（灰色岩堆 + 4 颗蓝边黑铁矿粒 + 「矿点」标签；挖空时 45% 透明）。位置 = 本层宽 45%，仅矿层 下标 27–33（废矿入口…山谷矿区·二）。
+- 需求：矿点图 256×192 PNG 透明底（可挖 / 枯竭 两态），参考传奇比奇矿区矿壁；交付后挂 ASSETS key `mine_node` / `mine_node_empty` 替换代码绘制。

@@ -147,7 +147,7 @@ export class MobileHud {
     const sig = this.hud.lines.map(l => l.t + l.at).join('|');
     if (sig !== this.logSig) { this.logSig = sig; this.log.innerHTML = ''; this.hud.lines.slice().reverse().forEach(l => { const d = this.el('div', this.log); d.textContent = l.t; d.style.color = l.c; }); }
     const en = this.b.entranceHere(); // 入口在范围内时高亮并显示具体去向
-    this.act.innerHTML = en === 'talk' ? '对话' : en === 'gate' ? '出城' : en === 'town' ? '回城' : en === 'prev' ? '上一层' : en === 'sealed' ? '封印' : w.town ? '对话' : '进入';
+    this.act.innerHTML = en === 'talk' ? '对话' : en === 'gate' ? '出城' : en === 'town' ? '回城' : en === 'prev' ? '上一层' : en === 'sealed' ? '封印' : en === 'mine' ? '挖矿' : w.town ? '对话' : '进入';
     this.act.classList.toggle('hot', !!en && en !== 'sealed');
     this.auto.innerHTML = `自动<br>${Settings.autoAttack ? '开' : '关'}`; this.auto.classList.toggle('on', Settings.autoAttack);
     this.comp.style.display = w.companion ? 'flex' : 'none';

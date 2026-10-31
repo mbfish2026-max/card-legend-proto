@@ -10,7 +10,8 @@ import { ITEMS, SLOTS, SETS, equipSlotsFor, EQUIP_VERSION, ENHANCE_SLOTS, ENHANC
 import { HERO, ENEMIES, SUMMON, SUMMON_BEAST, SUMMON_CORPSE, SUMMON_GOLDEN, DECOY } from '../data/units';
 import { EXP_PER_LEVEL, EXP_VERSION, migrateExp, scaledExp, fmtExp } from '../data/expCurve';
 import { killExp, foeStatsAt } from '../data/balance';
-import '../data/drop-plan'; // 阶段4：drop-plan 覆盖（副作用：改写 ENEMIES.drops）
+import '../data/drop-plan';
+import { MINE_FLOORS, MINE_CAST, MINE_RESPAWN, MINE_RADIUS, mineX, minePurity, OIL_BOSSES, OIL_RATE } from '../data/mining'; // 阶段4：drop-plan 覆盖（副作用：改写 ENEMIES.drops）
 import { WORLD, FLOORS, Floor, FARM_RESPAWN, FARM_SAFE_DIST, nextFloorOf, SIDE_FLOORS, DEPTH_STEP, prevLayerOf, prevFloorOf, floorWidth, OLD_MAP_W } from '../data/world';
 /** 任务 A：待机怪离主角超过「半屏 + 2 屏」即休眠 */
 export const SLEEP_DIST = 640 + 2 * 1280;
@@ -46,6 +47,8 @@ export interface SaveData {
   expV?: number;
   /** balance-sys 任务B：BOSS 刷新冷却剩余秒数（层 index → 秒），存档时写剩余值；缺省=旧档，无冷却 */
   bossCd?: Record<string, number>;
+  /** 阶段4 挖矿：各矿层距下次刷新的剩余秒数 */
+  mineCd?: Record<string, number>;
 }
 /** balance-sys 任务B：BOSS 击杀后 600 秒刷新 [适配]（官方各服不一，未查到统一值）；按游戏时间计（离线不走） */
 export const BOSS_RESPAWN = 600;
@@ -183,6 +186,7 @@ export class World {
       this.equip = migrateEquip(save); this.bag = [...save.bag]; this.kills = save.kills; this.nextItem = save.nextUid;
       this.skillTrain = { ...(save.skillTrain ?? {}) }; this.reached = new Set(save.reached ?? []); this.bossKilled = new Set(save.bossKilled ?? []);
       for (const [k, v] of Object.entries(save.bossCd ?? {})) if (v > 0) this.bossCdUntil[+k] = Math.min(BOSS_RESPAWN, v);
+      for (const [k, v] of Object.entries(save.mineCd ?? {})) if (v > 0) this.mineCdUntil[+k] = Math.min(MINE_RESPAWN, v);
       this.questProg = { ...(save.questProg ?? {}) }; this.questDone = new Set(save.questDone ?? []); this.achieves = new Set(save.achieves ?? []);
       if (save.mapV !== 2 && save.mapV !== 3 && this.floors === FLOORS) {
         const m = (i: number) => FLOOR_MIGRATE[i] ?? i;
@@ -356,6 +360,9 @@ export class World {
     return `提纯成功：黑铁矿石[+${pa + 1}]`;
   }
   buyIron(): string | null {
+    return '黑铁矿石只能在矿区挖矿获得'; // 阶段4：商店停售
+  }
+  private buyIronOld(): string | null {
     const LIM = 5;
     if (this.ironBoughtFloor === this.floorIndex && this.ironBoughtCount >= LIM) return `黑铁矿石每层限购 ${LIM} 块`;
     if (this.gold < IRON_PRICE) return `金币不足（需 ${IRON_PRICE}）`;
@@ -432,7 +439,7 @@ export class World {
     if (isHero) u.level = this.level;
     this.units.push(u); return u;
   }
-  loadFloor(i: number) { this.recall = null; this.stepTarget = null; this.stepQueued = 0;
+  loadFloor(i: number) { this.recall = null; this.mine = null; this.stepTarget = null; this.stepQueued = 0;
     this.floorIndex = i; this.cleared = false; this.womaPending = null; this.womaSec = -1; this.womaWarnAt = -99; this.ground = []; this.zones = []; this.farmQueue = []; this.reached.add(i); this.checkAchieves();
     this.units = this.units.filter(u => u.isHero || u.summon || u.companion); this.companionTarget = null;
     const h = this.hero; if (h) { h.x = WORLD.heroStartX; h.y = 0; h.facing = 1; }
@@ -589,7 +596,8 @@ export class World {
     if (u.tier === 'boss') { this.bossKilled.add(this.floorIndex); this.bossCdUntil[this.floorIndex] = this.time + BOSS_RESPAWN; }
     else if (this.floor?.farm && !u.summon) this.farmQueue.push({ id: u.id, x: u.homeX, y: u.homeY, at: this.time + FARM_RESPAWN });
     const extra: { id: string; purity?: number }[] = [];
-    if (u.tier === 'boss' || this.lootRng() < (u.oilChance ?? 0)) extra.push({ id: 'bless_oil' });
+    // 阶段4：祝福油只由高级 BOSS（OIL_BOSSES）掉，[适配] 1/8；普通怪/精英不掉（oilChance 已停用）
+    if (u.tier === 'boss' && OIL_BOSSES.includes(u.id) && this.lootRng() < OIL_RATE) extra.push({ id: 'bless_oil' });
     // R11 技能书掉落（本职业、未学、背包里也没有）
     { const pool = Object.values(BOOKS).filter(b => b.cls === this.cls && (u.id in BOOK_RATES ? (BOOK_RATES[u.id][b.skill] ?? 0) > 0 : b.drops.includes(u.id)) && !this.learned.has(b.skill) && !this.bag.some(x => x.item === bookItemId(b.skill)));
       // R13：有资料的怪逐本按资料爆率（1/N）独立判定；无资料的怪沿用 [适配] 首领/普通几率随机一本
@@ -600,8 +608,7 @@ export class World {
       if (!has && HORN_MOBS.includes(u.id) && this.lootRng() < HORN_MOB_CHANCE) extra.push({ id: 'woma_horn' });
     } // R14 #14：号角 [适配] 8%；清怪保底见 womaTick
     // 黑铁：Boss 必掉 1 块纯度 1–3；普通怪 8% 掉纯度 1（lootRng，不影响平衡模拟主序列）
-    if (u.tier === 'boss') extra.push({ id: 'black_iron', purity: 1 + Math.floor(this.lootRng() * 3) });
-    else if (this.lootRng() < 0.05) extra.push({ id: 'black_iron', purity: 1 });
+    // 阶段4：黑铁矿只能挖矿（startMine），怪物不掉
     if (extra.length) {
       const items = extra.map((e, i) => {
         const inv = this.makeItem(e.id, 'common', e.purity ? { purity: e.purity } : undefined);
@@ -700,6 +707,9 @@ export class World {
     return `学会了 ${s.name}`;
   }
   buyOil(): string | null {
+    return '祝福油只由高级 BOSS 掉落'; // 阶段4：商店停售
+  }
+  private buyOilOld(): string | null {
     if (this.oilBoughtFloor === this.floorIndex) return '祝福油每层限购 1 瓶';
     if (this.gold < OIL_PRICE) return '金币不足';
     if (this.bag.length >= WORLD.bagSize) return '背包已满';
@@ -736,7 +746,7 @@ export class World {
     if (!TOWNS[t]) return '无此城镇';
     if (this.town === t) return null;
     if (!free && this.inCombat()) return '战斗中无法回城';
-    this.town = t; this.recall = null; this.stepTarget = null; this.stepQueued = 0;
+    this.town = t; this.recall = null; this.mine = null; this.stepTarget = null; this.stepQueued = 0;
     const h = this.hero; if (h) { h.hp = h.maxHp; h.mp = h.maxMp; h.x = TOWN_SPAWN_X; h.y = WORLD.laneMin + (WORLD.laneMax - WORLD.laneMin) / 2; }
     // 横版长街：清掉野外怪物/地上物品（出城时重新刷层）
     this.units = this.units.filter(u => u.isHero || u.summon); this.ground = []; this.zones = [];
@@ -806,6 +816,33 @@ export class World {
     const i = ['return_scroll', 'dungeon_scroll'].map(id => this.bag.findIndex(b => b.item === id)).find(k => k >= 0);
     if (i === undefined) return '没有回城卷（城镇杂货商有售）'; return this.useConsumable(i);
   }
+  /** 阶段4 挖矿：矿点读条状态 / 各层下次刷新时间 */
+  mine: { floor: number; at: number; x: number; y: number; hp: number } | null = null;
+  mineCdUntil: Record<number, number> = {};
+  mineCdLeft(i = this.floorIndex) { return Math.max(0, Math.ceil((this.mineCdUntil[i] ?? 0) - this.time)); }
+  hasMine(i = this.floorIndex) { return !this.town && MINE_FLOORS.includes(i); }
+  mineX() { return mineX(this.mapW); }
+  /** 主角在矿点范围内（不论是否刷新） */
+  atMine(): boolean { const h = this.hero; return this.hasMine() && !!h && Math.abs(h.x - this.mineX()) <= MINE_RADIUS; }
+  startMine(): string {
+    const h = this.hero; if (!h || !this.atMine()) return '附近没有矿点';
+    if (this.mine) return '正在挖矿';
+    const cd = this.mineCdLeft(); if (cd > 0) return `矿脉已挖空，${cd} 秒后刷新`;
+    this.mine = { floor: this.floorIndex, at: this.time + MINE_CAST, x: h.x, y: h.y, hp: h.hp };
+    this.events.push({ type: 'log', text: `挖矿读条 ${MINE_CAST} 秒：移动/受伤/施法会打断` }); return '挖矿中';
+  }
+  cancelMine(why: string) { if (!this.mine) return; this.mine = null; this.events.push({ type: 'log', text: `挖矿被${why}打断` }); }
+  private mineStep(h: Unit) {
+    const m = this.mine; if (!m) return;
+    if (!h.alive) return this.cancelMine('死亡');
+    if (Math.abs(h.x - m.x) > 0.5 || Math.abs(h.y - m.y) > 0.5) return this.cancelMine('移动');
+    if (h.hp < m.hp - 0.01) return this.cancelMine('受伤');
+    m.hp = h.hp; if (this.time < m.at) return;
+    this.mine = null; const p = minePurity(m.floor, this.lootRng());
+    if (!this.addIron(p)) { this.events.push({ type: 'log', text: '背包已满，挖到的矿石掉回矿脉' }); return; }
+    this.mineCdUntil[m.floor] = this.time + MINE_RESPAWN;
+    this.events.push({ type: 'log', text: `挖到 黑铁矿石[+${p}]（矿脉 ${MINE_RESPAWN} 秒后刷新）` });
+  }
   cancelRecall(why: string) { if (!this.recall) return; this.recall = null; this.events.push({ type: 'log', text: `回城读条被${why}打断（卷轴未消耗）` }); }
   private recallStep(h: Unit) {
     const r = this.recall; if (!r) return;
@@ -844,6 +881,7 @@ export class World {
     const s = this.skills[i], h = this.hero;
     if (!s || !h) return { ok: false, reason: '' };
     if (this.recall && !opts.auto) this.cancelRecall('施法');
+    if (this.mine && !opts.auto) this.cancelMine('施法');
     const need = this.needLevel(s);
     if (this.level < need) return { ok: false, reason: `${s.name} 需等级 ${need}` };
     if (s.passive) return { ok: false, reason: `${s.name} 为被动技能` };
@@ -1224,7 +1262,7 @@ export class World {
     this.events.push({ type: 'combo', id: cb?.id ?? 'placeholder', name: cb?.name ?? '合击', source: h.uid, partner: u.uid, target: t.uid, amount: dealt, hits: targets.length, affected, statusUntil }, { type: 'log', text: `合击「${cb?.name ?? '合击'}」造成 ${dealt} 伤害`, color: 'green' });
   }
   toSave(): SaveData {
-    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, town: this.town, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], ringQ: this.ringQ, ringDone: this.ringDone, eqV: EQUIP_VERSION, expV: EXP_VERSION, bossCd: Object.fromEntries(Object.keys(this.bossCdUntil).map(k => [k, this.bossCdLeft(+k)]).filter(e => (e[1] as number) > 0)), companion: this.companion ? JSON.parse(JSON.stringify(this.companion)) : null  };
+    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, town: this.town, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], ringQ: this.ringQ, ringDone: this.ringDone, eqV: EQUIP_VERSION, expV: EXP_VERSION, bossCd: Object.fromEntries(Object.keys(this.bossCdUntil).map(k => [k, this.bossCdLeft(+k)]).filter(e => (e[1] as number) > 0)), mineCd: Object.fromEntries(Object.keys(this.mineCdUntil).map(k => [k, this.mineCdLeft(+k)]).filter(e => (e[1] as number) > 0)), companion: this.companion ? JSON.parse(JSON.stringify(this.companion)) : null  };
   }
 
   /** 点按一格：滑行中的按键全部排队（同向最多 10 格，反向则替换队列），每次按键都会走一格 */
@@ -1464,6 +1502,7 @@ export class World {
     this.units = this.units.filter(u => u.alive);
     const hh = this.hero; if (!hh) return;
     if (this.recall) { this.recallStep(hh); if (this.town) return; }
+    if (this.mine) this.mineStep(hh);
     for (const g of [...this.ground]) if (g.landAt <= this.time && Math.hypot(g.x - hh.x, (g.y - hh.y) * 0.5) <= WORLD.pickupRadius) this.pickup(g);
     this.atExit = Math.abs(hh.x - this.exitX) <= WORLD.exitRadius || hh.x >= this.exitX;
     if (this.atExit && this.requireUse && !inp.use) {
