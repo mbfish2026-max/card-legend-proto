@@ -818,3 +818,6 @@ thunder_sword 雷霆剑、break_strike 破击剑法、shield_break 破盾斩、v
 ## 手机界面（feat/mobile-ui）
 按钮底板、摇杆、技能圆框都用 CSS 代码绘制（暗金边框 + 径向渐变）。顶部功能图标暂用 emoji（🎒📜🎯🗺🏯⚙）。
 待美术：6 个手机顶部图标（48×46 CSS px，2x 出图 96×92）、摇杆底盘和摇杆头、「进入/对话」大圆键底板。
+
+## PWA 图标（feat/pwa-fullscreen）
+- apple-touch-icon.png（180×180）和 icon-512.png 目前是用 favicon.png（192）放大生成的占位图，512 会发糊。需要 1024×1024 的正式 App 图标（不透明、黑底、不带圆角，iOS 会自己加圆角）。

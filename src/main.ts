@@ -16,7 +16,10 @@ setupMobile(); enableMobileOnTouch();
 // 画质：画布 = 1280k×720k，各场景相机 zoom=k 居中，逻辑坐标不变；文字按 k 倍分辨率栅格化
 const K = Render.k = resolveResK(Settings.res, window.devicePixelRatio || 1, window.innerWidth, window.innerHeight, IS_MOBILE);
 // 手机铺满（docs/mobile-ui.md「铺满方案」）：逻辑高 720 不变，逻辑宽按可视区（visualViewport，含地址栏收起/展开）宽高比扩展
-const vp = () => { const v = window.visualViewport; return { w: v?.width || window.innerWidth, h: v?.height || window.innerHeight }; };
+// PWA 根因修复：iOS 独立模式下 visualViewport 在启动/旋转后可能停在旧（竖屏）尺寸，以 innerWidth/innerHeight 为准；
+// 浏览器里地址栏展开时 visualViewport 更小 → 取两者较小的高（不留被遮挡区），宽取 innerWidth
+const vp = () => { const v = window.visualViewport, iw = window.innerWidth || v?.width || 0, ih = window.innerHeight || v?.height || 0;
+  const vh = v && v.scale <= 1.01 && Math.abs(v.width - iw) < 2 ? v.height : ih; return { w: iw, h: Math.min(ih, vh) || ih }; };
 const isMob = () => !!(window as any).__mobile || IS_MOBILE;
 { const v = vp(); Render.lw = logicWidthFor(v.w, v.h, IS_MOBILE); Render.ox = (Render.lw - LOGIC_W) / 2; }
 const origText = Phaser.GameObjects.GameObjectFactory.prototype.text;
@@ -62,8 +65,14 @@ if (IS_MOBILE) game.events.once('ready', () => { for (const sc of game.scene.sce
 game.events.once('ready', () => { Settings.applyZoom(); document.getElementById('boot')?.remove(); });
 // 尺寸变化/旋转实时重算（iOS 旋转后视口晚到，补两次）
 const reflow = () => { applyFill(); setTimeout(applyFill, 120); setTimeout(applyFill, 400); Settings.applyZoom(); setTimeout(() => Settings.applyZoom(), 120); setTimeout(() => Settings.applyZoom(), 400); };
+const reflowLate = () => { reflow(); setTimeout(reflow, 1000); setTimeout(reflow, 2000); };
 window.addEventListener('resize', reflow);
-window.addEventListener('orientationchange', reflow);
+window.addEventListener('orientationchange', reflowLate);
+(screen as any).orientation?.addEventListener?.('change', reflowLate);
 window.visualViewport?.addEventListener('resize', reflow);
+// PWA：切后台恢复 / bfcache 恢复 / 启动后视口晚到，都多次重排
+window.addEventListener('pageshow', reflowLate);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) reflowLate(); });
+game.events.once('ready', reflowLate);
 // R10：生产环境注册 Service Worker（重复访问走缓存）
 if (import.meta.env.PROD && 'serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register(import.meta.env.BASE_URL + 'sw.js').catch(() => {}));

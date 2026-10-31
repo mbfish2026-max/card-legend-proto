@@ -75,3 +75,24 @@
 
 修复的缺口：①「进入」键原来只发空格，左端回城/上一层在手机上只能靠顶栏「回城」且无提示 → 改为按 `entranceHere()` 上下文执行并显示去向、在范围内高亮；② 传送门本体不可点 → 手机端可点（电脑不加交互）；③ 顶栏无「传送」字样 → 地图图标改名「传送」。
 验证：`node tests/e2e/mobile-entrance-verify.mjs`（844×390 触屏，截图 me-*.png）。
+
+## PWA / 添加到主屏幕全屏（feat/pwa-fullscreen）
+- 元数据（index.html）：
+  - `viewport-fit=cover`、`apple-mobile-web-app-capable=yes`、`mobile-web-app-capable=yes`、`apple-mobile-web-app-status-bar-style=black-translucent`；
+  - `theme-color` 为 #000；
+  - `apple-touch-icon` 180×180。
+- `public/manifest.webmanifest`：
+  - `display: fullscreen`，`display_override` 为 `[fullscreen, standalone]`；
+  - `orientation: landscape`；
+  - `start_url`、`scope`、`id` 都是 `/card-legend-proto/`（与 vite build 的 base 一致；HTML 里的 /xxx 链接由 vite 自动加 base）。
+- 尺寸：
+  - html 依次回退 `100dvh → 100svh → -webkit-fill-available`；body 和 #game 用 `position:fixed; inset:0`，背景 #000。
+  - 手机模式下 #game 不留 safe-area 内边距，画布和场景背景铺到物理屏幕边缘（含刘海/圆角区域）。只有 HUD（#mhud）用 `env(safe-area-inset-*)` 避让。
+  - 不依赖 screen.height。
+- 用户截图（画面约 60% 高、四周黑边）的根因，已用 e2e 在 main 上复现：
+  1. 旧设置里的手动缩放（`zoomAuto=false`、zoom≈0.85）在手机上也给画布加了 `transform: scale(z)`，铺满后的画布被缩小，四周露出 #game 背景。修复：手机上一律按 1 渲染；存档里的缩放值保留，回到电脑上仍生效。
+  2. iOS 独立模式启动或旋转后，`visualViewport` 可能停在旧的竖屏尺寸，逻辑宽被算成 1280（16:9）。修复：以 `innerWidth/innerHeight` 为准，只有 visualViewport 同宽且未缩放时才取较小的高（浏览器地址栏的情况）。
+  3. 重排时机补全：在 `pageshow`、`visibilitychange`（回到前台）、`orientationchange`、`screen.orientation change` 时重排，并在 0/120/400/1000/2000ms 多次重算；游戏 ready 后也重算一次。
+- 验证：`tests/e2e/pwa-fullscreen-verify.mjs`，截图在 `/workspace/shared-mobile/shots/pwa-*.png`。
+  - 覆盖 standalone 932×430 / 852×393（含刘海 59/59/21）、旧缩放存档 1024×471、竖屏启动后旋转（visualViewport 停在旧值）、地址栏 844×345，以及桌面与 main 的像素对比。
+- 未真机验证：旋转、切后台恢复、manifest 是否生效、刘海实际 inset。iOS 会缓存 manifest 和图标，**旧的主屏幕图标要先删掉，再在 Safari 里重新「添加到主屏幕」**才会生效。

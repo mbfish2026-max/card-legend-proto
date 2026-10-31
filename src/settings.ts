@@ -76,8 +76,9 @@ export const Settings = {
     } catch { return 100; }
   },
   applyZoom() {
-    const z = this.isAutoZoom() ? 1 : clampZoom(this.zoom);
-    if (!this.isAutoZoom()) this.zoom = z;
+    // PWA 根因修复：手机上旧存档里的手动缩放（zoomAuto=false, zoom<1）会给画布加 scale(z)，铺满后四周露黑边 → 手机一律 1（存档值保留，回电脑仍生效）
+    const mob = IS_MOBILE || !!(globalThis as any).__mobile, z = mob || this.isAutoZoom() ? 1 : clampZoom(this.zoom);
+    if (!this.isAutoZoom() && !mob) this.zoom = z;
     try {
       const canvas = document.querySelector('#game canvas') as HTMLElement | null;
       if (canvas) {

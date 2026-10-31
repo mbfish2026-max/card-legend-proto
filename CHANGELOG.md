@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## PWA 主屏幕全屏（feat/pwa-fullscreen）
+- 修复 iPhone「添加到主屏幕」后画面偏小、四周黑边：
+  - 手机上忽略旧的手动缩放（画布 transform）；
+  - 视口改以 innerWidth/innerHeight 为准（独立模式下 visualViewport 可能停在旧值）；
+  - pageshow、visibilitychange、旋转时多次重排。
+- 元数据：manifest 改为 fullscreen，standalone 作回退，横屏，start_url/scope 为 /card-legend-proto/；新增 apple-touch-icon 180 和 icon-512（由 favicon 放大生成，见 art-requests）；theme 和背景改为黑色；html/body 用 dvh/svh/fill-available，position:fixed。
+- e2e：tests/e2e/pwa-fullscreen-verify.mjs；文档：docs/mobile-ui.md「PWA」。
+
 ## 手机入口全覆盖（feat/mobile-fill）
 - 右下大键按位置显示「进入/封印/上一层/回城/出城/对话」，入口在范围内高亮；左端回城与返回上一层可直接点大键。
 - 手机端可直接点传送门本体进入；顶栏地图图标改名「传送」。
