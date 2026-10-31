@@ -288,16 +288,11 @@ export class World {
       const near = this.alive('enemy').filter(u => Math.abs(u.x - h.x) <= WORLD.aggroRange).sort((a, b) => Math.abs(a.x - h.x) - Math.abs(b.x - h.x))[0];
       h.facing = (near && Math.sign(near.x - h.x) === -dx ? -dx : dx) as 1 | -1;
       let nx = h.x + dx * speed * dt;
-      // 前后都被怪贴住（夹击）时不阻挡，允许从怪物身边挤过去，避免左右都锁死
-      const back = this.queue(-dx)[0], sandwiched = !!back && this.inMelee(h, back);
-      if (!sandwiched) for (const u of this.alive('enemy')) if (Math.sign(u.x - h.x || dx) === dx) {
-        const limit = u.x - dx * (h.width + u.width) / 2;
-        if (dx > 0 ? nx > limit : nx < limit) nx = dx > 0 ? Math.max(h.x, limit) : Math.min(h.x, limit);
-      }
+      // 可直接穿过怪物卡牌（不阻挡、不推开）；穿到怪身后后，怪会转身/跳跃追到新的一侧
       h.x = Math.max(h.width / 2, Math.min(WORLD.mapWidth - h.width / 2, nx));
     }
     if (this.stepTarget !== null && (inp.dx || !sdx || Math.abs(h.x - this.stepTarget) < 0.5 || h.x === x0)) {
-      this.stepTarget = null; // 到达 / 被怪或边界挡住：结束本格
+      this.stepTarget = null; // 到达 / 被地图边界挡住：结束本格
       if (this.stepQueued) { const sd = Math.sign(this.stepQueued); this.stepTarget = h.x + sd * WORLD.stepPx; this.stepQueued -= sd; }
     }
     if (dy) h.y = Math.max(WORLD.laneMin, Math.min(WORLD.laneMax, h.y + dy * WORLD.heroLaneSpeed * dt));

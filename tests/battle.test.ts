@@ -34,7 +34,7 @@ const free = (w: World) => w.skills.map(() => 0);
   const hits: number[] = []; let prevB = b.x, pushed = false;
   for (let i = 0; i < 200; i++) { w.step(0.05); if (b.x > prevB + 1e-9) pushed = true; prevB = b.x; for (const e of w.drainEvents()) if (e.type === 'damage' && !e.heal && e.target !== h.uid) hits.push(e.target); }
   ok(!pushed && hits.length > 0 && hits.every(t => t === a.uid), '不推挤，近战只打前排');
-  run(w, 2, 1); ok(h.x + (h.width + a.width) / 2 <= a.x + 1e-6, '前排阻挡');
+  const ax = a.x; run(w, 2, 1); ok(h.x > ax, '可穿过前排走到怪身后（不阻挡）');
 }
 { // 脱战回位
   const w = mk([{ id: 'zombie', x: 2500 }]); tough(w); const h = w.hero!, z = w.alive('enemy')[0];
@@ -136,7 +136,7 @@ const free = (w: World) => w.skills.map(() => 0);
       // 去城镇商人补药（简化：金币够就买）
       while (w.gold >= 60 && w.pots[1] < 3) w.buyPotion(1);
       while (w.gold >= 60 && w.pots[3] < 3) w.buyPotion(3);
-      w.step(0.05, { dx: 1, dy: 0 }); w.drainEvents(); t += 0.05; for (let i = 0; i < cds.length; i++) cds[i] = Math.max(0, cds[i] - 0.05);
+      w.step(0.05, { dx: (() => { const f = w.queue(1)[0]; return f && w.inMelee(h, f) ? 0 : 1; })(), dy: 0 }); w.drainEvents(); t += 0.05; /* 玩家：前方接战时站定输出（可穿怪） */ for (let i = 0; i < cds.length; i++) cds[i] = Math.max(0, cds[i] - 0.05);
     }
     ok(w.deaths >= 1 && w.deaths <= 4, `${CLASSES[c].name} 难度适中：模拟通关死亡 1–4 次（实际 ${w.deaths}）`);
     console.log(`  ${CLASSES[c].name}: 通关=${w.done} 用时 ${Math.round(t)}s 等级 ${w.level} 死亡 ${w.deaths} 次 层 ${w.floorIndex + 1} 红药 ${potUsed} 瓶`);
@@ -199,8 +199,8 @@ const free = (w: World) => w.skills.map(() => 0);
     const x1 = h.x; run(w, 0.5, 0); ok(h.x === x1, '松开立即停止'); }
   { const { w, h } = fight(); run(w, 1, -1); const x0 = h.x; for (let i = 0; i < 3; i++) w.step(0.05, { dx: 1, dy: 0 });
     ok(h.x > x0, `后退后按住 D 立即前进（${Math.round(h.x - x0)}px）`);
-    run(w, 2, 1); const a = w.queue(1)[0]; ok(h.x + (h.width + a.width) / 2 <= a.x + 1e-6, '贴脸时前排阻挡（不重叠）');
-    const x2 = h.x; w.step(0.05, { dx: -1, dy: 0 }); ok(h.x < x2, '被阻挡后反向一帧就能离开，不会卡墙'); }
+    const a = w.queue(1)[0], ax = a.x; run(w, 1.5, 1); ok(h.x > ax, '贴脸按住 D 直接穿过怪物');
+    const x2 = h.x; w.step(0.05, { dx: -1, dy: 0 }); ok(h.x < x2, '穿过后反向一帧就能走回来'); }
   { const { w, h } = fight(); const x0 = h.x; h.mp = h.maxMp = 1e6;
     for (let i = 0; i < 20; i++) { if (i % 4 === 0) w.cast(i % 8 === 0 ? 0 : 1, free(w)); w.step(0.05, { dx: -1, dy: 0 }); }
     ok(x0 - h.x > WORLD.heroSpeed * 0.9 * 0.9, `连续放技能时后退不中断（${Math.round(x0 - h.x)}px）`); }
@@ -220,7 +220,9 @@ const free = (w: World) => w.skills.map(() => 0);
   const x2 = h.x; w.queueStep(1); for (let i = 0; i < 3; i++) w.step(0.05); ok(Math.abs(h.x - x2 - WORLD.stepPx) < 1e-6, `一格在 ${WORLD.stepSec}s 左右内完成`);
   const f = mk([{ id: 'zombie', x: 700 }]); tough(f); const fh = f.hero!; fh.hp = fh.maxHp = 1e9; fh.x = 560; f.alive('enemy').forEach(e => (e.ai = 'chase', e.atk = 0)); run(f, 3);
   const y = fh.x; for (let i = 0; i < 3; i++) { f.queueStep(-1); if (i === 1) f.cast(0, free(f)); run(f, 0.2); } ok(y - fh.x > WORLD.stepPx * 2.5, `战斗中点按 A 后退 3 格 + 技能不丢（${Math.round(y - fh.x)}px）`);
-  run(f, 3); const z = fh.x; f.queueStep(1); run(f, 0.5); const a = f.queue(1)[0]; ok(fh.x >= z && fh.x + (fh.width + a.width) / 2 <= a.x + 1e-6, '贴脸点 D 被阻挡，不重叠、不卡后续输入');
-  f.queueStep(-1); run(f, 0.3); ok(fh.x < z - 50, '被挡后点 A 立即后退');
+  run(f, 3); const z = fh.x, en = f.queue(1)[0], ex = en.x; for (let i = 0; i < 3; i++) f.queueStep(1); run(f, 0.5);
+  ok(Math.abs(fh.x - z - 3 * WORLD.stepPx) < 1e-6 && fh.x > ex, `贴脸点 D ×3 穿过怪物走到身后（${Math.round(fh.x - z)}px，不推开：怪位移 ${Math.round(en.x - ex)}）`);
+  run(f, 3); ok(f.meleeSide() === -1 && en.facing === 1, '穿过后怪转身追到新的一侧并继续近战');
+  f.queueStep(-1); run(f, 0.3); ok(fh.x < z + 3 * WORLD.stepPx - 50, '穿过后点 A 立即后退');
 }
 console.log(`全部通过 ${pass} 项`);

@@ -343,8 +343,8 @@ export class BattleScene extends Phaser.Scene {
       const q = this.world.alive('enemy').filter(e => Math.sign(e.x - h.x) === side && (e.ai !== 'idle' || Math.abs(e.x - h.x) < 700)).sort((a, b) => Math.abs(a.x - h.x) - Math.abs(b.x - h.x));
       let edge = -Infinity;
       for (const e of q) {
-        // 前排与主角至少留出 半卡宽之和 + 28px 的视觉空隙，避免主角卡与怪物卡贴得过近
-        const d = Math.abs(e.x - h.x), want = Math.max(d, edge, (h.width + e.width) / 2 + 28);
+        // 仅怪物之间做视觉错开；主角可与怪重叠/穿过（主角卡绘制在上层）
+        const d = Math.abs(e.x - h.x), want = Math.max(d, edge);
         const v = this.views.get(e.uid); if (v) v.dispOff = side * (want - d);
         edge = want + e.width * WORLD.visualSpacing;
       }
