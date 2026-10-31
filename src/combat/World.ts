@@ -31,6 +31,20 @@ export const FLOOR_MIGRATE = [0, 2, 3, 1, 4, 5, 6, 7];
 export const OIL_PRICE = 400;
 export { IRON_PRICE } from '../data/items';
 export type CastResult = { ok: true; targets: number[]; skill: string; kind: string } | { ok: false; reason: string };
+/** R13 官方 BOSS 机制（来源见 docs/combat-official.md）：沃玛教主/祖玛教主/赤月恶魔由 bossStep 接管攻击 */
+export const BOSS_MECH = new Set(['boss_woma', 'boss_zuma', 'boss_redmoon']);
+/** R13 官方参数 */
+export const OFFICIAL = {
+  womaStages: [5, 4, 3, 2, 1], womaDaze: 8, womaCrazy: 8, womaCrazyInterval: 0.5, womaFlySec: 30,
+  /** [适配] 祖玛教主召唤频率/上限未查到：每 12 秒最多唤醒 1 只，同时最多 2 只（F4 平衡取值） */
+  zumaCallSec: 12, zumaCallMax: 2, zumaRange: 420,
+  /** 赤月地刺：官方「每隔 2~3 秒」取 2.5；[适配] 预警 0.8 秒、判定半径 60px */
+  spikeEvery: 2.5, spikeWarn: 0.8, spikeRadius: 60,
+  /** 施毒：绿毒每 2.5 秒掉血、无视防御；红毒受伤 +20%；持续 = 道术×2 + 表值（秒） */
+  poisonTick: 2.5, redAmp: 0.2, greenDur: [20, 27, 33, 40], redDur: [15, 20, 25, 30],
+  /** 魔法盾 0–3 级减伤 */
+  shieldReduce: [0.15, 0.3, 0.45, 0.6],
+};
 const ZERO: Stats = { hp: 0, mp: 0, atk: 0, mag: 0, tao: 0, def: 0 };
 
 export class World {
@@ -319,11 +333,12 @@ export class World {
     return null;
   }
 
-  damage(target: Unit, amount: number, source?: Unit, canCrit = true, dot = false) {
+  damage(target: Unit, amount: number, source?: Unit, canCrit = true, dot = false, ignoreDef = false) {
     if (!target.alive) return 0;
     const crit = canCrit && this.rng() < (source?.isHero ? this.critChance() : CRIT_CHANCE);
     if (crit) amount *= CRIT_MULT;
-    amount = Math.max(amount * 0.2, amount - (target.def ?? 0) * WORLD.defFactor);
+    if (!ignoreDef) amount = Math.max(amount * 0.2, amount - (target.def ?? 0) * WORLD.defFactor);
+    if (target.redUntil && target.redUntil > this.time) amount *= 1 + OFFICIAL.redAmp; // R13 红毒
     if (target.armorUntil && target.armorUntil > this.time) amount *= 1 - (target.armorReduce ?? 0.5);
     amount = Math.max(1, Math.round(amount));
     target.hp -= amount;
@@ -539,6 +554,7 @@ export class World {
       targets = this.queue(side).filter(e => e.level < this.level && this.gap(h, e) <= reach).slice(0, 3);
       if (!targets.length) return { ok: false, reason: '附近没有等级低于自己的目标' };
     }
+    if (s.kind === 'buff' && s.reduce && (h.armorUntil ?? 0) > this.time) return { ok: false, reason: `${s.name}持续中（官方：持续期间重复开启无效）` };
     h.mp = (h.mp ?? 0) - s.mana; cds[i] = s.cooldown;
     this.events.push({ type: 'attack', source: h.uid, target: targets[0]?.uid ?? h.uid, skill: s.id });
     this.addTrain(s, 100);
@@ -546,8 +562,8 @@ export class World {
     const dur = (s.duration ?? 8) + (s.durPerLv ?? 0) * slv;
     if (s.kind === 'buff') {
       if (s.reduce) {
-        h.armorUntil = this.time + dur; h.armorReduce = s.reduce;
-        this.events.push({ type: 'log', text: `${s.name}：受到伤害降低 ${Math.round(s.reduce * 100)}%，持续 ${dur} 秒` });
+        h.armorUntil = this.time + dur; h.armorReduce = OFFICIAL.shieldReduce[Math.min(3, slv)];
+        this.events.push({ type: 'log', text: `${s.name}：受到伤害降低 ${Math.round(h.armorReduce * 100)}%，持续 ${dur} 秒` });
       }
       if (s.heal) this.heal(h, pw * s.heal);
     } else if (s.kind === 'summon') {
@@ -568,7 +584,13 @@ export class World {
         this.events.push({ type: 'summon', uid: u.uid });
       }
     } else if (s.kind === 'dot') {
-      for (const t of targets) { t.poisonUntil = this.time + dur; t.poisonDps = pw * (s.mult ?? 0.5); t.poisonTick = this.time + 1; this.damage(t, pw * (s.mult ?? 0.5), h, false); }
+      // R13 官方施毒：红绿毒同时施加（[适配] 本作不区分毒粉），无直接伤害；绿毒每 2.5 秒掉血且无视防御，红毒受伤 +20%
+      const lv4 = Math.min(3, slv), tao2 = (h.tao ?? 0) * 2;
+      for (const t of targets) {
+        t.poisonUntil = this.time + tao2 + OFFICIAL.greenDur[lv4]; t.redUntil = this.time + tao2 + OFFICIAL.redDur[lv4];
+        t.poisonDps = pw * (s.mult ?? 0.5); t.poisonTick = this.time + OFFICIAL.poisonTick;
+        if (t.ai !== 'chase') { t.ai = 'chase'; this.events.push({ type: 'aggro', uid: t.uid }); }
+      }
     } else if (s.kind === 'zone') {
       // 火墙：官方 2×2、等级延长燃烧时间；[适配] 落在目标脚下，半径约一格，每秒灼烧
       const t0 = targets[0];
@@ -672,9 +694,9 @@ export class World {
     }
     for (const u of this.alive('enemy')) {
       u.moving = false;
-      // 中毒：每秒结算一次（不暴击）
+      // 中毒（R13 官方绿毒）：每 2.5 秒结算一次，无视防御、不暴击
       if (u.poisonUntil && u.poisonTick !== undefined && this.time >= u.poisonTick && u.poisonTick <= u.poisonUntil) {
-        u.poisonTick += 1; this.damage(u, u.poisonDps ?? 1, h, false, true); if (!u.alive) continue;
+        u.poisonTick += OFFICIAL.poisonTick; this.damage(u, (u.poisonDps ?? 1) * OFFICIAL.poisonTick, h, false, true, true); if (!u.alive) continue;
       }
       if (u.ai === 'alert') { u.alertT -= dt; if (u.alertT <= 0) u.ai = 'chase'; }
       else if (u.ai === 'return') {
@@ -691,6 +713,7 @@ export class World {
         const dist = Math.abs(u.x - h.x);
         if (u.ai === 'chase') {
           u.facing = -side as 1 | -1;
+          if (u.id === 'boss_redmoon') { prevDist = Math.abs(u.x - h.x); prev = u; continue; } // R13 赤月恶魔：速度 0，不移动
           const sp = chase * (u.slowUntil && u.slowUntil > this.time ? 0.5 : 1);
           const tx = dist > stop ? h.x + side * stop : u.x;
           // 近战怪：玩家后退拉开距离时，跳跃式扑上去补位（短时间 3 倍速，有冷却）
@@ -728,6 +751,7 @@ export class World {
         if (Math.abs(tx - sm.x) > 30) { sm.facing = Math.sign(tx - sm.x) as 1 | -1; this.toward(sm, tx, WORLD.summonLane, WORLD.baseSpeed * 1.1, dt); } else sm.moving = false;
       }
     }
+    if (h && h.alive) this.bossStep(dt, h);
     if (h && h.alive) {
       const side = this.meleeSide();
       // 自动普攻：仅在近战贴脸时打（不追怪）；可由 Input.autoAttack=false 关闭
@@ -748,7 +772,7 @@ export class World {
       }
       for (const s of [1, -1]) {
         const f = this.queue(s)[0];
-        if (!f || f.ai !== 'chase' || f.cd > 0 || !h.alive) continue;
+        if (!f || f.ai !== 'chase' || f.cd > 0 || !h.alive || BOSS_MECH.has(f.id)) continue;
         const s2 = this.summon, hitSummon = s2 && this.inMelee(s2, f) && this.rng() < 0.5;
         if (!hitSummon && !this.inMelee(h, f)) continue;
         const tgt = hitSummon ? s2! : h;
@@ -769,6 +793,63 @@ export class World {
         if (this.time - this.sealedLogT > 3) { this.sealedLogT = this.time; this.events.push({ type: 'log', text: `出口被${boss.name}的力量封印，击败${boss.name}后开启` }); }
       } else if (this.floorIndex >= this.floors.length - 1) { this.done = true; this.events.push({ type: 'win' }); }
       else this.loadFloor(this.floorIndex + 1);
+    }
+  }
+  /** R13 官方 BOSS 机制（沃玛教主 / 祖玛教主 / 赤月恶魔），来源与 [适配] 说明见 docs/combat-official.md */
+  bossStep(dt: number, h: Unit) {
+    for (const b of this.alive('enemy')) {
+      if (!BOSS_MECH.has(b.id) || b.ai !== 'chase') continue;
+      const m = b.boss ??= { stage: 0, dazeUntil: 0, crazyUntil: 0, crazyOn: false, flyT: 0, summonT: 0, spikeT: OFFICIAL.spikeEvery, minions: [] };
+      const sm = this.summon, slow = b.slowUntil && b.slowUntil > this.time ? 1.5 : 1;
+      const pick = () => (sm && this.inMelee(sm, b) && this.rng() < 0.5 ? sm : h);
+      if (b.id === 'boss_woma') {
+        // 血量跌破 5/7…1/7：先发呆 8 秒（不攻击）再狂暴 8 秒（每秒攻击 2 次）
+        const st = OFFICIAL.womaStages.filter(k => b.hp <= b.maxHp * k / 7).length;
+        if (st > m.stage) {
+          m.stage = st; m.dazeUntil = this.time + OFFICIAL.womaDaze; m.crazyUntil = m.dazeUntil + OFFICIAL.womaCrazy; m.crazyOn = false;
+          this.events.push({ type: 'bossfx', uid: b.uid, kind: 'daze', x: b.x }, { type: 'log', text: `${b.name}陷入发呆（8 秒不攻击），随后将狂暴！` });
+        }
+        const crazy = this.time >= m.dazeUntil && this.time < m.crazyUntil;
+        if (crazy && !m.crazyOn) { m.crazyOn = true; this.events.push({ type: 'bossfx', uid: b.uid, kind: 'crazy', x: b.x }, { type: 'log', text: `${b.name}狂暴：攻速翻倍（8 秒）` }); }
+        if (!crazy) m.crazyOn = false;
+        // 30 秒计时 + 有仇恨 + 被围攻（[适配] 主角贴身）→ 飞到目标背后
+        m.flyT += dt;
+        if (m.flyT >= OFFICIAL.womaFlySec && this.inMelee(h, b)) {
+          m.flyT = 0; const side = Math.sign(b.x - h.x) || 1;
+          b.x = h.x - side * ((h.width + b.width) / 2 + b.range); b.facing = side as 1 | -1;
+          this.events.push({ type: 'bossfx', uid: b.uid, kind: 'fly', x: b.x }, { type: 'log', text: `${b.name}飞到了你的背后！` });
+        }
+        if (this.time < m.dazeUntil || b.cd > 0) continue;
+        const t = pick(); if (!this.inMelee(t, b)) continue;
+        b.cd = crazy ? OFFICIAL.womaCrazyInterval : b.atkInterval * slow;
+        this.events.push({ type: 'attack', source: b.uid, target: t.uid, skill: 'boss' }, { type: 'bossfx', uid: b.uid, kind: 'spark', x: t.x, target: t.uid });
+        this.damage(t, b.atk * (0.9 + this.rng() * 0.2), b);
+      } else if (b.id === 'boss_zuma') {
+        // 丢火球远程攻击，边攻击边召唤祖玛雕像/卫士
+        if (b.cd > 0 || Math.abs(b.x - h.x) > OFFICIAL.zumaRange) continue;
+        const t = pick(); b.cd = b.atkInterval * slow; b.facing = (Math.sign(t.x - b.x) || 1) as 1 | -1;
+        this.events.push({ type: 'attack', source: b.uid, target: t.uid, skill: 'boss' }, { type: 'bossfx', uid: b.uid, kind: 'fireball', x: t.x, target: t.uid });
+        this.damage(t, b.atk * (0.9 + this.rng() * 0.2), b);
+        m.minions = m.minions.filter(id => this.units.some(u => u.uid === id && u.alive));
+        if (this.time >= m.summonT && m.minions.length < OFFICIAL.zumaCallMax) {
+          m.summonT = this.time + OFFICIAL.zumaCallSec;
+          const base = ENEMIES[m.minions.length % 2 ? 'zuma_guard' : 'zuma_statue'];
+          // [适配] 召唤物不给经验/掉落，防止刷怪
+          const u = this.spawn({ ...base, exp: 0, drops: [], setDrop: undefined, oilChance: 0 }, 'enemy', b.x + b.facing * 90, b.y);
+          u.ai = 'chase'; m.minions.push(u.uid);
+          this.events.push({ type: 'summon', uid: u.uid }, { type: 'bossfx', uid: b.uid, kind: 'call', x: u.x }, { type: 'log', text: `${b.name}唤醒了${base.name}` });
+        }
+      } else {
+        // 赤月恶魔：不移动；全屏地刺落在目标当时所在位置，走开可躲
+        if (m.spikeX === undefined) {
+          m.spikeT -= dt;
+          if (m.spikeT <= 0) { m.spikeX = h.x; m.spikeAt = this.time + OFFICIAL.spikeWarn; m.spikeT = OFFICIAL.spikeEvery; this.events.push({ type: 'bossfx', uid: b.uid, kind: 'spike_warn', x: h.x }); }
+        } else if (this.time >= (m.spikeAt ?? 0)) {
+          const x = m.spikeX; m.spikeX = undefined;
+          this.events.push({ type: 'attack', source: b.uid, target: h.uid, skill: 'boss' }, { type: 'bossfx', uid: b.uid, kind: 'spike', x });
+          for (const t of [h, sm]) if (t && t.alive && Math.abs(t.x - x) <= OFFICIAL.spikeRadius) this.damage(t, b.atk * (0.9 + this.rng() * 0.2), b);
+        }
+      }
     }
   }
   /** S 键：在本层起点附近返回上一层（出生在上一层出口前） */

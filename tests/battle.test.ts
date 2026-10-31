@@ -1,5 +1,5 @@
 declare const process: { env: Record<string, string | undefined> };
-import { World, SaveData, OIL_PRICE, IRON_PRICE } from '../src/combat/World';
+import { World, SaveData, OIL_PRICE, IRON_PRICE, OFFICIAL } from '../src/combat/World';
 import { ITEMS, SETS, ENHANCE_MAX, enhanceChance, shatterChance } from '../src/data/items';
 import { WORLD, Floor, FLOORS } from '../src/data/world';
 import { CLASSES, ClassId } from '../src/data/classes';
@@ -115,7 +115,8 @@ const free = (w: World) => w.skills.map(() => 0);
   w2.cast(idx(w2, 'fireball'), free(w2)); const a40 = (w2.drainEvents().find(e => e.type === 'damage') as any).amount;
   ok(d1 > 0 && a40 > a20 * 1.5, `火球伤害随等级成长（20级 ${a20} → 40级 ${a40}）`);
   const w4 = mk([{ id: 'orc', x: 900 }, { id: 'orc', x: 1000 }], [], 'mage', 40); tough(w4); w4.hero!.x = 600;
-  const sh = w4.cast(idx(w4, 'magic_shield'), free(w4)); ok(sh.ok && w4.hero!.armorReduce === 0.4, '魔法盾减伤 40%');
+  const sh = w4.cast(idx(w4, 'magic_shield'), free(w4)); ok(sh.ok && OFFICIAL.shieldReduce.includes(w4.hero!.armorReduce!), `魔法盾按官方等级减伤（${w4.hero!.armorReduce}）`);
+  ok(!w4.cast(idx(w4, 'magic_shield'), free(w4)).ok, '魔法盾持续期间重复开启无效（官方）');
   ok(!mk([{ id: 'orc', x: 900 }], [], 'mage', 30).cast(idx(w4, 'magic_shield'), free(w4)).ok, '魔法盾 31 级前不可用');
   ok(w4.skills[idx(w4, 'fireball')].mana === 12, '火球耗魔 = 官方 4 × 3（适配）');
 }
@@ -123,8 +124,9 @@ const free = (w: World) => w.skills.map(() => 0);
   const w = mk([{ id: 'orc', x: 800 }], [], 'taoist'); const o = w.alive('enemy')[0]; o.hp = o.maxHp = 1e6;
   const h = w.hero!; h.x = 500;
   ok(w.cast(idx(w, 'poison'), free(w)).ok, '施毒术施放'); w.drainEvents();
-  let dots = 0; for (let i = 0; i < 100; i++) { w.step(0.05); for (const e of w.drainEvents()) if (e.type === 'damage' && e.dot) dots++; }
-  ok(dots >= 4, `中毒每秒掉血（5 秒内 ${dots} 跳）`);
+  let dots = 0; for (let i = 0; i < 110; i++) { w.step(0.05); for (const e of w.drainEvents()) if (e.type === 'damage' && e.dot) dots++; }
+  ok(dots === 2, `绿毒每 2.5 秒掉血（5.5 秒内 ${dots} 跳）`);
+  ok(o.redUntil! > w.time, '红毒同时生效');
   const r = w.cast(idx(w, 'summon_skeleton'), free(w)); const sm = w.summon;
   ok(r.ok && !!sm && sm.team === 'ally' && sm.card?.bg === 0x7a5c14, '召唤出金色卡底的友方骷髅');
   h.hp = h.maxHp = 1e9; let sDmg = 0;
@@ -199,6 +201,25 @@ const free = (w: World) => w.skills.map(() => 0);
   ok(QUESTS.find(q => q.target === 'orc')!.floor === 1 && QUESTS.find(q => q.target === 'spider')!.floor === 2 && QUESTS.find(q => q.target === 'skeleton')!.floor === 3, '悬赏随层移动');
   const lv = FLOORS.map(f => Math.max(...f.spawns.map(sp => ENEMIES[sp.id].tier === 'boss' ? 0 : ENEMIES[sp.id].level)));
   ok(lv.every((v, i) => i === 0 || v >= lv[i - 1]), `各层普通怪最高等级递增 ${lv.join('/')}`);
+}
+{ // R13 官方 BOSS 机制
+  const ww = mk([{ id: 'boss_woma', x: 800 }], [], 'warrior', 30); const h = ww.hero!; h.hp = h.maxHp = 1e9; h.x = 600; const b = ww.alive('enemy')[0]; b.ai = 'chase';
+  b.hp = b.maxHp * 0.7; ww.step(0.05); ww.drainEvents();
+  ok(b.boss!.stage === 1 && b.boss!.dazeUntil > ww.time, '沃玛教主血量跌破 5/7 进入发呆');
+  let atk = 0; for (let i = 0; i < 100; i++) { ww.step(0.05); atk += ww.drainEvents().filter(e => e.type === 'attack' && e.source === b.uid).length; }
+  ok(atk === 0, '沃玛教主发呆期间不攻击');
+  ww.time = b.boss!.dazeUntil; b.cd = 0; atk = 0; for (let i = 0; i < 80; i++) { ww.step(0.05); atk += ww.drainEvents().filter(e => e.type === 'attack' && e.source === b.uid).length; }
+  ok(atk >= 7, `沃玛教主狂暴每秒攻击 2 次（4 秒 ${atk} 次）`);
+  const x0 = b.x; b.boss!.flyT = 30; ww.step(0.05); ok(Math.sign(b.x - h.x) !== Math.sign(x0 - h.x), '沃玛教主 30 秒后飞到主角背后');
+  const wz = mk([{ id: 'boss_zuma', x: 950 }], [], 'mage', 30); wz.hero!.hp = wz.hero!.maxHp = 1e9; wz.hero!.x = 600; const z = wz.alive('enemy')[0]; z.ai = 'chase'; z.cd = 0;
+  wz.step(0.05); const ev = wz.drainEvents();
+  ok(ev.some(e => e.type === 'bossfx' && e.kind === 'fireball') && wz.alive('enemy').length === 2, '祖玛教主远程火球并唤醒祖玛怪');
+  const wr = mk([{ id: 'boss_redmoon', x: 900 }], [], 'warrior', 30); const rh = wr.hero!; rh.hp = rh.maxHp = 1e9; rh.x = 600; const r = wr.alive('enemy')[0]; r.ai = 'chase';
+  const rx = r.x; let hit = 0, warn = 0;
+  for (let i = 0; i < 60; i++) { wr.step(0.05); for (const e of wr.drainEvents()) { if (e.type === 'bossfx' && e.kind === 'spike_warn') { warn++; rh.x += 200; } if (e.type === 'damage' && e.target === rh.uid) hit++; } }
+  ok(r.x === rx && warn >= 1 && hit === 0, '赤月恶魔不移动，地刺预警后走开可躲');
+  for (let i = 0; i < 80; i++) { wr.step(0.05); for (const e of wr.drainEvents()) if (e.type === 'damage' && e.target === rh.uid) hit++; }
+  ok(hit >= 1, '站在地刺上会受伤');
 }
 { // 平衡：每个职业的自动脚本能打通全部 5 层（允许死亡复活）
   for (const c of ['warrior', 'mage', 'taoist'] as ClassId[]) {

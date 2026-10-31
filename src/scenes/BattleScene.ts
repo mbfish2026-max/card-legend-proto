@@ -322,6 +322,32 @@ export class BattleScene extends Phaser.Scene {
       } else if (e.type === 'respawn') this.onRespawn();
       else if (e.type === 'inventory') { if (this.ui?.panel?.open) this.ui.panel.render(); }
       else if (e.type === 'log') this.log(e.text, e.color === 'green');
+      else if (e.type === 'bossfx') this.bossFx(e);
+    }
+  }
+  /** R13 官方 BOSS 机制表现：沃玛电火花、祖玛火球、赤月地刺预警/冒刺、发呆/狂暴/瞬移/召唤提示（1× 简易图形） */
+  bossFx(e: Extract<BattleEvent, { type: 'bossfx' }>) {
+    const v = this.views.get(e.uid), t = e.target !== undefined ? this.views.get(e.target) : undefined;
+    const hv = this.world.hero ? this.views.get(this.world.hero.uid) : undefined, gy = hv ? hv.y : GROUND_Y;
+    const tip = (txt: string, c: string) => v && fx.floatNumber(this, v.cx, v.cy - v.h * 0.35, v.h, txt, c, 0.8);
+    switch (e.kind) {
+      case 'spark': if (v && t) { const dir = t.x >= v.x ? 1 : -1; v.swing(dir); v.lunge(dir, 18); fx.lightning(this, t.cx, t.cy - 220, t.cy); } break;
+      case 'fireball': if (v && t) { const dir = t.x >= v.x ? 1 : -1; v.swing(dir); fx.projectile(this, v.cx + dir * 30, v.cy - 20, t.cx, t.cy, 'fire', () => fx.explosion(this, t.cx, t.cy, t.h * 0.3)); } break;
+      case 'spike_warn': {
+        const g = this.add.ellipse(e.x, gy, 120, 30, 0xff2020, 0.35).setStrokeStyle(2, 0xff5050).setDepth(8);
+        this.tweens.add({ targets: g, alpha: 0.9, duration: 200, yoyo: true, repeat: 1, onComplete: () => g.destroy() }); break;
+      }
+      case 'spike': {
+        const g = this.add.graphics().setDepth(57); g.fillStyle(0x8a1010, 1);
+        for (let i = -2; i <= 2; i++) g.fillTriangle(e.x + i * 22 - 9, gy, e.x + i * 22 + 9, gy, e.x + i * 22, gy - 70 + Math.abs(i) * 14);
+        g.setScale(1, 0.1); g.y = gy * 0.9;
+        this.tweens.add({ targets: g, scaleY: 1, y: 0, duration: 120, onComplete: () => this.tweens.add({ targets: g, alpha: 0, delay: 250, duration: 250, onComplete: () => g.destroy() }) });
+        if (!FxQuality.low) this.cameras.main.shake(80, 0.003); break;
+      }
+      case 'daze': tip('发呆', '#c0c0c0'); break;
+      case 'crazy': tip('狂暴！', '#ff4040'); break;
+      case 'fly': tip('飞！', '#ffd080'); break;
+      case 'call': tip('召唤', '#ffd080'); break;
     }
   }
   useNext = false; fading = false; portalHint!: Phaser.GameObjects.Text;
