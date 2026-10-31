@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 模拟补给策略（fix/sim-supply2）
+- 仅改 tests/battle.test.ts 模拟脚本：进图前回村补红/蓝药，上限随层深增加（存钱期 min(3,1+层/4)，否则 3+层/2）；游戏数值未改
+
 ## 合击版阶段 B（feat/hj-battle）
 - 六合击各自效果（AOE/单体、无视防御/吸血/易伤/中毒/麻痹，数值 [适配]）；BOSS 免疫麻痹
 - 6 个 fx_combo_* 美术需求；未到素材时 Graphics 占位（浏览器验证无报错）
