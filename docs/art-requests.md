@@ -343,6 +343,19 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 | I1 | chicken | 鸡肉 | `public/assets/items/chicken.png` | ITEMS.chicken.icon → `items/chicken.png` | 改编 |
 | I1 | meat | 鹿肉 | `public/assets/items/meat.png` | ITEMS.meat.icon → `items/meat.png` | 改编 |
 | I1 | bone | 骷髅骨头 | `public/assets/items/bone.png` | ITEMS.bone.icon → `items/bone.png` | 改编 |
+
+### L.2 召唤物姿态单帧（fx-requests「召唤物动作」）
+
+与原立绘同尺寸、同脚底锚点（不透明区最低行对齐，水平按原图不透明像素均值 x 居中），混合模式 NORMAL。接入：攻击/受击时临时替换召唤物立绘纹理，结束后切回 `_full`。
+
+| 文件 | 尺寸 | 基准立绘 | 用途 |
+|---|---|---|---|
+| `public/assets/fx/summon_skeleton_atk.png` | 836×1096 | `portraits/skeleton_full.png` | 骷髅（summon_skeleton）攻击帧：前倾挥砍 |
+| `public/assets/fx/summon_skeleton_hurt.png` | 836×1096 | `portraits/skeleton_full.png` | 骷髅受击帧：后仰、骨屑飞溅 |
+| `public/assets/fx/summon_beast_atk.png` | 960×747 | `portraits/summon_beast_full.png` | 神兽（summon_beast）攻击帧：前扑爪击、蓝色爪痕 |
+| `public/assets/fx/summon_beast_hurt.png` | 960×747 | `portraits/summon_beast_full.png` | 神兽受击帧：闭眼后缩 |
+
+注：SUMMON_BEAST 目前 art 仍为 `wolf`，需先改为 `summon_beast` 才能与这两帧配套；骷髅攻击帧因挥剑姿态较宽，按画布宽度限位，重心比原图右移约 23px。
 ## feat/maps-more（plan-60h B1）
 1. 背景 3 张（1920×1080 起）：兽人古墓（bg_floor14/15）、天然洞穴（骷髅洞，bg_floor16/17）、沃玛自然洞穴（bg_floor18/19）；现占位复用 bg_floor3 / bg_floor2。
 2. 怪物立绘 5 张：骷髅战士、骷髅战将、掷斧骷髅、洞蛆、山洞蝙蝠（现复用已有贴图）。
