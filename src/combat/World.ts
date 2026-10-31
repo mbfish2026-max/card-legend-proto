@@ -491,7 +491,7 @@ export class World {
   /** feat/maps-more：刷怪并按子层深度加成（官方第 d 层 攻/血 ×(1+DEPTH_STEP×(d−1))，原有层 depth 缺省=1 不变） */
   spawnFoe(id: string, x: number, y: number) { const u = this.spawn(ENEMIES[id], 'enemy', x, y), d = this.floor.depth ?? 1;
     const bs = this.floors === FLOORS ? foeStatsAt(id, this.floorIndex) : null; // balance-sys：按层目标等级生成面板（新手图豁免）
-    if (bs) { u.level = bs.level; u.hp = u.maxHp = bs.hp; u.atk = bs.atk; u.def = bs.def; }
+    if (bs) { u.level = bs.level; u.hp = u.maxHp = bs.hp; u.atk = bs.atk; u.def = bs.def; if (u.tier !== 'boss') u.mdef = Math.round(bs.def * FOE_BAND.mdef[floorBand(this.floorIndex)]); }
     else if (d > 1) { const k = 1 + DEPTH_STEP * (d - 1); u.hp = u.maxHp = Math.round(u.hp * k); u.atk = Math.round(u.atk * k); }
     // feat/balance-battle：BOSS 攻击 = 同层普通怪均值 ×bossAtkVsNormal（取 max）、血 = 均值 ×bossHpVsNormal（取 min）[适配]；攻击间隔 1.5→1.2s。首图豁免
     // 普通怪均值：主线取 balance-sys 的 foeStatsAt 面板；自定义层取 ENEMIES×深度系数

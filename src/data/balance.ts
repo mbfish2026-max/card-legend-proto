@@ -115,6 +115,7 @@ const ratio = (v: number, avg: number) => Math.max(0.85, Math.min(1.15, avg > 0 
 /** balance-battle2 A [适配]（官方未查到）：按层目标等级 10 级段（1–10…41–50+）给普通怪攻/血再乘一层，用来给 0 死亡段加压、过难段减压。改前全 1 */
 export const FOE_BAND = { atk: [1, 1, 1, 1, 1], hp: [1, 1, 1, 1, 1],
   /** 普通怪移动速度倍率（贴近远程职业） */ spd: [1, 1, 1, 1, 1],
+  /** 普通怪魔御 = 防御 × 该倍率（缺省魔御=防御；官方怪物有独立魔御 MAC，本作数值未查到） */ mdef: [1, 1, 1, 1, 1],
   /** 召唤物仇恨是否生效（0 = 该段普通怪不被召唤物拉走，仍追主角；替身法符不受影响） */ petAggro: [1, 1, 1, 1, 1] };
 export const floorBand = (f: number) => fb(FLOOR_TARGET_LV[f] ?? 1);
 const fb = (L: number) => Math.min(4, Math.max(0, Math.floor((L - 1) / 10)));
