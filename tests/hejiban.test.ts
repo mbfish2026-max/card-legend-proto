@@ -18,3 +18,10 @@ const W = (lv = 40, cls: any = 'warrior', save?: any) => new World(seeded(1), lv
   w2.companion!.out = true; w2.gainExp(100000); ok(w2.companion!.exp > 0 || w2.companion!.level > 1, '召唤中的英雄分得经验');
 }
 console.log(`合击版测试全部通过（${pass}）`);
+{ // #2 英雄获取
+  const w = W(39); ok(w.recruitCompanion('taoist', '阿道')?.includes('40') === true && !w.companion, '40 级前不可领');
+  w.level = 40; const g = w.gold; ok(w.recruitCompanion('taoist', '阿道') === null && w.companion?.cls === 'taoist' && w.gold === g, '40 级免费领取，职业三选一');
+  ok(w.recruitCompanion('mage', 'x') === '已有英雄', '只能领一次');
+  ok(W(40, 'warrior', w.toSave()).companion?.name === '阿道', '领取后存档保留');
+}
+console.log(`合击版 #2 通过（${pass}）`);

@@ -1,3 +1,4 @@
+import { COMPANION_UNLOCK_LEVEL, RECRUIT_DIALOG } from '../data/companion';
 import { fmtExp, scaledExp } from '../data/expCurve';
 import Phaser from 'phaser';
 import type { World } from '../combat/World';
@@ -6,7 +7,7 @@ import { EQUIP_SLOTS, EQUIP_SLOT_NAMES, SLOT_NAMES, STAT_NAMES, ITEMS, SETS, ENH
 import { OIL_PRICE } from '../combat/World';
 import { POTIONS } from '../data/skills';
 import { WORLD } from '../data/world';
-import { CLASSES } from '../data/classes';
+import { CLASSES, CLASS_IDS } from '../data/classes';
 import { renderSettingsView } from './SettingsView';
 import { txt, button, sfx } from '../scenes/TitleScene';
 import { IS_MOBILE } from '../mobile';
@@ -248,7 +249,7 @@ export class Panel {
     const n = this.npcDef(), X = 340;
     if (!n) { R.add(txt(s, X, top + 90, `${t.name}\n选择左侧 NPC。\n来源：${t.src}`, 14, '#ddd', { wordWrap: { width: 600 } })); return; }
     R.add(txt(s, X - 180, top + 44, `${n.name}${n.pos ? `  原版坐标 ${n.pos}` : ''}${n.note ? `  ${n.note}` : ''}`, 13, '#ffe8a0', { wordWrap: { width: this.npcNeedsBag() ? 400 : 700 } }));
-    const row = (i: number, name: string, sub: string, label: string, fn: () => void, ok: boolean, icon?: string) => {
+    const row = (i: number, name: string, sub: string, label: string, fn: () => void, ok: boolean, icon?: string, X = 340) => {
       const y = top + 100 + i * 50;
       R.add(s.add.rectangle(X + 110, y, 230, 44, 0x0a0806).setStrokeStyle(1, 0x4a3a28));
       if (icon && s.textures.exists('item_' + icon)) R.add(s.add.image(X + 16, y, 'item_' + icon).setDisplaySize(36, 36));
@@ -265,7 +266,12 @@ export class Panel {
     if (n.kind === 'book') { R.add(txt(s, X, top + 74, '书店：本职业有售技能书', 13, '#9fd')); w.shopBooks().forEach((b, i) => { const id = 'book_' + b.skill, learned = w.learned.has(b.skill);
       row(i, ITEMS[id].name, `${b.price} 金 ${learned ? '已学会' : ''}`, '购买', () => buy(w.buyBook(b.skill), ITEMS[id].name), !learned && w.gold >= b.price, id); }); }
     if (n.kind === 'jewelry') R.add(txt(s, X, top + 90, '首饰店存货：未查到（原版只能买到别人卖的）。\n点击右侧背包物品出售。', 13, '#9fd'));
-    if (n.kind === 'veteran') R.add(txt(s, X, top + 66, '老兵：城里安全，西门出城；要去哪我送你。', 13, '#9fd'));
+    if (n.kind === 'veteran') { R.add(txt(s, X, top + 66, '老兵：城里安全，西门出城；要去哪我送你。', 13, '#9fd'));
+      const c = w.companion; // 合击版 #2 英雄获取（40 级，免费）
+      if (c) row(0, `英雄 ${c.name}`, `${CLASSES[c.cls].name} Lv${c.level} · ${c.out ? '召唤中' : '已收回'}`, c.out ? '收回' : '召唤', () => { c.out = !c.out; if (!c.out) c.recallAt = w.time; this.render(); }, true, undefined, X + 250);
+      else CLASS_IDS.forEach((k, i) => row(i, `领取${CLASSES[k].name}英雄`, w.level < COMPANION_UNLOCK_LEVEL ? `${COMPANION_UNLOCK_LEVEL} 级开放 · 免费` : RECRUIT_DIALOG[i % 2].slice(0, 14) + '…', '领取', () => {
+        const nm = CLASSES[k].name + '英雄'; // [适配] 起名用默认名（输入框后续做）
+        const e = w.recruitCompanion(k, nm); this.onChange(e ?? `获得英雄 ${nm}`, !e); this.render(); }, w.level >= COMPANION_UNLOCK_LEVEL, undefined, X + 250)); }
     if (n.kind === 'teleport' || n.kind === 'veteran') { const fl = [...w.reached].sort((a, b) => a - b).slice(0, 8);
       fl.forEach((f, i) => row(i, w.floors[f].name, `${w.teleportCost(f)} 金 · 冷却 ${WorldCls.TELEPORT_CD}s`, '传送', () => { const e = w.townTeleport(f); this.onChange(e ?? `传送到 ${w.floors[f].name}`, !e); if (!e) { this.mode = null; this.close(); this.onTeleport?.(); } else this.render(); }, w.gold >= w.teleportCost(f))); }
     if (n.kind === 'storage') {

@@ -69,3 +69,9 @@ export function companionUnequip(c: CompanionState, sl: CompanionSlot): string |
   const it = c.equip[sl]; if (!it) return '该栏位为空'; if (c.bag.length >= COMPANION_BAG) return '英雄包裹已满';
   delete c.equip[sl]; c.bag.push(it); return null;
 }
+
+// ===== #2 英雄获取 =====
+/** 官方：角色 40 级，经苍月岛「神秘人」送至英雄地，长老处选职业+起名，免费（H2 https://actmir2.web.sdo.com/project/mir2180/index.html 、H3、H4） */
+export const COMPANION_UNLOCK_LEVEL = 40;
+/** [适配] 本作没有苍月岛/英雄地地图：在城里老兵处弹剧情对话完成（神秘人→长老两步合一） */
+export const RECRUIT_DIALOG = ['神秘人：你已有 40 级修为，随我去英雄地吧。', '长老：选一位英雄与你并肩作战，给他起个名字。'];
