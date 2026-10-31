@@ -12,7 +12,7 @@ import { CLASSES, ClassId, SkillDef, castGapOf } from '../data/classes';
 import { ITEMS, SLOTS, SETS, equipSlotsFor, EQUIP_VERSION, ENHANCE_SLOTS, ENHANCE_MAX, ENHANCE_STAT, IRON_PRICE, IRON_MAX_PURITY, enhanceChance, shatterChance } from '../data/items';
 import { HERO, ENEMIES, SUMMON, SUMMON_BEAST, SUMMON_CORPSE, SUMMON_GOLDEN, DECOY } from '../data/units';
 import { EXP_PER_LEVEL, EXP_VERSION, migrateExp, scaledExp, fmtExp } from '../data/expCurve';
-import { killExp, foeStatsAt, FLOOR_TARGET_LV } from '../data/balance';
+import { killExp, foeStatsAt, FLOOR_TARGET_LV, FOE_BAND, floorBand } from '../data/balance';
 import '../data/drop-plan';
 import { REGIONS } from '../data/map';
 import { MINE_FLOORS, MINE_CAST, MINE_RESPAWN, MINE_RADIUS, mineX, minePurity, OIL_BOSSES, OIL_RATE } from '../data/mining'; // 阶段4：drop-plan 覆盖（副作用：改写 ENEMIES.drops）
@@ -280,6 +280,7 @@ export class World {
     if (u.aggroUid === undefined || BOSS_MECH.has(u.id)) return undefined;
     const h = this.hero, sm = this.units.find(x => x.uid === u.aggroUid && x.alive);
     if (sm?.decoy) return sm; // 替身法符：仇恨完全转移
+    if (this.floors === FLOORS && u.tier !== 'boss' && !FOE_BAND.petAggro[floorBand(this.floorIndex)]) return undefined; // balance-battle2 [适配]：该段怪不被召唤物拉走
     if (!sm || !h || Math.abs(u.x - h.x) <= WORLD.summonAggroNear) return undefined;
     return sm;
   }
@@ -490,7 +491,7 @@ export class World {
   /** feat/maps-more：刷怪并按子层深度加成（官方第 d 层 攻/血 ×(1+DEPTH_STEP×(d−1))，原有层 depth 缺省=1 不变） */
   spawnFoe(id: string, x: number, y: number) { const u = this.spawn(ENEMIES[id], 'enemy', x, y), d = this.floor.depth ?? 1;
     const bs = this.floors === FLOORS ? foeStatsAt(id, this.floorIndex) : null; // balance-sys：按层目标等级生成面板（新手图豁免）
-    if (bs) { u.level = bs.level; u.hp = u.maxHp = bs.hp; u.atk = bs.atk; u.def = bs.def; }
+    if (bs) { u.level = bs.level; u.hp = u.maxHp = bs.hp; u.atk = bs.atk; u.def = bs.def; if (u.tier !== 'boss') u.speed = Math.round(u.speed * FOE_BAND.spd[floorBand(this.floorIndex)]); }
     else if (d > 1) { const k = 1 + DEPTH_STEP * (d - 1); u.hp = u.maxHp = Math.round(u.hp * k); u.atk = Math.round(u.atk * k); }
     // feat/balance-battle：BOSS 攻击 = 同层普通怪均值 ×bossAtkVsNormal（取 max）、血 = 均值 ×bossHpVsNormal（取 min）[适配]；攻击间隔 1.5→1.2s。首图豁免
     // 普通怪均值：主线取 balance-sys 的 foeStatsAt 面板；自定义层取 ENEMIES×深度系数
