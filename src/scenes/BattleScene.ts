@@ -158,6 +158,8 @@ export class BattleScene extends Phaser.Scene {
     this.portalHint = this.add.text(0, -235, IS_MOBILE ? '点「进入」' : '按 W/空格 进入', { fontFamily: FONT, fontSize: '18px', color: '#ffffff', fontStyle: 'bold', stroke: '#2a0a5a', strokeThickness: 5 }).setOrigin(0.5).setVisible(false);
     this.tweens.add({ targets: this.portalHint, y: -242, duration: 500, yoyo: true, repeat: -1 });
     c.add([arch, core, swirl, ...rings, motes, t, this.portalHint]); this.portal = c;
+    // 手机：传送门本体可点（与「进入」键同效，不在门口则提示走近）；电脑不加交互，保持原样
+    if (IS_MOBILE) arch.setInteractive(new Phaser.Geom.Rectangle(-110, -200, 220, 330), Phaser.Geom.Rectangle.Contains).on('pointerdown', () => this.mobileAct('portal'));
   }
   // ===== R14 横版长街城镇 =====
   street?: Phaser.GameObjects.Container; streetFar?: Phaser.GameObjects.TileSprite; streetHint?: Phaser.GameObjects.Text; townTarget: { x: number; id: string } | null = null;
@@ -542,6 +544,22 @@ export class BattleScene extends Phaser.Scene {
   }
   useNext = false; fading = false; portalHint!: Phaser.GameObjects.Text;
   /** 传送门：在出口处按空格 → 黑屏淡出 → 切层（新楼层再淡入） */
+  /** 当前位置可触发的入口（手机「进入」大键按此显示文字并执行）：右端出口 / 左端回城或上一层 / 城内门面与城门 */
+  entranceHere(): 'talk' | 'gate' | 'exit' | 'sealed' | 'town' | 'prev' | null {
+    const w = this.world; if (w.town) return w.atTownGate() ? 'gate' : w.nearDoor() ? 'talk' : null;
+    if (w.atExit) return w.floor.boss && w.alive('enemy').some(u => u.tier === 'boss') ? 'sealed' : 'exit';
+    if (w.atReturnGate()) return w.floorIndex === 0 || REGIONS.some(r => r.floors[0] === w.floorIndex) ? 'town' : 'prev';
+    return null;
+  }
+  /** 手机「进入」键 / 点传送门本体：覆盖桌面 W/空格/T/S 的全部入口（docs/mobile-ui.md 入口对照表） */
+  mobileAct(src: 'key' | 'portal' = 'key') {
+    if (this.state !== 'play' || this.paused) return; const e = this.entranceHere();
+    if (src === 'portal' && e !== 'exit' && e !== 'sealed') { this.log('走到传送门前再点'); return; }
+    if (e === 'talk' || e === 'gate' || this.world.town) return this.townUse();
+    if (e === 'exit' || e === 'sealed') return this.usePortal();
+    if (e === 'town' || e === 'prev') return this.onKey('S');
+    this.log('走到右端传送门进入下一层，或走到左端入口回城/返回上一层');
+  }
   usePortal() {
     const w = this.world; if (!w.atExit || this.fading) return;
     if (w.floor.boss && w.alive('enemy').some(u => u.tier === 'boss')) { this.useNext = true; return; }

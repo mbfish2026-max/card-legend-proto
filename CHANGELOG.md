@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 手机入口全覆盖（feat/mobile-fill）
+- 右下大键按位置显示「进入/封印/上一层/回城/出城/对话」，入口在范围内高亮；左端回城与返回上一层可直接点大键。
+- 手机端可直接点传送门本体进入；顶栏地图图标改名「传送」。
+- 新增 e2e `tests/e2e/mobile-entrance-verify.mjs`：出口(键/本体)、BOSS 门、上一层、回城口、城门、传送员、地图传送、侧线出口全部触屏验证。
+- 回城卷轴未实现，预留 `entranceHere/mobileAct` 扩展点。电脑端不变。
+
 ## 手机画面铺满（feat/mobile-fill）
 - 手机模式下画布铺满整个可视区，iPhone 横屏两侧不再有黑边。逻辑高度固定 720，逻辑宽度按可视区宽高比扩展，范围 1280–2016（2.8:1），等比不变形。尺寸取自 visualViewport，地址栏收起或展开、旋转、resize 时实时重算（Phaser setGameSize + FIT）。
 - 战斗相机加宽后能看到更多场景；World 坐标、碰撞、怪物位置不变。相机夹紧沿用 setBounds，按新相机宽度自动计算。
