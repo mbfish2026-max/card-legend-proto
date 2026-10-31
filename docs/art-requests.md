@@ -293,3 +293,11 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 | M3 | black_boar | 黑野猪 | `public/assets/portraits/black_boar_full.png` | ASSETS 加 `black_boar`，units 中 art 指向 `black_boar` | 参考原作 |
 | M3 | scorpion_snake | 蝎蛇 | `public/assets/portraits/scorpion_snake_full.png` | ASSETS 加 `scorpion_snake`，units 中 art 指向 `scorpion_snake` | 参考原作 |
 | M3 | summon_beast | 神兽 | `public/assets/portraits/summon_beast_full.png` | ASSETS 加 `summon_beast`，units 中 art 指向 `summon_beast` | 推测 |
+| M4 | yeti_king | 雪人王 | `public/assets/portraits/yeti_king_full.png` | ASSETS 加 `yeti_king`，units 中 art 指向 `yeti_king` | 参考原作 |
+| M4 | rake_cat_king | 钉耙猫王 | `public/assets/portraits/rake_cat_king_full.png` | ASSETS 加 `rake_cat_king`，units 中 art 指向 `rake_cat_king` | 推测 |
+| M4 | orc_commander | 半兽统领 | `public/assets/portraits/orc_commander_full.png` | ASSETS 加 `orc_commander`，units 中 art 指向 `orc_commander` | 参考原作 |
+| M4 | evil_lich | 恶灵尸王 | `public/assets/portraits/evil_lich_full.png` | ASSETS 加 `evil_lich`，units 中 art 指向 `evil_lich` | 参考原作 |
+| M4 | huangquan_master | 黄泉教主 | `public/assets/portraits/huangquan_master_full.png` | ASSETS 加 `huangquan_master`，units 中 art 指向 `huangquan_master` | 参考原作 |
+| M4 | hawk_guard | 鹰卫 | `public/assets/portraits/hawk_guard_full.png` | ASSETS 加 `hawk_guard`，units 中 art 指向 `hawk_guard` | 参考原作 |
+| M4 | twinhead_kong | 双头金刚 | `public/assets/portraits/twinhead_kong_full.png` | ASSETS 加 `twinhead_kong`，units 中 art 指向 `twinhead_kong` | 推测 |
+| M4 | twinhead_blood | 双头血魔 | `public/assets/portraits/twinhead_blood_full.png` | ASSETS 加 `twinhead_blood`，units 中 art 指向 `twinhead_blood` | 推测 |

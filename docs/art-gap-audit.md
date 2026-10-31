@@ -137,6 +137,22 @@
 | 鹰卫 | 丛林迷宫 | 银甲弓手，背箭筒，持长弓 | [21cq Mob186](https://www.21cq.com/mir/Mob.aspx?id=186) |
 | 双头金刚 / 双头血魔 | 赤月峡谷 | 双头融合的巨猿，肌肉外凸（金刚）；双头血红色魔（血魔）。仅文字描述，图像未查 | [17173 图鉴](https://mir.17173.com/monster/monster5.htm) |
 
+
+**M4 实际清单（2026-10-31 定稿，id 为预留命名，待地图进游戏后接入）**：
+
+| id | 名称 | 规划地图 | 外观依据 |
+|---|---|---|---|
+| yeti_king | 雪人王 | 白日门野外 | 参考原作（§2.1） |
+| rake_cat_king | 钉耙猫王 | 白日门野外 | 推测（仅知猫形持钉耙） |
+| orc_commander | 半兽统领 | 封魔谷野外 | 参考原作 |
+| evil_lich | 恶灵尸王 | 尸魔洞 | 参考原作 |
+| huangquan_master | 黄泉教主 | 骨魔洞 | 参考原作 |
+| hawk_guard | 鹰卫 | 丛林迷宫 | 参考原作 |
+| twinhead_kong | 双头金刚 | 赤月峡谷 | 推测（仅文字描述） |
+| twinhead_blood | 双头血魔 | 赤月峡谷 | 推测（仅文字描述） |
+
+去重：尸王=boss_lich、骷髅精灵=boss_skeleton_lord 已有图；千年树妖已在 M1 交付。
+
 ## 3. 生成分批与优先级建议
 
 | 批次 | 内容 | 数量 | 说明 |
@@ -246,3 +262,11 @@
 | M3 | black_boar | 黑野猪 | `public/assets/portraits/black_boar_full.png` | 730×960 | 参考原作 |
 | M3 | scorpion_snake | 蝎蛇 | `public/assets/portraits/scorpion_snake_full.png` | 897×960 | 参考原作 |
 | M3 | summon_beast | 神兽 | `public/assets/portraits/summon_beast_full.png` | 960×747 | 推测：未查到原作外观，按金色神兽犬推测 |
+| M4 | yeti_king | 雪人王 | `public/assets/portraits/yeti_king_full.png` | 774×960 | 参考原作：预留，地图未进游戏 |
+| M4 | rake_cat_king | 钉耙猫王 | `public/assets/portraits/rake_cat_king_full.png` | 718×960 | 推测：预留；外观仅知猫形持钉耙 |
+| M4 | orc_commander | 半兽统领 | `public/assets/portraits/orc_commander_full.png` | 791×960 | 参考原作：预留 |
+| M4 | evil_lich | 恶灵尸王 | `public/assets/portraits/evil_lich_full.png` | 728×960 | 参考原作：预留 |
+| M4 | huangquan_master | 黄泉教主 | `public/assets/portraits/huangquan_master_full.png` | 737×960 | 参考原作：预留 |
+| M4 | hawk_guard | 鹰卫 | `public/assets/portraits/hawk_guard_full.png` | 694×960 | 参考原作：预留 |
+| M4 | twinhead_kong | 双头金刚 | `public/assets/portraits/twinhead_kong_full.png` | 780×960 | 推测：预留；仅文字描述 |
+| M4 | twinhead_blood | 双头血魔 | `public/assets/portraits/twinhead_blood_full.png` | 685×960 | 推测：预留；首版生成成三头已重绘 |
