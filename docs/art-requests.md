@@ -372,3 +372,21 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 | blade_roller_full.png | 790x960 | blade_roller | 滚刀手 | 机关洞（传世） | 据描述 | 迅猛刀手，双刃 |
 | hammer_man_full.png | 721x960 | hammer_man | 铜锤手 | 机关洞（传世） | 据描述 | 持巨锤 |
 | vajra_man_full.png | 702x960 | vajra_man | 金刚人 | 机关洞（传世） | 部分推测 | 金刚不坏的巨人 |
+
+### 批次3：蚂蚁洞穴 + 潘夜石窟 + 诺玛（11）
+
+预览：`docs/art-gap-preview/sq_b3_ant_skel_noma.jpg`
+
+| 文件 | 尺寸 | id | 名称 | 地图 | 外观 | 备注 |
+|---|---|---|---|---|---|---|
+| ant_warrior_full.png | 882x960 | ant_warrior | 蚂蚁战士 | 蚂蚁洞穴（传奇3） | 据描述 | 兵蚁，块头大、外壳硬、前额利钳 |
+| ant_armored_full.png | 960x673 | ant_armored | 盔甲蚂蚁 | 蚂蚁洞穴（传奇3） | 据描述 | 巨大蚂蚁，前额巨钳，破坏力强 |
+| ant_poison_full.png | 960x687 | ant_poison | 爆毒蚂蚁 | 蚂蚁洞穴（传奇3） | 据描述 | 小腹有喷毒射管，钳/爪不发达 |
+| ant_taoist_full.png | 783x960 | ant_taoist | 蚂蚁道士 | 蚂蚁洞穴（传奇3） | 据描述 | 畸形巨大腹部，可为同伴回血 |
+| skel_samurai_full.png | 698x960 | skel_samurai | 骷髅武士 | 潘夜石窟（传奇3） | 据描述 | 刀背带两环的刀 |
+| skel_general_full.png | 717x960 | skel_general | 骷髅武将 | 潘夜石窟（传奇3） | 据描述 | 庞大身躯，全身变异骨头 |
+| skel_soldier_full.png | 755x960 | skel_soldier | 骷髅士兵 | 潘夜石窟（传奇3） | 据描述 | 带旗长枪 |
+| skel_archer_full.png | 674x960 | skel_archer | 骷髅弓箭手 | 潘夜石窟（传奇3） | 据描述 | 弓箭，远程 |
+| bone_ghost_general_full.png | 721x960 | bone_ghost_general | 骨鬼将 | 潘夜石窟（传奇3） | 据描述 | 与骷髅武将样子很像（17173 作「鬼骨将」） |
+| noma_full.png | 754x960 | noma | 诺玛 | 沙漠绿洲（传奇3） | 据描述 | 皮衣、骨制护身服和骨制武器 |
+| noma_pharaoh_full.png | 699x960 | noma_pharaoh | 诺玛法老 | 沙漠绿洲（传奇3） | 据描述 | 会魔法，持魔法拐棍 |
