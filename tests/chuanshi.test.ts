@@ -1,3 +1,5 @@
+import { SWING_SCALE, WINDUP_SCALE, HIT_SCALE, breathScaleY } from '../src/ui/cardMotion';
+import { SUMMON, SUMMON_BEAST, SUMMON_CORPSE, SUMMON_GOLDEN, DECOY } from '../src/data/units';
 import { bookItemId } from '../src/data/books';
 import { SKILL_BOOK_DROPS } from '../src/data/skillBookDrops';
 import { ENEMIES } from '../src/data/units';
@@ -10,7 +12,7 @@ import { BOOKS } from '../src/data/books';
 import { ITEMS } from '../src/data/items';
 import { Settings, DEFAULT_AUTO_SKILLS } from '../src/settings';
 // @ts-ignore node
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 let pass = 0; const ok = (c: boolean, m: string) => { if (!c) { console.error('FAIL', m); throw new Error(m); } pass++; console.log('ok', m); };
 function seeded(s: number) { return () => (s = (s * 16807) % 2147483647) / 2147483647; }
 const CS: Record<ClassId, string[]> = {
@@ -133,5 +135,11 @@ for (const c of Object.keys(CS) as ClassId[]) for (const id of CS[c]) {
   const boss = w.alive('enemy').find(u => u.id === 'boss_lich')!; w.kill(boss); w.drainEvents();
   const got = (w as any).ground?.map?.((g: any) => g.item) ?? []; const all = JSON.stringify([got, w.bag.map(x => x.item), (w as any).loot]);
   ok(/book_half_moon/.test(all), `尸王真实掉落 >25 级书（${all.slice(0, 160)}）`);
+}
+{ // R54 F：攻击/受击/前摇/待机立绘缩放不超过基准（所有卡牌共用 CardView：主角、怪物、全部召唤物）
+  for (const [k, v] of Object.entries({ SWING_SCALE, WINDUP_SCALE, HIT_SCALE })) ok(v.x <= 1 && v.y <= 1, `${k} 关键帧不放大（${v.x}/${v.y}）`);
+  let mx = 0; for (let i = 0; i < 2000; i++) mx = Math.max(mx, breathScaleY(i * 0.013)); ok(mx <= 1, `待机呼吸 max scaleY ${mx.toFixed(4)} ≤ 1`);
+  const src = readFileSync('src/ui/CardView.ts', 'utf8'); ok(!/artS[XY] \* 1\.\d*[1-9]/.test(src) && !/scale(X|Y)?: \{?\s*(from: [\d.]+, )?to: 1\.\d*[1-9]/.test(src), 'CardView 无 artS×1.xx 放大');
+  for (const d of [SUMMON, SUMMON_BEAST, SUMMON_CORPSE, SUMMON_GOLDEN, DECOY]) ok((d.card?.h ?? 0) <= 190 && (d.card?.figureScale ?? 1) <= 1.25, `${d.name} 静态卡面不大于常规（h ${d.card?.h} fs ${d.card?.figureScale}）`);
 }
 console.log(`全部通过 ${pass} 项`);
