@@ -141,7 +141,7 @@ const hitsBy = (ev: any[], uid: number, target?: number) => ev.filter(e => e.typ
   ok(!!d && d.name === '魔龙教主' && d.tier === 'boss' && d.hp === ENEMIES.boss_zuma.hp && d.art === 'boss_woma' && d.card?.tint !== undefined, 'B3 魔龙教主：HP 基数 12000（官方，与祖玛教主同基数×难度），复用贴图着色占位');
   ok(d.drops!.some(x => x.item === 'boots') && d.drops!.some(x => x.item === 'book_page') && BOSS_MECH.has('boss_molong'), 'B3 掉落靴子/书页（官方掉落中本作已有的），走 BOSS 机制框架');
   ok(FLOORS[23]?.name === '魔龙血域' && FLOORS[23].spawns.some(x => x.id === 'boss_molong') && SIDE_FLOORS.includes(23) && !FLOOR_ORDER.includes(23) && nextFloorOf(22) === -1, 'B3 下标 23 侧线层，不进通关顺序（火龙仍是终点）');
-  ok(REGIONS.find(r => r.id === 'hejiban')!.nodes.some(n => n.floor === 23) && townOfFloor(23) === 'mengzhong' && HJ_FLOOR_ANCHORS.length === 6 && FLOOR_EXP_MULT.length === 24, 'B3 接入合击区域/回盟重/经验锚点');
+  ok(REGIONS.find(r => r.id === 'hejiban')!.nodes.some(n => n.floor === 23) && townOfFloor(23) === 'mengzhong' && HJ_FLOOR_ANCHORS.length === 6 && FLOOR_EXP_MULT.length === 34, 'B3 接入合击区域/回盟重/经验锚点');
   const w = new World(seeded(9), 55, FLOORS, 'warrior'); w.loadFloor(23); const h = w.hero!; h.hp = h.maxHp = 1e9; h.atk = 0;
   const boss = w.units.find(u => u.id === 'boss_molong')!; ok(!!boss && boss.alive, 'B3 进入魔龙血域生成魔龙教主');
   for (const u of w.alive('enemy')) if (u !== boss) w.kill(u);
