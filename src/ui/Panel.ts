@@ -1,4 +1,5 @@
 import { toLogic } from '../render';
+import { compareLines } from './equipCompare';
 import { RING_MIN_LEVEL, IDENT_PRICE, IDENT_MIN_LEVEL } from '../data/r14b';
 import { fmtExp, scaledExp } from '../data/expCurve';
 import Phaser from 'phaser';
@@ -448,7 +449,7 @@ export class Panel {
       for (const b of sd.bonus) lines.push([`  ${b.n}件：${b.text}`, n >= b.n ? '#7aff7a' : '#777']); }
     if (it.slot) {
       const ts = w.targetSlot(it), cur = ts ? w.equip[ts] : undefined;
-      if (cur && cur !== it) lines.push([`当前：${cur.name}`, '#888']);
+      void cur; lines.push(...compareLines(it, w.equip));
       lines.push([`需要等级 ${it.req}`, w.level >= it.req ? '#fff' : '#ff4040']);
       const cl = ITEMS[it.item]?.cls;
       if (cl?.length) lines.push([`职业：${cl.map(c => CLASSES[c].name).join('/')}`, cl.includes(w.cls) ? '#fff' : '#ff4040']);

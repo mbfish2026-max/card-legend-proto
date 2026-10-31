@@ -7,7 +7,7 @@
     "dev": "vite --host --port 5180",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "test": "tsx tests/equip-table.test.ts && tsx tests/battle.test.ts",
+    "test": "tsx tests/equip-compare.test.ts && tsx tests/equip-table.test.ts && tsx tests/battle.test.ts",
     "gen:equip": "tsx scripts/gen-equip-table.ts",
     "gen:monsters": "tsx scripts/gen-monsters.ts",
     "regress": "node tests/regress.mjs",

@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 装备对比（feat/equip-compare）
+- 物品提示新增与身上同部位装备的属性差：涨绿降红，属性相同显示「属性相同」；戒指/手镯分别对比左右两位；空位显示「未穿戴」；已穿的那件自身不对比
+- 背包、商店、仓库共用同一提示，均生效；触屏点选即显示（沿用选中显示提示）
+- 新增 tests/equip-compare.test.ts；e2e：tests/e2e/compare-verify.mjs、tests/e2e/maps-verify.mjs（洞穴群子层顺序/S 上一层/回城）
+
 ## 地图子层框架 + 洞穴群（feat/maps-more，plan-60h 第 1 批）
 - Floor 新增 group（图群）/sub（官方子层名）/depth/src；通关按 FLOOR_ORDER，新层追加在下标 13–18，旧档下标不变、无需迁移（白骨墓穴=兽人古墓一层 D001，原样保留，不做 mapV 迁移）
 - 新子层：兽人古墓二/三层（D002/D003）、骷髅洞·洞穴一/二层（D011/D012）、沃玛自然洞穴·一/二（E001/E002），全部练级图（farm），刷怪按 21cq 刷新表
