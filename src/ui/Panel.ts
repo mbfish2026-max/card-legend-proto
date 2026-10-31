@@ -1,3 +1,4 @@
+import { COMPANION_MODE_NAME } from '../data/companion';
 import { COMPANION_UNLOCK_LEVEL, comboFor, BOOK_PAGE, BRM_BOOK, GOLD_BAR, PAGES_PER_BOOK, COMBO_LEVEL, heartFeedValue, RAGE_MAX, HEART_STORE_MAX, RECRUIT_DIALOG } from '../data/companion';
 import { toLogic } from '../render';
 import { RING_MIN_LEVEL, IDENT_PRICE, IDENT_MIN_LEVEL } from '../data/r14b';
@@ -302,10 +303,11 @@ export class Panel {
       if (!q) row(0, `环式任务 第${w.ringDone + 1}环`, w.level < RING_MIN_LEVEL ? `${RING_MIN_LEVEL} 级开放` : '随机去过的楼层清怪', '接取', () => done(w.ringAccept(), '接到环式任务'), w.level >= RING_MIN_LEVEL, undefined, X + 250);
       else row(0, `第${q.n}环 ${q.name} ${q.prog}/${q.need}`, `${w.floors[q.floor].name}`, '交付', () => done(w.ringClaim(), '环式任务完成'), q.prog >= q.need, undefined, X + 250);
       const c = w.companion; // 合击版 #2 英雄获取（40 级，免费）
-      if (c) row(1, `英雄 ${c.name}`, `${CLASSES[c.cls].name} Lv${c.level} · ${c.out ? '召唤中' : '已收回'}`, c.out ? '收回' : '召唤', () => { c.out = !c.out; if (!c.out) c.recallAt = w.time; this.render(); }, true, undefined, X + 250);
+      if (c) { const cdl = w.companionCooldown(); // 阶段 A：与战斗内 R 键同一逻辑（官方收回后 60 秒冷却）
+        row(1, `英雄 ${c.name} · ${COMPANION_MODE_NAME[c.mode]}`, `${CLASSES[c.cls].name} Lv${c.level} · ${c.out ? '召唤中' : cdl > 0 ? `冷却 ${cdl}s` : '已收回'}`, c.out ? '收回' : '召唤', () => { const e = w.toggleCompanion(); this.onChange(e ?? (c.out ? '召唤英雄' : '收回英雄'), !e); this.render(); }, c.out || cdl <= 0, undefined, X + 250); }
       // #5 怒槽/火龙之心显示（爆发结算归战斗开发）
       if (c) { const fi = w.bag.findIndex(b => heartFeedValue(b.item) > 0);
-        row(2, `怒槽 ${c.rage}/${RAGE_MAX}`, c.equip.heart ? `火龙之心 ${c.heartStore}/${HEART_STORE_MAX}` : '未装备火龙之心（学合击后获得）', '补充', () => { const e = w.feedCompanionHeart(fi); this.onChange(e ?? '火龙之心已补充', !e); this.render(); }, !!c.equip.heart && fi >= 0, undefined, X + 250); }
+        row(2, `怒槽 ${Math.floor(c.rage)}/${RAGE_MAX}${c.burst ? " 爆发中" : ""}`, c.equip.heart ? `火龙之心 ${c.heartStore}/${HEART_STORE_MAX}` : '未装备火龙之心（学合击后获得）', '补充', () => { const e = w.feedCompanionHeart(fi); this.onChange(e ?? '火龙之心已补充', !e); this.render(); }, !!c.equip.heart && fi >= 0, undefined, X + 250); }
       else CLASS_IDS.forEach((k, i) => row(i + 1, `领取${CLASSES[k].name}英雄`, w.level < COMPANION_UNLOCK_LEVEL ? `${COMPANION_UNLOCK_LEVEL} 级开放 · 免费` : RECRUIT_DIALOG[i % 2].slice(0, 14) + '…', '领取', () => {
         const nm = CLASSES[k].name + '英雄'; // [适配] 起名用默认名（输入框后续做）
         const e = w.recruitCompanion(k, nm); this.onChange(e ?? `获得英雄 ${nm}`, !e); this.render(); }, w.level >= COMPANION_UNLOCK_LEVEL, undefined, X + 250)); }

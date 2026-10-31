@@ -1,4 +1,4 @@
-import { CompanionState, migrateCompanion, companionGainExp, COMPANION_BAG, COMPANION_UNLOCK_LEVEL, newCompanion, feedHeart, heartFeedValue, HEART_STORE_MAX, RAGE_MAX, COMBO_LEVEL, COMBO_GOLD_BARS, BRM_BOOK, BOOK_PAGE, GOLD_BAR, PAGES_PER_BOOK, comboFor, HEART_ITEM } from '../data/companion';
+import { CompanionState, migrateCompanion, companionGainExp, COMPANION_BAG, COMPANION_UNLOCK_LEVEL, newCompanion, feedHeart, heartFeedValue, HEART_STORE_MAX, RAGE_MAX, COMBO_LEVEL, COMBO_GOLD_BARS, BRM_BOOK, BOOK_PAGE, GOLD_BAR, PAGES_PER_BOOK, comboFor, HEART_ITEM, COMPANION_UNIT_ID, COMPANION_RECALL_CD, COMPANION_MODES, COMPANION_MODE_NAME, CompanionMode, companionStats, rageTick, unleash, canUnleash, comboEffect, COMBO_RANGE, pickPotion, COMPANION_POT_HP, COMPANION_POT_MP } from '../data/companion';
 import { BOOKS, BookDef, BOOK_DROP, BOOK_RATES, STARTER, bookItemId } from '../data/books';
 // 纯逻辑世界模块（无 Phaser 依赖，可在 node 中单测）：职业/等级成长、分层横版地图、怪物 AI、
 // 自动战斗与技能、召唤物、掉落/背包/装备/商店、死亡复活、存档序列化。
@@ -400,9 +400,10 @@ export class World {
   }
   loadFloor(i: number) { this.stepTarget = null; this.stepQueued = 0;
     this.floorIndex = i; this.cleared = false; this.womaPending = null; this.womaSec = -1; this.womaWarnAt = -99; this.ground = []; this.zones = []; this.farmQueue = []; this.reached.add(i); this.checkAchieves();
-    this.units = this.units.filter(u => u.isHero || u.summon);
+    this.units = this.units.filter(u => u.isHero || u.summon || u.companion); this.companionTarget = null;
     const h = this.hero; if (h) { h.x = WORLD.heroStartX; h.y = 0; h.facing = 1; }
     this.units.filter(u => u.summon).forEach((s, k) => { s.x = WORLD.heroStartX - 110 - k * 60; s.y = WORLD.summonLane; });
+    const cu = this.companionUnit; if (cu) { cu.x = WORLD.heroStartX - 80; cu.y = WORLD.summonLane; }
     for (const sp of this.floor.spawns) {
       if (sp.id === 'boss_woma' && this.floor.name === WOMA_FLOOR_NAME) { this.womaPending = { x: sp.x, y: sp.y ?? 0 }; continue; } // R14 #14：教主之家需号角
       this.spawnFoe(sp.id, sp.x, sp.y ?? 0);
@@ -460,7 +461,8 @@ export class World {
     if (target.armorUntil && target.armorUntil > this.time) amount *= 1 - (target.armorReduce ?? 0.5);
     amount = Math.max(1, Math.round(amount));
     target.hp -= amount;
-    if (target.team === 'enemy' && source?.summon && source.alive) target.aggroUid = source.uid; // 召唤物打一下即记仇
+    if (target.team === 'enemy' && (source?.summon || source?.companion) && source.alive) target.aggroUid = source.uid; // 召唤物/英雄打一下即记仇
+    if (target.team === 'enemy' && source?.isHero) this.heroTargetUid = target.uid; // 合击「同一目标」判定用（不耗随机数）
     if (target.team === 'enemy' && target.ai !== 'chase') { target.ai = 'chase'; this.events.push({ type: 'aggro', uid: target.uid }); }
     this.events.push({ type: 'damage', source: source?.uid, target: target.uid, amount, x: target.x, crit, dot });
     if (target.hp <= 0) this.kill(target);
@@ -528,6 +530,7 @@ export class World {
   kill(u: Unit) {
     u.hp = 0; u.alive = false;
     this.events.push({ type: 'death', uid: u.uid });
+    if (u.companion) { this.onCompanionDeath(); return; }
     if (u.team !== 'enemy') return;
     this.kills++; this.summonKill();
     this.onKillQuest(u.id);
@@ -960,6 +963,119 @@ export class World {
     const c = this.companion; if (!c) return '还没有英雄'; const it = c.bag[idx]; if (!it) return '没有物品';
     if (this.bag.length >= WORLD.bagSize) return '背包已满'; c.bag.splice(idx, 1); this.bag.push(it); this.events.push({ type: 'inventory' }); return null;
   }
+  // ===== 合击版阶段 A：英雄战斗（A1 生成/AI、A2 召回、A3 用药、A4 怒气/合击） =====
+  companionTarget: number | null = null;
+  heroTargetUid: number | null = null;
+  get companionUnit() { return this.units.find(u => u.companion && u.alive); }
+  /** 官方：收回后 1 分钟内无法再次召唤（怀旧版专题 detail02）。剩余秒数（0 = 可召唤） */
+  companionCooldown() { const c = this.companion; return c ? Math.max(0, Math.ceil(c.recallAt + COMPANION_RECALL_CD - this.time)) : 0; }
+  private spawnCompanion(): Unit | undefined {
+    const c = this.companion, h = this.hero; if (!c?.out || !h || this.town) return;
+    const st = companionStats(c), cd = CLASSES[c.cls];
+    const def: UnitDef = { ...HERO, id: COMPANION_UNIT_ID, name: c.name, art: cd.art, atkInterval: cd.atkInterval, hp: Math.max(1, st.hp), mp: st.mp, atk: st.atk,
+      card: { ...HERO.card!, w: 130, h: 175, bg: cd.bg, artFacing: cd.artFacing } };
+    const u = this.spawn(def, 'ally', h.x - h.facing * 80, WORLD.summonLane);
+    Object.assign(u, { companion: true, level: c.level, mag: st.mag, tao: st.tao, def: st.def, mdef: st.mdef, mp: st.mp, maxMp: st.mp, facing: h.facing });
+    this.events.push({ type: 'summon', uid: u.uid }); return u;
+  }
+  private despawnCompanion() { const u = this.companionUnit; if (u) { u.alive = false; this.units = this.units.filter(x => x !== u); this.events.push({ type: 'death', uid: u.uid }); } this.companionTarget = null; }
+  /** 召唤/收回切换（官方按钮/快捷键同键切换）。返回错误文字或 null */
+  toggleCompanion(): string | null {
+    const c = this.companion; if (!c) return '还没有英雄';
+    if (c.out) { c.out = false; c.recallAt = this.time; c.burst = false; this.despawnCompanion(); this.events.push({ type: 'log', text: `收回英雄 ${c.name}（${COMPANION_RECALL_CD} 秒内无法再次召唤）` }); return null; }
+    const cdl = this.companionCooldown(); if (cdl > 0) return `英雄召唤冷却中（${cdl} 秒）`;
+    c.out = true; this.spawnCompanion(); this.events.push({ type: 'log', text: `召唤英雄 ${c.name}（${COMPANION_MODE_NAME[c.mode]}）`, color: 'green' }); return null;
+  }
+  /** 官方 Ctrl+E：攻击 → 跟随 → 休息 循环 */
+  cycleCompanionMode(m?: CompanionMode): string | null {
+    const c = this.companion; if (!c) return '还没有英雄';
+    c.mode = m ?? COMPANION_MODES[(COMPANION_MODES.indexOf(c.mode) + 1) % COMPANION_MODES.length];
+    if (c.mode === 'rest') this.companionTarget = null;
+    this.events.push({ type: 'log', text: `英雄状态：${COMPANION_MODE_NAME[c.mode]}` }); return null;
+  }
+  /** 官方 Ctrl+W：指定英雄攻击目标（本作：点击怪物卡） */
+  setCompanionTarget(uid: number): string | null {
+    const c = this.companion; if (!c?.out || !this.companionUnit) return '英雄未召唤';
+    const t = this.units.find(u => u.uid === uid && u.alive && u.team === 'enemy'); if (!t) return '目标无效';
+    if (c.mode === 'rest') return '英雄休息中';
+    this.companionTarget = uid; this.events.push({ type: 'log', text: `英雄目标：${t.name}` }); return null;
+  }
+  /** 官方 Ctrl+S：怒槽满 → 进入爆发；之后同目标同范围自动放合击，怒气耗尽作废 */
+  unleashCombo(): string | null {
+    const c = this.companion; if (!c) return '还没有英雄'; if (!c.out || !this.companionUnit) return '英雄未召唤';
+    if (!c.equip.heart) return '英雄未装备火龙之心'; if (c.burst) return '合击爆发中';
+    if (c.rage < RAGE_MAX) return `怒气未满（${Math.floor(c.rage)}/${RAGE_MAX}）`;
+    const cb = comboFor(this.cls, c.cls); if (!cb || !c.combo?.includes(cb.id)) return '尚未学会合击';
+    if (!canUnleash(c) || !unleash(c)) return '无法爆发';
+    this.events.push({ type: 'log', text: `怒气爆发！与英雄攻击同一目标释放「${cb.name}」`, color: 'green' }); return null;
+  }
+  private onCompanionDeath() {
+    const c = this.companion; if (!c) return; c.out = false; c.recallAt = this.time; c.burst = false; this.companionTarget = null;
+    this.events.push({ type: 'log', text: `英雄 ${c.name} 阵亡，${COMPANION_RECALL_CD} 秒后可再次召唤` });
+  }
+  private static POT_TABLE: Record<string, { hp?: number; mp?: number }> | null = null;
+  private potTable() {
+    if (!World.POT_TABLE) { const t: Record<string, { hp?: number; mp?: number }> = {}; for (const p of POTIONS) t[p.item] = { hp: p.hp, mp: p.mp };
+      for (const [k, v] of Object.entries(CONSUMABLE)) if (!v.town && (v.hp || v.mp)) t[k] = { hp: v.hp, mp: v.mp }; World.POT_TABLE = t; }
+    return World.POT_TABLE;
+  }
+  /** A3：英雄按需自动喝包裹药（阈值 [适配]），无药不喝 */
+  companionPotions(u: Unit) {
+    const c = this.companion!, tb = this.potTable();
+    for (const need of ['hp', 'mp'] as const) {
+      const low = need === 'hp' ? u.hp < u.maxHp * COMPANION_POT_HP : u.maxMp > 0 && (u.mp ?? 0) < u.maxMp * COMPANION_POT_MP; if (!low) continue;
+      const i = pickPotion(c, need, tb); if (i < 0) continue; const it = c.bag[i], p = tb[it.item];
+      if ((it.qty ?? 1) > 1) it.qty!--; else c.bag.splice(i, 1);
+      if (p.hp) this.heal(u, p.hp); if (p.mp) u.mp = Math.min(u.maxMp, (u.mp ?? 0) + p.mp);
+      this.events.push({ type: 'log', text: `英雄使用 ${it.name}` }, { type: 'inventory' });
+    }
+  }
+  /** [适配] 法/道英雄施法距离、施法耗蓝 */
+  static readonly COMPANION_CAST_RANGE = 300; static readonly COMPANION_CAST_MP = 8;
+  companionStep(dt: number, h: Unit) {
+    const c = this.companion!; let u = this.companionUnit;
+    if (!u) u = this.spawnCompanion(); if (!u) return;
+    u.mp = Math.min(u.maxMp, (u.mp ?? 0) + WORLD.mpRegen * dt);
+    const fighting = this.alive('enemy').some(e => e.ai === 'chase');
+    u.hp = Math.min(u.maxHp, u.hp + WORLD.hpRegen * (fighting ? 1 : 5) * dt);
+    this.companionPotions(u);
+    if (rageTick(c, dt) === 'expired') this.events.push({ type: 'log', text: '怒气耗尽，合击未释放（作废）' });
+    const followX = h.x - h.facing * 80;
+    if (c.mode === 'rest') { u.moving = false; return; } // 官方：休息 = 原地等待
+    let tg = this.companionTarget !== null ? this.units.find(e => e.uid === this.companionTarget && e.alive) : undefined;
+    if (!tg) this.companionTarget = null;
+    // 官方：攻击 = 主动打选定目标或附近怪；跟随 = 一直跟随主号，受到攻击也不自己攻击（指定目标 Ctrl+W 仍执行 [适配]）
+    if (!tg && c.mode === 'fight') tg = this.alive('enemy').filter(e => e.ai === 'chase' && Math.abs(e.x - h.x) < (e.aggroUid === u!.uid ? WORLD.leashRange : 700)).sort((a, b) => Math.abs(a.x - u!.x) - Math.abs(b.x - u!.x))[0];
+    if (!tg) { if (Math.abs(followX - u.x) > 30) { u.facing = Math.sign(followX - u.x) as 1 | -1; this.toward(u, followX, WORLD.summonLane, WORLD.baseSpeed * 1.2, dt); } else u.moving = false; this.comboCheck(c, u, h); return; }
+    const caster = c.cls !== 'warrior', side = Math.sign(tg.x - u.x) || 1; u.facing = side as 1 | -1;
+    const inRange = caster ? this.gap(u, tg) <= World.COMPANION_CAST_RANGE : this.inMelee(u, tg);
+    if (!inRange) this.toward(u, tg.x - side * ((u.width + tg.width) / 2 + (caster ? World.COMPANION_CAST_RANGE * 0.8 : 0)), WORLD.summonLane, WORLD.baseSpeed * 1.2, dt);
+    else if (u.cd <= 0) {
+      u.moving = false; u.cd = u.atkInterval;
+      // [适配] 职业策略：战=近战普攻；法=火球（魔法）；道=主人 HP<50% 先治疗，否则灵魂火符（道术）；蓝不足退化为物理普攻
+      const mpOk = (u.mp ?? 0) >= World.COMPANION_CAST_MP;
+      if (c.cls === 'taoist' && mpOk && h.hp < h.maxHp * 0.5) { u.mp! -= World.COMPANION_CAST_MP; this.heal(h, (u.tao ?? 0) * 2 + 20); this.events.push({ type: 'log', text: `英雄 ${c.name} 治愈术` }); }
+      else {
+        this.events.push({ type: 'attack', source: u.uid, target: tg.uid });
+        if (caster && mpOk) { u.mp! -= World.COMPANION_CAST_MP; this.damage(tg, (c.cls === 'mage' ? u.mag ?? 0 : u.tao ?? 0) * 1.2 * (0.9 + this.rng() * 0.2) + 5, u, true, false, false, 1); }
+        else this.damage(tg, u.atk * (0.9 + this.rng() * 0.2), u);
+      }
+    }
+    this.comboCheck(c, u, h);
+  }
+  /** A4：爆发中 + 主人与英雄同一目标 + 双方都在 COMBO_RANGE 内 → 放合击（阶段 A 占位伤害），清空怒气 */
+  private comboCheck(c: CompanionState, u: Unit, h: Unit) {
+    if (!c.burst || this.heroTargetUid === null) return;
+    const t = this.units.find(e => e.uid === this.heroTargetUid && e.alive && e.team === 'enemy'); if (!t) return;
+    const ct = this.companionTarget ?? (c.mode === 'fight' ? t.uid : null); if (ct !== t.uid) return;
+    if (this.gap(h, t) > COMBO_RANGE || this.gap(u, t) > COMBO_RANGE) return;
+    const cb = comboFor(this.cls, c.cls), fx = comboEffect(cb?.id);
+    const pw = (k: 'atk' | 'mag' | 'tao', x: Unit) => k === 'atk' ? x.atk : (x[k] ?? 0);
+    const amt = (pw(this.classDef.autoStat as any, h) + pw(CLASSES[c.cls].autoStat as any, u)) * fx.mult;
+    c.burst = false; c.rage = 0;
+    const dealt = this.damage(t, amt, h, false, false, false, fx.magic);
+    this.events.push({ type: 'combo', id: cb?.id ?? 'placeholder', name: cb?.name ?? '合击', source: h.uid, partner: u.uid, target: t.uid, amount: dealt }, { type: 'log', text: `合击「${cb?.name ?? '合击'}」造成 ${dealt} 伤害`, color: 'green' });
+  }
   toSave(): SaveData {
     return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, town: this.town, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], ringQ: this.ringQ, ringDone: this.ringDone, eqV: EQUIP_VERSION, expV: EXP_VERSION, companion: this.companion ? JSON.parse(JSON.stringify(this.companion)) : null  };
   }
@@ -1154,6 +1270,7 @@ export class World {
         if (Math.abs(tx - sm.x) > 30) { sm.facing = Math.sign(tx - sm.x) as 1 | -1; this.toward(sm, tx, WORLD.summonLane, WORLD.baseSpeed * 1.1, dt); } else sm.moving = false;
       }
     }
+    if (h && h.alive && this.companion?.out) this.companionStep(dt, h);
     if (h && h.alive) this.bossStep(dt, h);
     if (h && h.alive) {
       const side = this.meleeSide();
@@ -1184,7 +1301,7 @@ export class World {
       for (const s of [1, -1]) {
         const f = this.queue(s).find(u => !this.summonAggro(u));
         if (!f || f.ai !== 'chase' || f.cd > 0 || !h.alive || BOSS_MECH.has(f.id)) continue;
-        const s2 = this.summon ?? this.units.find(u => u.summon && u.alive && this.inMelee(u, f)), hitSummon = s2 && this.inMelee(s2, f) && this.rng() < 0.5;
+        const s2 = this.summon ?? this.units.find(u => (u.summon || u.companion) && u.alive && this.inMelee(u, f)), hitSummon = s2 && this.inMelee(s2, f) && this.rng() < 0.5;
         if (!hitSummon && !this.inMelee(h, f)) continue;
         const tgt = hitSummon ? s2! : h;
         f.cd = f.atkInterval * (f.slowUntil && f.slowUntil > this.time ? 1.5 : 1);

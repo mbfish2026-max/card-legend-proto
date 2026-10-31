@@ -13,6 +13,11 @@ export const COMPANION_UNIT_ID = 'companion';
 /** 英雄栏 = 主角同款 9 格 + 火龙之心（H1/H5：装英雄栏左下） */
 export type CompanionSlot = EquipSlot | 'heart';
 export type CompanionMode = 'follow' | 'fight' | 'rest';
+/** 官方三状态 攻击/跟随/休息，Ctrl+E 循环；初始默认「攻击」（怀旧版专题 https://actmirt.web.sdo.com/project/banben/20200827/detail02.html ） */
+export const COMPANION_MODES: CompanionMode[] = ['fight', 'follow', 'rest'];
+export const COMPANION_MODE_NAME: Record<CompanionMode, string> = { fight: '攻击', follow: '跟随', rest: '休息' };
+/** 官方：收回后 1 分钟内无法再次召唤（同上专题页） */
+export const COMPANION_RECALL_CD = 60;
 /** [适配] 英雄包裹格数（官方未查到） */
 export const COMPANION_BAG = 10;
 export interface CompanionState {
@@ -25,10 +30,12 @@ export interface CompanionState {
   out: boolean; recallAt: number;
   /** #7 已学合击秘籍 id */
   combo?: string[];
+  /** 阶段 A #4：怒气爆发中（Ctrl+S 后自动消耗怒气，耗尽未放出则作废；H5）。可选，旧档缺省 false */
+  burst?: boolean;
 }
 export const ZERO_STATS: Stats = { hp: 0, mp: 0, atk: 0, mag: 0, tao: 0, def: 0, mdef: 0 };
 export function newCompanion(cls: ClassId, name: string, level = 1): CompanionState {
-  return { cls, name: name.trim().slice(0, 8) || CLASSES[cls].name + '英雄', level, exp: 0, bag: [], equip: {}, mode: 'follow', rage: 0, heartStore: 0, out: false, recallAt: -1e9 };
+  return { cls, name: name.trim().slice(0, 8) || CLASSES[cls].name + '英雄', level, exp: 0, bag: [], equip: {}, mode: 'fight', rage: 0, heartStore: 0, out: false, recallAt: -1e9, burst: false };
 }
 /** 旧存档 / 缺字段补默认（存档迁移） */
 export function migrateCompanion(c: Partial<CompanionState> | null | undefined): CompanionState | null {
@@ -36,7 +43,9 @@ export function migrateCompanion(c: Partial<CompanionState> | null | undefined):
   const d = newCompanion(c.cls, c.name ?? '', c.level ?? 1);
   const r = { ...d, ...c, bag: [...(c.bag ?? [])], equip: { ...(c.equip ?? {}) }, combo: [...(c.combo ?? [])] } as CompanionState;
   // #5 存档兜底：怒槽/储量缺省 0 并夹到合法区间
-  r.rage = Math.max(0, Math.min(100, +r.rage || 0)); r.heartStore = Math.max(0, Math.min(30000, +r.heartStore || 0)); return r;
+  r.rage = Math.max(0, Math.min(100, +r.rage || 0)); r.heartStore = Math.max(0, Math.min(30000, +r.heartStore || 0));
+  // 阶段 A：模式非法回落官方默认「攻击」；召回冷却按会话计（world.time 每次读档从 0 起）→ 读档清零；爆发态不跨存档
+  if (!COMPANION_MODES.includes(r.mode)) r.mode = 'fight'; r.recallAt = -1e9; r.burst = false; return r;
 }
 /** [适配] 英雄属性：同职业主角成长 ×0.8（官方英雄成长表未查到） */
 export const COMPANION_STAT_MULT = 0.8;
@@ -111,13 +120,42 @@ export function feedHeart(c: CompanionState, itemId: string, qty = 1): number {
   if (!hasHeart(c)) return 0; const v = heartFeedValue(itemId) * qty; const before = c.heartStore;
   c.heartStore = Math.min(HEART_STORE_MAX, c.heartStore + v); return c.heartStore - before;
 }
-// ---- 战斗开发接入点（占位，无战斗结算） ----
-/** TODO(战斗开发)：每 tick 从 heartStore 往 rage 补充；积满时间官方未查到，当前不做任何事 */
-export function rageTick(_c: CompanionState, _dt: number): void { /* 占位 */ }
-/** 怒槽满且装了火龙之心 → 可爆发（Ctrl+S，H1） */
-export function canUnleash(c: CompanionState): boolean { return hasHeart(c) && c.out && c.rage >= RAGE_MAX; }
-/** TODO(战斗开发)：爆发期间持续消耗、同目标同范围释放、耗尽作废（H1）；此处只清槽占位 */
-export function unleash(c: CompanionState): boolean { if (!canUnleash(c)) return false; c.rage = 0; return true; }
+// ---- 阶段 A #4 怒气 / 爆发 ----
+/** [适配] 补怒速率：每秒 +2 怒（空槽→满槽 50 秒；官方积满时间未查到） */
+export const RAGE_REGEN = 2;
+/** [适配] 每 1 点怒气消耗火龙之心储量 10（30000 储量 ≈ 30 次满槽；官方换算未查到）。官方：储量不足时怒气无法恢复（detail05） */
+export const HEART_PER_RAGE = 10;
+/** [适配] 爆发期间怒气自动消耗速率：每秒 −20（满槽 5 秒内未放出即作废；官方时长未查到） */
+export const BURST_DRAIN = 20;
+/** 每 tick 从火龙之心往怒槽补怒（仅英雄召唤中由 World 调用）；爆发中改为消耗。返回 'expired' 表示爆发怒气耗尽作废 */
+export function rageTick(c: CompanionState, dt: number): 'expired' | void {
+  if (c.burst) { c.rage = Math.max(0, c.rage - BURST_DRAIN * dt); if (c.rage <= 0) { c.burst = false; return 'expired'; } return; }
+  if (!hasHeart(c) || c.rage >= RAGE_MAX || c.heartStore <= 0) return;
+  const add = Math.min(RAGE_REGEN * dt, RAGE_MAX - c.rage, c.heartStore / HEART_PER_RAGE);
+  c.rage = Math.min(RAGE_MAX, c.rage + add); c.heartStore = Math.max(0, c.heartStore - add * HEART_PER_RAGE);
+  if (RAGE_MAX - c.rage < 1e-6) c.rage = RAGE_MAX;
+}
+/** 怒槽满且装了火龙之心、英雄在场、未在爆发中 → 可爆发（Ctrl+S，H1/H5） */
+export function canUnleash(c: CompanionState): boolean { return hasHeart(c) && c.out && !c.burst && c.rage >= RAGE_MAX; }
+/** 进入爆发态（不立即清槽）：之后怒气自动消耗，主人与英雄同目标且都在范围内时由 World 触发合击；耗尽作废（H5） */
+export function unleash(c: CompanionState): boolean { if (!canUnleash(c)) return false; c.burst = true; return true; }
+/** [适配] 合击触发范围（px，≈ 5 格；官方「都在攻击范围内」具体格数未查到） */
+export const COMBO_RANGE = 400;
+/** 合击效果表（阶段 B 按 combo id 填 6 种真实伤害/范围）；阶段 A 全部走占位：(主人主属性 + 英雄主属性) × 3 [适配] 单体 */
+export interface ComboEffect { mult: number; magic: number; aoe: number }
+export const COMBO_PLACEHOLDER: ComboEffect = { mult: 3, magic: 0.5, aoe: 0 };
+export const COMBO_EFFECTS: Partial<Record<string, ComboEffect>> = {};
+export function comboEffect(id: string | undefined): ComboEffect { return (id && COMBO_EFFECTS[id]) || COMBO_PLACEHOLDER; }
+
+// ---- 阶段 A #3 自动用药 ----
+/** [适配] 自动用药阈值：HP < 50% 喝红、MP < 30% 喝蓝（官方只说「按需自动使用包裹药品」，阈值未查到） */
+export const COMPANION_POT_HP = 0.5, COMPANION_POT_MP = 0.3;
+/** 药品回复量（英雄包裹内物品 id → hp/mp）；由 World 注入 POTIONS + CONSUMABLE，避免循环依赖 */
+export function pickPotion(c: CompanionState, need: 'hp' | 'mp', table: Record<string, { hp?: number; mp?: number }>): number {
+  let best = -1, v = Infinity; // 选回复量最小的够用药（省好药）[适配]
+  c.bag.forEach((b, i) => { const t = table[b.item]; const x = t?.[need] ?? 0; if (x > 0 && x < v) { v = x; best = i; } });
+  return best;
+}
 
 // ===== #7 龙人合书（合击秘籍） =====
 /** 官方：英雄 43 级，到白日门龙人处交 2 本白日门技能书 + 金条 2 根（H1）/金刚石（H5）→ 合击秘籍 → 获得火龙之心 */

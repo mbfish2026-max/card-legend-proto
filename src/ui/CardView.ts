@@ -38,6 +38,9 @@ export class CardView extends Phaser.GameObjects.Container {
     const c = { ...DEFAULT_CARD, ...(unit.card ?? {}) };
     const w = this.w = c.w, ch = this.cardH = c.h, barH = Math.round(ch * 0.22);
     this.artFacing = c.artFacing;
+    // 合击版 A1：点击/触屏点怪物卡 = 指定英雄攻击目标（官方 Ctrl+W）。只发场景事件，不触发走位
+    if (unit.team === 'enemy') this.setSize(w, ch).setInteractive(new Phaser.Geom.Rectangle(0, 0, w, ch), Phaser.Geom.Rectangle.Contains)
+      .on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev?.stopPropagation?.(); if (this.unit.team === 'enemy' && this.unit.alive) scene.events.emit('cardTap', this.unit.uid); });
     const shadow = scene.add.ellipse(0, 2, w * 1.25, 22, 0x000000, 0.45);
     this.inner = scene.add.container(0, 0);
     // 卡框：背景色 + 窄金属边框（无粗描边）

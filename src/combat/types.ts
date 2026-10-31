@@ -23,6 +23,8 @@ export type AIState = 'idle' | 'alert' | 'chase' | 'return';
 export interface Unit extends UnitDef {
   uid: number; team: Team; x: number; y: number; maxHp: number; maxMp: number; cd: number;
   alive: boolean; isHero?: boolean; summon?: boolean;
+  /** 合击版阶段 A：英雄（伙伴）战斗单位，id = COMPANION_UNIT_ID；不是 summon（不走召唤物逻辑），仇恨/挨打规则同召唤物 */
+  companion?: boolean;
   /** 诱惑之光宠物（summon=true 且 pet=true）；petUntil = 叛变时间。不存档 */
   pet?: boolean; petUntil?: number;
   /** 召唤物仇恨：被召唤物打过一次后记录其 uid；主角离怪 > WORLD.summonAggroNear 时只追打该召唤物（召唤物死亡自动失效） */
@@ -64,6 +66,7 @@ export type BattleEvent =
   | { type: 'exp'; amount: number }
   | { type: 'levelup'; level: number }
   | { type: 'summon'; uid: number }
+  | { type: 'combo'; id: string; name: string; source: number; partner: number; target: number; amount: number }
   | { type: 'charm'; uid: number; result: 'ok' | 'fail' | 'immune' | 'high' | 'betray' }
   | { type: 'respawn' }
   | { type: 'inventory' }
