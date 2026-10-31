@@ -1,4 +1,5 @@
 import { POTIONS } from '../data/skills';
+import { fmtInt } from './fmt';
 import { Settings } from '../settings';
 import { fmtExp } from '../data/expCurve';
 import type { BattleScene } from '../scenes/BattleScene';
@@ -160,7 +161,7 @@ export class MobileHud {
     POTIONS.forEach((_, i) => { this.potBtns[i].textContent = String(w.pots[i] ?? 0); });
     this.skBtns.forEach(s => {
       const max = w.skills[s.i]?.cooldown ?? 0, c = cds[s.i] ?? 0;
-      if (max && c > 0) { const deg = 360 * Math.min(1, c / max); s.cd.style.background = `conic-gradient(from ${360 - deg}deg, rgba(0,0,0,.62) 0 ${deg}deg, transparent ${deg}deg)`; s.t.textContent = c >= 1 ? String(Math.ceil(c)) : ''; }
+      if (max && c > 0) { const deg = 360 * Math.min(1, c / max); s.cd.style.background = `conic-gradient(from ${360 - deg}deg, rgba(0,0,0,.62) 0 ${deg}deg, transparent ${deg}deg)`; s.t.textContent = c >= 0.5 ? fmtInt(c) : ''; }
       else { s.cd.style.background = ''; s.t.textContent = ''; }
       s.el.style.opacity = (h && (h.mp ?? 0) < (w.skills[s.i]?.mana ?? 0)) ? '0.5' : '1';
     });

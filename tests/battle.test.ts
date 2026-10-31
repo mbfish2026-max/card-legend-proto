@@ -211,7 +211,7 @@ const free = (w: World) => w.skills.map(() => 0);
   m.level = 17; const ev0 = m.drainEvents().length; void ev0;
   ok(m.learnBook(m.bag.findIndex(x => x.item === 'book_thunder')) === '学会了 雷电术' && m.skills.map(s => s.id).join() === 'fireball,thunder' && !m.bag.some(x => x.item === 'book_thunder'), '学会后出现在 F2，书被消耗');
   ok(m.drainEvents().some(e => e.type === 'learned'), '学会事件（UI 刷新快捷栏）');
-  ok(m.buyBook('fire_wall') !== null, '掉落书（火墙）书店不卖');
+  ok(m.buyBook('magic_shield') !== null, '>25 级掉落书（魔法盾）书店不卖（R54：≤25 级书均可买）');
   const t = new World(seeded(3), 1, FLOORS, 'taoist'); t.gold = 100;
   ok(t.skills.map(s => s.id).join() === 'heal' && t.buyBook('summon_skeleton') === null && t.learnBook(0) === '学会了 召唤骷髅' && t.skills.some(s => s.id === 'summon_skeleton'), '道士：开局只有治愈术；召唤骷髅书 100 金，1 级即可学');
   const wr = new World(seeded(3), 1, FLOORS, 'warrior');

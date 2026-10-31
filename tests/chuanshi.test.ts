@@ -1,3 +1,4 @@
+import { fmtInt, fmtText } from '../src/ui/fmt';
 // 传世 16 技能 + 金甲骷髅：学习条件 / 耗魔 / 效果 / 自动 / 点击 / 召唤等级 / 旧存档
 import { World, SaveData, SUMMON_NAME_COLORS } from '../src/combat/World';
 import { CLASSES, ClassId, SkillDef } from '../src/data/classes';
@@ -91,5 +92,26 @@ for (const c of Object.keys(CS) as ClassId[]) for (const id of CS[c]) {
   m2.learned.add('summon_golden_skeleton'); const m3 = new World(seeded(3), 1, [{ name: 't', spawns: [] }], 'taoist', JSON.parse(JSON.stringify(m2.toSave())));
   ok(m3.learned.has('summon_golden_skeleton'), '传世技能写入存档并可读回');
   ok(Settings.skillsFor('taoist').includes('summon_golden_skeleton'), '设置默认自动列表含金甲骷髅');
+}
+{ // R54：书店出售本职业全部 ≤25 级技能书（按等级升序），>25 传世书在秘籍页；技能面板按学习等级升序
+  for (const c of ['warrior', 'mage', 'taoist'] as const) {
+    const w = new World(seeded(5), 50, [{ name: 't', spawns: [] }], c); w.gold = 1e7; w.learned.clear();
+    const lv = (b: { skill: string }) => w.needLevel(w.skillPool.find(x => x.id === b.skill)!);
+    const want = Object.values(BOOKS).filter(b => b.cls === c && lv(b) <= 25).map(b => b.skill).sort();
+    const got = w.shopBooks(); ok(JSON.stringify(got.map(b => b.skill).sort()) === JSON.stringify(want), `${c} 书店含全部 ≤25 级书（${got.map(b => b.skill)}）`);
+    ok(got.every((b, i) => i === 0 || lv(got[i - 1]) <= lv(b)), `${c} 书店按学习等级升序`);
+    for (const b of got) { w.bag.length = 0; ok(w.buyBook(b.skill) === null, `${c} 可购买 ${b.skill}（Lv${lv(b)}，${b.price} 金）`); }
+    ok(w.csBooks().every(b => lv(b) > 25), `${c} 传世秘籍页只剩 >25 级`);
+    const sl = w.skillsByLevel(); ok(sl.length === w.skillPool.length && sl.every((k, i) => i === 0 || w.needLevel(sl[i - 1]) <= w.needLevel(k)), `${c} 技能面板按学习等级升序`);
+  }
+  for (const id of ['poison', 'soul_fire', 'drive_corpse', 'decoy_talisman', 'ghost_shield', 'holy_armor', 'ice_arrow']) ok(Object.values(BOOKS).some(b => b.skill === id), id);
+  ok(['poison', 'soul_fire'].every(id => BOOKS[id].drops.length > 0), '≤25 书仍保留掉落池（未移除）');
+}
+{ // R54：技能数值显示只显示整数（四舍五入）
+  ok(fmtInt(2.5) === '3' && fmtInt(1.4) === '1' && fmtInt(12) === '12' && fmtInt(-0.2) === '0', 'fmtInt 四舍五入');
+  ok(fmtText('倍率 3.0') === '倍率 3' && fmtText('减速 1.5s') === '减速 2s' && fmtText('骷髅 ×1.25') === '骷髅 ×1' && fmtText('+37.6') === '+38', 'fmtText 去小数');
+  for (const c of ['warrior', 'mage', 'taoist'] as const) for (const k of new World(seeded(1), 50, [{ name: 't', spawns: [] }], c).skillPool) ok(!/\d\.\d/.test(fmtText(`${k.desc} 耗魔${fmtInt(k.mana)} 冷却${fmtInt(k.cooldown)}s`)), `${k.name} 显示文本无小数`);
+  const tw = new World(seeded(1), 50, [{ name: 't', spawns: [] }], 'taoist'); const heal = tw.skillPool.find(k => k.id === 'heal')!;
+  ok(fmtText(`+${heal.mult ?? 1.37}`) .indexOf('.') < 0, '治愈术飘字无小数');
 }
 console.log(`全部通过 ${pass} 项`);

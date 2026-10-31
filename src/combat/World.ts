@@ -1,4 +1,5 @@
 import { CompanionState, migrateCompanion, companionGainExp, COMPANION_BAG, COMPANION_UNLOCK_LEVEL, newCompanion, feedHeart, heartFeedValue, HEART_STORE_MAX, RAGE_MAX, COMBO_LEVEL, COMBO_GOLD_BARS, BRM_BOOK, BOOK_PAGE, GOLD_BAR, PAGES_PER_BOOK, comboFor, HEART_ITEM, COMPANION_UNIT_ID, COMPANION_RECALL_CD, COMPANION_MODES, COMPANION_MODE_NAME, CompanionMode, companionStats, rageTick, unleash, canUnleash, comboEffect, COMBO_RANGE, pickPotion, COMPANION_POT_HP, COMPANION_POT_MP } from '../data/companion';
+import { fmtInt } from '../ui/fmt';
 import { BOOKS, BookDef, BOOK_DROP, BOOK_RATES, STARTER, bookItemId } from '../data/books';
 import { sortBag } from './bagSort';
 // 纯逻辑世界模块（无 Phaser 依赖，可在 node 中单测）：职业/等级成长、分层横版地图、怪物 AI、
@@ -58,6 +59,8 @@ const CS_SUMMON: Record<string, { base: UnitDef; hp: number; atk: number; def: n
   // 官方一次召唤 2 只；[适配] 单只 HP×1.1 攻×0.85 防×1.5（2 只合计 HP×2.2 攻×1.7 ≈ 原单只 HP×2/攻×1.6 的 1.1 倍，另分摊仇恨）
   summon_golden_skeleton: { base: SUMMON_GOLDEN, hp: 1.1, atk: 0.85, def: 1.5 },
 };
+/** 书店出售学习等级 ≤ 此值的全部本职业技能书（用户需求 R54） */
+export const SHOP_BOOK_MAX_LV = 25;
 /** 同时存在上限（官方金甲骷髅一次 2 只；其余召唤 1 只） */
 export const SUMMON_MAX: Record<string, number> = { summon_golden_skeleton: 2 };
 export type CastResult = { ok: true; targets: number[]; skill: string; kind: string } | { ok: false; reason: string };
@@ -677,11 +680,15 @@ export class World {
     this.gold -= p.price; this.pots[i]++; return null;
   }
   /** R11 书店：本职业 shop 书 */
-  shopBooks(): BookDef[] { return Object.values(BOOKS).filter(b => b.cls === this.cls && b.shop); }
-  /** 传世秘籍页（书店第二页）：本职业传世技能书 */
-  csBooks(): BookDef[] { return Object.values(BOOKS).filter(b => b.cls === this.cls && b.cs).sort((a, b) => a.price - b.price); }
+  /** R54 书店：本职业 shop 书 + 所有学习等级 ≤ SHOP_BOOK_MAX_LV 的书（含原掉落/传世），按学习等级升序；掉落池不变 */
+  shopBooks(): BookDef[] { return Object.values(BOOKS).filter(b => b.cls === this.cls && (b.shop || this.bookLv(b) <= SHOP_BOOK_MAX_LV)).sort((a, b) => this.bookLv(a) - this.bookLv(b)); }
+  /** 传世秘籍页（书店第二页）：本职业学习等级 > 25 的传世技能书 */
+  csBooks(): BookDef[] { return Object.values(BOOKS).filter(b => b.cls === this.cls && b.cs && this.bookLv(b) > SHOP_BOOK_MAX_LV).sort((a, b) => this.bookLv(a) - this.bookLv(b)); }
+  /** R54 技能面板顺序：学习等级升序（同级保持技能池顺序） */
+  skillsByLevel() { return [...this.skillPool].sort((x, y) => this.needLevel(x) - this.needLevel(y)); }
+  bookLv(b: BookDef) { const s = this.skillPool.find(x => x.id === b.skill); return s ? this.needLevel(s) : 99; }
   buyBook(skill: string): string | null {
-    const b = BOOKS[skill]; if (!b || !(b.shop || b.cs) || b.cls !== this.cls) return '书店没有这本书';
+    const b = BOOKS[skill]; if (!b || b.cls !== this.cls || ![...this.shopBooks(), ...this.csBooks()].includes(b)) return '书店没有这本书';
     if (this.gold < b.price) return `金币不足（需 ${b.price}）`;
     if (this.bag.length >= WORLD.bagSize) return '背包已满';
     this.gold -= b.price; this.bag.push(this.makeItem(bookItemId(skill))); this.events.push({ type: 'inventory' }); return null;
@@ -820,7 +827,7 @@ export class World {
     if (this.level < need) return { ok: false, reason: `${s.name} 需等级 ${need}` };
     if (s.passive) return { ok: false, reason: `${s.name} 为被动技能` };
     const slv = Math.max(0, this.skillLevel(s)), lvF = 1 + 0.1 * slv;
-    if (cds[i] > 0) return { ok: false, reason: `${s.name} 冷却中（${cds[i].toFixed(1)}s）` };
+    if (cds[i] > 0) return { ok: false, reason: `${s.name} 冷却中（${fmtInt(Math.max(1, cds[i]))}s）` };
     if ((h.mp ?? 0) < s.mana) return { ok: false, reason: '魔法值不足' };
     if (s.kind === 'summon' && opts.auto) {
       const max = SUMMON_MAX[s.id] ?? 1, mine = this.summons.filter(u => u.id === (CS_SUMMON[s.id]?.base.id ?? ''));
