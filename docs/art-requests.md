@@ -1071,3 +1071,19 @@ public/assets/ui/UI-Tooltip-Border.png
 ```
 
 另外 src/assets-manifest.ts 第 2 行还留着魔兽来源的版权注释，以后全部替换完再删。音效有没有魔兽来源：未查到/推测，本次没核查。
+## 新手地图传奇原有怪物立绘（art/novice-monsters，2026-10-31）
+
+先对照 src/data/units.ts 和 docs/monsters-official.md：鹿（deer）、僵尸（zombie）、半兽人（orc）已经有立绘，这次跳过。下面 6 只是新画的，每只单独一张，没有复用已有图。都是透明底 PNG，最长边 960，卡通半身、粗描边，放在 public/assets/portraits/。数值和刷新地点来自 21cq（1.76 版资料站）。外观是 21cq 上查不到的，按名字自己设计，标「推测」。
+
+| id | 中文名 | 来源 | 原版等级/HP/攻击/经验 | 原版刷新 | 建议层位 | 文件 | 尺寸 | 外观 |
+|---|---|---|---|---|---|---|---|---|
+| hen | 鸡 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=14) | 5 / 5 / 1-1 / 5 | 比奇省 | 第1层 幽暗森林（和鹿同档） | hen_full.png | 883x960 | 推测 |
+| scarecrow | 稻草人 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=21) | 10 / 15 / 1-2 / 12，不死系 | 比奇省 | 第1层 | scarecrow_full.png | 960x955 | 推测 |
+| hook_cat | 多钩猫 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=24) | 13 / 22 / 2-4 / 17 | 比奇省 | 第1层 | hook_cat_full.png | 960x940 | 推测 |
+| rake_cat | 钉耙猫 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=26) | 13 / 23 / 2-4 / 18 | 比奇省 | 第1层 | rake_cat_full.png | 900x960 | 推测 |
+| forest_yeti | 森林雪人 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=28) | 16 / 36 / 7-10 / 30 | 比奇省 | 第1层末到第2层 | forest_yeti_full.png | 925x960 | 推测 |
+| man_eater_flower | 食人花 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=30) | 20 / 28 / 6-9 / 28 | 比奇省 | 第2层 | man_eater_flower_full.png | 928x960 | 推测 |
+
+- 羊：21cq 怪物 ID 1–40 里没有，未查到，所以没画。
+- 本作数值曲线和原版不同，表里的"建议层位"是推测；这次只加了立绘，units.ts 没改。
+- 预览拼图：docs/art-gap-preview/novice_monsters.jpg
