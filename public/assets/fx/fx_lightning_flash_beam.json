@@ -1,0 +1,223 @@
+{
+ "frames": {
+  "fx_lightning_flash_beam_00": {
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 768,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 768,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 768,
+    "h": 128
+   },
+   "anchor": {
+    "x": 0.0,
+    "y": 0.5
+   }
+  },
+  "fx_lightning_flash_beam_01": {
+   "frame": {
+    "x": 0,
+    "y": 128,
+    "w": 768,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 768,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 768,
+    "h": 128
+   },
+   "anchor": {
+    "x": 0.0,
+    "y": 0.5
+   }
+  },
+  "fx_lightning_flash_beam_02": {
+   "frame": {
+    "x": 0,
+    "y": 256,
+    "w": 768,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 768,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 768,
+    "h": 128
+   },
+   "anchor": {
+    "x": 0.0,
+    "y": 0.5
+   }
+  },
+  "fx_lightning_flash_beam_03": {
+   "frame": {
+    "x": 0,
+    "y": 384,
+    "w": 768,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 768,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 768,
+    "h": 128
+   },
+   "anchor": {
+    "x": 0.0,
+    "y": 0.5
+   }
+  },
+  "fx_lightning_flash_beam_04": {
+   "frame": {
+    "x": 0,
+    "y": 512,
+    "w": 768,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 768,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 768,
+    "h": 128
+   },
+   "anchor": {
+    "x": 0.0,
+    "y": 0.5
+   }
+  },
+  "fx_lightning_flash_beam_05": {
+   "frame": {
+    "x": 0,
+    "y": 640,
+    "w": 768,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 768,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 768,
+    "h": 128
+   },
+   "anchor": {
+    "x": 0.0,
+    "y": 0.5
+   }
+  },
+  "fx_lightning_flash_beam_06": {
+   "frame": {
+    "x": 0,
+    "y": 768,
+    "w": 768,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 768,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 768,
+    "h": 128
+   },
+   "anchor": {
+    "x": 0.0,
+    "y": 0.5
+   }
+  },
+  "fx_lightning_flash_beam_07": {
+   "frame": {
+    "x": 0,
+    "y": 896,
+    "w": 768,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 768,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 768,
+    "h": 128
+   },
+   "anchor": {
+    "x": 0.0,
+    "y": 0.5
+   }
+  }
+ },
+ "meta": {
+  "app": "card-legend fx proc (python numpy/Pillow)",
+  "image": "fx_lightning_flash_beam.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 768,
+   "h": 1024
+  },
+  "scale": "1",
+  "fx": {
+   "w": 768,
+   "h": 128,
+   "n": 8,
+   "fps": 24,
+   "loop": false,
+   "pivot": [
+    0,
+    64
+   ],
+   "anchor": "caster",
+   "skill": "lightning_flash",
+   "phase": "hit",
+   "blend": "ADD",
+   "ms": 333,
+   "cols": 1
+  }
+ }
+}

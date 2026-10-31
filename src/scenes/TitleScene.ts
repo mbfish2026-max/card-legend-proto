@@ -103,7 +103,8 @@ export class TitleScene extends Phaser.Scene {
       L.add(this.add.rectangle(x, y + 95, w, 110, 0x0c0a08, 0.9));
       L.add(txt(this, x, y + 55, c.name, 26, '#ffd24a', { fontStyle: 'bold' }).setOrigin(0.5));
       L.add(txt(this, x, y + 80, c.desc, 13, '#ddd', { align: 'center', strokeThickness: 2 }).setOrigin(0.5, 0));
-      c.skills.forEach((s, k) => { if (this.textures.exists('sk_' + s.id)) L.add(this.add.image(x - 66 + k * 44, y - h / 2 - 26, 'sk_' + s.id).setDisplaySize(38, 38)); });
+      { const n = c.skills.length, st = Math.min(44, 260 / n), sz = Math.min(38, st - 4); // #11 技能多时缩小图标不溢出卡片
+        c.skills.forEach((s, k) => { if (this.textures.exists('sk_' + s.id)) L.add(this.add.image(x - (n - 1) * st / 2 + k * st, y - h / 2 - 26, 'sk_' + s.id).setDisplaySize(sz, sz)); }); }
       card.on('pointerover', () => card.setStrokeStyle(4, 0xffe080)).on('pointerout', () => card.setStrokeStyle(3, 0xb8a070))
         .on('pointerdown', () => { sfx(this, 'click2'); SaveStore.clear(); this.startBattle({ cls: id }); });
     });

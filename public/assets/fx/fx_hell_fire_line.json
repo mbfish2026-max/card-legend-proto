@@ -1,0 +1,271 @@
+{
+ "frames": {
+  "fx_hell_fire_line_00": {
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 512,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 512,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 512,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.0,
+    "y": 0.8333
+   }
+  },
+  "fx_hell_fire_line_01": {
+   "frame": {
+    "x": 512,
+    "y": 0,
+    "w": 512,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 512,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 512,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.0,
+    "y": 0.8333
+   }
+  },
+  "fx_hell_fire_line_02": {
+   "frame": {
+    "x": 0,
+    "y": 192,
+    "w": 512,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 512,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 512,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.0,
+    "y": 0.8333
+   }
+  },
+  "fx_hell_fire_line_03": {
+   "frame": {
+    "x": 512,
+    "y": 192,
+    "w": 512,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 512,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 512,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.0,
+    "y": 0.8333
+   }
+  },
+  "fx_hell_fire_line_04": {
+   "frame": {
+    "x": 0,
+    "y": 384,
+    "w": 512,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 512,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 512,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.0,
+    "y": 0.8333
+   }
+  },
+  "fx_hell_fire_line_05": {
+   "frame": {
+    "x": 512,
+    "y": 384,
+    "w": 512,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 512,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 512,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.0,
+    "y": 0.8333
+   }
+  },
+  "fx_hell_fire_line_06": {
+   "frame": {
+    "x": 0,
+    "y": 576,
+    "w": 512,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 512,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 512,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.0,
+    "y": 0.8333
+   }
+  },
+  "fx_hell_fire_line_07": {
+   "frame": {
+    "x": 512,
+    "y": 576,
+    "w": 512,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 512,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 512,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.0,
+    "y": 0.8333
+   }
+  },
+  "fx_hell_fire_line_08": {
+   "frame": {
+    "x": 0,
+    "y": 768,
+    "w": 512,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 512,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 512,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.0,
+    "y": 0.8333
+   }
+  },
+  "fx_hell_fire_line_09": {
+   "frame": {
+    "x": 512,
+    "y": 768,
+    "w": 512,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 512,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 512,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.0,
+    "y": 0.8333
+   }
+  }
+ },
+ "meta": {
+  "app": "card-legend fx proc (python numpy/Pillow)",
+  "image": "fx_hell_fire_line.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 1024,
+   "h": 960
+  },
+  "scale": "1",
+  "fx": {
+   "w": 512,
+   "h": 192,
+   "n": 10,
+   "fps": 20,
+   "loop": false,
+   "pivot": [
+    0,
+    160
+   ],
+   "anchor": "caster",
+   "skill": "hell_fire",
+   "phase": "hit",
+   "blend": "ADD",
+   "ms": 500,
+   "cols": 2
+  }
+ }
+}

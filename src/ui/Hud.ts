@@ -60,7 +60,7 @@ export class Hud {
     s.add.rectangle(1130, 36, 258, 34).setStrokeStyle(1, 0xffe8a0, 0.6).setDepth(20);
     this.plaque = txt(s, 1130, 36, levelName, 22, '#ffe8a0', { fontStyle: 'bold' }).setOrigin(0.5).setDepth(21);
     this.setFloor(levelName, waveIcons);
-    if (!mobile) txt(s, 640, 574, '移动 A/D ←→ 按住走  纵深 ↑↓  W/空格 传送门  S 回上层  技能 F1-F5  药水 1-4  背包 B/C  悬赏 Q  商人 T  地图 M  设置 Esc  静音 N', 13, '#cccccc', { strokeThickness: 2 }).setOrigin(0.5).setDepth(30);
+    if (!mobile) txt(s, 640, 574, '移动 A/D ←→ 按住走  纵深 ↑↓  W/空格 传送门  S 回上层  技能 F1-F11  药水 1-4  背包 B/C  悬赏 Q  商人 T  地图 M  设置 Esc  静音 N', 13, '#cccccc', { strokeThickness: 2 }).setOrigin(0.5).setDepth(30);
     // 底部栏
     // Diablo 式紧凑底栏：红球 | 技能+药水 | 蓝球，中间上方经验条
     s.add.rectangle(640, 664, 760, 112, 0x140f0a, 0.92).setStrokeStyle(2, 0x6a5030).setDepth(19);
@@ -69,11 +69,13 @@ export class Hud {
     s.add.rectangle(640, 601, 480, 10, 0x000000, 0.9).setStrokeStyle(1, 0x8a7040).setDepth(20);
     this.expFill = s.add.rectangle(400, 601, 0, 8, 0xc8a020).setOrigin(0, 0.5).setDepth(21);
     this.expT = txt(s, 640, 601, '', 10, '#fff', { strokeThickness: 2 }).setOrigin(0.5).setDepth(22);
-    const SK = skills.length > 4 ? 52 : Hud.SK;
-    const gap = skills.length > 4 ? SK + 4 : SK + 8;
-    const x0 = skills.length > 4 ? 400 : 420;
+    // #11 法师最多 10 技能：>5 时两行各 5 格，缩小格子不挤占药水栏
+    const two = skills.length > 5;
+    const SK = two ? 40 : skills.length > 4 ? 52 : Hud.SK;
+    const gap = two ? 44 : skills.length > 4 ? SK + 4 : SK + 8;
+    const x0 = two ? 410 : skills.length > 4 ? 400 : 420;
     skills.forEach((k, i) => {
-      const x = x0 + i * gap, y = 646; this.skillPos.push({ x, y });
+      const x = x0 + (two ? i % 5 : i) * gap, y = two ? (i < 5 ? 628 : 673) : 646; this.skillPos.push({ x, y });
       s.add.rectangle(x, y, SK, SK, 0x1a1a1a).setStrokeStyle(2, 0xbbaa77).setDepth(20);
       if (s.textures.exists('sk_' + k.id)) s.add.image(x, y, 'sk_' + k.id).setDisplaySize(SK - 4, SK - 4).setDepth(20);
       else if (k.name) txt(s, x, y, k.name, 12).setOrigin(0.5).setDepth(20);

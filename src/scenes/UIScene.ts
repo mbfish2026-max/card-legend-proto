@@ -19,7 +19,9 @@ export class UIScene extends Phaser.Scene {
     { this.pad = new VirtualPad(this, b.world.skills, k => b.onKey(k)); this.pad.onStep = d => b.stepKey(d); this.pad.setVisible(false); }
   }
   update() {
-    const b = this.scene.get('Battle') as BattleScene; if (!this.pad || !b.world) return;
+    const b = this.scene.get('Battle') as BattleScene; if (!b?.world) return;
+    this.panel?.refreshIfStale(); // #11：角色/技能面板打开时等级、经验变化即时刷新
+    if (!this.pad) return;
     this.pad.setVisible(Settings.wantPad(IS_MOBILE) && !this.panel.open && b.state === 'play');
     this.pad.update(b.cds, b.world.skills);
   }

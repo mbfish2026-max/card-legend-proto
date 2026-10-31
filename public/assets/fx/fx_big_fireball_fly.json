@@ -1,0 +1,175 @@
+{
+ "frames": {
+  "fx_big_fireball_fly_00": {
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 192,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 192,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 192,
+    "h": 96
+   },
+   "anchor": {
+    "x": 0.75,
+    "y": 0.5
+   }
+  },
+  "fx_big_fireball_fly_01": {
+   "frame": {
+    "x": 192,
+    "y": 0,
+    "w": 192,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 192,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 192,
+    "h": 96
+   },
+   "anchor": {
+    "x": 0.75,
+    "y": 0.5
+   }
+  },
+  "fx_big_fireball_fly_02": {
+   "frame": {
+    "x": 384,
+    "y": 0,
+    "w": 192,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 192,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 192,
+    "h": 96
+   },
+   "anchor": {
+    "x": 0.75,
+    "y": 0.5
+   }
+  },
+  "fx_big_fireball_fly_03": {
+   "frame": {
+    "x": 576,
+    "y": 0,
+    "w": 192,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 192,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 192,
+    "h": 96
+   },
+   "anchor": {
+    "x": 0.75,
+    "y": 0.5
+   }
+  },
+  "fx_big_fireball_fly_04": {
+   "frame": {
+    "x": 768,
+    "y": 0,
+    "w": 192,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 192,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 192,
+    "h": 96
+   },
+   "anchor": {
+    "x": 0.75,
+    "y": 0.5
+   }
+  },
+  "fx_big_fireball_fly_05": {
+   "frame": {
+    "x": 0,
+    "y": 96,
+    "w": 192,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 192,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 192,
+    "h": 96
+   },
+   "anchor": {
+    "x": 0.75,
+    "y": 0.5
+   }
+  }
+ },
+ "meta": {
+  "app": "card-legend fx proc (python numpy/Pillow)",
+  "image": "fx_big_fireball_fly.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 960,
+   "h": 192
+  },
+  "scale": "1",
+  "fx": {
+   "w": 192,
+   "h": 96,
+   "n": 6,
+   "fps": 20,
+   "loop": true,
+   "pivot": [
+    144,
+    48
+   ],
+   "anchor": "screen-line",
+   "skill": "big_fireball",
+   "phase": "projectile",
+   "blend": "ADD",
+   "ms": 300,
+   "cols": 5
+  }
+ }
+}
