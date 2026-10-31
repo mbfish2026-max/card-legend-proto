@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { Unit } from '../combat/types';
 import { FX, FONT, GROUND_Y } from '../data/fx';
 import { equipLook } from './EquipLayers';
+import { SWING_SCALE, WINDUP_SCALE, HIT_SCALE, breathScaleY } from './cardMotion';
 
 const FALLBACK: Record<string, number> = { hero: 0x3366cc, deer: 0x887744, wolf: 0x777766, skeleton: 0xcccccc, zombie: 0x557744, boss_lich: 0x442255 };
 // 卡框背景色：敌方深红，战士深灰/黑（法师蓝 0x1c3a7a、道士金黄 0x7a5c14 预留）
@@ -150,7 +151,7 @@ export class CardView extends Phaser.GameObjects.Container {
     if (this.dying || this.leaping) return;
     const ph = t / 1000 + this.unit.uid;
     if (this.unit.moving) { this.inner.y = -Math.abs(Math.sin(ph * 10)) * 5; this.art.scaleY = this.artSY; }
-    else { this.inner.y = 0; this.art.scaleY = this.artSY * (1 + Math.sin(ph * 2.4) * 0.018); }
+    else { this.inner.y = 0; this.art.scaleY = this.artSY * breathScaleY(ph); }
   }
   flashing = false; private curStatus = 0;
   /** 状态色：中毒亮绿、减速冰蓝，持续期间整张立绘染色 */
@@ -181,10 +182,10 @@ export class CardView extends Phaser.GameObjects.Container {
     if (this.art instanceof Phaser.GameObjects.Image) { this.art.setTint(0xffa060); this.scene.time.delayedCall(sec * 1000, () => { if (!this.dying && this.art.active) { this.untint(this.art as Phaser.GameObjects.Image); this.curStatus = -1; } }); }
   }
   private reset() { const a = this.art; this.scene.tweens.killTweensOf(a); a.setPosition(this.artX, this.artY).setAngle(0).setScale(this.artSX, this.artSY); }
-  /** 普攻：卡框不动，立绘向前冲、前倾、横向拉伸 */
+  /** 普攻：卡框不动，立绘向前冲、前倾、纵向微压（R54：不再横向放大） */
   swing(dir: number) {
     this.reset(); const a = this.art;
-    this.scene.tweens.add({ targets: a, x: this.artX + dir * FX.portraitSwingDx, angle: dir * FX.portraitSwingAngle, scaleX: this.artSX * 1.08, scaleY: this.artSY * 0.96,
+    this.scene.tweens.add({ targets: a, x: this.artX + dir * FX.portraitSwingDx, angle: dir * FX.portraitSwingAngle, scaleX: this.artSX * SWING_SCALE.x, scaleY: this.artSY * SWING_SCALE.y,
       duration: FX.portraitSwingMs / 2, yoyo: true, ease: 'Quad.easeOut', onComplete: () => { if (!this.dying) a.setPosition(this.artX, this.artY).setAngle(0).setScale(this.artSX, this.artSY); } });
   }
   /** 跳跃补位：整卡弧线跃起再落地 */
@@ -198,10 +199,10 @@ export class CardView extends Phaser.GameObjects.Container {
     this.scene.tweens.killTweensOf(this.inner); this.inner.x = 0;
     this.scene.tweens.add({ targets: this.inner, x: dir * dist, duration: 90, yoyo: true, ease: 'Quad.easeOut', onComplete: () => (this.inner.x = 0) });
   }
-  /** 技能前摇：立绘后仰蓄力 + 放大 + 发红 */
+  /** 技能前摇：立绘后仰蓄力 + 微压缩 + 发红（R54：不再放大） */
   windup(dir: number) {
     this.reset(); const a = this.art;
-    this.scene.tweens.add({ targets: a, x: this.artX - dir * FX.windupBackDx, angle: -dir * 6, scaleX: this.artSX * 1.06, scaleY: this.artSY * 1.06, duration: FX.windupMs, yoyo: true, hold: 40 });
+    this.scene.tweens.add({ targets: a, x: this.artX - dir * FX.windupBackDx, angle: -dir * 6, scaleX: this.artSX * WINDUP_SCALE.x, scaleY: this.artSY * WINDUP_SCALE.y, duration: FX.windupMs, yoyo: true, hold: 40 });
     if (a instanceof Phaser.GameObjects.Image) { a.setTint(FX.windupGlow); this.scene.time.delayedCall(FX.windupMs * 2, () => { if (!this.dying) { this.untint(a); this.curStatus = -1; } }); }
   }
   /** 受击：立绘闪色 + 后仰压缩 + 整卡水平震动 */
@@ -211,7 +212,7 @@ export class CardView extends Phaser.GameObjects.Container {
     this.flash.setFillStyle(0xffffff, 0.25).setAlpha(1);
     this.scene.tweens.add({ targets: this.flash, alpha: 0, duration: FX.hitFlashMs });
     const dir = this.unit.facing;
-    this.scene.tweens.add({ targets: this.art, angle: -dir * 4, scaleY: this.artSY * 0.95, duration: FX.hitShakeMs / 2, yoyo: true, onComplete: () => { this.art.setAngle(0); this.art.scaleY = this.artSY; } });
+    this.scene.tweens.add({ targets: this.art, angle: -dir * 4, scaleY: this.artSY * HIT_SCALE.y, duration: FX.hitShakeMs / 2, yoyo: true, onComplete: () => { this.art.setAngle(0); this.art.scaleY = this.artSY; } });
     this.scene.tweens.killTweensOf(this.inner); this.inner.x = 0;
     const amp = this.w * FX.hitShakeRatio, kb = -dir * 10;
     // 受击后退：整卡往后弹 10px 再回位

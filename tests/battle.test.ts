@@ -211,7 +211,7 @@ const free = (w: World) => w.skills.map(() => 0);
   m.level = 17; const ev0 = m.drainEvents().length; void ev0;
   ok(m.learnBook(m.bag.findIndex(x => x.item === 'book_thunder')) === '学会了 雷电术' && m.skills.map(s => s.id).join() === 'fireball,thunder' && !m.bag.some(x => x.item === 'book_thunder'), '学会后出现在 F2，书被消耗');
   ok(m.drainEvents().some(e => e.type === 'learned'), '学会事件（UI 刷新快捷栏）');
-  ok(m.buyBook('fire_wall') !== null, '掉落书（火墙）书店不卖');
+  ok(m.buyBook('magic_shield') !== null, '>25 级掉落书（魔法盾）书店不卖（R54：≤25 级书均可买）');
   const t = new World(seeded(3), 1, FLOORS, 'taoist'); t.gold = 100;
   ok(t.skills.map(s => s.id).join() === 'heal' && t.buyBook('summon_skeleton') === null && t.learnBook(0) === '学会了 召唤骷髅' && t.skills.some(s => s.id === 'summon_skeleton'), '道士：开局只有治愈术；召唤骷髅书 100 金，1 级即可学');
   const wr = new World(seeded(3), 1, FLOORS, 'warrior');
@@ -224,7 +224,7 @@ const free = (w: World) => w.skills.map(() => 0);
   const bw = new World(seeded(3), 30, FLOORS, 'warrior'); let got = 0;
   for (let k = 0; k < 40; k++) { const u = bw.spawn(ENEMIES.boss_lich, 'enemy', 1000); bw.kill(u); }
   got = bw.ground.filter(g => g.item.startsWith('book_')).length;
-  ok(got > 0 && bw.ground.every(g => !g.item.startsWith('book_') || ['book_thrust', 'book_half_moon', 'book_rush'].includes(g.item)), `尸王按资料爆率掉战士技能书（刺杀1/10 半月1/500 野蛮1/600）（40 次掉 ${got} 本）`);
+  ok(got > 0 && bw.ground.every(g => !g.item.startsWith('book_') || ['book_thrust', 'book_half_moon', 'book_rush', 'book_thunder_sword', 'book_fire_sword'].includes(g.item)), `尸王掉战士技能书：≤25 级按资料爆率（刺杀1/10），>25 级按 R54 掉落表（半月/野蛮/烈火/雷霆 10% 适配）（40 次掉 ${got} 本）`);
 }
 { // R13 地图扩充：区域覆盖、旧存档迁移、传送
   const all = REGIONS.flatMap(r => r.floors).sort((a, b) => a - b);

@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { fmtText } from './fmt';
 import { FX, FONT } from '../data/fx';
 type S = Phaser.Scene;
 
@@ -90,7 +91,7 @@ export function shieldAura(s: S, x: number, y: number, cardH: number) {
 }
 /** 伤害数字：出现瞬间放大（不回弹）→ 匀速直线上飘 → 淡出 */
 export function floatNumber(s: S, x: number, y: number, cardH: number, text: string, color: string, scale = 1) {
-  const size = Math.round(cardH * FX.dmgSizeRatio * scale);
+  text = fmtText(text); const size = Math.round(cardH * FX.dmgSizeRatio * scale);
   const t = s.add.text(x, y, text, { fontFamily: FONT, fontSize: size + 'px', color, fontStyle: 'bold', stroke: '#000', strokeThickness: 2 }).setOrigin(0.5).setDepth(80).setScale(0.3);
   s.tweens.add({ targets: t, scale: 1, duration: FX.dmgPopMs, ease: 'Quad.easeOut' });
   s.tweens.add({ targets: t, y: y - cardH * FX.dmgRiseRatio, duration: FX.dmgLifeMs, ease: 'Linear' });

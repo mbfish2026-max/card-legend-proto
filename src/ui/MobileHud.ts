@@ -1,4 +1,5 @@
 import { POTIONS } from '../data/skills';
+import { fmtInt } from './fmt';
 import { Settings } from '../settings';
 import { fmtExp } from '../data/expCurve';
 import type { BattleScene } from '../scenes/BattleScene';
@@ -48,6 +49,7 @@ const CSS = `
 #mh-pots .b{width:46px;height:46px;position:relative;padding:0;background-size:70%;background-repeat:no-repeat;background-position:center}
 #mh-pots .b span{position:absolute;right:3px;bottom:1px;font-size:11px;color:#fff}
 #mh-auto{position:absolute;width:52px;height:44px}
+#mh-page{position:absolute;width:52px;height:44px}
 #mh-comp{position:absolute;display:flex;gap:4px}
 #mh-comp .b{width:48px;height:44px}
 `;
@@ -56,7 +58,7 @@ export class MobileHud {
   root: HTMLDivElement; dx = 0; dy = 0; onStep?: (d: number) => void;
   private bars: Record<string, [HTMLElement, HTMLElement]> = {}; private info!: HTMLElement; private log!: HTMLElement; private floor!: HTMLElement;
   private skBtns: { el: Btn; cd: HTMLElement; t: HTMLElement; i: number }[] = []; private potBtns: HTMLElement[] = [];
-  private act!: Btn; private auto!: Btn; private comp!: HTMLElement; private skSig = ''; private logSig = '';
+  private act!: Btn; private auto!: Btn; private page!: Btn; skPage = 0; private comp!: HTMLElement; private skSig = ''; private logSig = '';
   constructor(private b: BattleScene, private hud: Hud) {
     if (!document.getElementById('mhud-css')) { const st = document.createElement('style'); st.id = 'mhud-css'; st.textContent = CSS; document.head.appendChild(st); }
     document.getElementById('mhud')?.remove();
@@ -94,6 +96,8 @@ export class MobileHud {
     // 右下：互动（传送/对话）+ 技能弧 + 自动 + 药水 + 合击
     this.act = this.btn(r, '进入', () => b.mobileAct()); this.act.id = 'mh-act'; this.act.classList.add('ctl');
     this.auto = this.btn(r, '', () => { Settings.autoAttack = !Settings.autoAttack; Settings.save(); }); this.auto.id = 'mh-auto'; this.auto.classList.add('ctl');
+    // 技能多于 10 个（传世技能等）：弧形翻页，每页 10 个（内 4 外 6）
+    this.page = this.btn(r, '', () => { this.skPage++; this.layoutSkills(); }); this.page.id = 'mh-page'; this.page.classList.add('ctl');
     const pots = this.el('div', r, 'ctl'); pots.id = 'mh-pots';
     POTIONS.forEach((p, i) => { const e = this.btn(pots, '<span></span>', () => b.onKey(p.key)); e.dataset.id = 'pot' + i; e.style.backgroundImage = this.texUrl('potion_' + i); this.potBtns.push(e.firstChild as HTMLElement); });
     this.comp = this.el('div', r, 'ctl'); this.comp.id = 'mh-comp';
@@ -103,7 +107,12 @@ export class MobileHud {
     this.layoutSkills();
   }
   private el<K extends keyof HTMLElementTagNameMap>(t: K, p: HTMLElement, cls = '') { const e = document.createElement(t); if (cls) e.className = cls; p.appendChild(e); return e; }
-  private tap(e: HTMLElement, fn: () => void) { e.addEventListener('pointerdown', ev => { ev.preventDefault(); ev.stopPropagation(); fn(); }); }
+  private tap(e: HTMLElement, fn: () => void) {
+    e.addEventListener('pointerdown', ev => { ev.preventDefault(); ev.stopPropagation(); fn(); });
+    // R54：按下即拦截——Phaser 在 window 上监听 touchstart/mousedown（画布外事件），未 preventDefault 时会当成点地图→城内点地行走；这里吞掉，防止快捷栏点击穿透
+    const eat = (ev: Event) => { if (ev.cancelable) ev.preventDefault(); ev.stopPropagation(); };
+    e.addEventListener('touchstart', eat, { passive: false }); e.addEventListener('mousedown', eat); e.addEventListener('touchend', eat, { passive: false }); e.addEventListener('mouseup', eat);
+  }
   private btn(p: HTMLElement, html: string, fn: () => void): Btn { const e = this.el('div', p, 'b'); e.innerHTML = html; this.tap(e, fn); return e; }
   private texUrl(key: string) {
     const t = this.b.textures; if (!t.exists(key)) return '';
@@ -117,7 +126,9 @@ export class MobileHud {
     const sk = this.b.world.skills; const act = sk.map((s, i) => ({ s, i })).filter(o => !o.s.passive);
     this.skSig = sk.map(s => s.id).join();
     const ring = (n: number, k: number, rad: number) => { const a0 = 180, a1 = 270, a = n === 1 ? (a0 + a1) / 2 : a0 + (a1 - a0) * k / (n - 1); return [Math.cos(a * Math.PI / 180) * rad, Math.sin(a * Math.PI / 180) * rad]; };
-    const inner = act.slice(0, 4), outer = act.slice(4, 10);
+    const pages = Math.max(1, Math.ceil(act.length / 10)); this.skPage %= pages;
+    const cur = act.slice(this.skPage * 10, this.skPage * 10 + 10), inner = cur.slice(0, 4), outer = cur.slice(4, 10);
+    this.page.style.display = pages > 1 ? 'flex' : 'none'; this.page.innerHTML = `翻页<br>${this.skPage + 1}/${pages}`;
     [[inner, 92], [outer, 152]].forEach(([list, rad]) => (list as typeof act).forEach((o, k) => {
       const [x, y] = ring((list as typeof act).length, k, rad as number);
       const e = this.btn(this.root, '', () => this.b.onKey(o.s.key)); e.classList.add('sk', 'ctl'); e.dataset.id = 'sk_' + o.s.id; e.title = o.s.name;
@@ -127,8 +138,9 @@ export class MobileHud {
       this.skBtns.push({ el: e, cd, t, i: o.i });
     }));
     // 自动开关放弧的上方；药水放弧左侧；合击放药水上方
-    const outerR = outer.length ? 152 : 92;
+    const outerR = act.length > 4 ? 152 : 92;
     this.auto.style.right = `calc(var(--sr) + 8px)`; this.auto.style.bottom = `calc(var(--sb) + ${outerR + 50 + 8}px)`;
+    this.page.style.right = `calc(var(--sr) + 66px)`; this.page.style.bottom = `calc(var(--sb) + ${outerR + 50 + 8}px)`;
     const pots = this.root.querySelector('#mh-pots') as HTMLElement; pots.style.right = `calc(var(--sr) + ${outerR + 50 + 14}px)`;
     this.comp.style.right = `calc(var(--sr) + ${outerR + 50 + 14}px)`; this.comp.style.bottom = `calc(var(--sb) + 56px)`;
   }
@@ -154,7 +166,7 @@ export class MobileHud {
     POTIONS.forEach((_, i) => { this.potBtns[i].textContent = String(w.pots[i] ?? 0); });
     this.skBtns.forEach(s => {
       const max = w.skills[s.i]?.cooldown ?? 0, c = cds[s.i] ?? 0;
-      if (max && c > 0) { const deg = 360 * Math.min(1, c / max); s.cd.style.background = `conic-gradient(from ${360 - deg}deg, rgba(0,0,0,.62) 0 ${deg}deg, transparent ${deg}deg)`; s.t.textContent = c >= 1 ? String(Math.ceil(c)) : ''; }
+      if (max && c > 0) { const deg = 360 * Math.min(1, c / max); s.cd.style.background = `conic-gradient(from ${360 - deg}deg, rgba(0,0,0,.62) 0 ${deg}deg, transparent ${deg}deg)`; s.t.textContent = c >= 0.5 ? fmtInt(c) : ''; }
       else { s.cd.style.background = ''; s.t.textContent = ''; }
       s.el.style.opacity = (h && (h.mp ?? 0) < (w.skills[s.i]?.mana ?? 0)) ? '0.5' : '1';
     });

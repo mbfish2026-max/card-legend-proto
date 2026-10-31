@@ -629,7 +629,7 @@ export class BattleScene extends Phaser.Scene {
     this.groundObjs.forEach(os => os.forEach(o => o.destroy())); this.groundObjs.clear();
     this.floorUids = this.world.alive('enemy').map(u => u.uid);
     for (const u of this.world.alive('enemy')) this.views.set(u.uid, new CardView(this, u));
-    const s = this.world.summon; if (s) { const v = this.views.get(s.uid); if (v) v.x = s.x; }
+    for (const s of this.world.summons) { const v = this.views.get(s.uid); if (v) v.x = s.x; }
     const bg = this.world.floor.bg && this.textures.exists(this.world.floor.bg) ? this.world.floor.bg : 'bg';
     this.bgImgs.forEach(b => b.setTexture(bg).setDisplaySize(1280, 720));
     // R10：本层背景未到 → 到了自动替换；下一层资源插队预加载
