@@ -9,6 +9,7 @@ import { CLASSES, ClassId, SkillDef, CAST_GAP } from '../data/classes';
 import { ITEMS, SLOTS, SETS, equipSlotsFor, EQUIP_VERSION, ENHANCE_SLOTS, ENHANCE_MAX, ENHANCE_STAT, IRON_PRICE, IRON_MAX_PURITY, enhanceChance, shatterChance } from '../data/items';
 import { HERO, ENEMIES, SUMMON, SUMMON_BEAST } from '../data/units';
 import { EXP_PER_LEVEL, EXP_VERSION, migrateExp, scaledExp, fmtExp } from '../data/expCurve';
+import { killExp, foeStatsAt } from '../data/balance';
 import { WORLD, FLOORS, Floor, FARM_RESPAWN, FARM_SAFE_DIST, nextFloorOf, SIDE_FLOORS, DEPTH_STEP, prevLayerOf, prevFloorOf } from '../data/world';
 import { TOWNS, townFloors, townOfFloor, returnTownOf, STORAGE_SIZE, TOWN_W, TOWN_GATE_X, GATE_RANGE, TOWN_SPAWN_X, DOOR_RANGE, streetDoors } from '../data/towns';
 import { CONSUMABLE } from '../data/items-town';
@@ -415,7 +416,9 @@ export class World {
   }
   /** feat/maps-more：刷怪并按子层深度加成（官方第 d 层 攻/血 ×(1+DEPTH_STEP×(d−1))，原有层 depth 缺省=1 不变） */
   spawnFoe(id: string, x: number, y: number) { const u = this.spawn(ENEMIES[id], 'enemy', x, y), d = this.floor.depth ?? 1;
-    if (d > 1) { const k = 1 + DEPTH_STEP * (d - 1); u.hp = u.maxHp = Math.round(u.hp * k); u.atk = Math.round(u.atk * k); }
+    const bs = this.floors === FLOORS ? foeStatsAt(id, this.floorIndex) : null; // balance-sys：按层目标等级生成面板（新手图豁免）
+    if (bs) { u.level = bs.level; u.hp = u.maxHp = bs.hp; u.atk = bs.atk; u.def = bs.def; }
+    else if (d > 1) { const k = 1 + DEPTH_STEP * (d - 1); u.hp = u.maxHp = Math.round(u.hp * k); u.atk = Math.round(u.atk * k); }
     return u; }
   /** 子层：返回同图群上一层（仅非战斗、已到达过该层时可用），出生在起点 */
   upLayer(): string { const p = prevLayerOf(this.floorIndex, this.floors); if (p < 0) return '没有上一层';
@@ -574,7 +577,7 @@ export class World {
       });
       this.ground.push(...items); this.events.push({ type: 'drop', uid: u.uid, x: u.x, y: u.y, items });
     }
-    this.gainExp(scaledExp(u.exp ?? 10, this.floorIndex));
+    this.gainExp(killExp(u.id, this.floorIndex, this.level, u.level ?? 1)); // balance-sys：官方经验 × 层倍率 × 等级差衰减
     if (!this.alive('enemy').length && !this.cleared && !this.womaPending) { this.cleared = true; this.events.push({ type: 'cleared' }); }
   }
   gainExp(n: number) {
