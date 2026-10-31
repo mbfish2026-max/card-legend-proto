@@ -345,6 +345,8 @@ export class Panel {
       const ts = w.targetSlot(it), cur = ts ? w.equip[ts] : undefined;
       if (cur && cur !== it) lines.push([`当前：${cur.name}`, '#888']);
       lines.push([`需要等级 ${it.req}`, w.level >= it.req ? '#fff' : '#ff4040']);
+      const cl = ITEMS[it.item]?.cls;
+      if (cl?.length) lines.push([`职业：${cl.map(c => CLASSES[c].name).join('/')}`, cl.includes(w.cls) ? '#fff' : '#ff4040']);
     }
     lines.push([`售价 ${it.price} 金币`, '#ffd24a']);
     if (touch) lines.push([this.mode === 'shop' ? '再点一次：出售' : it.slot && this.sel?.startsWith('eq_') ? '再点一次：卸下' : it.slot ? '再点一次：装备' : '不可装备', '#9fd']);
