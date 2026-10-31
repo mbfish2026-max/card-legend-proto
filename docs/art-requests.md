@@ -92,3 +92,17 @@
 | 文件 | 说明 |
 |---|---|
 | items/item_book.png | 通用技能书底图（古旧线装书，128×128 透明底），可按职业三色：`item_book_warrior.png` / `item_book_mage.png` / `item_book_taoist.png` |
+
+## R13 地图扩充 / 掉落装备 / 超大世界地图（2026-10-31）
+### 新层背景（1280×720，key 已在 world.ts，目前复用旧图）
+bg_floor9 毒蛇山谷、bg_floor10 蜈蚣洞、bg_floor11 石墓·猪洞、bg_floor12 牛魔寺庙、bg_floor13 封魔殿
+### 世界地图节点（128×128，目前复用旧节点图）
+map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封魔谷（代码 icon 字段改名后即可替换）
+### 新怪立绘（目前 art 字段复用旧图，交付后改 units.ts 的 art）
+红蛇、虎蛇、蝎子、万年树妖(BOSS)、蜈蚣、跳跳蜂、黑色恶蛆、触龙神(BOSS)、红野猪、黑野猪、蝎蛇、白野猪(BOSS)、牛魔战士、牛魔法师、牛魔侍卫、牛魔王(BOSS)、虹魔猪卫、虹魔蝎卫、虹魔教主(BOSS)
+### 新装备图标（64×64，目前复用旧图标）
+`short_sword` 短剑（占位用 assets/items/INV_Sword_01.png）、`bronze_sword` 青铜剑（占位用 assets/items/INV_Sword_01.png）、`dagger` 匕首（占位用 assets/items/INV_Sword_01.png）、`ebony_sword` 乌木剑（占位用 assets/items/INV_Sword_01.png）、`bronze_axe` 青铜斧（占位用 assets/items/INV_Sword_02.png）、`bahuang` 八荒（占位用 assets/items/INV_Sword_02.png）、`banyue` 半月（占位用 assets/items/INV_Sword_02.png）、`haihun` 海魂（占位用 assets/items/INV_Sword_03.png）、`lingfeng` 凌风（占位用 assets/items/INV_Sword_02.png）、`xiangmo` 降魔（占位用 assets/items/INV_Sword_04.png）、`yanyue` 偃月（占位用 assets/items/INV_Sword_03.png）、`xiuluo` 修罗（占位用 assets/items/INV_Sword_02.png）、`zhanma` 斩马刀（占位用 assets/items/INV_Sword_02.png）、`pohun` 破魂（占位用 assets/items/INV_Sword_02.png）、`ningshuang` 凝霜（占位用 assets/items/INV_Sword_02.png）、`lianyu` 炼狱（占位用 assets/items/INV_Sword_02.png）、`jingzhongyue` 井中月（占位用 assets/items/INV_Sword_05.png）、`wujigun` 无极棍（占位用 assets/items/INV_Sword_04.png）、`longwen` 龙纹剑（占位用 assets/items/INV_Sword_04.png）、`caijue` 裁决之杖（占位用 assets/items/INV_Sword_05.png）、`guyu` 骨玉权杖（占位用 assets/items/INV_Sword_03.png）、`light_armor` 轻型盔甲（占位用 assets/items/INV_Chest_Plate01.png）、`soul_robe` 灵魂战衣（占位用 assets/items/INV_Chest_Plate03.png）、`magic_robe` 魔法长袍（占位用 assets/items/INV_Chest_Plate03.png）、`war_armor` 战神盔甲（占位用 assets/items/INV_Chest_Plate03.png）、`ghost_robe` 幽灵战衣（占位用 assets/items/INV_Chest_Plate03.png）、`demon_robe` 恶魔长袍（占位用 assets/items/INV_Chest_Plate03.png）、`tao_helm` 道士头盔（占位用 assets/items/INV_Helmet_03.png）、`magic_helm` 魔法头盔（占位用 assets/items/INV_Helmet_01.png）
+### 超大世界地图 / 区域小地图 / 入口图标（新 key，未提供时代码画占位色块）
+- `map_world_big`：2400×1400 世界大地图（区域中心坐标见 src/data/map.ts REGIONS.x/y）
+- `map_region_<id>`：960×320 区域小地图，id = bichi / woma / dushe / zuma / cangyue / fengmo / chiyue
+- `map_entry_town` / `map_entry_cave` / `map_entry_dungeon` / `map_entry_exit`：64×64 入口图标（城镇/洞穴/副本/出口）

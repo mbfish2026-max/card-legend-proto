@@ -5,7 +5,7 @@ import { WORLD, Floor, FLOORS } from '../src/data/world';
 import { CLASSES, ClassId } from '../src/data/classes';
 import { ENEMIES, DIFF } from '../src/data/units';
 import { QUESTS, ACHIEVES } from '../src/data/quests';
-import { REGIONS, floorBoss, regionOf } from '../src/data/map';
+import { REGIONS, floorBoss, regionOf, entrances, nodeOfFloor, clampView, zoomAt, WORLD_W, WORLD_H } from '../src/data/map';
 import { detectMobile } from '../src/mobile';
 import { StepGate, stepDir, HoldKeys, HOLD } from '../src/input/stepKeys';
 import { POTIONS } from '../src/data/skills';
@@ -574,6 +574,21 @@ const free = (w: World) => w.skills.map(() => 0);
   const f = mk([]); for (let i = 0; i < 8; i++) f.reached.add(i); f.checkAchieves();
   ok(f.achieves.has('a_floors_8'), '到达 8 层成就');
   ok(ACHIEVES.length >= 7, '成就定义齐全');
+}
+
+{ // R13 超大世界地图 + 区域小地图入口
+  ok(FLOORS.every((_, i) => nodeOfFloor(i)), '每一层都有区域小地图入口');
+  ok(entrances().length === FLOORS.length, `入口与层一一对应（${entrances().length}/${FLOORS.length}）`);
+  ok(entrances().every(e => e.region.floors.includes(e.node.floor!)), '入口所在区域与 floors 一致');
+  ok(REGIONS.every(r => r.nodes.filter(n => n.kind === 'town').every(n => n.safe && n.floor === undefined)), '城镇节点为安全区且不是战斗层（留给城镇/商人任务）');
+  ok(REGIONS.every(r => r.nodes.every(n => n.kind !== 'exit' || REGIONS.some(x => x.id === n.to))), '区域出口指向存在的区域');
+  ok(REGIONS.every(r => r.x > 0 && r.x < WORLD_W && r.y > 0 && r.y < WORLD_H && r.nodes.every(n => n.x >= 0 && n.x <= 1 && n.y >= 0 && n.y <= 1)), '坐标在画布内');
+  const v = clampView({ x: 500, y: 500, z: 0.01 }, 960, 360); ok(v.x <= 0 && v.y <= 0 && v.z * WORLD_W >= 960, '视口夹紧：不露出画布外、最小缩放铺满');
+  const z = zoomAt({ x: -400, y: -200, z: 1 }, 480, 180, 1.5, 960, 360); ok(Math.abs((480 - z.x) / z.z - 880) < 1e-6 && Math.abs((180 - z.y) / z.z - 380) < 1e-6, '缩放以锚点为中心');
+  ok(zoomAt({ x: 0, y: 0, z: 2 }, 0, 0, 5, 960, 360).z === 2, '最大缩放受限');
+  const w = new World(seeded(3), 1, FLOORS, 'warrior'); w.reached.add(4); w.gold = 1000;
+  ok(w.teleport(nodeOfFloor(4)!.node.floor!) === null && w.floorIndex === 4, '点击入口沿用 teleport 规则传送');
+  ok(!!w.teleport(nodeOfFloor(0)!.node.floor!), '传送冷却仍生效');
 }
 
 console.log(`全部通过 ${pass} 项`);
