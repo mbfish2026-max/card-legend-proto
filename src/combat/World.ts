@@ -480,10 +480,13 @@ export class World {
     this.units.filter(u => u.summon).forEach((s, k) => { s.x = WORLD.heroStartX - 110 - k * 60; s.y = WORLD.summonLane; });
     const cu = this.companionUnit; if (cu) { cu.x = WORLD.heroStartX - 80; cu.y = WORLD.summonLane; }
     const cd = this.bossCdLeft(i); // 任务B：进层时普通怪全量重刷；BOSS 冷却中不刷（防反复进出刷 BOSS）
+    let densAcc = 0;
     for (const sp of this.floor.spawns) {
       if (cd > 0 && ENEMIES[sp.id]?.tier === 'boss') continue;
       if (sp.id === 'boss_woma' && this.floor.name === WOMA_FLOOR_NAME) { this.womaPending = { x: sp.x, y: sp.y ?? 0 }; continue; } // R14 #14：教主之家需号角
       this.spawnFoe(sp.id, sp.x, sp.y ?? 0);
+      // 层内密度 [适配]：FOE_BAND.dens 按段给普通怪追加副本（累加器，确定性；BOSS/精英不复制；新手层除外）
+      if (ENEMIES[sp.id]?.tier !== 'boss' && this.floors === FLOORS && !this.newbieFloor) { densAcc += (FOE_BAND.dens[floorBand(this.floorIndex)] ?? 1) - 1; while (densAcc >= 1) { densAcc -= 1; this.spawnFoe(sp.id, sp.x + 45, sp.y ?? 0); } }
     }
     this.events.push({ type: 'floor', index: i, name: this.floor.name });
     if (cd > 0) this.events.push({ type: 'log', text: `本层首领已被击败，${Math.ceil(cd / 60)} 分钟内不会刷新（出口已开启）` });
