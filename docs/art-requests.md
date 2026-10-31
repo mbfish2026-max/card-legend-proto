@@ -445,3 +445,22 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 - 外观依据（热血传奇官方背景，百度百科）：原为人们祭奠的神将，与龙共同守护人类，龙堕落后随之化为妖魔；「神所赐的双翅」「由天地灵气化成的短枪」；作为龙命令的执行者带来血与火。据此绘制：龙角头盔的堕落神将、暗红金边重甲、一对龙翼、紫红灵气短枪、血火缭绕。
 - 未查到：原作具体配色与头部造型的官方立绘描述（配色暗红/黑红为玩家资料推测）；短枪画成两端带刃，属自由发挥。
 - 原创绘制，未描摹原作素材。
+
+### 批次5：蛇魔谷（下） + 禁地（12）
+
+预览：`docs/art-gap-preview/sq_b5_snake_jindi.jpg`
+
+| 文件 | 尺寸 | id | 名称 | 地图 | 外观 | 备注 |
+|---|---|---|---|---|---|---|
+| three_head_snake_full.png | 859x960 | three_head_snake | 三头蛇 | 蛇魔谷（传世） | 据描述 | 红蛇妖受魔法感染变成三个脑袋 |
+| scarab_full.png | 960x722 | scarab | 圣甲虫 | 蛇魔谷（传世） | 部分推测 | 防御极强的甲虫 |
+| magic_beetle_full.png | 960x888 | magic_beetle | 魔甲虫 | 蛇魔谷（传世） | 部分推测 | 会石化魔法的甲虫 |
+| termite_full.png | 960x701 | termite | 白蚁 | 蛇魔谷（传世） | 部分推测 | 蚁巢中的小生物 |
+| thorn_demon_full.png | 709x960 | thorn_demon | 刺魔 | 禁地（传世） | 据描述 | 剪刀般利爪，背上六根背鳍 |
+| claw_demon_full.png | 723x960 | claw_demon | 利爪魔 | 禁地（传世） | 未查到/推测 | 仅名称与掉落 |
+| flash_demon_full.png | 715x960 | flash_demon | 闪灵 | 禁地（传世） | 未查到/推测 | 又名闪电魔，外形未查到 |
+| vine_demon_full.png | 722x960 | vine_demon | 藤妖 | 禁地（传世） | 据描述 | 千年藤树化身，全身树藤 |
+| blood_demon_full.png | 722x960 | blood_demon | 血妖 | 禁地（传世） | 据描述 | 远程吐血攻击，类似僵尸 |
+| iron_wing_full.png | 960x702 | iron_wing | 铁翼魔 | 禁地（传世） | 据描述 | 像巨大蝙蝠 |
+| yao_lishi_full.png | 720x960 | yao_lishi | 妖力士 | 禁地（传世） | 据描述 | 面目狰狞，一只手臂粗大无比 |
+| ghost_bug_full.png | 960x830 | ghost_bug | 幽灵虫 | 禁地（传世） | 未查到/推测 | 仅名称（另有幽灵虫母） |
