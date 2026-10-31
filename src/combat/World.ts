@@ -150,7 +150,9 @@ export class World {
   /** 各套装已穿件数 */
   setCounts(): Record<string, number> {
     const c: Record<string, number> = {};
-    for (const it of Object.values(this.equip)) { const s = it && ITEMS[it.item]?.set; if (s) c[s] = (c[s] ?? 0) + 1; }
+    // 官方规则：相同款式重复穿戴不重复计件（记忆套需不同款手镯/戒指）→ 按不同物品 id 计数
+    const seen = new Set<string>();
+    for (const it of Object.values(this.equip)) { const s = it && ITEMS[it.item]?.set; if (s && !seen.has(it!.item)) { seen.add(it!.item); c[s] = (c[s] ?? 0) + 1; } }
     return c;
   }
   /** 当前激活的套装加成 */
@@ -477,6 +479,7 @@ export class World {
     const it = this.bag[bagIdx]; if (!it) return '没有物品';
     if (!it.slot) return '该物品无法装备';
     if (this.level < it.req) return `需要等级 ${it.req}`;
+    const cl = ITEMS[it.item]?.cls; if (cl?.length && !cl.includes(this.cls)) return '职业不符';
     const sl = this.targetSlot(it, target); if (!sl) return '部位不符';
     this.bag.splice(bagIdx, 1);
     const old = this.equip[sl]; if (old) this.bag.splice(bagIdx, 0, old);
