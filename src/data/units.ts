@@ -48,6 +48,15 @@ export const ENEMIES: Record<string, UnitDef> = {
   blood_zombie: n('blood_zombie', '血僵尸', 28, 1700, 68, 22, 420, [G(0.6), { item: 'hp_mid', chance: 0.35 }], { deathSfx: 'ghoul_death', speed: 75, atkInterval: 1.5, oilChance: 0.02 }),
   redmoon_spider: n('redmoon_spider', '赤月蜘蛛', 29, 1400, 75, 18, 440, [G(0.6), { item: 'mp_mid', chance: 0.3 }], { art: 'spider', deathSfx: 'death', oilChance: 0.02 }),
   boss_redmoon: b('boss_redmoon', 'boss_redmoon', '赤月恶魔', 32, 15000, 95, 26, 6000, [{ item: 'dragon_sword', chance: 0.5 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'lich_death', setDrop: ['set_chiyue_necklace', 'set_chiyue_ring', 'set_chiyue_bracelet'] }),
+  // 合击版 #8 新地图怪物（docs/hejiban-official.md §4）。官方怪物表/数值未查到 → 名称/数值 [适配]，美术复用现有（见 art-requests）
+  hj_guard: n('hj_guard', '家园守卫', 30, 1800, 76, 23, 470, [G(0.6), { item: 'hp_mid', chance: 0.35 }, { item: 'book_page', chance: 0.06 }], { art: 'orc', deathSfx: 'death2', oilChance: 0.02 }),
+  boss_hj_home: b('boss_hj_home', 'boss_woma', '魔龙守将', 33, 15500, 96, 26, 6200, [{ item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, { item: 'book_page', chance: 1 }, { item: 'gold_bar', chance: 0.5 }, G(1), G(1)], { deathSfx: 'death2' }),
+  wolong_guard: n('wolong_guard', '卧龙护卫', 31, 1850, 78, 24, 490, [G(0.6), { item: 'hp_mid', chance: 0.35 }, { item: 'book_page', chance: 0.06 }], { art: 'orc', deathSfx: 'death2', oilChance: 0.02 }),
+  boss_wolong: b('boss_wolong', 'boss_orc_chief', '卧龙名将', 34, 16000, 98, 27, 6500, [{ item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, { item: 'book_page', chance: 1 }, { item: 'gold_bar', chance: 0.6 }, G(1), G(1)], { deathSfx: 'death2' }),
+  leiyan_spider: n('leiyan_spider', '雷炎蜘蛛', 32, 1700, 82, 22, 510, [G(0.6), { item: 'mp_mid', chance: 0.35 }, { item: 'book_page', chance: 0.08 }], { art: 'spider', deathSfx: 'death', oilChance: 0.02 }),
+  boss_leiyan: b('boss_leiyan', 'boss_redmoon', '雷炎蛛王', 35, 16500, 100, 27, 7000, [{ item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, { item: 'book_page', chance: 1 }, { item: 'book_page', chance: 1 }, { item: 'gold_bar', chance: 0.6 }, G(1), G(1)], { deathSfx: 'lich_death' }),
+  fire_dragon_guard: n('fire_dragon_guard', '火龙守卫', 33, 1900, 84, 24, 530, [G(0.6), { item: 'hp_mid', chance: 0.35 }, { item: 'book_page', chance: 0.08 }], { art: 'orc', deathSfx: 'death2', oilChance: 0.02 }),
+  boss_fire_dragon: b('boss_fire_dragon', 'boss_redmoon', '火龙', 36, 17000, 102, 28, 7500, [{ item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, { item: 'book_page', chance: 1 }, { item: 'gold_bar', chance: 1 }, G(1), G(1)], { deathSfx: 'lich_death' }),
   // R13 新增地图（原版怪名/BOSS 见 docs/maps-research.md；数值按本作层位 [适配]，非原版数值）
   red_snake: n('red_snake', '红蛇', 10, 420, 28, 8, 110, [G(0.5), { item: 'hp_small', chance: 0.3 }, { item: 'bracelet', chance: 0.08 }], { art: 'spider', deathSfx: 'death' }),
   tiger_snake: n('tiger_snake', '虎蛇', 11, 460, 30, 8, 120, [G(0.5), { item: 'mp_small', chance: 0.3 }, { item: 'boots', chance: 0.08 }], { art: 'spider', deathSfx: 'death' }),

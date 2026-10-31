@@ -1,6 +1,6 @@
 import { REGIONS } from './map';
 /** R14 城镇与 NPC。来源/未查到见 docs/towns-npcs-official.md */
-export type NpcKind = 'potion' | 'weapon' | 'armor' | 'jewelry' | 'book' | 'general' | 'smith' | 'storage' | 'teleport' | 'veteran';
+export type NpcKind = 'potion' | 'weapon' | 'armor' | 'jewelry' | 'book' | 'general' | 'smith' | 'storage' | 'teleport' | 'veteran' | 'dragon';
 /** 商品：item 物品 id；official 原版价（null = 未查到）；price 本作买价 */
 export interface Goods { item: string; official: number | null; price: number; src: string }
 export interface NpcDef { id: string; name: string; kind: NpcKind; pos?: string; goods?: Goods[]; note?: string }
@@ -39,18 +39,18 @@ export const TOWNS: Record<string, TownDef> = {
     npc('bq_tele', '传送员', 'teleport', undefined, { note: '[适配] 原版位置未查到' }),
     npc('bq_veteran', '比奇老兵', 'veteran', undefined, { note: '城门老兵：新手指引 + 传送（原版比奇老兵承担传送；坐标未查到）' })] },
   mengzhong: { id: 'mengzhong', name: '盟重土城', region: 'zuma', src: T2, npcs: [...basic('mz'), npc('mz_weapon', '铁匠铺老板（武器）', 'weapon', '329,314', { goods: WEAPON_GOODS })] },
-  bairimen: { id: 'bairimen', name: '白日门', region: 'chiyue', src: '未查到', npcs: basic('brm') },
+  bairimen: { id: 'bairimen', name: '白日门', region: 'chiyue', src: '未查到', npcs: [...basic('brm'), npc('brm_dragon', '龙人', 'dragon', undefined, { note: '合击秘籍（H1）；坐标未查到' })] },
   cangyue: { id: 'cangyue', name: '苍月岛', region: 'cangyue', src: '未查到', npcs: basic('cy') },
   fengmo: { id: 'fengmo', name: '封魔谷', region: 'fengmo', src: '未查到', npcs: basic('fm') },
 };
 /** 地图城镇节点 id → 城镇 id */
-export const NODE_TOWN: Record<string, string> = { bichi_town: 'bichi', zuma_town: 'mengzhong', chiyue_town: 'bairimen', cangyue_town: 'cangyue', bichi_xinshou: 'xinshou', fengmo_town: 'fengmo' };
+export const NODE_TOWN: Record<string, string> = { bichi_town: 'bichi', zuma_town: 'mengzhong', chiyue_town: 'bairimen', cangyue_town: 'cangyue', bichi_xinshou: 'xinshou', fengmo_town: 'fengmo', hj_town: 'mengzhong' };
 /** 城镇所在区域的入口层（出城去的层） */
 export function townFloors(t: string): number[] { const r = REGIONS.find(x => x.id === TOWNS[t]?.region); const e = TOWNS[t]?.exit; if (e !== undefined) return [e]; return r ? [...r.floors] : [0]; }
 /** 某层所在区域的城镇（地牢逃脱卷）；没有返回 bichi */
 /** 战斗层的「回城/回村」入口：原路返回进来的城镇（第 0 层由新手村进入 → 回新手村；其余回本区域主城） */
 export function returnTownOf(f: number): string { const v = Object.values(TOWNS).find(t => t.exit === f); return v ? v.id : townOfFloor(f); }
-export function townOfFloor(f: number): string { const r = REGIONS.find(x => x.floors.includes(f)); return Object.values(TOWNS).find(t => t.region === r?.id && t.exit === undefined)?.id ?? 'bichi'; }
+export function townOfFloor(f: number): string { const r = REGIONS.find(x => x.floors.includes(f)); const tn = r?.nodes.find(n => n.kind === 'town'); return Object.values(TOWNS).find(t => t.region === r?.id && t.exit === undefined)?.id ?? (tn && NODE_TOWN[tn.id]) ?? 'bichi'; }
 export const STORAGE_SIZE = 40;
 
 /** R14 横版长街：街宽 = 3 屏；西端城门（出城），店铺门面沿街等距排开 */
@@ -60,7 +60,7 @@ export const TOWN_W = Math.round(5760 * STREET_ART_K), TOWN_GATE_X = 0, GATE_RAN
 /** 门口触发半径：素材约定 |x−店铺中心| < 200（原尺寸）→ ×2/3 */
 export const DOOR_RANGE = Math.round(200 * STREET_ART_K) - 13;
 /** NPC 立绘/门面文件 id（public/assets/town/npc_<id>.png、shop_<id>.png） */
-export const NPC_ART: Record<NpcKind, string> = { potion: 'pharmacist', weapon: 'weapon', armor: 'clothes', jewelry: 'jewelry', book: 'book', general: 'grocer', smith: 'blacksmith', storage: 'storage', teleport: 'teleporter', veteran: 'veteran' };
+export const NPC_ART: Record<NpcKind, string> = { potion: 'pharmacist', weapon: 'weapon', armor: 'clothes', jewelry: 'jewelry', book: 'book', general: 'grocer', smith: 'blacksmith', storage: 'storage', teleport: 'teleporter', veteran: 'veteran', dragon: 'jewelry' }; // [适配] 龙人暂用首饰店位与立绘（白日门无首饰店）
 /** 街上店铺顺序（素材 street_near 中的固定排布，中心 x = 288 + 576×i 原尺寸） */
 export const STREET_ORDER = ['veteran', 'teleporter', 'pharmacist', 'weapon', 'clothes', 'jewelry', 'book', 'grocer', 'blacksmith', 'storage'];
 export const streetSlotX = (i: number) => Math.round((288 + 576 * i) * STREET_ART_K);

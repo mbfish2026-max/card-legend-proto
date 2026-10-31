@@ -1,3 +1,5 @@
+import { COMPANION_MODE_NAME } from '../data/companion';
+import { COMPANION_UNLOCK_LEVEL, comboFor, BOOK_PAGE, BRM_BOOK, GOLD_BAR, PAGES_PER_BOOK, COMBO_LEVEL, heartFeedValue, RAGE_MAX, HEART_STORE_MAX, RECRUIT_DIALOG } from '../data/companion';
 import { toLogic } from '../render';
 import { RING_MIN_LEVEL, IDENT_PRICE, IDENT_MIN_LEVEL } from '../data/r14b';
 import { fmtExp, scaledExp } from '../data/expCurve';
@@ -8,8 +10,8 @@ import { EQUIP_SLOTS, EQUIP_SLOT_NAMES, SLOT_NAMES, STAT_NAMES, ITEMS, SETS, ENH
 import { OIL_PRICE } from '../combat/World';
 import { POTIONS } from '../data/skills';
 import { WORLD } from '../data/world';
+import { CLASSES, CLASS_IDS } from '../data/classes';
 export const BAG_PAGE = 30;
-import { CLASSES } from '../data/classes';
 import { renderSettingsView } from './SettingsView';
 import { txt, button, sfx } from '../scenes/TitleScene';
 import { IS_MOBILE } from '../mobile';
@@ -292,10 +294,23 @@ export class Panel {
     if (n.kind === 'book') { R.add(txt(s, X, top + 74, '书店：本职业有售技能书', 13, '#9fd')); w.shopBooks().forEach((b, i) => { const id = 'book_' + b.skill, learned = w.learned.has(b.skill);
       row(i, ITEMS[id].name, `${b.price} 金 ${learned ? '已学会' : ''}`, '购买', () => buy(w.buyBook(b.skill), ITEMS[id].name), !learned && w.gold >= b.price, id); }); }
     if (n.kind === 'jewelry') R.add(txt(s, X, top + 90, '首饰店存货：未查到（原版只能买到别人卖的）。\n点击右侧背包物品出售。', 13, '#9fd'));
+    if (n.kind === 'dragon') { R.add(txt(s, X, top + 66, '龙人：英雄 43 级，带 2 本白日门技能书和 2 根金条来，我教你们合击。', 13, '#9fd'));
+      const c = w.companion, cb = c ? comboFor(w.cls, c.cls) : undefined;
+      row(0, '合成白日门技能书', `书页 ${w.countItem(BOOK_PAGE)}/${PAGES_PER_BOOK} [适配]`, '合成', () => { const e = w.craftBrmBook(); this.onChange(e ?? '获得白日门技能书', !e); this.render(); }, w.countItem(BOOK_PAGE) >= PAGES_PER_BOOK);
+      row(1, cb ? `合击秘籍·${cb.name}` : '合击秘籍（需英雄）', c ? `英雄 Lv${c.level}/${COMBO_LEVEL} · 书 ${w.countItem(BRM_BOOK)}/2 · 金条 ${w.countItem(GOLD_BAR)}/2${c.combo?.includes(cb!.id) ? ' · 已学会' : ''}` : '先在老兵处领取英雄', '学习', () => { const e = w.learnCombo(); this.onChange(e ?? `学会 ${cb?.name}`, !e); this.render(); }, !!c && !c.combo?.includes(cb!.id)); }
     if (n.kind === 'veteran') { R.add(txt(s, X, top + 66, '老兵：城里安全，西门出城；要去哪我送你。', 13, '#9fd'));
       const q = w.ringQ, done = (e: string | null, m: string) => { this.onChange(e ?? m, !e); this.render(); }; // R14 #17 环式任务（S12：20 级起）
       if (!q) row(0, `环式任务 第${w.ringDone + 1}环`, w.level < RING_MIN_LEVEL ? `${RING_MIN_LEVEL} 级开放` : '随机去过的楼层清怪', '接取', () => done(w.ringAccept(), '接到环式任务'), w.level >= RING_MIN_LEVEL, undefined, X + 250);
-      else row(0, `第${q.n}环 ${q.name} ${q.prog}/${q.need}`, `${w.floors[q.floor].name}`, '交付', () => done(w.ringClaim(), '环式任务完成'), q.prog >= q.need, undefined, X + 250); }
+      else row(0, `第${q.n}环 ${q.name} ${q.prog}/${q.need}`, `${w.floors[q.floor].name}`, '交付', () => done(w.ringClaim(), '环式任务完成'), q.prog >= q.need, undefined, X + 250);
+      const c = w.companion; // 合击版 #2 英雄获取（40 级，免费）
+      if (c) { const cdl = w.companionCooldown(); // 阶段 A：与战斗内 R 键同一逻辑（官方收回后 60 秒冷却）
+        row(1, `英雄 ${c.name} · ${COMPANION_MODE_NAME[c.mode]}`, `${CLASSES[c.cls].name} Lv${c.level} · ${c.out ? '召唤中' : cdl > 0 ? `冷却 ${cdl}s` : '已收回'}`, c.out ? '收回' : '召唤', () => { const e = w.toggleCompanion(); this.onChange(e ?? (c.out ? '召唤英雄' : '收回英雄'), !e); this.render(); }, c.out || cdl <= 0, undefined, X + 250); }
+      // #5 怒槽/火龙之心显示（爆发结算归战斗开发）
+      if (c) { const fi = w.bag.findIndex(b => heartFeedValue(b.item) > 0);
+        row(2, `怒槽 ${Math.floor(c.rage)}/${RAGE_MAX}${c.burst ? " 爆发中" : ""}`, c.equip.heart ? `火龙之心 ${c.heartStore}/${HEART_STORE_MAX}` : '未装备火龙之心（学合击后获得）', '补充', () => { const e = w.feedCompanionHeart(fi); this.onChange(e ?? '火龙之心已补充', !e); this.render(); }, !!c.equip.heart && fi >= 0, undefined, X + 250); }
+      else CLASS_IDS.forEach((k, i) => row(i + 1, `领取${CLASSES[k].name}英雄`, w.level < COMPANION_UNLOCK_LEVEL ? `${COMPANION_UNLOCK_LEVEL} 级开放 · 免费` : RECRUIT_DIALOG[i % 2].slice(0, 14) + '…', '领取', () => {
+        const nm = CLASSES[k].name + '英雄'; // [适配] 起名用默认名（输入框后续做）
+        const e = w.recruitCompanion(k, nm); this.onChange(e ?? `获得英雄 ${nm}`, !e); this.render(); }, w.level >= COMPANION_UNLOCK_LEVEL, undefined, X + 250)); }
     if (n.kind === 'teleport' || n.kind === 'veteran') { const fl = [...w.reached].sort((a, b) => a - b).slice(0, 8);
       fl.forEach((f, i) => row(i, w.floors[f].name, `${w.teleportCost(f)} 金 · 冷却 ${WorldCls.TELEPORT_CD}s`, '传送', () => { const e = w.townTeleport(f); this.onChange(e ?? `传送到 ${w.floors[f].name}`, !e); if (!e) { this.mode = null; this.close(); this.onTeleport?.(); } else this.render(); }, w.gold >= w.teleportCost(f))); }
     if (n.kind === 'storage') {

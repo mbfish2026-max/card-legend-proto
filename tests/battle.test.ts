@@ -2,6 +2,7 @@ declare const process: { env: Record<string, string | undefined> };
 import { World, SaveData, OIL_PRICE, IRON_PRICE, OFFICIAL, mitigate, taoBuffValue, taoBuffDur, SKELETON_OFFICIAL, SUMMON_NAME_COLORS, SUMMON_MAX_LV, SUMMON_LV_KILLS } from '../src/combat/World';
 import { ITEMS, SETS, ENHANCE_MAX, enhanceChance, shatterChance } from '../src/data/items';
 import { WORLD, CARD, Floor, FLOORS, FLOOR_ORDER, nextFloorOf, floorNo, DEPTH_STEP, prevLayerOf, groupOf } from '../src/data/world';
+import { comboFor } from '../src/data/companion';
 import { CLASSES, ClassId, CAST_GAP, COOLDOWN_BEFORE, REBALANCE, MANA_BEFORE, SKILL_CD, CD_BEFORE_LIGHT } from '../src/data/classes';
 import { ENEMIES, DIFF } from '../src/data/units';
 import { QUESTS, ACHIEVES } from '../src/data/quests';
@@ -238,13 +239,13 @@ const free = (w: World) => w.skills.map(() => 0);
 { // R11 地图按原版递进
   ok(FLOORS.slice(0, 13).map(f => f.name).join() === '幽暗森林,兽人要塞,蛛网晶洞,毒蛇山谷,白骨墓穴,尸王殿,蜈蚣洞,石墓·猪洞,沃玛寺庙,祖玛阁,牛魔寺庙,封魔殿,赤月魔穴', '层序：新手村→沃玛森林(兽人/蛛洞)→兽人古墓→比奇矿区尸王殿→沃玛寺庙→祖玛→赤月');
   // feat/maps-more（plan-60h B1）：洞穴群子层追加在 13–18（旧档下标不变），通关顺序按 FLOOR_ORDER
-  ok(FLOORS.slice(13).map(f => f.name).join() === '兽人古墓二层,兽人古墓三层,骷髅洞·洞穴一层,骷髅洞·洞穴二层,沃玛自然洞穴·一,沃玛自然洞穴·二' && FLOORS.slice(13).every(f => f.farm && f.group && f.sub && f.src), 'B1 6 个子层：官方名/图群/子层名/来源，全部 farm');
+  ok(FLOORS.slice(13, 19).map(f => f.name).join() === '兽人古墓二层,兽人古墓三层,骷髅洞·洞穴一层,骷髅洞·洞穴二层,沃玛自然洞穴·一,沃玛自然洞穴·二' && FLOORS.slice(13, 19).every(f => f.farm && f.group && f.sub && f.src), 'B1 6 个子层：官方名/图群/子层名/来源，全部 farm');
   ok([...FLOOR_ORDER].sort((a, b) => a - b).join() === FLOORS.map((_, i) => i).join() && FLOOR_ORDER.slice(0, 5).join() === '0,1,2,3,4', 'FLOOR_ORDER 覆盖全部层，新手段不变');
-  ok(nextFloorOf(4) === 13 && nextFloorOf(14) === 15 && nextFloorOf(18) === 5 && nextFloorOf(12) === -1 && floorNo(13) === 6 && floorNo(5) === 12 && floorNo(12) === 19, '子层顺序：古墓一→二→三→洞穴一→二→自然洞穴一→二→尸王殿');
+  ok(nextFloorOf(4) === 13 && nextFloorOf(14) === 15 && nextFloorOf(18) === 5 && nextFloorOf(12) === 19 && nextFloorOf(22) === -1 && floorNo(13) === 6 && floorNo(5) === 12 && floorNo(12) === 19, '子层顺序：古墓一→二→三→洞穴一→二→自然洞穴一→二→尸王殿');
   ok(nextFloorOf(2, FLOORS.slice(0, 3)) === -1 && floorNo(1, FLOORS.slice(0, 3)) === 2 && prevLayerOf(1, FLOORS.slice(0, 3)) === -1, '自定义层表仍按线性');
   ok(prevLayerOf(13) === 4 && prevLayerOf(14) === 13 && prevLayerOf(16) === 15 && prevLayerOf(15) === -1 && prevLayerOf(17) === -1 && prevLayerOf(18) === 17 && prevLayerOf(5) === -1 && prevLayerOf(0) === -1, '上一层入口只在同图群内');
   ok(groupOf(4) === 'shouren' && groupOf(13) === 'shouren' && groupOf(0) === undefined, '白骨墓穴并入兽人古墓图群（层本身不变）');
-  { const r = REGIONS.flatMap(g => g.nodes).filter(n => n.floor !== undefined && n.floor >= 13); ok(r.length === 6 && REGIONS.find(g => g.id === 'bichi')!.nodes.find(n => n.id === 'bichi_cave')!.floor === 15, '骷髅洞节点开放，6 个子层都有小地图入口'); }
+  { const r = REGIONS.flatMap(g => g.nodes).filter(n => n.floor !== undefined && n.floor >= 13 && n.floor <= 18); ok(r.length === 6 && REGIONS.find(g => g.id === 'bichi')!.nodes.find(n => n.id === 'bichi_cave')!.floor === 15, '骷髅洞节点开放，6 个子层都有小地图入口'); }
   { const x = new World(seeded(4), 30, FLOORS, 'warrior'); x.loadFloor(13); x.hero!.x = WORLD.heroStartX; ok(x.prevFloor() && x.floorIndex === 4, '起点「上一层」入口按通关顺序（兽人古墓二层→白骨墓穴，不是第 12 层）'); x.loadFloor(5); x.hero!.x = WORLD.heroStartX; ok(x.prevFloor() && (x.floorIndex as number) === 18, '尸王殿上一层=沃玛自然洞穴·二'); }
   { const x = new World(seeded(4), 30, FLOORS, 'warrior'); x.loadFloor(14); ok(x.upLayer() === 'ok' && (x.floorIndex as number) === 13 && x.upLayer() === "ok" && (x.floorIndex as number) === 4 && x.upLayer() === '没有上一层' && x.floorIndex === 4, 'upLayer 逐层返回'); }
   { const x = new World(seeded(4), 30, FLOORS, 'warrior'); x.loadFloor(17); for (let k = 0; k < 40 && x.floorIndex === 17; k++) { x.hero!.x = x.exitX; x.step(0.05); } ok(x.floorIndex === 18, '无 BOSS 层直接从出口进入下一层（沃玛自然洞穴·二）'); }
@@ -359,6 +360,10 @@ const free = (w: World) => w.skills.map(() => 0);
       for (let i = w.bag.length - 1; i >= 0; i--) if (w.bag[i]?.item === 'black_iron') w.sellItem(i);
       // 黑铁：模拟脚本卖掉（避免碎装干扰难度基线；玩家可手动强化）
       for (let i = w.bag.length - 1; i >= 0; i--) if (w.bag[i]?.item === 'black_iron') w.sellItem(i);
+      // 合击版阶段 A 专项（HJ=1）：40 级领英雄并召唤（攻击状态），补英雄药/火龙之心，怒满即爆发；默认不开 → 与 main 完全一致
+      if (process.env.HJ && w.level >= 40 && !w.town) { if (!w.companion) { w.recruitCompanion(process.env.HJ_CLS as ClassId || c, '英雄'); const cp = w.companion!; cp.combo = [comboFor(c, cp.cls)!.id]; cp.equip.heart = { uid: 0, item: 'fire_heart', name: '火龙之心', rarity: 'common', stats: {}, req: 0, price: 0 } as any; cp.heartStore = 30000; }
+        const cp = w.companion!; if (cp.bag.length < 4) { const pot = (item: string, name: string) => ({ uid: 0, item, name, rarity: 'common', stats: {}, req: 0, price: 0, qty: 5 }) as any; cp.bag.push(pot('hp_strong', '强效金创药'), pot('mp_strong', '强效魔法药')); }
+        if (!cp.out && w.companionCooldown() <= 0) w.toggleCompanion(); w.unleashCombo(); }
       if (process.env.SIM && Math.round(t * 20) % 2000 === 0) console.log("   t", Math.round(t), "lv", w.level, "gold", w.gold, "floor", w.floorIndex + 1, "deaths", w.deaths);
       // R11 技能书：达到等级且金币有余就买，背包里的书能学就学（学会后快捷栏重排，冷却重置）
       for (const b of w.shopBooks()) { const sk = w.skillPool.find(x => x.id === b.skill)!; if (!w.learned.has(b.skill) && w.level >= w.needLevel(sk) && w.gold >= b.price && !w.bag.some(x => ITEMS[x.item]?.book === b.skill)) w.buyBook(b.skill); }
@@ -1102,7 +1107,7 @@ console.log('# 诱惑之光');
 }
 { // feat/first-map-farm：首图练级
   const { FARM_RESPAWN } = await import('../src/data/world');
-  ok(FLOORS[0].farm === true && FLOORS.slice(1, 13).every(f => !f.farm) && FLOORS.slice(13).every(f => f.farm), '原有层只有第 1 层是练级图；B1 子层全部练级图');
+  ok(FLOORS[0].farm === true && FLOORS.slice(1, 13).every(f => !f.farm) && FLOORS.slice(13, 19).every(f => f.farm) && FLOORS.slice(19).every(f => !f.farm), '原有层只有第 1 层是练级图；B1 子层全部练级图');
   ok(ENEMIES.wolf_king.hp < 900 * DIFF.bossHp && ENEMIES.wolf_king.atk < Math.round(20 * 1.4 * DIFF.bossAtk), '狼王已削弱');
   const w = new World(seeded(5), 3, FLOORS, 'warrior'); w.requireUse = true;
   const n0 = w.alive('enemy').filter(u => u.tier !== 'boss').length;
