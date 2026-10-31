@@ -42,14 +42,14 @@ try {
       const cand = [10, 11, 22, 9, 12, 19, 20, 21];
       for (const i of cand) { const f = W.floors[i]; const s = f?.spawns.find(x => x.id.startsWith('boss') || /王|魔|龙|教主/.test(x.id)); if (!f) continue;
         W.loadFloor(i); const bu = W.units.find(u => u.team === 'enemy' && u.tier === 'boss'); if (!bu) continue;
-        W.hero.hp = W.hero.maxHp = 1e7; bu.x = W.hero.x + 200; bu.ai = 'chase'; return { i, name: f.name, boss: bu.name, uid: bu.uid, iv: bu.atkInterval, atk: bu.atk, hp: bu.maxHp }; }
+        W.hero.hp = W.hero.maxHp = 1e7; W.hero.x = bu.x - 200; bu.ai = 'chase'; return { i, name: f.name, boss: bu.name, uid: bu.uid, iv: bu.atkInterval, atk: bu.atk, hp: bu.maxHp }; }
       return null; });
     chk(!!r, `找到主线 BOSS 层 ${r?.name} ${r?.boss}（攻 ${r?.atk} 血 ${r?.hp}）`);
     chk(r && r.iv <= 1.2, `BOSS 攻速 ${r?.iv}s ≤1.2s`);
     await sleep(1500); await p.evaluate(uid => { const W = window.__game.scene.getScene('Battle').world, u = W.units.find(x => x.uid === uid); u.hp = Math.round(u.maxHp * 0.45); }, r.uid);
     await sleep(2500); await p.screenshot({ path: `${dir}/bb-2-boss.png` });
-    const ev = await p.evaluate(() => window.__ev); const calls = ev.filter(e => e === 'bossfx:call').length;
-    chk(calls >= 1, `BOSS 半血召唤小怪（${calls} 次）`); chk(!ev.includes('bossfx:enrage') && !ev.includes('bossfx:aoe_warn'), '主线 BOSS 无通用狂暴/AOE（bossMainEnrageAoe=false）');
+    const st = await p.evaluate(uid => { const W = window.__game.scene.getScene('Battle').world, u = W.units.find(x => x.uid === uid); return { called: !!u.boss?.called, minions: (u.boss?.minions ?? []).length, enr: !!u.boss?.enraged, aoe: u.boss?.aoeX !== undefined || u.boss?.aoeT !== undefined, ev: window.__ev }; }, r.uid); const ev = st.ev, calls = st.minions; console.log('  boss state', JSON.stringify({ ...st, ev: ev.slice(0, 12) }));
+    chk(calls >= 1, `BOSS 半血召唤小怪（${calls} 次）`); chk(!st.enr && !st.aoe, '主线 BOSS 无通用狂暴/AOE（bossMainEnrageAoe=false）');
     errs.push(...w.errs); await p.close();
   }
   const bad = errs.filter(e => !/404|Failed to load/.test(e)); chk(bad.length === 0, `无控制台报错（${bad.length}）${bad.slice(0, 3).join(' | ')}`);
