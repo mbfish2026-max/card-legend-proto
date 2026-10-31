@@ -55,7 +55,7 @@ export const FX_DEFS: Record<string, FxDef> = {
   fx_holy_armor_cast: D(20, 'ADD', 56, ['holy_armor']),
   fx_holy_armor_loop: D(11, 'ADD', 11, ['holy_armor'], { loop: true }),
   fx_mass_heal_burst: D(20, 'ADD', 55, ['mass_heal']),
-  // 合击（阶段 B）：目标卡中心播放，第 6 帧（0.3s）为命中/最亮帧；shihun/mori 末 4 帧可循环作持续尾段（本次仅播一次）
+  // 合击（阶段 B）：目标卡中心播放，第 6 帧（0.3s）为命中/最亮帧；shihun/mori 帧 8–11、pixing 帧 6–9 由 ui/comboStatus.ts + BattleScene 作状态持续循环段
   fx_combo_pohun: D(20, 'ADD', 60, ['combo']),
   fx_combo_huolong: D(20, 'ADD', 60, ['combo']),
   fx_combo_shihun: D(20, 'ADD', 30, ['combo']),

@@ -151,7 +151,19 @@
 
 - comboFx：有图播图，缺图仍走金环 Graphics；「合击名」飘字和震屏两种情况都保留。
 - 原作合击帧「未查到」；box 参考视频帧中无合击画面，「参考不足」。形态只依据 21cq.com/chuanqi/743.html、百度百科「合击」的文字描述，原创绘制。
-- 已知不足：shihun/mori 的循环尾段、pixing 的 3s 麻痹需要逻辑侧另外播放循环/状态，本次未接；huolong 用的是横向盘旋（照规格 ±300px），不是具象龙形。
+- 已知不足：~~shihun/mori 的循环尾段、pixing 的 3s 麻痹需要逻辑侧另外播放循环/状态，本次未接~~（feat/hj-fx-loop 已接，见下）；huolong 用的是横向盘旋（照规格 ±300px），不是具象龙形。
+
+### 阶段 B 合击持续段接入（feat/hj-fx-loop，2026-10-31）
+- 实测素材：fx_combo_shihun 12 帧 640×192、fx_combo_mori 12 帧 384×384、fx_combo_pixing 10 帧 384×384，均**无单独 loop 段命名**（帧名 _00–_11）。
+- 现做法：shihun/mori 取帧 8–11 往返（yoyo）@12fps 循环，200ms 淡入；pixing 取帧 6–9 往返 @12fps、0.5× 作电弧 + 文字标记「⚡麻痹」。缺图时回退半透明 Graphics 椭圆/圆，不报错。
+- 仍缺（请特效 Bot 补，补后只需改 src/ui/comboStatus.ts 的帧区间/key）：
+  | key | 用途 | 建议规格 |
+  |---|---|---|
+  | fx_combo_shihun_loop | 毒沼持续段，首尾无缝 | 640×192，8 帧 @12fps，pivot 320,72，ADD，亮度低于起手段 |
+  | fx_combo_mori_loop | 法阵持续段，首尾无缝（缓慢旋转） | 384×384，8 帧 @12fps，pivot 192,192，ADD |
+  | fx_combo_pixing_stun | 麻痹电弧小循环（头部/身上） | 192×192，6 帧 @12fps，pivot 96,96，ADD |
+  | icon_status_stun | 麻痹状态图标（替换文字标记） | 32×32 PNG，透明底 |
+  | 可选 fx_combo_*_end | shihun/mori 收尾淡出段 | 同起手段尺寸，4 帧 |
 
 ## 阶段 B #9 魔龙教主 / 魔龙血域美术需求（当前占位：沃玛教主贴图 + 紫色 tint 0xb070ff + figureScale 1.35；背景 bg_floor24 缺图走现有回退）
 | key | 内容 | 规格 |

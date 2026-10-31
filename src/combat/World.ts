@@ -1080,7 +1080,7 @@ export class World {
     const amt = (pw(this.classDef.autoStat as any, h) + pw(CLASSES[c.cls].autoStat as any, u)) * fx.mult;
     c.burst = false; c.rage = 0;
     const targets = fx.aoe > 0 ? this.alive('enemy').filter(e => e === t || Math.abs(e.x - t.x) <= fx.aoe) : [t];
-    let dealt = 0;
+    let dealt = 0; const affected: number[] = []; // 表现层用：本次被施加持续状态（毒/麻痹）的目标
     for (const e of targets) {
       const d = this.damage(e, amt, h, false, false, !!fx.ignoreDef, fx.magic); dealt += d;
       if (!e.alive) continue;
@@ -1088,9 +1088,11 @@ export class World {
       if (fx.stun && e.tier !== 'boss') { e.stunUntil = this.time + fx.stun; e.cd = Math.max(e.cd, fx.stun); }
       if (fx.slow) e.slowUntil = this.time + fx.slow;
       if (fx.vuln) { e.vulnUntil = this.time + fx.vuln.dur; e.vulnPhys = fx.vuln.phys ?? 0; e.vulnMag = fx.vuln.mag ?? 0; }
+      if (fx.poison || (fx.stun && e.tier !== 'boss')) affected.push(e.uid);
     }
+    const statusUntil = fx.poison ? this.time + fx.poison.dur : fx.stun ? this.time + fx.stun : undefined;
     if (fx.lifesteal && h.alive) this.heal(h, Math.round(dealt * fx.lifesteal));
-    this.events.push({ type: 'combo', id: cb?.id ?? 'placeholder', name: cb?.name ?? '合击', source: h.uid, partner: u.uid, target: t.uid, amount: dealt, hits: targets.length }, { type: 'log', text: `合击「${cb?.name ?? '合击'}」造成 ${dealt} 伤害`, color: 'green' });
+    this.events.push({ type: 'combo', id: cb?.id ?? 'placeholder', name: cb?.name ?? '合击', source: h.uid, partner: u.uid, target: t.uid, amount: dealt, hits: targets.length, affected, statusUntil }, { type: 'log', text: `合击「${cb?.name ?? '合击'}」造成 ${dealt} 伤害`, color: 'green' });
   }
   toSave(): SaveData {
     return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, town: this.town, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], ringQ: this.ringQ, ringDone: this.ringDone, eqV: EQUIP_VERSION, expV: EXP_VERSION, companion: this.companion ? JSON.parse(JSON.stringify(this.companion)) : null  };
