@@ -355,3 +355,20 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 | boss_nimo_full.png | 709x960 | boss_nimo | 逆魔 | 逆魔古刹/逆魔大殿（传世） | 据描述 | 17173：巨斧之下烈焰横生；角/体型为推测 |
 | boss_jindi_king_full.png | 960x752 | boss_jindi_king | 禁地魔王 | 禁地（传世） | 未查到/推测 | 仅查到全屏攻击、不移动；外形未查到 |
 | boss_panye_bull_full.png | 733x960 | boss_panye_bull | 潘夜牛魔王 | 潘夜神殿（传奇3） | 据描述 | 17173：统治畜界的魔王，牛的样子；武器为推测 |
+
+### 批次2：将军坟 + 机关洞（10）
+
+预览：`docs/art-gap-preview/sq_b2_tomb_mech.jpg`
+
+| 文件 | 尺寸 | id | 名称 | 地图 | 外观 | 备注 |
+|---|---|---|---|---|---|---|
+| shiwei_full.png | 724x960 | shiwei | 尸卫 | 将军坟（传世） | 部分推测 | 殉葬帝王大军所化，千年不腐的尸兵 |
+| shiwei_brave_full.png | 706x960 | shiwei_brave | 尸卫勇士 | 将军坟（传世） | 据描述 | 原百夫长，整条手臂化为巨刀 |
+| shiwei_spear_full.png | 759x960 | shiwei_spear | 掷枪尸卫 | 将军坟（传世） | 据描述 | 掷枪兵所化，投枪 |
+| shiwei_general_full.png | 715x960 | shiwei_general | 尸卫战将 | 将军坟（传世） | 部分推测 | 亲卫军所化，最恐怖的部队 |
+| stone_man_full.png | 795x960 | stone_man | 石头人 | 机关洞（传世） | 据描述 | 巨石堆砌而成 |
+| bronze_man_full.png | 713x960 | bronze_man | 铜人 | 机关洞（传世） | 据描述 | 纯铜组装，握铜矛 |
+| bronze_beast_full.png | 960x720 | bronze_beast | 青铜兽 | 机关洞（传世） | 部分推测 | 兽化的铜机关；兽形为推测 |
+| blade_roller_full.png | 790x960 | blade_roller | 滚刀手 | 机关洞（传世） | 据描述 | 迅猛刀手，双刃 |
+| hammer_man_full.png | 721x960 | hammer_man | 铜锤手 | 机关洞（传世） | 据描述 | 持巨锤 |
+| vajra_man_full.png | 702x960 | vajra_man | 金刚人 | 机关洞（传世） | 部分推测 | 金刚不坏的巨人 |
