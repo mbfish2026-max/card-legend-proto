@@ -123,7 +123,6 @@ export const CLASS_IDS: ClassId[] = ['warrior', 'mage', 'taoist'];
  * 战士：烈火剑法冷却 4→6s、半月弯刀 2→3s。
  */
 export const PLAN_G = { mageMana: 1.15, fireMult: 0.9, mageCastGap: 1.0, mageMult: 0.75, mageHp: 450, mageHpGrow: 120, mageDefGrow: 4.5, fireSwordCd: 6, halfMoonCd: 3 };
-/*GXTMP*/if (typeof process !== "undefined" && process.env.GX) Object.assign(PLAN_G, JSON.parse(process.env.GX));
 export const PLAN_G_BEFORE = { mageHp: CLASSES.mage.base.hp, mageHpGrow: CLASSES.mage.grow.hp, mageDefGrow: CLASSES.mage.grow.def, mageCastGap: CAST_GAP, fireSwordCd: SKILL_CD.fire_sword, halfMoonCd: SKILL_CD.half_moon, mana: {} as Record<string, number>, mult: {} as Record<string, number> };
 for (const s of CLASSES.mage.skills) if (!s.passive) { PLAN_G_BEFORE.mana[s.id] = s.mana; if (s.mult) PLAN_G_BEFORE.mult[s.id] = s.mult;
   s.mana = Math.round(s.mana * PLAN_G.mageMana); if (s.mult) s.mult = +(s.mult * PLAN_G.mageMult * (s.id === 'fireball' || s.id === 'big_fireball' ? PLAN_G.fireMult : 1)).toFixed(2); }
@@ -132,4 +131,3 @@ SKILL_CD.fire_sword = PLAN_G.fireSwordCd; SKILL_CD.half_moon = PLAN_G.halfMoonCd
 for (const s of CLASSES.warrior.skills) { if (s.id === 'fire_sword') s.cooldown = PLAN_G.fireSwordCd; if (s.id === 'half_moon') s.cooldown = PLAN_G.halfMoonCd; }
 /** 公共施法间隔（按职业） */
 export const castGapOf = (c: ClassId) => c === 'mage' ? PLAN_G.mageCastGap : CAST_GAP;
-/*WXTMP*/if (typeof process !== "undefined" && process.env.CX) { const x = JSON.parse(process.env.CX); for (const c in x) { Object.assign((CLASSES as any)[c].base, x[c].base ?? {}); Object.assign((CLASSES as any)[c].grow, x[c].grow ?? {}); } }

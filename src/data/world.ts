@@ -258,4 +258,3 @@ export const floorNo = (i: number, floors: Floor[] = FLOORS) => floors === FLOOR
 /** 下一层下标；最后一层返回 -1 */
 export const nextFloorOf = (i: number, floors: Floor[] = FLOORS) => { if (floors !== FLOORS) return i + 1 < floors.length ? i + 1 : -1; const k = FLOOR_ORDER.indexOf(i); return k >= 0 && k + 1 < FLOOR_ORDER.length ? FLOOR_ORDER[k + 1] : -1; };
 
-/*WXTMP*/if (typeof process !== "undefined" && process.env.WX) Object.assign(WORLD, JSON.parse(process.env.WX));
