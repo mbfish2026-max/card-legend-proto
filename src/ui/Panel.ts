@@ -6,7 +6,7 @@ import { OIL_PRICE } from '../combat/World';
 import { POTIONS } from '../data/skills';
 import { WORLD } from '../data/world';
 import { CLASSES } from '../data/classes';
-import { Settings, ZOOM_STEP } from '../settings';
+import { renderSettingsView } from './SettingsView';
 import { txt, button, sfx } from '../scenes/TitleScene';
 import { IS_MOBILE } from '../mobile';
 import { FxQuality } from './Fx';
@@ -241,48 +241,11 @@ export class Panel {
     R.add(txt(s, 640, top + 455, '悬赏按层击杀目标怪；成就永久加属性。按 Q 关闭', 13, '#9fd').setOrigin(0.5));
   }
   private renderSettings(R: Phaser.GameObjects.Container, top: number) {
-    const s = this.s, w = this.world(), cls = w.cls;
-    const vol = txt(s, 640, top + 70, '', 20).setOrigin(0.5); R.add(vol);
-    const refresh = () => { vol.setText(`音量 ${Math.round(Settings.volume * 100)}%${Settings.muted ? '（静音）' : ''}`); Settings.apply(s.sound); Settings.save(); };
-    R.add([...button(s, 500, top + 70, 50, 36, '－', () => { Settings.volume = Math.max(0, +(Settings.volume - 0.1).toFixed(1)); refresh(); })]);
-    R.add([...button(s, 780, top + 70, 50, 36, '＋', () => { Settings.volume = Math.min(1, +(Settings.volume + 0.1).toFixed(1)); refresh(); })]);
-    R.add([...button(s, 560, top + 118, 160, 36, '静音 (N)', () => { Settings.muted = !Settings.muted; refresh(); }, 16)]);
-    R.add([...button(s, 740, top + 118, 160, 36, `低特效：${Settings.lowFx ? '开' : '关'}`, () => { Settings.lowFx = !Settings.lowFx; FxQuality.low = !!Settings.lowFx; Settings.save(); this.render(); }, 15)]);
-    if (IS_MOBILE) {
-      const on = Settings.wantPad(true);
-      R.add([...button(s, 640, top + 162, 220, 36, `虚拟按键：${on ? '开' : '关'}`, () => {
-        Settings.showPadMobile = !Settings.wantPad(true); Settings.save(); this.render();
-      }, 15)]);
-    } else {
-      R.add(txt(s, 640, top + 162, '虚拟按键：电脑默认关', 13, '#888').setOrigin(0.5));
-    }
-    // 自动攻击
-    R.add([...button(s, 640, top + 210, 280, 38, `自动攻击：${Settings.autoAttack ? '开' : '关'}`, () => {
-      Settings.autoAttack = !Settings.autoAttack; Settings.save(); this.render();
-    }, 17)]);
-    R.add(txt(s, 640, top + 248, '开启后贴脸自动普攻（不追怪）；勾选技能按优先级/冷却自动放；手动按键优先', 12, '#9ab').setOrigin(0.5));
-    // 自动技能勾选（null=职业推荐默认勾选）
-    const selected = new Set(Settings.skillsFor(cls));
-    w.skills.forEach((sk, i) => {
-      const on = selected.has(sk.id);
-      const x = 280 + (i % 4) * 180, y = top + 288 + Math.floor(i / 4) * 40;
-      R.add([...button(s, x, y, 168, 34, `${on ? '✓' : '○'} ${sk.key} ${sk.name}`, () => {
-        Settings.toggleAutoSkill(sk.id, cls); this.render();
-      }, 13)]);
+    const w = this.world();
+    renderSettingsView(this.s, R, top, {
+      cls: w.cls, rerender: () => this.render(),
+      footer: [{ label: '保存并返回标题', w: 200, fn: () => { this.close(); this.onTitle(); } }, { label: '继续游戏', w: 160, fn: () => this.close() }],
     });
-    // 画面缩放
-    const zlab = txt(s, 640, top + 340, `画面缩放 ${Math.round(Settings.zoom * 100)}%`, 18, '#ffe8a0').setOrigin(0.5); R.add(zlab);
-    R.add([...button(s, 480, top + 340, 50, 36, '－', () => { Settings.setZoom(Settings.zoom - ZOOM_STEP); this.render(); })]);
-    R.add([...button(s, 800, top + 340, 50, 36, '＋', () => { Settings.setZoom(Settings.zoom + ZOOM_STEP); this.render(); })]);
-    ;[0.8, 0.9, 1, 1.1, 1.2].forEach((z, i) => {
-      R.add([...button(s, 400 + i * 80, top + 386, 70, 30, `${Math.round(z * 100)}%`, () => { Settings.setZoom(z); this.render(); }, 13)]);
-    });
-    R.add([...button(s, 520, top + 440, 200, 40, '保存并返回标题', () => { this.close(); this.onTitle(); }, 16)]);
-    R.add([...button(s, 760, top + 440, 160, 40, '继续游戏', () => this.close(), 16)]);
-    R.add(txt(s, 640, top + 490, IS_MOBILE
-      ? '缩放用于适配不同手机；虚拟键/HUD 随画布一起缩放。竖屏会提示旋转'
-      : '电脑也可调缩放预览；手机浏览器打开虚拟按键默认开', 12, '#999').setOrigin(0.5));
-    refresh();
   }
   showTip(it: InvItem, x: number, y: number, touch = false) {
     this.hideTip(); const s = this.s, w = this.world();

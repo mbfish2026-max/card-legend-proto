@@ -4,6 +4,7 @@ import { ITEMS } from '../data/items';
 import { CLASSES, CLASS_IDS, ClassId } from '../data/classes';
 import { FONT } from '../data/fx';
 import { Settings, SaveStore } from '../settings';
+import { renderSettingsView } from '../ui/SettingsView';
 import { MUSIC, playMusic } from '../music';
 import { IS_MOBILE } from '../mobile';
 
@@ -59,17 +60,16 @@ export class TitleScene extends Phaser.Scene {
     L.add([...button(this, 640, 490, 280, 56, '设 置', () => this.settings())]);
     L.add(txt(this, 640, 690, '素材：魔兽世界图标/音效（仅供个人原型）+ AI 生成立绘与背景', 13, '#999').setOrigin(0.5));
   }
+  setCls: ClassId = 'warrior';
   settings() {
     const L = this.clear();
-    L.add(this.add.rectangle(640, 420, 520, 300, 0x140f0a, 0.92).setStrokeStyle(3, 0xd4a64a));
-    L.add(txt(this, 640, 300, '设置', 30, '#ffd24a', { fontStyle: 'bold' }).setOrigin(0.5));
-    const vol = txt(this, 640, 370, '', 24).setOrigin(0.5); L.add(vol);
-    const refresh = () => { vol.setText(`音量  ${Math.round(Settings.volume * 100)}%${Settings.muted ? '（静音）' : ''}`); Settings.apply(this.sound); Settings.save(); };
-    L.add([...button(this, 500, 370, 56, 44, '－', () => { Settings.volume = Math.max(0, +(Settings.volume - 0.1).toFixed(1)); refresh(); })]);
-    L.add([...button(this, 780, 370, 56, 44, '＋', () => { Settings.volume = Math.min(1, +(Settings.volume + 0.1).toFixed(1)); refresh(); })]);
-    L.add([...button(this, 640, 440, 220, 46, '静音开/关 (M)', () => { Settings.muted = !Settings.muted; refresh(); }, 18)]);
-    L.add([...button(this, 640, 510, 220, 46, '返回', () => this.mainMenu())]);
-    refresh();
+    const H = 580, top = Math.max(40, 360 - H / 2);
+    L.add(this.add.rectangle(640, 300, 640, H, 0x15100b, 0.97).setStrokeStyle(3, 0xd4a64a));
+    L.add(txt(this, 640, top + 10, '设置', 24, '#ffd24a', { fontStyle: 'bold' }).setOrigin(0.5).setY(top + 22));
+    renderSettingsView(this, L, top, {
+      cls: this.setCls, rerender: () => this.settings(), onPickClass: c => { this.setCls = c; this.settings(); },
+      footer: [{ label: '返回', w: 200, fn: () => this.mainMenu() }],
+    });
   }
   classSelect() {
     const L = this.clear();

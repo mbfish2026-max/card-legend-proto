@@ -23,6 +23,8 @@ export const Settings = {
   autoAttack: true,
   /** 自动释放的技能 id 列表（按优先级）；null=用职业推荐；[]=不放技能 */
   autoSkills: null as string[] | null,
+  /** 已手动改过自动技能的职业；null=旧存档（列表对所有职业生效）。未改过的职业用推荐默认，避免改战士后法师/道士全被清空 */
+  autoTouched: null as ClassId[] | null,
   /** 画面缩放 0.8~1.2，适配不同手机；经 CSS transform 作用在画布上，HUD/虚拟键同步缩放 */
   zoom: 1,
   load() {
@@ -38,6 +40,7 @@ export const Settings = {
       if (typeof raw.autoAttack === 'boolean') this.autoAttack = raw.autoAttack;
       if (raw.autoSkills === null) this.autoSkills = null;
       else if (Array.isArray(raw.autoSkills)) this.autoSkills = raw.autoSkills.filter((x): x is string => typeof x === 'string');
+      if (Array.isArray(raw.autoTouched)) this.autoTouched = raw.autoTouched.filter((x): x is ClassId => typeof x === 'string' && x in DEFAULT_AUTO_SKILLS);
       if (typeof raw.zoom === 'number' && Number.isFinite(raw.zoom)) this.zoom = clampZoom(raw.zoom);
     } catch { /* ignore */ }
     return this;
@@ -46,7 +49,7 @@ export const Settings = {
     ls()?.setItem(SET_KEY, JSON.stringify({
       volume: this.volume, muted: this.muted, music: this.music,
       showPadMobile: this.showPadMobile, lowFx: this.lowFx,
-      autoAttack: this.autoAttack, autoSkills: this.autoSkills, zoom: this.zoom,
+      autoAttack: this.autoAttack, autoSkills: this.autoSkills, autoTouched: this.autoTouched, zoom: this.zoom,
     }));
   },
   /** 手机/触屏：null 或 true → 显示虚拟按键；电脑永远 false */
@@ -69,13 +72,20 @@ export const Settings = {
   setZoom(z: number) { this.zoom = clampZoom(z); this.applyZoom(); this.save(); },
   /** 取当前职业的自动技能：null → 职业推荐；[] → 不放 */
   skillsFor(cls: ClassId): string[] {
-    return this.autoSkills === null ? DEFAULT_AUTO_SKILLS[cls] : this.autoSkills;
+    if (this.autoSkills === null) return DEFAULT_AUTO_SKILLS[cls];
+    if (this.autoTouched && !this.autoTouched.includes(cls)) return DEFAULT_AUTO_SKILLS[cls];
+    return this.autoTouched ? this.autoSkills.filter(id => DEFAULT_AUTO_SKILLS[cls].includes(id)) : this.autoSkills;
   },
   toggleAutoSkill(id: string, cls: ClassId) {
     const cur = [...this.skillsFor(cls)];
     const i = cur.indexOf(id);
     if (i >= 0) cur.splice(i, 1); else cur.push(id);
-    this.autoSkills = cur; // 一旦勾选过就写成显式列表（可为空）
+    // 按职业分别保存：保留其他职业已改过的勾选，本职业写成显式列表（可为空）
+    const mine = new Set(DEFAULT_AUTO_SKILLS[cls]);
+    const touched = this.autoTouched ?? [];
+    const others = this.autoSkills === null ? [] : this.autoSkills.filter(id => !mine.has(id));
+    this.autoSkills = [...others, ...cur];
+    this.autoTouched = touched.includes(cls) ? touched : [...touched, cls];
     this.save();
   },
 };

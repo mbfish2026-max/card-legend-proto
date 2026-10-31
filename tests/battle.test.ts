@@ -365,6 +365,15 @@ const free = (w: World) => w.skills.map(() => 0);
   ok(Settings.skillsFor('warrior').length >= 1, 'skillsFor 返回推荐或勾选');
   Settings.autoSkills = []; ok(Settings.skillsFor('mage').length === 0, '显式空列表 = 不自动放技能');
   Settings.autoSkills = null; ok(Settings.skillsFor('taoist').includes('summon_skeleton'), 'null → 职业推荐');
+  { // R8：按职业独立保存——改战士不影响法师/道士推荐
+    const bt = Settings.autoTouched; Settings.autoSkills = null; Settings.autoTouched = null;
+    Settings.toggleAutoSkill('thrust', 'warrior');
+    ok(!Settings.skillsFor('warrior').includes('thrust'), '战士取消刺杀生效');
+    ok(Settings.skillsFor('mage').length === 5 && Settings.skillsFor('taoist').length === 5, '法师/道士仍为推荐默认');
+    Settings.toggleAutoSkill('fireball', 'mage');
+    ok(!Settings.skillsFor('mage').includes('fireball') && !Settings.skillsFor('warrior').includes('thrust'), '两职业改动互不覆盖');
+    Settings.autoTouched = bt;
+  }
   Settings.autoSkills = bak.as; Settings.zoom = bak.z; Settings.autoAttack = bak.aa;
 }
 { // 地图：到达记录 / BOSS 击杀 / 传送规则
