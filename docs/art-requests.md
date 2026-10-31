@@ -760,3 +760,19 @@ thunder_sword 雷霆剑、break_strike 破击剑法、shield_break 破盾斩、v
 | m3_desert_wind_full.png | 704x960 | 沙漠风魔 | 复用 art/sq-mir3 的 desert_wind_full.png |
 | m3_desert_tree_full.png | 724x960 | 沙漠树魔 | 复用 art/sq-mir3 的 desert_tree_full.png |
 | m3_desert_stone_full.png | 761x960 | 沙漠石人 | 复用 art/sq-mir3 的 desert_golem_full.png |
+
+
+## art/maps-sq-mir3 交付·第 6 批（禁地，8 张）
+
+路径：`public/assets/portraits/<id>_full.png`，透明 PNG，最长边 960。预览：`docs/art-gap-preview/sq_mir3_batch6.jpg`。
+
+| 文件 | 尺寸 | 名称 | 来源 |
+|---|---|---|---|
+| sq_cimo_full.png | 709x960 | 刺魔 | 复用 art/sq-mir3 的 thorn_demon_full.png |
+| sq_lizhua_full.png | 723x960 | 利爪 | 复用 art/sq-mir3 的 claw_demon_full.png |
+| sq_shanling_full.png | 715x960 | 闪灵 | 复用 art/sq-mir3 的 flash_demon_full.png |
+| sq_tengyao_full.png | 722x960 | 藤妖 | 复用 art/sq-mir3 的 vine_demon_full.png |
+| sq_xueyao_full.png | 722x960 | 血妖 | 复用 art/sq-mir3 的 blood_demon_full.png |
+| sq_tieyi_full.png | 960x702 | 铁翼 | 复用 art/sq-mir3 的 iron_wing_full.png |
+| sq_yaolishi_full.png | 720x960 | 妖力士 | 复用 art/sq-mir3 的 yao_lishi_full.png |
+| sq_youling_bug_full.png | 960x830 | 幽灵虫 | 复用 art/sq-mir3 的 ghost_bug_full.png |
