@@ -464,3 +464,18 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 | iron_wing_full.png | 960x702 | iron_wing | 铁翼魔 | 禁地（传世） | 据描述 | 像巨大蝙蝠 |
 | yao_lishi_full.png | 720x960 | yao_lishi | 妖力士 | 禁地（传世） | 据描述 | 面目狰狞，一只手臂粗大无比 |
 | ghost_bug_full.png | 960x830 | ghost_bug | 幽灵虫 | 禁地（传世） | 未查到/推测 | 仅名称（另有幽灵虫母） |
+
+### 批次6：潘夜神殿（8）
+
+预览：`docs/art-gap-preview/sq_b6_panye.jpg`
+
+| 文件 | 尺寸 | id | 名称 | 地图 | 外观 | 备注 |
+|---|---|---|---|---|---|---|
+| panye_warrior_full.png | 701x960 | panye_warrior | 潘夜战士 | 潘夜神殿（传奇3） | 据描述 | 牛的样子的潘夜族战士 |
+| panye_wind_full.png | 803x960 | panye_wind | 潘夜风魔 | 潘夜神殿（传奇3） | 据描述 | 牛形，黑甲，长柄斧 |
+| panye_cloud_full.png | 769x960 | panye_cloud | 潘夜云魔 | 潘夜神殿（传奇3） | 据描述 | 牛形，绿甲，双铁锤 |
+| panye_fire_full.png | 709x960 | panye_fire | 潘夜火魔 | 潘夜神殿（传奇3） | 据描述 | 牛形，黄甲，偃月刀 |
+| panye_ice_full.png | 782x960 | panye_ice | 潘夜冰魔 | 潘夜神殿（传奇3） | 据描述 | 牛形，蓝甲，两把双刃斧 |
+| panye_left_guard_full.png | 712x960 | panye_left_guard | 潘夜左护卫 | 潘夜神殿（传奇3） | 部分推测 | 黑太阳灵气，多种魔法；体型推测 |
+| panye_right_guard_full.png | 722x960 | panye_right_guard | 潘夜右护卫 | 潘夜神殿（传奇3） | 部分推测 | 黑月亮灵气，多种魔法；体型推测 |
+| panye_ghost_general_full.png | 708x960 | panye_ghost_general | 潘夜鬼将 | 潘夜神殿（传奇3） | 据描述 | 与潘夜战士非常像 |
