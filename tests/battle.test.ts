@@ -924,16 +924,6 @@ const free = (w: World) => w.skills.map(() => 0);
   ok(NEW.every(([id]) => !old.learned.has(id)) && old.learned.has('heal'), '旧档（无 learned）不会白送新技能');
   ok(!JSON.stringify(new World(seeded(1), 40, FLOORS, 'taoist').toSave()).includes('UpUntil'), 'buff 状态不存档');
 }
-{ // 取消冷却：官方无独立冷却，只保留公共施法间隔
-  const act = (Object.keys(CLASSES) as ClassId[]).flatMap(c => CLASSES[c].skills.filter(s => !s.passive));
-  ok(act.every(s => s.cooldown === CAST_GAP) && COOLDOWN_BEFORE.summon_beast === 15 && COOLDOWN_BEFORE.magic_shield === 20, `所有主动技能冷却 = 公共施法间隔 ${CAST_GAP}s（改前值保留在 COOLDOWN_BEFORE）`);
-  const w = new World(seeded(2), 30, FLOORS, 'mage'); w.learned.add('thunder'); w.learned.add('hell_fire'); const h = w.hero!; h.mp = h.maxMp = 9999;
-  w.units.push(...[]); w.spawn(ENEMIES.orc, 'enemy', h.x + 200).ai = 'idle'; const cds = w.skills.map(() => 0);
-  const a = w.cast(idx(w, 'fireball'), cds), b = w.cast(idx(w, 'thunder'), cds);
-  ok(a.ok && !b.ok && cds.every(c => c >= CAST_GAP - 1e-9), '同帧不能连放第二个技能（公共间隔）');
-  for (let i = 0; i < cds.length; i++) cds[i] = Math.max(0, cds[i] - CAST_GAP); ok(w.cast(idx(w, 'fireball'), cds).ok, `间隔 ${CAST_GAP}s 后可再次施放同一技能（无独立冷却）`);
-  const ws = new World(seeded(2), 30, FLOORS, 'mage', JSON.parse(JSON.stringify(w.toSave()))); ok(ws.learned.has('hell_fire') && !('cds' in w.toSave()), '冷却不存档，旧档读档正常');
-}
 { // town-return：每层回城/回村、战斗地图无商人、新档出生新手村、旧档兼容
   const w = new World(seeded(1), 1, FLOORS, 'warrior'); w.startInVillage();
   ok(w.town === 'xinshou' && TOWNS.xinshou.npcs.some(n => n.kind === 'potion') && TOWNS.xinshou.npcs.some(n => n.kind === 'weapon') && TOWNS.xinshou.npcs.some(n => n.kind === 'armor') && TOWNS.xinshou.npcs.some(n => n.kind === 'general'), '新档出生新手村，有药/武器/服装/杂货');
@@ -944,6 +934,16 @@ const free = (w: World) => w.skills.map(() => 0);
   ok(all, `每一层（${FLOORS.length}）起点都能回城/回村`);
   const s = w.toSave(); ok(s.town === 'xinshou' && new World(seeded(1), 1, FLOORS, 'warrior', s).town === 'xinshou', '存档记住所在城镇');
   const old: any = { ...s, floorIndex: 3 }; delete old.town; const o = new World(seeded(1), 1, FLOORS, 'warrior', old); ok(o.town === null && o.floorIndex === 3, '旧档（无 town 字段）保持原层');
+}
+{ // 取消冷却：官方无独立冷却，只保留公共施法间隔
+  const act = (Object.keys(CLASSES) as ClassId[]).flatMap(c => CLASSES[c].skills.filter(s => !s.passive));
+  ok(act.every(s => s.cooldown === CAST_GAP) && COOLDOWN_BEFORE.summon_beast === 15 && COOLDOWN_BEFORE.magic_shield === 20, `所有主动技能冷却 = 公共施法间隔 ${CAST_GAP}s（改前值保留在 COOLDOWN_BEFORE）`);
+  const w = new World(seeded(2), 30, FLOORS, 'mage'); w.learned.add('thunder'); w.learned.add('hell_fire'); const h = w.hero!; h.mp = h.maxMp = 9999;
+  w.units.push(...[]); w.spawn(ENEMIES.orc, 'enemy', h.x + 200).ai = 'idle'; const cds = w.skills.map(() => 0);
+  const a = w.cast(idx(w, 'fireball'), cds), b = w.cast(idx(w, 'thunder'), cds);
+  ok(a.ok && !b.ok && cds.every(c => c >= CAST_GAP - 1e-9), '同帧不能连放第二个技能（公共间隔）');
+  for (let i = 0; i < cds.length; i++) cds[i] = Math.max(0, cds[i] - CAST_GAP); ok(w.cast(idx(w, 'fireball'), cds).ok, `间隔 ${CAST_GAP}s 后可再次施放同一技能（无独立冷却）`);
+  const ws = new World(seeded(2), 30, FLOORS, 'mage', JSON.parse(JSON.stringify(w.toSave()))); ok(ws.learned.has('hell_fire') && !('cds' in w.toSave()), '冷却不存档，旧档读档正常');
 }
 
 console.log('# 诱惑之光');
