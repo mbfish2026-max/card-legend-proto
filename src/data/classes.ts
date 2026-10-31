@@ -58,7 +58,7 @@ export const CLASSES: Record<ClassId, ClassDef> = {
   warrior: {
     id: 'warrior', name: '战士', art: 'hero', bg: 0x2a2a2e, artFacing: 1, atkInterval: 1.1, autoStat: 'atk',
     // [适配] 改用官方学习等级后战士 19 级前无主动技能，提高基础/成长保持模拟死亡 1–4 次（R4 技能轮）
-    base: { hp: 800, mp: 120, atk: 70, mag: 0, tao: 0, def: 26 }, grow: { hp: 110, mp: 9, atk: 11, mag: 0, tao: 0, def: 5.5 },
+    base: { hp: 800, mp: 120, atk: 70, mag: 0, tao: 0, def: 26 }, grow: { hp: 110, mp: 9, atk: 11, mag: 0, tao: 0, def: 6 },
     desc: '近战肉盾，高血高防\n基本/攻杀被动 · 刺杀 · 半月 · 野蛮 · 烈火',
     skills: [
       // 被动不占 F 键；World.skills 只返回主动技能并重标 F1..
