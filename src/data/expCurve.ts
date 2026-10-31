@@ -31,7 +31,8 @@ const cum = (f: (l: number) => number, a: number, b: number) => { let s = 0; for
 export const FLOOR_LEVEL_ANCHORS: readonly number[] = [1, 3, 7, 12, 15, 18, 22, 25, 29, 32, 36, 40, 45, 48];
 /** [适配] 合击版 #8 四层（下标 19–22，合并 main 后排在洞穴群之后）：进入等级锚点 48→49→50→51，通关 52（≥43 合击 / ≥47 卧龙·雷炎） */
 /** 阶段 B：追加下标 23 魔龙血域（侧线）52→53 [适配]；前四层倍率不变 */
-export const HJ_FLOOR_ANCHORS: readonly number[] = [48, 49, 50, 51, 52, 53];
+// M4 [适配]：侧线层 24–26 追加锚点 54–56（只在末尾追加，前面各层倍率不变）
+export const HJ_FLOOR_ANCHORS: readonly number[] = [48, 49, 50, 51, 52, 53, 54, 55, 56];
 /** 每层怪物/悬赏经验倍率 = 该层目标等级段的新曲线累计经验 ÷ 旧曲线累计经验（同一比例缩放，保持每层升级节奏） */
 export const floorExpMult = (anchors: readonly number[]): number[] => anchors.slice(0, -1).map((a, i) =>
   cum(EXP_PER_LEVEL, a, anchors[i + 1]) / cum(EXP_PER_LEVEL_V1, a, anchors[i + 1]));

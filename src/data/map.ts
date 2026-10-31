@@ -46,17 +46,20 @@ export const REGIONS: Region[] = [
     { id: 'zuma_stone', name: '石墓(猪洞)', kind: 'cave', floor: 7, x: 0.8, y: 0.3, orig: '未查到' },
     { id: 'zuma_temple', name: '祖玛寺庙', kind: 'dungeon', floor: 9, x: 0.65, y: 0.85, orig: '未查到' },
   ] },
-  { id: 'cangyue', name: '苍月岛', floors: [10], x: 1700, y: 920, icon: 'map_node_mengzhong', nodes: [
+  { id: 'cangyue', name: '苍月岛', floors: [10, 25], x: 1700, y: 920, icon: 'map_node_mengzhong', nodes: [
     { id: 'cangyue_town', name: '苍月岛', kind: 'town', safe: true, x: 0.3, y: 0.6, orig: '未查到' },
     { id: 'cangyue_bull', name: '牛魔寺庙', kind: 'dungeon', floor: 10, x: 0.7, y: 0.35, orig: '未查到' },
+    { id: 'cangyue_gumo', name: '骨魔洞五层', kind: 'cave', floor: 25, x: 0.55, y: 0.8, orig: '苍月岛骨魔洞（入口坐标未查到）' },
   ] },
   { id: 'fengmo', name: '封魔谷', floors: [11], x: 1900, y: 560, icon: 'map_node_mengzhong', nodes: [
     { id: 'fengmo_town', name: '封魔谷', kind: 'town', safe: true, x: 0.3, y: 0.5, orig: '未查到' },
     { id: 'fengmo_hall', name: '封魔矿区/封魔殿', kind: 'dungeon', floor: 11, x: 0.72, y: 0.4, orig: '未查到' },
   ] },
-  { id: 'chiyue', name: '白日门·赤月峡谷', floors: [12], x: 2150, y: 800, icon: 'map_node_chiyue', nodes: [
+  { id: 'chiyue', name: '白日门·赤月峡谷', floors: [12, 24, 26], x: 2150, y: 800, icon: 'map_node_chiyue', nodes: [
     { id: 'chiyue_town', name: '白日门', kind: 'town', safe: true, x: 0.3, y: 0.45, orig: '未查到' },
     { id: 'chiyue_canyon', name: '赤月峡谷/赤月魔穴', kind: 'dungeon', floor: 12, x: 0.72, y: 0.6, orig: '未查到' },
+    { id: 'chiyue_snow', name: '白日门·雪域', kind: 'dungeon', floor: 24, x: 0.5, y: 0.2, orig: '白日门野外（雪人王 348,132）' },
+    { id: 'chiyue_altar', name: '恶魔祭坛', kind: 'dungeon', floor: 26, x: 0.88, y: 0.85, orig: '赤月峡谷恶魔祭坛（入口未查到）' },
   ] },
   // 合击版 #8：盟重出发的合击地图（入口 NPC 见 docs/hejiban-official.md §4；世界图坐标 [适配]）
   { id: 'hejiban', name: '盟重·合击地图', floors: [19, 20, 21, 22, 23], x: 2050, y: 1080, icon: 'map_node_mengzhong', nodes: [

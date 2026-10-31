@@ -145,10 +145,26 @@ export const FLOORS: Floor[] = [
     { id: 'fire_dragon_guard', x: 800 }, { id: 'hj_guard', x: 910, y: 20 },
     { id: 'fire_dragon_guard', x: 1550 }, { id: 'wolong_guard', x: 1650, y: -15 },
     { id: 'fire_dragon_guard', x: 2300 }, { id: 'leiyan_spider', x: 2400, y: 15 },
-    { id: 'boss_molong', x: 3380 } ] }
+    { id: 'boss_molong', x: 3380 } ] },
+  // M4 下标 24–26 侧线层（同魔龙血域：不进 FLOOR_ORDER，清层回城，主线模拟不受影响）
+  { name: '白日门·雪域', bg: 'bg_floor25', boss: true, zone: '白日门（雪人王 348,132 / 钉耙猫王 380,270 / 半兽统领 多点；鹰卫原版在丛林迷宫 [适配] 并入）', src: 'https://www.21cq.com/mir/Mob.aspx?id=33', spawns: [
+    { id: 'orc_commander', x: 800 }, { id: 'hawk_guard', x: 910, y: 20 },
+    { id: 'rake_cat_king', x: 1550 }, { id: 'orc_commander', x: 1650, y: -15 },
+    { id: 'hawk_guard', x: 2300 }, { id: 'rake_cat_king', x: 2400, y: 15 },
+    { id: 'boss_yeti_king', x: 3380 } ] },
+  { name: '骨魔洞五层', bg: 'bg_floor26', boss: true, zone: '骨魔洞五层（黄泉教主 195,240，180 分钟；恶灵尸王原版在尸魔洞1–3层/骨魔洞一层）', src: 'https://www.21cq.com/mir/Mob.Aspx?ID=208', spawns: [
+    { id: 'evil_lich', x: 800 }, { id: 'evil_lich', x: 910, y: 20 },
+    { id: 'evil_lich', x: 1550 }, { id: 'evil_lich', x: 1650, y: -15 },
+    { id: 'evil_lich', x: 2300 }, { id: 'evil_lich', x: 2400, y: 15 },
+    { id: 'boss_huangquan', x: 3380 } ] },
+  { name: '恶魔祭坛', bg: 'bg_floor27', boss: true, zone: '赤月峡谷·恶魔祭坛（双头金刚 15,18 / 双头血魔，360 分钟）', src: 'https://www.21cq.com/mir/Mob.Aspx?ID=163', spawns: [
+    { id: 'blood_zombie', x: 800 }, { id: 'redmoon_spider', x: 910, y: 20 },
+    { id: 'blood_zombie', x: 1550 }, { id: 'redmoon_spider', x: 1650, y: -15 },
+    { id: 'boss_twinhead_kong', x: 2700 },
+    { id: 'boss_twinhead_blood', x: 3380 } ] }
 ];
 /** 侧线层（不在通关顺序里，清完回城） */
-export const SIDE_FLOORS: readonly number[] = [23];
+export const SIDE_FLOORS: readonly number[] = [23, 24, 25, 26];
 /** 通关顺序：兽人古墓一层(白骨墓穴)→二层→三层→洞穴一层→二层→沃玛自然洞穴一→二→尸王殿…（按 21cq 进出表连通） */
 export const FLOOR_ORDER = [0, 1, 2, 3, 4, 13, 14, 15, 16, 17, 18, 5, 6, 7, 8, 9, 10, 11, 12, 19, 20, 21, 22];
 /** 图群：白骨墓穴（下标 4）作为兽人古墓一层 */
