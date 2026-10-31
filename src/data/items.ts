@@ -11,6 +11,8 @@ export const ITEMS: Record<string, ItemDef> = {
   mp_mid: { id: 'mp_mid', name: '魔法药(中量)', icon: 'assets/potions/INV_Potion_75.png', potion: 3 },
   // 祝福油：武器幸运 +1（上限 7），有几率诅咒（参考传奇规则，重新实现）
   bless_oil: { id: 'bless_oil', name: '祝福油', icon: I + 'bless_oil.png', price: 50 },
+  // 黑铁矿石：强化武器/头盔/衣服/靴子（手机版规则简化，见 World.enhanceWithIron）
+  black_iron: { id: 'black_iron', name: '黑铁矿石', icon: I + 'black_iron.png', price: 20 },
   // 套装（R2，参考传奇沃玛/祖玛/赤月套装概念，数值为本作重新设计）。图标为占位副本，美术交付后同名替换
   set_woma_helm: { id: 'set_woma_helm', name: '沃玛头盔', icon: I + 'set_woma_helm.png', slot: 'helmet', equip: { def: 10, hp: 60 }, req: 14, price: 90, set: 'woma' },
   set_woma_necklace: { id: 'set_woma_necklace', name: '沃玛项链', icon: I + 'set_woma_necklace.png', slot: 'necklace', equip: { atk: 7, mag: 7, tao: 7 }, req: 14, price: 90, set: 'woma' },
@@ -53,3 +55,20 @@ export const SETS: Record<string, SetDef> = {
   chiyue: { id: 'chiyue', name: '赤月', pieces: ['set_chiyue_necklace', 'set_chiyue_ring', 'set_chiyue_bracelet'], bonus: [
     { n: 2, stats: { atk: 10, mag: 10, tao: 10 }, text: '攻/魔/道+10' }, { n: 3, stats: { hp: 200 }, luck: 1, text: '生命+200 幸运+1' }] },
 };
+
+/** 可黑铁强化的部位：手机版为武器/头盔/衣服/腰带/鞋；本作无腰带 → 适配四部位。首饰不可强化（官方）。 */
+export const ENHANCE_SLOTS: Slot[] = ['weapon', 'helmet', 'armor', 'boots'];
+export const ENHANCE_MAX = 7;
+export const ENHANCE_STAT = 0.08; // 适配：每 +1 该件基础属性 +8%
+export const IRON_PRICE = 80; // 商店纯度 1 售价（适配）
+export const IRON_MAX_PURITY = 5;
+/** 适配成功率：纯度相对目标等级越高越易成功（官方：纯度越高成功率越高，具体表未公开） */
+export function enhanceChance(curEnhance: number, purity: number): number {
+  const need = curEnhance + 1;
+  const gap = purity - need;
+  return Math.max(0.15, Math.min(0.95, 0.72 + gap * 0.14 - curEnhance * 0.04));
+}
+/** 适配：当前强化 ≥5 失败时有破碎概率（参考《不正经的卡牌传说》武器强化可破碎；官方手游失败不掉级不破碎） */
+export function shatterChance(curEnhance: number): number {
+  return curEnhance >= 5 ? 0.12 * (curEnhance - 4) : 0;
+}

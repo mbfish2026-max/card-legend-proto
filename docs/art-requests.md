@@ -48,7 +48,7 @@
 
 ## 交付记录
 - **v1 已交付（2026-10-30，美术 Bot）并已接入**：portraits/ 6 张（woma_guard、boss_woma、zuma_statue、blood_zombie、boss_redmoon、boss_zuma，700–770×960 透明 PNG，按高度缩放、脚底锚点，宽度上限保护）、bg/bg_floor6–8.jpg、items/ 11 个（bless_oil、9 件套装、black_iron）、ui/set_badge.png。上方 A–E 节对应条目均为 ✅ 已交付。
-  - black_iron.png 已入库，但黑铁强化功能尚未实现，暂未在游戏中使用。
+  - black_iron.png 已入库，R5 强化已接入。
   - set_badge.png 用于装备栏：已穿套装达到首档加成时显示在右上角。
 
 ## F. 技能图标（R4，64×64 PNG，已放同名占位，直接覆盖）
@@ -72,3 +72,7 @@
 |---|---|
 | map/map_world.jpg 1920×840 | 世界地图底图：比奇→盟重→沃玛森林→祖玛寺庙→赤月峡谷，手绘羊皮卷风格 |
 | map/map_node_bichi.png / map_node_mengzhong.png / map_node_woma.png / map_node_zuma.png / map_node_chiyue.png 128×128 圆形 | 地图区域节点缩略图（透明底） |
+
+## H. 悬赏 / 成就（R5 研究文档 / CHANGELOG R6）
+- 本轮无新立绘需求；悬赏与成就面板使用现有 UI 文字与菜单按钮。
+- 若后续要做「悬赏」菜单专用图标，可替换 menu 第 2 槽（当前复用占位）。

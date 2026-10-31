@@ -25,7 +25,7 @@ export const ASSETS: Record<string, string> = {
   menu_2: 'assets/items/INV_Misc_Book_09.png', menu_3: 'assets/items/INV_Misc_Coin_01.png', menu_4: 'assets/skills/Ability_Warrior_BattleShout.png',
   slot_bg: 'assets/ui/UI-Quickslot2.png', slot_empty: 'assets/ui/UI-Backpack-EmptySlot.png',
 };
-export const MENU_LABELS = ['角色', '背包', '技能', '商店', '设置'];
+export const MENU_LABELS = ['角色', '悬赏', '技能', '商店', '设置'];
 const A = 'assets/sfx/';
 export const SFX: Record<string, string> = {
   swing: A + 'swing.ogg', swing_crit: A + 'swing_crit.ogg', hit: A + 'hit.ogg', hit_hero: A + 'hit2.ogg',

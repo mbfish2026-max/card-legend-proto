@@ -166,6 +166,7 @@ export class BattleScene extends Phaser.Scene {
     if (k === 'B' || k === 'C' || k === 'I') return this.openPanel('bag');
     if (k === 'T') return this.openPanel('shop');
     if (k === 'K') return this.openPanel('skills');
+    if (k === 'Q') return this.openPanel('quests');
     if (this.paused || this.state !== 'play') return;
     if (k === ' ' || k === 'W') { this.usePortal(); return; }
     if (k === 'S') { if (!this.fading && this.world.hero && this.world.floorIndex > 0 && this.world.hero.x <= WORLD.heroStartX + 150) { this.fading = true; this.cameras.main.fadeOut(400, 0, 0, 0); this.cameras.main.once('camerafadeoutcomplete', () => { this.fading = false; this.world.prevFloor(); }); } else this.log('在本层起点按 S 返回上一层'); return; }

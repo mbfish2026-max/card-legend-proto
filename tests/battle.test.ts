@@ -1,8 +1,9 @@
-import { World, SaveData, OIL_PRICE } from '../src/combat/World';
-import { SETS } from '../src/data/items';
+import { World, SaveData, OIL_PRICE, IRON_PRICE } from '../src/combat/World';
+import { SETS, ENHANCE_MAX, enhanceChance, shatterChance } from '../src/data/items';
 import { WORLD, Floor, FLOORS } from '../src/data/world';
 import { CLASSES, ClassId } from '../src/data/classes';
 import { ENEMIES, DIFF } from '../src/data/units';
+import { QUESTS, ACHIEVES } from '../src/data/quests';
 import { detectMobile } from '../src/mobile';
 import { StepGate, stepDir, HoldKeys, HOLD } from '../src/input/stepKeys';
 import { POTIONS } from '../src/data/skills';
@@ -152,6 +153,10 @@ const free = (w: World) => w.skills.map(() => 0);
       if ((h.mp ?? 0) < 40) w.usePotion(w.pots[3] > 0 ? 3 : 2);
       for (let i = 0; i < 4; i++) w.cast(i, cds);
       for (let i = w.bag.length - 1; i >= 0; i--) { const it = w.bag[i]; if (it.slot && it.req <= w.level && !w.equip[it.slot]) w.equipItem(i); }
+      // 黑铁：模拟脚本卖掉（避免碎装干扰难度基线；玩家可手动强化）
+      for (let i = w.bag.length - 1; i >= 0; i--) if (w.bag[i]?.item === 'black_iron') w.sellItem(i);
+      // 黑铁：模拟脚本卖掉（避免碎装干扰难度基线；玩家可手动强化）
+      for (let i = w.bag.length - 1; i >= 0; i--) if (w.bag[i]?.item === 'black_iron') w.sellItem(i);
       // 去城镇商人补药（简化：金币够就买）
       while (w.gold >= 60 && w.pots[1] < 3) w.buyPotion(1);
       while (w.gold >= 60 && w.pots[3] < 3) w.buyPotion(3);
@@ -392,6 +397,86 @@ const free = (w: World) => w.skills.map(() => 0);
   const shop = mk([]); shop.gold = OIL_PRICE * 2;
   ok(shop.buyOil() === null && shop.bag.some(x => x.item === 'bless_oil') && shop.gold === OIL_PRICE, `商店可买祝福油（${OIL_PRICE} 金）`);
   ok(shop.buyOil() !== null && shop.gold === OIL_PRICE, '同层限购 1 瓶');
+}
+
+
+{ // R5 黑铁强化：成功率、属性、提纯、破碎、商店限购、Boss 掉落
+  const w = mk([], [], 'warrior', 20);
+  w.bag.push(w.makeItem('iron_sword')); w.equipItem(0);
+  const baseAtk = w.equip.weapon!.stats.atk!;
+  w.bag.push(w.makeItem('black_iron', 'common', { purity: 5 }));
+  w.rng = () => 0; // 必成功
+  const m = w.enhanceWithIron(0, 'weapon');
+  ok(m.includes('成功') && (w.equip.weapon!.enhance ?? 0) === 1, `强化成功 → +1（${m}）`);
+  ok((w.equip.weapon!.stats.atk ?? 0) > baseAtk, `属性提升 ${baseAtk} → ${w.equip.weapon!.stats.atk}`);
+  ok(w.bag.every(x => x.item !== 'black_iron'), '消耗矿石');
+  // 失败扣材料不掉级
+  w.bag.push(w.makeItem('black_iron', 'common', { purity: 1 }));
+  w.rng = () => 0.99; // 必失败且不触发破碎（+1 时 shatter=0）
+  const cur = w.equip.weapon!.enhance!;
+  const fail = w.enhanceWithIron(0, 'weapon');
+  ok(fail.includes('失败') && w.equip.weapon!.enhance === cur, `失败不掉级（${fail}）`);
+  // 上限
+  w.equip.weapon!.enhance = ENHANCE_MAX; w.applyEnhanceStats(w.equip.weapon!);
+  w.bag.push(w.makeItem('black_iron')); ok(w.enhanceWithIron(0, 'weapon').includes('上限'), '达上限不可再强化');
+  // 首饰不可强化
+  w.bag.push(w.makeItem('iron_ring')); w.equipItem(w.bag.length - 1);
+  w.bag.push(w.makeItem('black_iron')); ok(w.enhanceWithIron(w.bag.length - 1, 'ring').includes('不能'), '首饰不可强化');
+  // 提纯
+  const r = mk([]); r.bag.push(r.makeItem('black_iron', 'common', { purity: 2 }), r.makeItem('black_iron', 'common', { purity: 2 }));
+  ok(r.refineIron(0, 1).includes('[+3]') && r.bag.length === 1 && r.bag[0].purity === 3, '两块+2 提纯 → +3');
+  // 破碎（+5 失败）
+  const sh = mk([], [], 'warrior', 20); sh.bag.push(sh.makeItem('iron_sword')); sh.equipItem(0);
+  sh.equip.weapon!.enhance = 5; sh.applyEnhanceStats(sh.equip.weapon!);
+  sh.bag.push(sh.makeItem('black_iron', 'common', { purity: 1 }));
+  // rng: first call enhanceChance fail (0.99), second shatterChance trigger (0)
+  let n = 0; sh.rng = () => { n++; return n === 1 ? 0.99 : 0; };
+  ok(sh.enhanceWithIron(0, 'weapon').includes('破碎') && !sh.equip.weapon, '高强化失败可能破碎');
+  ok(shatterChance(4) === 0 && shatterChance(5) > 0 && enhanceChance(0, 5) > enhanceChance(0, 1), '成功率/破碎概率公式');
+  // 商店
+  const shop = mk([]); shop.gold = IRON_PRICE * 6;
+  ok(shop.buyIron() === null && shop.bag[0].item === 'black_iron' && shop.bag[0].purity === 1, '商店可买黑铁');
+  for (let i = 0; i < 4; i++) shop.buyIron();
+  ok((shop.bag[0].qty ?? 1) === 5 && shop.bag.length === 1, '同纯度堆叠');
+  ok(shop.buyIron() !== null, '每层限购 5');
+  // Boss 掉落黑铁
+  const b = mk([{ id: 'boss_woma', x: 800 }]); b.kill(b.alive('enemy')[0]);
+  ok(b.ground.some(g => g.item === 'black_iron'), 'Boss 掉落黑铁矿石');
+  ok(b.ground.some(g => g.item === 'bless_oil'), 'Boss 仍掉祝福油');
+}
+
+
+{ // R6 悬赏进度 / 交付 / 存档 + 成就称号
+  const w = mk([{ id: 'wolf', x: 600 }, { id: 'wolf', x: 700 }, { id: 'wolf', x: 800 }, { id: 'wolf', x: 900 }]);
+  ok(QUESTS[0].target === 'wolf' && QUESTS.length >= 8, '每层悬赏定义齐全');
+  const wolves = w.alive('enemy').filter(e => e.id === 'wolf');
+  ok(wolves.length >= 3, '测试层刷出狼');
+  wolves.slice(0, 3).forEach(e => w.kill(e));
+  ok((w.questProg['q0'] ?? 0) >= 3, `击杀累计悬赏进度 ${w.questProg['q0']}`);
+  const beforeG = w.gold, beforeE = w.exp;
+  const msg = w.claimQuest('q0');
+  ok(msg.includes('完成') && w.questDone.has('q0') && w.gold > beforeG && w.exp >= beforeE, `交付悬赏（${msg}）`);
+  ok(w.claimQuest('q0').includes('已完成'), '不可重复交付');
+  // 成就：击杀
+  const a = mk([]); a.kills = 30; a.checkAchieves();
+  ok(a.achieves.has('a_kills_30') && a.title() === '见习猎手', '击杀成就解锁称号');
+  const st0 = a.stats().atk;
+  a.achieves.delete('a_kills_30'); a.recompute();
+  ok(a.stats().atk < st0, '卸下成就（模拟）属性下降');
+  a.achieves.add('a_kills_30'); a.recompute();
+  // 强化成就
+  const e = mk([]); e.bag.push(e.makeItem('iron_sword')); e.equipItem(0);
+  e.equip.weapon!.enhance = 5; e.applyEnhanceStats(e.equip.weapon!); e.checkAchieves();
+  ok(e.achieves.has('a_enhance_5'), '强化+5 成就');
+  // 存档往返
+  const save = w.toSave();
+  ok(!!save.questDone?.includes('q0') && !!save.questProg, '存档含悬赏');
+  const w2 = new World(seeded(2), 20, [{ name: '测', spawns: [] }], 'warrior', save);
+  ok(w2.questDone.has('q0') && (w2.questProg['q0'] ?? 0) >= 3, '读档恢复悬赏进度');
+  // 到达层数成就
+  const f = mk([]); for (let i = 0; i < 8; i++) f.reached.add(i); f.checkAchieves();
+  ok(f.achieves.has('a_floors_8'), '到达 8 层成就');
+  ok(ACHIEVES.length >= 7, '成就定义齐全');
 }
 
 console.log(`全部通过 ${pass} 项`);

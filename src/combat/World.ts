@@ -3,9 +3,10 @@
 import { BattleEvent, GroundItem, InvItem, Rarity, Slot, Stats, Team, Unit, UnitDef } from './types';
 import { POTIONS } from '../data/skills';
 import { CLASSES, ClassId, SkillDef } from '../data/classes';
-import { ITEMS, SLOTS , SETS } from '../data/items';
+import { ITEMS, SLOTS, SETS, ENHANCE_SLOTS, ENHANCE_MAX, ENHANCE_STAT, IRON_PRICE, IRON_MAX_PURITY, enhanceChance, shatterChance } from '../data/items';
 import { HERO, ENEMIES, EXP_PER_LEVEL, SUMMON } from '../data/units';
 import { WORLD, FLOORS, Floor } from '../data/world';
+import { QUESTS, ACHIEVES, QuestDef, AchieveDef } from '../data/quests';
 
 export const CRIT_CHANCE = 0.15, CRIT_MULT = 1.8;
 export interface Input { dx: number; dy: number; use?: boolean; step?: number; /** false 时关闭自动普攻；缺省/true 保持原行为 */ autoAttack?: boolean }
@@ -16,9 +17,12 @@ export interface SaveData {
   skillTrain?: Record<string, number>;
   /** 地图：已到达的层（index）与已击杀的 BOSS（层 index） */
   reached?: number[]; bossKilled?: number[];
+  /** 悬赏进度 / 已完成悬赏 / 已解锁成就 */
+  questProg?: Record<string, number>; questDone?: string[]; achieves?: string[];
 }
 /** 商店祝福油价格（较贵，每层限购 1） */
 export const OIL_PRICE = 400;
+export { IRON_PRICE } from '../data/items';
 export type CastResult = { ok: true; targets: number[]; skill: string; kind: string } | { ok: false; reason: string };
 const ZERO: Stats = { hp: 0, mp: 0, atk: 0, mag: 0, tao: 0, def: 0 };
 
@@ -36,9 +40,13 @@ export class World {
   lootRng = (() => { let s = 0x2f6b1d; return () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296); })();
   /** 商店祝福油：每层限购 1 瓶 */
   oilBoughtFloor = -1;
+  /** 商店黑铁：每层限购次数（用尽后不可再买） */
+  ironBoughtFloor = -1;
+  ironBoughtCount = 0;
   /** 技能修炼点（官方等级要求/点数见 docs/skills-official.md） */
   skillTrain: Record<string, number> = {};
   reached = new Set<number>(); bossKilled = new Set<number>();
+  questProg: Record<string, number> = {}; questDone = new Set<string>(); achieves = new Set<string>();
   /** 技能等级 0..3：Lv k 需人物等级 ≥ learn[k] 且修炼点 ≥ train[k-1]（官方）；未学会返回 -1 */
   skillLevel(s: SkillDef): number {
     const learn = s.learn ?? [s.unlock ?? 1];
@@ -57,6 +65,7 @@ export class World {
       this.cls = save.cls; this.level = save.level; this.exp = save.exp; this.gold = save.gold; this.pots = [...save.pots];
       this.equip = { ...save.equip }; this.bag = [...save.bag]; this.kills = save.kills; this.nextItem = save.nextUid;
       this.skillTrain = { ...(save.skillTrain ?? {}) }; this.reached = new Set(save.reached ?? []); this.bossKilled = new Set(save.bossKilled ?? []);
+      this.questProg = { ...(save.questProg ?? {}) }; this.questDone = new Set(save.questDone ?? []); this.achieves = new Set(save.achieves ?? []);
     }
     this.expNext = EXP_PER_LEVEL(this.level);
     this.spawnHero();
@@ -81,7 +90,14 @@ export class World {
     const r = { ...ZERO };
     for (const it of Object.values(this.equip)) if (it) for (const [k, v] of Object.entries(it.stats)) (r as any)[k] += v ?? 0;
     for (const b of this.setBonuses()) for (const [k, v] of Object.entries(b.stats)) (r as any)[k] += v ?? 0;
+    for (const a of this.activeAchieves()) for (const [k, v] of Object.entries(a.bonus)) (r as any)[k] += v ?? 0;
     return r;
+  }
+  activeAchieves(): AchieveDef[] { return ACHIEVES.filter(a => this.achieves.has(a.id)); }
+  /** 当前显示称号：取已解锁中 need 最高的一个 */
+  title(): string | null {
+    const list = this.activeAchieves(); if (!list.length) return null;
+    return list.slice().sort((a, b) => b.need - a.need)[0].title;
   }
   /** 各套装已穿件数 */
   setCounts(): Record<string, number> {
@@ -119,6 +135,109 @@ export class World {
     if (r > 0.9) { wpn.luck = L - 1; return `武器被诅咒了！幸运 ${wpn.luck}`; }
     return '祝福油没有效果';
   }
+  /** 黑铁强化：消耗背包中的一块矿石，强化已装备的指定部位。失败扣材料，高等可能破碎（适配）。 */
+  enhanceWithIron(bagIdx: number, slot: Slot): string {
+    const ore = this.bag[bagIdx]; if (!ore || ore.item !== 'black_iron') return '需要黑铁矿石';
+    if (!ENHANCE_SLOTS.includes(slot)) return '该部位不能强化（首饰不可强化）';
+    const it = this.equip[slot]; if (!it) return '该栏位没有装备';
+    const cur = it.enhance ?? 0;
+    if (cur >= ENHANCE_MAX) return `已达强化上限 +${ENHANCE_MAX}`;
+    const purity = ore.purity ?? 1;
+    if (!this.consumeIron(bagIdx)) return '需要黑铁矿石';
+    const chance = enhanceChance(cur, purity);
+    if (this.rng() < chance) {
+      it.enhance = cur + 1; this.applyEnhanceStats(it); this.recompute(); this.checkAchieves();
+      return `${it.name} 强化成功！（成功率 ${Math.round(chance * 100)}%）`;
+    }
+    const sc = shatterChance(cur);
+    if (sc > 0 && this.rng() < sc) {
+      delete this.equip[slot]; this.recompute();
+      return `${it.name} 强化失败，装备破碎了！`;
+    }
+    return `${it.name} 强化失败（成功率 ${Math.round(chance * 100)}%，材料已消耗）`;
+  }
+  /** 提纯：两块同纯度黑铁 → 纯度+1（官方 100%）。返回新矿在背包的下标，或错误信息。 */
+  refineIron(a: number, b: number): string {
+    const ia = this.bag[a];
+    if (!ia || ia.item !== 'black_iron') return '只能提纯黑铁矿石';
+    const pa = ia.purity ?? 1;
+    if (pa >= IRON_MAX_PURITY) return `纯度已达上限 ${IRON_MAX_PURITY}`;
+    // 同一堆 qty>=2，或两格同纯度
+    if (a === b || (b < 0 && (ia.qty ?? 1) >= 2)) {
+      if ((ia.qty ?? 1) < 2) return '需要两块同纯度矿石';
+      ia.qty = (ia.qty ?? 1) - 2;
+      if (ia.qty <= 0) this.bag.splice(a, 1);
+      this.addIron(pa + 1);
+      return `提纯成功：黑铁矿石[+${pa + 1}]`;
+    }
+    const ib = this.bag[b];
+    if (!ib || ib.item !== 'black_iron') return '只能提纯黑铁矿石';
+    const pb = ib.purity ?? 1;
+    if (pa !== pb) return '纯度必须相同';
+    // 先消耗较高下标，避免错位
+    const idxs = [a, b].sort((x, y) => y - x);
+    for (const i of idxs) this.consumeIron(i);
+    this.addIron(pa + 1);
+    return `提纯成功：黑铁矿石[+${pa + 1}]`;
+  }
+  buyIron(): string | null {
+    const LIM = 5;
+    if (this.ironBoughtFloor === this.floorIndex && this.ironBoughtCount >= LIM) return `黑铁矿石每层限购 ${LIM} 块`;
+    if (this.gold < IRON_PRICE) return `金币不足（需 ${IRON_PRICE}）`;
+    const canStack = this.bag.some(x => x.item === 'black_iron' && (x.purity ?? 1) === 1);
+    if (!canStack && this.bag.length >= WORLD.bagSize) return '背包已满';
+    this.gold -= IRON_PRICE;
+    if (this.ironBoughtFloor !== this.floorIndex) { this.ironBoughtFloor = this.floorIndex; this.ironBoughtCount = 0; }
+    this.ironBoughtCount++;
+    this.addIron(1);
+    return null;
+  }
+  /** 黑铁入包：同纯度堆叠 */
+  addIron(purity = 1): boolean {
+    purity = Math.max(1, Math.min(IRON_MAX_PURITY, purity));
+    const exist = this.bag.find(x => x.item === 'black_iron' && (x.purity ?? 1) === purity);
+    if (exist) { exist.qty = (exist.qty ?? 1) + 1; this.events.push({ type: 'inventory' }); return true; }
+    if (this.bag.length >= WORLD.bagSize) return false;
+    this.bag.push(this.makeItem('black_iron', 'common', { purity })); this.events.push({ type: 'inventory' }); return true;
+  }
+  /** 消耗一枚黑铁（堆叠减 1 或移除） */
+  consumeIron(bagIdx: number): boolean {
+    const ore = this.bag[bagIdx]; if (!ore || ore.item !== 'black_iron') return false;
+    if ((ore.qty ?? 1) > 1) { ore.qty! -= 1; this.events.push({ type: 'inventory' }); return true; }
+    this.bag.splice(bagIdx, 1); this.events.push({ type: 'inventory' }); return true;
+  }
+  onKillQuest(enemyId: string) {
+    for (const q of QUESTS) {
+      if (this.questDone.has(q.id) || q.target !== enemyId) continue;
+      // 悬赏在对应层或已到达该层后可累计（适配：不强制人必须在该层）
+      if (!this.reached.has(q.floor) && this.floorIndex !== q.floor) continue;
+      const n = (this.questProg[q.id] ?? 0) + 1;
+      this.questProg[q.id] = Math.min(n, q.need);
+      if (n >= q.need) this.events.push({ type: 'log', text: `悬赏可交付：${q.name}`, color: 'green' });
+    }
+  }
+  claimQuest(id: string): string {
+    const q = QUESTS.find(x => x.id === id); if (!q) return '无此悬赏';
+    if (this.questDone.has(id)) return '已完成';
+    if ((this.questProg[id] ?? 0) < q.need) return `进度 ${(this.questProg[id] ?? 0)}/${q.need}`;
+    this.questDone.add(id); this.gold += q.gold; this.gainExp(q.exp);
+    this.checkAchieves(); this.events.push({ type: 'log', text: `完成悬赏 ${q.name}，获得 ${q.gold} 金 / ${q.exp} 经验`, color: 'green' });
+    return `完成 ${q.name}！+${q.gold} 金 +${q.exp} 经验`;
+  }
+  checkAchieves() {
+    const maxEnh = Math.max(0, ...Object.values(this.equip).map(it => it?.enhance ?? 0), ...this.bag.map(it => it.enhance ?? 0));
+    const vals: Record<string, number> = {
+      kills: this.kills, bosses: this.bossKilled.size, enhance: maxEnh,
+      floors: this.reached.size, quests: this.questDone.size,
+    };
+    for (const a of ACHIEVES) {
+      if (this.achieves.has(a.id)) continue;
+      if ((vals[a.kind] ?? 0) >= a.need) {
+        this.achieves.add(a.id); this.recompute();
+        this.events.push({ type: 'log', text: `成就解锁：${a.name}（称号「${a.title}」）`, color: 'green' });
+      }
+    }
+  }
   power(stat: 'atk' | 'mag' | 'tao') { const h = this.hero; return h ? (stat === 'atk' ? h.atk : stat === 'mag' ? h.mag ?? 0 : h.tao ?? 0) : 0; }
   skillScale() { return 1 + 0.02 * (this.level - 1); }
 
@@ -136,7 +255,7 @@ export class World {
     this.units.push(u); return u;
   }
   loadFloor(i: number) { this.stepTarget = null; this.stepQueued = 0;
-    this.floorIndex = i; this.cleared = false; this.ground = []; this.reached.add(i);
+    this.floorIndex = i; this.cleared = false; this.ground = []; this.reached.add(i); this.checkAchieves();
     this.units = this.units.filter(u => u.isHero || u.summon);
     const h = this.hero; if (h) { h.x = WORLD.heroStartX; h.y = 0; h.facing = 1; }
     const s = this.summon; if (s) { s.x = WORLD.heroStartX - 110; s.y = WORLD.summonLane; }
@@ -193,12 +312,33 @@ export class World {
     target.hp += a;
     this.events.push({ type: 'damage', target: target.uid, amount: a, x: target.x, heal: true });
   }
-  makeItem(item: string, rarity: Rarity = 'common'): InvItem {
+  makeItem(item: string, rarity: Rarity = 'common', opts?: { purity?: number; enhance?: number }): InvItem {
     const def = ITEMS[item], mul = 1 + (rarity === 'common' ? 0 : WORLD.affix[rarity]);
     const stats: Record<string, number> = {};
     for (const [k, v] of Object.entries(def.equip ?? {})) stats[k] = Math.round((v ?? 0) * mul);
-    const name = def.name + (rarity === 'magic' ? '[精良]' : rarity === 'rare' ? '[极品]' : '');
-    return { uid: this.nextItem++, item, name, rarity, slot: def.slot, stats, req: def.req ?? 1, price: Math.round((def.price ?? 1) * mul) };
+    let name = def.name + (rarity === 'magic' ? '[精良]' : rarity === 'rare' ? '[极品]' : '');
+    const it: InvItem = { uid: this.nextItem++, item, name, rarity, slot: def.slot, stats, req: def.req ?? 1, price: Math.round((def.price ?? 1) * mul) };
+    if (item === 'black_iron') {
+      it.purity = Math.max(1, Math.min(IRON_MAX_PURITY, opts?.purity ?? 1));
+      it.qty = 1;
+      it.name = `黑铁矿石[+${it.purity}]`;
+      it.price = Math.round((def.price ?? 20) * it.purity);
+    } else if (def.slot) {
+      it.enhance = opts?.enhance ?? 0;
+      this.applyEnhanceStats(it);
+    }
+    return it;
+  }
+  /** 按强化等级重算装备属性（基于物品定义 × 品质 × (1+enhance×8%)） */
+  applyEnhanceStats(it: InvItem) {
+    const def = ITEMS[it.item]; if (!def?.equip) return;
+    const mul = 1 + (it.rarity === 'common' ? 0 : WORLD.affix[it.rarity]);
+    const e = it.enhance ?? 0;
+    const stats: Record<string, number> = {};
+    for (const [k, v] of Object.entries(def.equip)) stats[k] = Math.round((v ?? 0) * mul * (1 + e * ENHANCE_STAT));
+    it.stats = stats;
+    const base = def.name + (it.rarity === 'magic' ? '[精良]' : it.rarity === 'rare' ? '[极品]' : '');
+    it.name = e > 0 ? `${base} +${e}` : base;
   }
   rollDrop(item: string, forced: Rarity | undefined, x: number, y: number): GroundItem {
     const def = ITEMS[item];
@@ -215,6 +355,8 @@ export class World {
     this.events.push({ type: 'death', uid: u.uid });
     if (u.team !== 'enemy') return;
     this.kills++;
+    this.onKillQuest(u.id);
+    this.checkAchieves();
     const entries = (u.drops ?? []).filter(d => this.rng() < d.chance);
     if (entries.length) {
       const items = entries.map(d => {
@@ -227,13 +369,17 @@ export class World {
     }
     // 额外掉落：独立随机流 lootRng（不消耗主 rng，保持平衡模拟稳定）。Boss 必掉 1 瓶祝福油；setDrop 随机 1 件套装
     if (u.tier === 'boss') this.bossKilled.add(this.floorIndex);
-    const extra: string[] = [];
-    if (u.tier === 'boss' || this.lootRng() < (u.oilChance ?? 0)) extra.push('bless_oil');
-    if (u.setDrop?.length && this.lootRng() < (u.setChance ?? 1)) extra.push(u.setDrop[Math.floor(this.lootRng() * u.setDrop.length)]);
+    const extra: { id: string; purity?: number }[] = [];
+    if (u.tier === 'boss' || this.lootRng() < (u.oilChance ?? 0)) extra.push({ id: 'bless_oil' });
+    if (u.setDrop?.length && this.lootRng() < (u.setChance ?? 1)) extra.push({ id: u.setDrop[Math.floor(this.lootRng() * u.setDrop.length)] });
+    // 黑铁：Boss 必掉 1 块纯度 1–3；普通怪 8% 掉纯度 1（lootRng，不影响平衡模拟主序列）
+    if (u.tier === 'boss') extra.push({ id: 'black_iron', purity: 1 + Math.floor(this.lootRng() * 3) });
+    else if (this.lootRng() < 0.05) extra.push({ id: 'black_iron', purity: 1 });
     if (extra.length) {
-      const items = extra.map((id, i) => {
-        const inv = this.makeItem(id), x = Math.max(40, Math.min(WORLD.mapWidth - 40, u.x + (i - (extra.length - 1) / 2) * 50));
-        return { gid: this.nextGid++, item: id, name: inv.name, rarity: 'common', x, y: 0, landAt: this.time + WORLD.dropLandSec, atk: inv.stats.atk ?? 0, hp: inv.stats.hp ?? 0, amount: 1, inv } as GroundItem;
+      const items = extra.map((e, i) => {
+        const inv = this.makeItem(e.id, 'common', e.purity ? { purity: e.purity } : undefined);
+        const x = Math.max(40, Math.min(WORLD.mapWidth - 40, u.x + (i - (extra.length - 1) / 2) * 50));
+        return { gid: this.nextGid++, item: e.id, name: inv.name, rarity: 'common' as const, x, y: 0, landAt: this.time + WORLD.dropLandSec, atk: inv.stats.atk ?? 0, hp: inv.stats.hp ?? 0, amount: 1, inv } as GroundItem;
       });
       this.ground.push(...items); this.events.push({ type: 'drop', uid: u.uid, x: u.x, y: u.y, items });
     }
@@ -255,6 +401,12 @@ export class World {
     this.ground.splice(this.ground.indexOf(g), 1);
     if (g.item === 'gold') this.gold += g.amount;
     else if (def.potion !== undefined) this.pots[def.potion]++;
+    else if (g.item === 'black_iron' && g.inv) {
+      const pur = g.inv.purity ?? 1;
+      const exist = this.bag.find(x => x.item === 'black_iron' && (x.purity ?? 1) === pur);
+      if (exist) { exist.qty = (exist.qty ?? 1) + (g.inv.qty ?? 1); this.events.push({ type: 'inventory' }); }
+      else this.bag.push(g.inv);
+    }
     else if (g.inv) { this.bag.push(g.inv); this.events.push({ type: 'inventory' }); }
     this.events.push({ type: 'pickup', gid: g.gid, name: g.name, item: g.item });
     return true;
@@ -378,7 +530,7 @@ export class World {
 
   // ---------- 存档 ----------
   toSave(): SaveData {
-    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, reached: [...this.reached], bossKilled: [...this.bossKilled] };
+    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves] };
   }
 
   /** 点按一格：滑行中的按键全部排队（同向最多 10 格，反向则替换队列），每次按键都会走一格 */
