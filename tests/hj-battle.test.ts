@@ -131,4 +131,32 @@ const hitsBy = (ev: any[], uid: number, target?: number) => ev.filter(e => e.typ
     ok(Math.abs(w.companionUnit!.x - h.x) <= 450, 'B1 战士英雄跟得上奔跑的主人（≤ 合击范围）');
   }
 }
+{ // B3 新 BOSS 魔龙教主 / 魔龙血域（侧线层 23）
+  const { FLOORS, FLOOR_ORDER, SIDE_FLOORS, nextFloorOf } = await import('../src/data/world');
+  const { BOSS_MECH } = await import('../src/combat/World');
+  const { townOfFloor } = await import('../src/data/towns');
+  const { REGIONS } = await import('../src/data/map');
+  const { HJ_FLOOR_ANCHORS, FLOOR_EXP_MULT } = await import('../src/data/expCurve');
+  const d = ENEMIES.boss_molong;
+  ok(!!d && d.name === '魔龙教主' && d.tier === 'boss' && d.hp === ENEMIES.boss_zuma.hp && d.art === 'boss_woma' && d.card?.tint !== undefined, 'B3 魔龙教主：HP 基数 12000（官方，与祖玛教主同基数×难度），复用贴图着色占位');
+  ok(d.drops!.some(x => x.item === 'boots') && d.drops!.some(x => x.item === 'book_page') && BOSS_MECH.has('boss_molong'), 'B3 掉落靴子/书页（官方掉落中本作已有的），走 BOSS 机制框架');
+  ok(FLOORS[23]?.name === '魔龙血域' && FLOORS[23].spawns.some(x => x.id === 'boss_molong') && SIDE_FLOORS.includes(23) && !FLOOR_ORDER.includes(23) && nextFloorOf(22) === -1, 'B3 下标 23 侧线层，不进通关顺序（火龙仍是终点）');
+  ok(REGIONS.find(r => r.id === 'hejiban')!.nodes.some(n => n.floor === 23) && townOfFloor(23) === 'mengzhong' && HJ_FLOOR_ANCHORS.length === 6 && FLOOR_EXP_MULT.length === 24, 'B3 接入合击区域/回盟重/经验锚点');
+  const w = new World(seeded(9), 55, FLOORS, 'warrior'); w.loadFloor(23); const h = w.hero!; h.hp = h.maxHp = 1e9; h.atk = 0;
+  const boss = w.units.find(u => u.id === 'boss_molong')!; ok(!!boss && boss.alive, 'B3 进入魔龙血域生成魔龙教主');
+  for (const u of w.alive('enemy')) if (u !== boss) w.kill(u);
+  h.x = boss.x - 150; boss.ai = 'chase'; let tp = false, hit = false;
+  for (let i = 0; i < 40 * 20; i++) { w.step(0.05); for (const e of w.drainEvents()) { if (e.type === 'bossfx' && e.kind === 'fly') tp = true; if (e.type === 'attack' && e.source === boss.uid) hit = true; } }
+  ok(tp && hit, 'B3 魔龙教主近战 + 30 秒瞬移到身后');
+  { const w3 = W('warrior', 'taoist'); const c = w3.companion!; c.level = 45; c.combo = ['pixing']; c.equip.heart = item('fire_heart'); c.heartStore = 30000; c.rage = RAGE_MAX; const h3 = w3.hero!; h3.hp = h3.maxHp = 1e9;
+    const bb = w3.spawn(ENEMIES.boss_molong, 'enemy', h3.x + 150, 0); bb.hp = bb.maxHp = 1e7; bb.ai = 'chase'; bb.atk = 0; w3.unleashCombo(); let cm: any = null;
+    for (let i = 0; i < 200 && !cm; i++) { w3.step(0.05); cm = w3.drainEvents().find(x => x.type === 'combo'); }
+    ok(!!cm && !(bb.stunUntil && bb.stunUntil > w3.time) && (bb.vulnUntil ?? 0) > w3.time, 'B BOSS 免疫麻痹（受伤加深仍生效）'); }
+  for (const u of w.alive('enemy')) w.kill(u); h.x = w.exitX; w.step(0.05); w.step(0.05);
+  ok(!w.done && w.town === 'mengzhong', 'B3 清完魔龙血域：回盟重，不判通关');
+  const w2 = new World(seeded(9), 55, FLOORS, 'warrior'); w2.loadFloor(23); const sv = JSON.parse(JSON.stringify(w2.toSave()));
+  ok(new World(seeded(9), 55, FLOORS, 'warrior', sv).floorIndex === 23, 'B3 存档在魔龙血域：读档层号不变');
+  const old: any = JSON.parse(JSON.stringify(new World(seeded(9), 50, FLOORS, 'warrior').toSave())); old.floorIndex = 22; delete old.companion;
+  const wo = new World(seeded(9), 50, FLOORS, 'warrior', old); ok(wo.floorIndex === 22 && nextFloorOf(22) === -1, 'B3 旧存档（无英雄/在火龙神殿）兼容');
+}
 console.log(`合击版阶段 A 英雄战斗通过（${pass}）`);

@@ -57,6 +57,10 @@ export const ENEMIES: Record<string, UnitDef> = {
   boss_leiyan: b('boss_leiyan', 'boss_redmoon', '雷炎蛛王', 35, 16500, 100, 27, 7000, [{ item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, { item: 'book_page', chance: 1 }, { item: 'book_page', chance: 1 }, { item: 'gold_bar', chance: 0.6 }, G(1), G(1)], { deathSfx: 'lich_death' }),
   fire_dragon_guard: n('fire_dragon_guard', '火龙守卫', 33, 1900, 84, 24, 530, [G(0.6), { item: 'hp_mid', chance: 0.35 }, { item: 'book_page', chance: 0.08 }], { art: 'orc', deathSfx: 'death2', oilChance: 0.02 }),
   boss_fire_dragon: b('boss_fire_dragon', 'boss_redmoon', '火龙', 36, 17000, 102, 28, 7500, [{ item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, { item: 'book_page', chance: 1 }, { item: 'gold_bar', chance: 1 }, G(1), G(1)], { deathSfx: 'lich_death' }),
+  // 阶段 B #9 新 BOSS 魔龙教主（docs/hejiban-official.md §7）：HP 12000 官方（百度百科）；等级/攻/防未查到 → [适配] 取火龙(36 级)之后一档；
+  // 掉落官方「腰带/靴子、技能书、魔龙首饰、开天/镇天/玄天」(17173)：本作无腰带/魔龙首饰/开天镇天玄天 → 只落已有的 靴子(boots)、技能残页(book_page)，其余未实装（不新建背包结构）
+  // 美术：无 boss_molong 立绘 → 复用沃玛教主贴图 + 紫色着色 + 放大占位（fx-requests.md 已提需求）
+  boss_molong: b('boss_molong', 'boss_woma', '魔龙教主', 38, 12000, 108, 24, 8000, [{ item: 'boots', chance: 0.5 }, { item: 'book_page', chance: 1 }, { item: 'book_page', chance: 0.5 }, { item: 'hp_mid', chance: 1 }, { item: 'mp_mid', chance: 1 }, G(1), G(1)], { deathSfx: 'death2', card: bossCard({ figureScale: 1.35, tint: 0xb070ff, bg: 0x2a0636 }) }),
   // R13 新增地图（原版怪名/BOSS 见 docs/maps-research.md；数值按本作层位 [适配]，非原版数值）
   red_snake: n('red_snake', '红蛇', 10, 420, 28, 8, 110, [G(0.5), { item: 'hp_small', chance: 0.3 }, { item: 'bracelet', chance: 0.08 }], { art: 'spider', deathSfx: 'death' }),
   tiger_snake: n('tiger_snake', '虎蛇', 11, 460, 30, 8, 120, [G(0.5), { item: 'mp_small', chance: 0.3 }, { item: 'boots', chance: 0.08 }], { art: 'spider', deathSfx: 'death' }),

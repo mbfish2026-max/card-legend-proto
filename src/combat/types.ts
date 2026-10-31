@@ -16,7 +16,7 @@ export interface UnitDef {
   /** 立绘纹理 ID（缺省 = id）；Boss 变体复用普通怪立绘 */
   art?: string;
   /** 渲染用（不影响战斗逻辑） */
-  card?: { w: number; h: number; figureScale: number; anchorX?: number; footSink?: number; maxWidthRatio?: number; artFacing?: 1 | -1; bg?: number };
+  card?: { w: number; h: number; figureScale: number; anchorX?: number; footSink?: number; maxWidthRatio?: number; artFacing?: 1 | -1; bg?: number; tint?: number };
 }
 /** idle 原地待机；alert 发现主角（感叹号）；chase 追击/战斗；return 脱战回位 */
 export type AIState = 'idle' | 'alert' | 'chase' | 'return';

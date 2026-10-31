@@ -37,7 +37,7 @@ export class CardView extends Phaser.GameObjects.Container {
     super(scene, unit.x, GROUND_Y);
     const c = { ...DEFAULT_CARD, ...(unit.card ?? {}) };
     const w = this.w = c.w, ch = this.cardH = c.h, barH = Math.round(ch * 0.22);
-    this.artFacing = c.artFacing;
+    this.artFacing = c.artFacing; this.baseTint = (c as any).tint;
     // 合击版 A1：点击/触屏点怪物卡 = 指定英雄攻击目标（官方 Ctrl+W）。只发场景事件，不触发走位
     if (unit.team === 'enemy') this.setSize(w, ch).setInteractive(new Phaser.Geom.Rectangle(0, 0, w, ch), Phaser.Geom.Rectangle.Contains)
       .on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev?.stopPropagation?.(); if (this.unit.team === 'enemy' && this.unit.alive) scene.events.emit('cardTap', this.unit.uid); });
@@ -61,14 +61,14 @@ export class CardView extends Phaser.GameObjects.Container {
     const has = scene.textures.exists(tex);
     // 立绘未到：同色剪影占位（不显示大字），立绘加载完成后自动替换
     const im = scene.add.image(this.artX, this.artY, has ? tex : silhouette(scene)).setOrigin(c.anchorX ?? 0.5, 1);
-    this.art = im; figH = this.fitArt();
+    this.art = im; figH = this.fitArt(); if (has) this.untint(im);
     if (!has) {
       im.setTint(FALLBACK[unit.id] ?? (unit.tier === 'player' ? 0x3a3a44 : 0x2a1414)).setAlpha(0.85);
       const pulse = scene.tweens.add({ targets: im, alpha: 0.55, duration: 700, yoyo: true, repeat: -1 });
       const onAdd = (key: string) => {
         if (key !== tex || !this.active) return;
         scene.textures.off('addtexture', onAdd); pulse.stop();
-        im.setTexture(tex).clearTint().setAlpha(0); this.fitArt();
+        this.untint(im.setTexture(tex)).setAlpha(0); this.fitArt();
         scene.tweens.add({ targets: im, alpha: 1, duration: 250 });
       };
       scene.textures.on('addtexture', onAdd);
@@ -152,21 +152,24 @@ export class CardView extends Phaser.GameObjects.Container {
     const c = u.poisonUntil && u.poisonUntil > t ? 0x66ff55 : u.slowUntil && u.slowUntil > t ? 0x88ccff : u.pet ? 0xffb0dd : 0;
     this.lvlText.setColor(u.pet ? '#ff9ad5' : '#ffd24a');
     if (c === this.curStatus) return; this.curStatus = c;
-    if (c) a.setTint(c); else a.clearTint();
+    if (c) a.setTint(c); else this.untint(a);
   }
+  /** 阶段 B：无专属立绘的 BOSS 用现有贴图着色占位（card.tint）；状态闪色结束后回到底色而非清空 */
+  private baseTint?: number;
+  private untint(a: Phaser.GameObjects.Image) { return this.baseTint !== undefined ? a.setTint(this.baseTint) : a.clearTint(); }
   private tint(color: number, ms: number) {
     const a = this.art; if (!(a instanceof Phaser.GameObjects.Image)) return;
     // 参考原作：先整卡闪白，再短暂偏红
     this.flashing = true; a.setTintFill(0xffffff);
     this.scene.time.delayedCall(ms * 0.45, () => { if (!this.dying && a.active && color !== 0xffffff) a.setTint(color); });
-    this.scene.time.delayedCall(ms * 1.3, () => { this.flashing = false; this.curStatus = -1; if (!this.dying && a.active) a.clearTint(); });
+    this.scene.time.delayedCall(ms * 1.3, () => { this.flashing = false; this.curStatus = -1; if (!this.dying && a.active) this.untint(a); });
   }
   /** 被吸引：感叹号 + 立绘闪橙 */
   alert(sec: number) {
     const ex = this.scene.add.text(this.x, this.y - this.h - 8, '!', { fontFamily: FONT, fontSize: '40px', color: '#ffdd00', fontStyle: 'bold', stroke: '#600', strokeThickness: 5 }).setOrigin(0.5, 1).setDepth(70);
     this.scene.tweens.add({ targets: ex, y: ex.y - 10, duration: 120, yoyo: true });
     this.scene.time.delayedCall(sec * 1000 + 200, () => ex.destroy());
-    if (this.art instanceof Phaser.GameObjects.Image) { this.art.setTint(0xffa060); this.scene.time.delayedCall(sec * 1000, () => { if (!this.dying && this.art.active) { (this.art as Phaser.GameObjects.Image).clearTint(); this.curStatus = -1; } }); }
+    if (this.art instanceof Phaser.GameObjects.Image) { this.art.setTint(0xffa060); this.scene.time.delayedCall(sec * 1000, () => { if (!this.dying && this.art.active) { this.untint(this.art as Phaser.GameObjects.Image); this.curStatus = -1; } }); }
   }
   private reset() { const a = this.art; this.scene.tweens.killTweensOf(a); a.setPosition(this.artX, this.artY).setAngle(0).setScale(this.artSX, this.artSY); }
   /** 普攻：卡框不动，立绘向前冲、前倾、横向拉伸 */
@@ -190,7 +193,7 @@ export class CardView extends Phaser.GameObjects.Container {
   windup(dir: number) {
     this.reset(); const a = this.art;
     this.scene.tweens.add({ targets: a, x: this.artX - dir * FX.windupBackDx, angle: -dir * 6, scaleX: this.artSX * 1.06, scaleY: this.artSY * 1.06, duration: FX.windupMs, yoyo: true, hold: 40 });
-    if (a instanceof Phaser.GameObjects.Image) { a.setTint(FX.windupGlow); this.scene.time.delayedCall(FX.windupMs * 2, () => { if (!this.dying) { a.clearTint(); this.curStatus = -1; } }); }
+    if (a instanceof Phaser.GameObjects.Image) { a.setTint(FX.windupGlow); this.scene.time.delayedCall(FX.windupMs * 2, () => { if (!this.dying) { this.untint(a); this.curStatus = -1; } }); }
   }
   /** 受击：立绘闪色 + 后仰压缩 + 整卡水平震动 */
   hit() {
