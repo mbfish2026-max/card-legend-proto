@@ -459,3 +459,19 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 - 外观依据（热血传奇官方背景，百度百科）：原为人们祭奠的神将，与龙共同守护人类，龙堕落后随之化为妖魔；「神所赐的双翅」「由天地灵气化成的短枪」；作为龙命令的执行者带来血与火。据此绘制：龙角头盔的堕落神将、暗红金边重甲、一对龙翼、紫红灵气短枪、血火缭绕。
 - 未查到：原作具体配色与头部造型的官方立绘描述（配色暗红/黑红为玩家资料推测）；短枪画成两端带刃，属自由发挥。
 - 原创绘制，未描摹原作素材。
+
+## feat/maps-batch3（plan-60h B3）
+
+规格按 L 章：怪物立绘 `public/assets/portraits/<id>_full.png`，透明底 PNG，最长边 960；接入时 ASSETS 加 `<id>` 并把 units 的 art 指向它。现均复用已有贴图（括号内为占位）。
+
+| id | 官方名 | 文件 | 现占位 | 来源 |
+|---|---|---|---|---|
+| pincer_bug | 钳虫 | `public/assets/portraits/pincer_bug_full.png` | centipede | [21cq 地牢一层西](https://www.21cq.com/mir/Map.aspx?id=1379) |
+| giant_worm | 巨型蠕虫 | `public/assets/portraits/giant_worm_full.png` | black_maggot | [21cq 地牢一层东](https://www.21cq.com/mir/Map.aspx?id=1378) |
+| wedge_moth | 楔蛾 | `public/assets/portraits/wedge_moth_full.png` | jump_bee | [21cq 石墓一层](https://www.21cq.com/mir/Map.aspx?id=1198) |
+| horn_fly | 角蝇 | `public/assets/portraits/horn_fly_full.png` | jump_bee | [21cq 石墓三层](https://www.21cq.com/mir/Map.aspx?id=1200) |
+| boss_evil_pincer | 邪恶钳虫（BOSS） | `public/assets/portraits/boss_evil_pincer_full.png` | boss_chulong | [21cq 地牢一层北](https://www.21cq.com/mir/Map.aspx?id=1380) |
+| boss_evil_snake | 邪恶毒蛇（BOSS） | `public/assets/portraits/boss_evil_snake_full.png` | boss_white_boar | [21cq 石墓七层](https://www.21cq.com/mir/Map.aspx?id=1233) |
+| boss_shimu_lich | 石墓尸王（BOSS） | `public/assets/portraits/boss_shimu_lich_full.png` | boss_lich | [21cq 石墓七层](https://www.21cq.com/mir/Map.aspx?id=1233) |
+
+背景 4 套（1920×1080 起，jpg）：蜈蚣洞地牢（bg_floor35–39，下标 34–38）、蜈蚣洞深层（bg_floor40–46，下标 39–45）、石墓（bg_floor47–53，下标 46–52）、香石墓穴（bg_floor54–56，下标 53–55）；现占位 bg_floor3 / bg_floor4 / bg_floor5。外观均「未查到」官方原图，按地名推测。

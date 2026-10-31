@@ -16,11 +16,11 @@ try {
     const st = () => page.evaluate(() => { const W = window.__game.scene.getScene('Battle').world; return { i: W.floorIndex, name: W.floor.name, town: W.town }; });
     const tap = async q => { if (touch) await page.touchscreen.tap(q.x, q.y); else await page.mouse.click(q.x, q.y); await sleep(800); };
     // 真点小地图：打开地图→拖到盟重省→点区域→点「石墓七层」节点→点「传送」
-    await page.evaluate(() => { const W = window.__game.scene.getScene('Battle').world; for (let k = 0; k < 56; k++) W.reached.add(k); W.teleportReadyAt = 0; W.gold = 1e6; window.__game.scene.getScene('Battle').openPanel('map'); }); await sleep(800);
+    await page.evaluate(() => { const W = window.__game.scene.getScene('Battle').world; for (let k = 0; k < 56; k++) W.reached.add(k); W.units.filter(u => u.team === 'enemy' && u.alive).forEach(u => W.kill(u)); W.time += 10; W.step(0.05); W.teleportReadyAt = 0; W.gold = 1e6; window.__game.scene.getScene('Battle').openPanel('map'); }); await sleep(800);
     for (let d = 0; d < 8 && !(await findPos(page, 'UI', '^盟重省')); d++) { await page.mouse.move(vw * 0.7, vh * 0.5); await page.mouse.down(); await page.mouse.move(vw * 0.3, vh * 0.5, { steps: 5 }); await page.mouse.up(); await sleep(300); }
     const reg = await findPos(page, 'UI', '^盟重省'); if (reg) await tap({ x: reg.x, y: reg.y - 30 * vh / 720 });
     const node = await findPos(page, 'UI', '^石墓七层'); await page.screenshot({ path: `${dir}/b3-map-${vw}.png` });
-    let viaMap = null; if (node) { await tap(node); const go = await findPos(page, 'UI', '^传送'); if (go) await tap(go); await sleep(1200); await page.keyboard.press('Escape'); await sleep(400); viaMap = await st(); }
+    let viaMap = null; if (node) { await tap({ x: node.x, y: node.y - 38 * vh / 720 }); await page.screenshot({ path: `${dir}/b3-node-${vw}.png` }); const go = await findPos(page, 'UI', '^传送'); if (go) await tap(go); await sleep(1200); await page.keyboard.press('Escape'); await sleep(400); viaMap = await st(); }
     await page.evaluate(() => window.__game.scene.getScene('UI').panel?.close?.()); await page.keyboard.press('Escape'); await sleep(500);
     const mini = { regionFound: !!reg, nodeFound: !!node, viaMap };
     for (let i = 34; i <= 55; i++) {
