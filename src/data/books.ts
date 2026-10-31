@@ -32,6 +32,8 @@ export const BOOKS: Record<string, BookDef> = {
   hell_fire: { skill: 'hell_fire', cls: 'mage', shop: true, drops: ['skeleton_lord', LICH, 'woma_guard'], price: P(16) },
   lightning_flash: { skill: 'lightning_flash', cls: 'mage', shop: false, drops: [LICH], price: P(26) },
   hell_thunder: { skill: 'hell_thunder', cls: 'mage', shop: false, drops: [LICH, 'woma_guard', 'boss_redmoon', 'boss_chulong', 'boss_white_boar', 'boss_bull_king', 'hongmo_pig', 'boss_hongmo'], price: P(30) },
+  // 诱惑之光：书店是否出售/售价 未查到 → shop:false；官方掉落 = 21cq 骷髅精灵 1/5、尸王 1/5、沃玛卫士 1/3（drops-official.ts），已接入
+  charm: { skill: 'charm', cls: 'mage', shop: false, drops: ['skeleton_lord', LICH, 'woma_guard'], price: P(13) },
   // 道士：治愈(初始)/精神力/施毒/灵魂火符/召唤骷髅 书店有售；神兽 掉落
   spirit_force: { skill: 'spirit_force', cls: 'taoist', shop: true, drops: [], price: P(9) },
   poison: { skill: 'poison', cls: 'taoist', shop: true, drops: [LICH, ...WOMA], price: P(14) },

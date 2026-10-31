@@ -92,3 +92,9 @@
 
 缺图时的兜底：回落到 fx_magic_shield_* 着色，再回落 fx.holyLight。
 已知不足：参考帧里没有这三个技能，造型为原创；loop 的幽光点在循环接缝处有轻微跳变。
+
+## #诱惑之光（feat/charm，2026-10-31）
+- 施放：`fx_charm_light`（目标身上粉紫色光环/心形光点，约 0.6s，单体）。未注册/缺失 → `playFx` 返回 null，回落 `fx.holyLight`（Graphics 圣光占位），不崩溃。
+- 宠物标识：当前用卡面粉色着色 + 粉色等级字占位；需要 `ui_pet_badge`（卡面角标）时在 CardView 接入。
+- 飘字：诱惑成功（粉）/诱惑失败（灰）/免疫（灰）/叛变（红），用现有 floatNumber，无需素材。
+- 音效：复用 `shockwave`。

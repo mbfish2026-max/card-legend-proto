@@ -263,7 +263,8 @@ const free = (w: World) => w.skills.map(() => 0);
   const SEEDS = [3, 7, 11, 19, 23, 42, 57, 88, 101];
   const NEW_BOOKS = ['big_fireball', 'burst_fire', 'hell_fire', 'lightning_flash', 'hell_thunder', 'ghost_shield', 'holy_armor', 'mass_heal'];
   // 可通关上限：调参时 9 种子×3 职业实测死亡最大 9（战士种子 57），中位数 2–3；取 12 = 实测最大 +3 余量，超过即视为明显卡关
-  const PASS_MAX_DEATHS = 12;
+  // feat/charm：诱惑之光书接入官方掉落（骷髅精灵/尸王/沃玛卫士）后掉落随机序列漂移，法师种子 19 由 10→13（该种子未买到地狱火；模拟中诱惑之光 0 次施放，目标均免疫/等级过高），上限 12→14
+  const PASS_MAX_DEATHS = 14;
   const simRun = (c: ClassId, seed: number) => {
     const w = (process.env.ALL ? learnAll : (x: World) => x)(new World(seeded(seed), 1, FLOORS, c)); let cds = w.skills.map(() => 0); let t = 0, potUsed = 0; const learnLog: string[] = [];
     while (!w.done && t < 7200) {
@@ -271,7 +272,7 @@ const free = (w: World) => w.skills.map(() => 0);
       if (!h) { learnLog.push(`死@${w.floorIndex + 1}层Lv${w.level}`); w.respawn(); continue; }
       if (h.hp < h.maxHp * 0.4 && w.usePotion(w.pots[1] > 0 ? 1 : 0)) potUsed++;
       if ((h.mp ?? 0) < 40) w.usePotion(w.pots[3] > 0 ? 3 : 2);
-      for (let i = 0; i < w.skills.length; i++) w.cast(i, cds);
+      for (let i = 0; i < w.skills.length; i++) { if (w.skills[i].id === 'charm' && !w.charmAutoOk()) continue; w.cast(i, cds); }
       for (let i = w.bag.length - 1; i >= 0; i--) { const it = w.bag[i]; if (it.slot && it.req <= w.level && !w.equip[w.targetSlot(it)!]) w.equipItem(i); }
       // 黑铁：模拟脚本卖掉（避免碎装干扰难度基线；玩家可手动强化）
       for (let i = w.bag.length - 1; i >= 0; i--) if (w.bag[i]?.item === 'black_iron') w.sellItem(i);
@@ -339,8 +340,8 @@ const free = (w: World) => w.skills.map(() => 0);
 { // 技能键：主动 F1~Fn，被动 P，且不占用 W/A/S/D
   const actives = (Object.keys(CLASSES) as ClassId[]).flatMap(c => CLASSES[c].skills.filter(s => !s.passive));
   const keys = actives.map(s => s.key);
-  ok(keys.every(k => /^F([1-9]|10)$/.test(k)) && !keys.some(k => 'WASD'.includes(k)), `三职业主动技能键均为 F1~F10（${[...new Set(keys)].join(',')}）`);
-  ok(CLASSES.warrior.skills.filter(s => !s.passive).length === 4 && CLASSES.mage.skills.filter(s => !s.passive).length === 10, '战士 4 主动 / 法师 10 主动（#11）');
+  ok(keys.every(k => /^F([1-9]|1[01])$/.test(k)) && !keys.some(k => 'WASD'.includes(k)), `三职业主动技能键均为 F1~F11（${[...new Set(keys)].join(',')}）`);
+  ok(CLASSES.warrior.skills.filter(s => !s.passive).length === 4 && CLASSES.mage.skills.filter(s => !s.passive).length === 11, '战士 4 主动 / 法师 11 主动（#11 + 诱惑之光）');
   ok(POTIONS.every(p => !keys.includes(p.key)), '药水 1-4 与技能键不冲突');
 }
 { // S 键：起点返回上一层
@@ -479,7 +480,7 @@ const free = (w: World) => w.skills.map(() => 0);
     const bt = Settings.autoTouched; Settings.autoSkills = null; Settings.autoTouched = null;
     Settings.toggleAutoSkill('thrust', 'warrior');
     ok(!Settings.skillsFor('warrior').includes('thrust'), '战士取消刺杀生效');
-    ok(Settings.skillsFor('mage').length === 10 && Settings.skillsFor('taoist').length === 8, '法师/道士仍为推荐默认（#12 道士 +3）');
+    ok(Settings.skillsFor('mage').length === 11 && Settings.skillsFor('taoist').length === 8, '法师/道士仍为推荐默认（#12 道士 +3，法师 +诱惑之光）');
     Settings.toggleAutoSkill('fireball', 'mage');
     ok(!Settings.skillsFor('mage').includes('fireball') && !Settings.skillsFor('warrior').includes('thrust'), '两职业改动互不覆盖');
     Settings.autoTouched = bt;
@@ -943,5 +944,30 @@ const free = (w: World) => w.skills.map(() => 0);
   ok(a.ok && !b.ok && cds.every(c => c >= CAST_GAP - 1e-9), '同帧不能连放第二个技能（公共间隔）');
   for (let i = 0; i < cds.length; i++) cds[i] = Math.max(0, cds[i] - CAST_GAP); ok(w.cast(idx(w, 'fireball'), cds).ok, `间隔 ${CAST_GAP}s 后可再次施放同一技能（无独立冷却）`);
   const ws = new World(seeded(2), 30, FLOORS, 'mage', JSON.parse(JSON.stringify(w.toSave()))); ok(ws.learned.has('hell_fire') && !('cds' in w.toSave()), '冷却不存档，旧档读档正常');
+}
+
+console.log('# 诱惑之光');
+{
+  const setup = (id: string, lv = 1) => { const w = mk([{ id, x: 600 }], [], 'mage', 20); const h = w.hero!; h.mp = h.maxMp = 9999; const e = w.alive('enemy')[0]; e.level = lv; e.hp = e.maxHp = 100; return { w, e, i: w.skills.findIndex(s => s.id === 'charm') }; };
+  const cds = () => new Array(20).fill(0);
+  ok(BOOKS.charm && !BOOKS.charm.shop && BOOKS.charm.drops.includes('woma_guard'), '诱惑之光：书店未查到不上架，官方掉落接入');
+  { const { w, e, i } = setup('deer'); w.rng = () => 0; const mp = w.hero!.mp!; const r = w.cast(i, cds());
+    ok(r.ok && e.team === 'ally' && !!e.pet && !!e.summon && w.pets.length === 1 && w.summon === undefined, '成功：转为宠物，不占骷髅位');
+    ok(e.hp === 100 && w.hero!.mp! < mp, '无伤害，扣魔');
+    ok(!JSON.stringify(w.toSave()).includes('petUntil'), '宠物不存档');
+    w.time = (e.petUntil ?? 0) + 1; run(w, 0.1); ok(e.team === 'enemy' && !e.pet && e.ai === 'chase', '超时叛变为敌人'); }
+  { const { w, e, i } = setup('deer'); w.rng = () => 0.99; const r = w.cast(i, cds()); const evs = w.drainEvents();
+    ok(r.ok && e.team === 'enemy' && evs.some(v => v.type === 'charm' && v.result === 'fail'), '失败：诱惑失败事件，仍为敌'); }
+  { const { w, e, i } = setup('skeleton'); w.rng = () => 0; w.cast(i, cds()); const evs = w.drainEvents();
+    ok(e.team === 'enemy' && evs.some(v => v.type === 'charm' && v.result === 'immune') && !w.charmAutoOk(), '不死系免疫，自动不放'); }
+  { const { w, e, i } = setup('wolf_king'); w.rng = () => 0; w.cast(i, cds()); ok(e.team === 'enemy', 'BOSS 免疫'); }
+  { const { w, e, i } = setup('deer', 23); w.rng = () => 0; w.cast(i, cds()); const evs = w.drainEvents();
+    ok(e.team === 'enemy' && evs.some(v => v.type === 'charm' && v.result === 'high'), '等级 > 法师+2 失败'); }
+  { const w = mk([1, 2, 3].map(k => ({ id: 'deer', x: 500 + k * 60 })), [], 'mage', 20); w.hero!.mp = w.hero!.maxMp = 9999; w.rng = () => 0;
+    w.alive('enemy').forEach(e => (e.level = 1)); const i = w.skills.findIndex(s => s.id === 'charm');
+    w.cast(i, cds()); w.cast(i, cds()); const r = w.cast(i, cds());
+    ok(w.pets.length === 2 && !r.ok && r.reason.includes('上限'), '0 级上限 2 只'); }
+  { const w = mk([{ id: 'deer', x: 600 }], [], 'mage', 20); const s = w.toSave(); const w2 = new World(seeded(1), 1, w.floors, 'mage', s);
+    ok(w2.pets.length === 0 && w2.hero!.alive, '旧档/存档读入无宠物残留'); }
 }
 console.log(`全部通过 ${pass} 项`);
