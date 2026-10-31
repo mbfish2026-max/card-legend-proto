@@ -1,5 +1,5 @@
 declare const process: { env: Record<string, string | undefined> };
-import { World, SaveData, OIL_PRICE, IRON_PRICE, OFFICIAL, mitigate, taoBuffValue, taoBuffDur } from '../src/combat/World';
+import { World, SaveData, OIL_PRICE, IRON_PRICE, OFFICIAL, mitigate, taoBuffValue, taoBuffDur, SKELETON_OFFICIAL, SUMMON_NAME_COLORS, SUMMON_MAX_LV, SUMMON_LV_KILLS } from '../src/combat/World';
 import { ITEMS, SETS, ENHANCE_MAX, enhanceChance, shatterChance } from '../src/data/items';
 import { WORLD, CARD, Floor, FLOORS } from '../src/data/world';
 import { CLASSES, ClassId, CAST_GAP, COOLDOWN_BEFORE, REBALANCE, MANA_BEFORE } from '../src/data/classes';
@@ -259,6 +259,59 @@ const free = (w: World) => w.skills.map(() => 0);
   for (let i = 0; i < 80; i++) { wr.step(0.05); for (const e of wr.drainEvents()) if (e.type === 'damage' && e.target === rh.uid) hit++; }
   ok(hit >= 1, '站在地刺上会受伤');
 }
+{ // 召唤物仇恨 [适配]：召唤物打一下即记仇；主角走开（> summonAggroNear）只打召唤物；主角贴身不强制转移；召唤物死后回到主角；脱战仍按主角/出生点
+  const setup = () => { const w = mk([{ id: 'orc', x: 1200 }], [], 'taoist', 30); tough(w); const h = w.hero!; h.hp = h.maxHp = 1e9; h.x = 900;
+    w.cast(idx(w, 'summon_skeleton'), free(w)); const sm = w.summon!; sm.hp = sm.maxHp = 1e9; sm.x = 1080; const o = w.alive('enemy')[0]; o.ai = 'chase'; o.cd = 99; return { w, h, sm, o }; };
+  const hits = (w: World, sec: number, uid: number) => { let n = 0; for (let t = 0; t < sec; t += 0.05) { w.step(0.05, { dx: 0, dy: 0 }); for (const e of w.drainEvents()) if (e.type === 'damage' && e.target === uid && e.source !== undefined && w.units.find(u => u.uid === e.source)?.team === 'enemy') n++; } return n; };
+  { const { w, h, sm, o } = setup(); run(w, 2); ok(o.aggroUid === sm.uid, '召唤物攻击一次后怪物记仇（aggroUid=召唤物）');
+    h.x = o.x - 600; o.cd = 0; const hh = hits(w, 8, h.uid);
+    const w2 = setup(); run(w2.w, 2); w2.h.x = w2.o.x - 600; w2.o.cd = 0; const s2 = hits(w2.w, 8, w2.sm.uid);
+    ok(hh === 0 && s2 >= 3 && Math.abs(w2.o.x - w2.h.x) > WORLD.summonAggroNear, `主角走开（>${WORLD.summonAggroNear}px）：怪只打召唤物（主角 ${hh} 次，召唤物 ${s2} 次）`);
+    ok(o.ai === 'chase', '主角走开 600px（< 脱战 6 卡）怪仍在战斗');
+    w.kill(sm); let hit = 0; for (let t = 0; t < 10; t += 0.05) { w.step(0.05, { dx: 0, dy: 0 }); for (const e of w.drainEvents()) if (e.type === 'damage' && e.target === h.uid) hit++; }
+    ok(hit > 0 && !w.summonAggro(o), `召唤物死亡后仇恨回到主角（主角被打 ${hit} 次）`); }
+  { const { w, h, sm, o } = setup(); run(w, 2); h.x = o.x - 150; o.cd = 0; let hh = 0, hs = 0;
+    for (let t = 0; t < 20; t += 0.05) { h.x = o.x - 150; w.step(0.05, { dx: 0, dy: 0 }); for (const e of w.drainEvents()) if (e.type === 'damage' && e.source === o.uid) { if (e.target === h.uid) hh++; else if (e.target === sm.uid) hs++; } }
+    ok(!w.summonAggro(o) && hh > 0, `主角贴身（≤${WORLD.summonAggroNear}px）不强制转移：主角仍会被打（主角 ${hh} / 召唤物 ${hs}）`); }
+  { const { w, h, o } = setup(); run(w, 2); h.x = o.x - WORLD.leashRange - 200; w.step(0.05, { dx: 0, dy: 0 }); ok(o.ai === 'return', '脱战仍按主角距离判定（> 6 卡宽回位）'); }
+}
+{ // 治愈术：主角未满血治主角；满血治 170px 内最残召唤物；都满不施放（不耗蓝、不占公共间隔）
+  const w = mk([{ id: 'orc', x: 3000 }], [], 'taoist', 30); const h = w.hero!; w.cast(idx(w, 'summon_skeleton'), free(w)); const sm = w.summon!; sm.x = h.x + 100;
+  const hi = idx(w, 'heal'); h.mp = h.maxMp = 9999;
+  h.hp = h.maxHp - 50; sm.hp = 10; let cds = free(w); ok(w.cast(hi, cds).ok, '主角未满血：治愈术可施放'); run(w, 3); ok(h.hp === h.maxHp && sm.hp === 10, '主角未满血优先治主角（召唤物不回血）');
+  h.hp = h.maxHp; sm.hp = 10; cds = free(w); const mp0 = h.mp; ok(w.cast(hi, cds).ok, '主角满血：治愈术施放到召唤物'); run(w, 3); ok(sm.hp > 10 && h.mp < mp0, `召唤物回血 10→${Math.round(sm.hp)}`);
+  h.hp = h.maxHp; sm.hp = 10; sm.x = h.x + 400; cds = free(w); const r0 = w.cast(hi, cds) as any; ok(!r0.ok, '召唤物超出 170px：不施放');
+  sm.x = h.x + 100; sm.hp = sm.maxHp; h.hp = h.maxHp; cds = free(w); const mp1 = h.mp; const r = w.cast(hi, cds) as any;
+  ok(!r.ok && r.reason === '主角与召唤物生命已满' && h.mp === mp1 && Math.max(...cds) === 0, '都满血：不施放、不耗蓝、不占公共间隔');
+}
+{ // 召唤物等级 [适配]：初始=技能等级(≤3)；主角+召唤物总击杀累计阈值升级，最高 7；名字带等级、蓝色逐级加深；重新召唤从初始等级重启
+  const w = mk([{ id: 'orc', x: 3000 }], [], 'taoist', 30); const h = w.hero!; h.mp = h.maxMp = 9999;
+  const k = idx(w, 'summon_skeleton'); w.cast(k, free(w)); const sm = w.summon!; const L0 = sm.sLv!;
+  ok(L0 === Math.min(3, w.skillLevel(w.skills[k])) && sm.name === `骷髅·${L0}级` && sm.nameColor === SUMMON_NAME_COLORS[L0], `初始等级=技能等级（${L0}），名字「${sm.name}」颜色 ${sm.nameColor}`);
+  const hp0 = sm.maxHp, atk0 = sm.atk; const colors = [sm.nameColor];
+  for (let i = 0; i < 300; i++) { const e = w.spawn({ ...w.alive('enemy')[0] } as any, 'enemy', 2000, 0); w.kill(e); if (colors[colors.length - 1] !== sm.nameColor) colors.push(sm.nameColor); }
+  ok(sm.sLv === SUMMON_MAX_LV && sm.name === '骷髅·7级', `击杀 300 → 7 级封顶（${sm.name}）`);
+  ok(sm.maxHp === Math.round(hp0 * 480 / SKELETON_OFFICIAL.hp[L0]) && sm.atk > atk0, `7 级属性按官方比例：HP ${hp0}→${sm.maxHp}，攻击 ${atk0}→${sm.atk}`);
+  ok(colors.length === 8 - L0 && new Set(colors).size === colors.length, `每升一级换色：${colors.join(' ')}`);
+  w.kill(sm); w.cast(k, free(w)); const s2 = w.summon!; ok(s2.sLv === L0 && s2.sKills === 0, '重新召唤从技能等级对应初始等级重启（不继承 7 级）');
+  const w0 = mk([{ id: 'orc', x: 3000 }], [], 'taoist', 30); w0.skillTrain.summon_skeleton = 0; w0.cast(idx(w0, 'summon_skeleton'), free(w0)); const z = w0.summon!;
+  for (let i = 0; i < 9; i++) w0.kill(w0.spawn({ ...w0.alive('enemy')[0] } as any, 'enemy', 2000, 0)); const a = z.sLv; w0.kill(w0.spawn({ ...w0.alive('enemy')[0] } as any, 'enemy', 2000, 0));
+  ok(z.sBase!.start === 0 && a === 0 && z.sLv === 1, `技能 0 级召出 0 级（白名），召出后第 10 次击杀升 1 级（${a}→${z.sLv}）`);
+  for (const n of [1, 2, 3]) { const wn = mk([{ id: 'orc', x: 3000 }], [], 'taoist', 30); (wn as any).skillLevel = () => n; const kk = idx(wn, 'summon_skeleton');
+    wn.cast(kk, free(wn)); const x = wn.summon!; ok(x.sLv === n && x.name === `骷髅·${n}级`, `技能 ${n} 级 → 召出 ${n} 级`);
+    for (let i = 0; i < 300; i++) wn.kill(wn.spawn({ ...wn.alive('enemy')[0] } as any, 'enemy', 2000, 0)); ok(x.sLv === 7, `技能 ${n} 级召出后按总击杀成长到 7 级`);
+    wn.kill(x); wn.cast(kk, free(wn)); ok(wn.summon!.sLv === n && wn.summon!.sKills === 0, `重新召唤重置为技能等级 ${n}（不继承 7 级）`); }
+  ok(!('sLv' in (w.toSave() as any)) && !JSON.stringify(w.toSave()).includes('sKills'), '召唤物等级/击杀不存档');
+}
+{ // 自动施毒：跳过已中毒的怪；全部中毒则不施放（不耗蓝、不占公共间隔）；手动不受限
+  const w = mk([{ id: 'orc', x: 1300 }, { id: 'orc', x: 1500 }], [], 'taoist', 30); tough(w); const h = w.hero!; h.x = 1000; h.mp = h.maxMp = 9999;
+  const p = idx(w, 'poison'), [a, b] = w.alive('enemy').sort((x, y) => x.x - y.x);
+  let cds = free(w); let r = w.cast(p, cds, { auto: true }); ok(r.ok && (a.poisonUntil ?? 0) > w.time, '自动施毒：先毒最近的未中毒怪');
+  cds = free(w); r = w.cast(p, cds, { auto: true }); ok(r.ok && (b.poisonUntil ?? 0) > w.time, '自动施毒：跳过已中毒的怪，毒下一只');
+  cds = free(w); const mp0 = h.mp; const r2 = w.cast(p, cds, { auto: true }) as any;
+  ok(!r2.ok && r2.reason === '射程内敌人均已中毒' && h.mp === mp0 && Math.max(...cds) === 0, '全部已中毒：自动不施放、不耗蓝、不占公共间隔');
+  cds = free(w); ok(w.cast(p, cds).ok && h.mp < mp0, '手动施毒不受限（可重复施放）');
+}
 { // 平衡：多种子自动脚本（单种子对随机序列太敏感，任何改动 RNG 消耗顺序的提交都会让结果漂移）
   const SEEDS = [3, 7, 11, 19, 23, 42, 57, 88, 101];
   const NEW_BOOKS = ['big_fireball', 'burst_fire', 'hell_fire', 'lightning_flash', 'hell_thunder', 'ghost_shield', 'holy_armor', 'mass_heal'];
@@ -273,6 +326,7 @@ const free = (w: World) => w.skills.map(() => 0);
       if (h.hp < h.maxHp * 0.4 && w.usePotion(w.pots[1] > 0 ? 1 : 0)) potUsed++;
       if ((h.mp ?? 0) < 40) w.usePotion(w.pots[3] > 0 ? 3 : 2);
       for (let i = 0; i < w.skills.length; i++) { if (w.skills[i].id === 'charm' && !w.charmAutoOk()) continue; w.cast(i, cds); }
+      for (let i = 0; i < w.skills.length; i++) w.cast(i, cds, { auto: true }); // 模拟 = 自动施法（施毒跳过已中毒）
       for (let i = w.bag.length - 1; i >= 0; i--) { const it = w.bag[i]; if (it.slot && it.req <= w.level && !w.equip[w.targetSlot(it)!]) w.equipItem(i); }
       // 黑铁：模拟脚本卖掉（避免碎装干扰难度基线；玩家可手动强化）
       for (let i = w.bag.length - 1; i >= 0; i--) if (w.bag[i]?.item === 'black_iron') w.sellItem(i);
@@ -444,6 +498,12 @@ const free = (w: World) => w.skills.map(() => 0);
   const w20 = mk([{ id: 'orc', x: 900 }], [], 'taoist', 20); w20.hero!.mp = 9999;
   w20.cast(idx(w20, 'summon_skeleton'), free(w20));
   ok(w20.summon!.maxHp > w.summon!.maxHp, `高等级骷髅更强（${w.summon!.maxHp} → ${w20.summon!.maxHp}）`);
+  { // 加强骷髅：官方成长比例（HP 60/84/120/168，攻击上限 25/26/28/30.4）
+    const hpAt = (L: number) => { const x = new World(seeded(1), 30, FLOORS, 'taoist'); learnAll(x); const sk = pool(x, 'summon_skeleton'); x.skillLevel = (s: any) => s.id === sk.id ? L : World.prototype.skillLevel.call(x, s); x.cast(idx(x, 'summon_skeleton'), free(x)); return x.summon!; };
+    const s0 = hpAt(0), s3 = hpAt(3), tao = new World(seeded(1), 30, FLOORS, 'taoist').hero!.tao ?? 0;
+    ok(Math.abs(s3.maxHp / s0.maxHp - 168 / 60) < 0.01 && s3.atk === Math.round((10 + tao) * 30.4 / 25), `骷髅 3 级 HP=0 级×2.8（${s0.maxHp}→${s3.maxHp}），攻击按官方上限比例（${s0.atk}→${s3.atk}）`);
+    ok(s3.maxHp > Math.round((140 + tao * 5) * 1.3) && s3.atk > Math.round((8 + tao * 0.9) * 1.3), '3 级骷髅比改前（×1.3）更强');
+  }
 }
 { // 自动普攻开关：autoAttack=false 时贴脸不打
   const w = mk([{ id: 'zombie', x: 600 }], [], 'warrior', 10); tough(w);

@@ -25,6 +25,10 @@ export interface Unit extends UnitDef {
   alive: boolean; isHero?: boolean; summon?: boolean;
   /** 诱惑之光宠物（summon=true 且 pet=true）；petUntil = 叛变时间。不存档 */
   pet?: boolean; petUntil?: number;
+  /** 召唤物仇恨：被召唤物打过一次后记录其 uid；主角离怪 > WORLD.summonAggroNear 时只追打该召唤物（召唤物死亡自动失效） */
+  aggroUid?: number;
+  /** 召唤物等级 0–7（[适配] 官方 宝宝 7 级）、本只召唤物期间主角+召唤物总击杀、成长基准（初始属性与初始等级）、名字颜色；均不存档 */
+  sLv?: number; sKills?: number; sBase?: { hp: number; atk: number; start: number; name: string }; nameColor?: string;
   armorUntil?: number; armorReduce?: number;
   /** #12 幽灵盾（魔御）/神圣战甲术（防御）增益，不存档 */
   mdefUpUntil?: number; mdefUp?: number; defUpUntil?: number; defUp?: number;
