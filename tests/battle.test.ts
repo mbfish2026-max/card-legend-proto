@@ -997,4 +997,18 @@ console.log('# 诱惑之光');
   ok(w.bag.length === 200 && w.ground.some(g => g.item === 'wood_sword') && w.drainEvents().some(e => e.type === 'log' && /满/.test((e as any).text)), '满包拾取提示且物品留在地上');
   ok(w.sellItem(0) > 0 && w.bag.length === 199, '满包可出售');
 }
+// 画质/分辨率（feat/hd-resolution）
+{
+  const { resolveResK, RES_OPTIONS, isResId, hdFixed, Render, toLogic } = await import('../src/render');
+  ok(RES_OPTIONS.map(r => r.k).join() === '1,1.5,2', '三档 720p/1080p/2K 倍率 1/1.5/2');
+  ok(resolveResK('720', 3, 844, 390, true) === 1 && resolveResK('1440', 1, 1280, 720, false) === 2, '手动档位优先');
+  ok(resolveResK('auto', 1, 1280, 720, false) === 1, '自动：1x 屏 1280 宽 → 720p');
+  ok(resolveResK('auto', 2, 1280, 720, false) === 2, '自动：2x 屏 → 2K');
+  ok(resolveResK('auto', 1, 1920, 1080, false) === 1.5, '自动：1080p 显示器 → 1080p');
+  ok(resolveResK('auto', 3, 844, 390, true) === 1.5, '自动：手机最高 1080p');
+  ok(resolveResK(undefined, 1, 1280, 720, false) === 1 && resolveResK('bogus', 1, 1280, 720, false) === 1, '旧设置无 res/非法值 → 自动');
+  ok(isResId('auto') && isResId('1080') && !isResId('4k') && !isResId(null), 'isResId 校验');
+  Render.k = 2; const o = hdFixed({ x: 0, y: 0 }); ok(o.x === 640 && o.y === 360 && toLogic(1280) === 640, 'k=2 屏幕固定物体平移/坐标换算');
+  Render.k = 1; const o1 = hdFixed({ x: 5, y: 6 }); ok(o1.x === 5 && o1.y === 6, 'k=1 不变');
+}
 console.log(`全部通过 ${pass} 项`);
