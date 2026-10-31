@@ -4,14 +4,26 @@
  * - mori 末日审判：持续掉血期间法阵循环段（fx_combo_mori 帧 8–11）跟随目标
  * - pixing 劈星斩：麻痹期间目标头顶「麻痹」标记 + 电弧（fx_combo_pixing 帧 6–9）；BOSS 免疫麻痹 → World 不放进 affected → 不显示
  * 状态结束 / 目标全部死亡或离场 → 立即 destroy 句柄。只读 Unit 状态字段，不改任何战斗数值。
+ * 素材（特效 Bot fx/combo-loop）：优先专用 loopKey（fx_combo_shihun_loop / fx_combo_mori_loop / fx_combo_pixing_stun），结束播 endKey 一次；
+ * 缺专用素材 → 回退起手图集帧区间往返（动画 key 用 cs_fallback_<id>，避免与素材同名 key 冲突）→ 再缺 → Graphics。
  */
 export type ComboStatusField = 'poisonUntil' | 'stunUntil';
-export interface ComboStatusDef { field: ComboStatusField; /** 起手段播放多久后才接循环段（秒） */ introSec: number; kind: 'loop' | 'mark'; loopFrames?: [number, number] }
+export interface ComboStatusDef { field: ComboStatusField; /** 起手段播放多久后才接循环段（秒） */ introSec: number; kind: 'loop' | 'mark'; loopFrames?: [number, number]; loopKey?: string; endKey?: string; icon?: string }
 export const COMBO_STATUS: Record<string, ComboStatusDef> = {
-  shihun: { field: 'poisonUntil', introSec: 0.4, kind: 'loop', loopFrames: [8, 11] },
-  mori: { field: 'poisonUntil', introSec: 0.4, kind: 'loop', loopFrames: [8, 11] },
-  pixing: { field: 'stunUntil', introSec: 0, kind: 'mark', loopFrames: [6, 9] },
+  shihun: { field: 'poisonUntil', introSec: 0.4, kind: 'loop', loopFrames: [8, 11], loopKey: 'fx_combo_shihun_loop', endKey: 'fx_combo_shihun_end' },
+  mori: { field: 'poisonUntil', introSec: 0.4, kind: 'loop', loopFrames: [8, 11], loopKey: 'fx_combo_mori_loop', endKey: 'fx_combo_mori_end' },
+  pixing: { field: 'stunUntil', introSec: 0, kind: 'mark', loopFrames: [6, 9], loopKey: 'fx_combo_pixing_stun', icon: 'icon_status_stun' },
 };
+/** 回退动画 key：不得与任何素材/FX_DEFS key 同名（旧实现用 fx_combo_<id>_loop，与新素材 key 冲突） */
+export const fallbackAnimKey = (id: string) => 'cs_fallback_' + id;
+export interface ComboStatusPlan { loop: { tex: string; anim: string; fallback: boolean } | null; end: string | null; icon: string | null }
+/** 按现有贴图决定表现方案（纯函数，可无头测）；has(key) = 贴图已加载 */
+export function comboStatusPlan(id: string, has: (k: string) => boolean): ComboStatusPlan {
+  const d = COMBO_STATUS[id], base = 'fx_combo_' + id;
+  const loop = d.loopKey && has(d.loopKey) ? { tex: d.loopKey, anim: d.loopKey, fallback: false }
+    : d.loopFrames && has(base) ? { tex: base, anim: fallbackAnimKey(id), fallback: true } : null;
+  return { loop, end: d.endKey && has(d.endKey) ? d.endKey : null, icon: d.icon && has(d.icon) ? d.icon : null };
+}
 export interface StatusUnit { uid: number; alive: boolean; poisonUntil?: number; stunUntil?: number }
 export interface StatusHandle { update(u: StatusUnit): void; destroy(): void }
 interface Entry { id: string; uids: number[]; until: number; showAt: number; handle: StatusHandle | null }

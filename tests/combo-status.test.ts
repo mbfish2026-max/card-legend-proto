@@ -2,7 +2,10 @@
 import { World } from '../src/combat/World';
 import { ENEMIES } from '../src/data/units';
 import { comboFor, RAGE_MAX, COMBO_EFFECTS } from '../src/data/companion';
-import { ComboStatusTracker, StatusUnit } from '../src/ui/comboStatus';
+import { ComboStatusTracker, StatusUnit, comboStatusPlan, fallbackAnimKey, COMBO_STATUS } from '../src/ui/comboStatus';
+import { ASSETS as MANIFEST } from '../src/assets-manifest';
+import { existsSync, readFileSync } from 'node:fs';
+const FX_SRC = readFileSync('src/ui/FxPlayer.ts', 'utf8'); const FX_DEFS: Record<string, true> = Object.fromEntries([...FX_SRC.matchAll(/^\s+(fx_\w+): D\(/gm)].map(m => [m[1], true])); // FxPlayer 依赖 Phaser，无头只解析源码键名
 import type { InvItem } from '../src/combat/types';
 let pass = 0; const ok = (c: boolean, m: string) => { if (!c) { console.error('FAIL', m); throw new Error(m); } pass++; console.log('ok', m); };
 const seeded = (s: number) => () => (s = (s * 16807) % 2147483647) / 2147483647;
@@ -58,4 +61,16 @@ for (const [mc, hc, id, dur] of [['taoist', 'taoist', 'shihun', 10], ['mage', 't
   ok(!!r.combo && f.t.size === 0 && f.made === 0, 'pixing 打 BOSS：免疫麻痹，不建麻痹标记');
 }
 ok(COMBO_EFFECTS.shihun!.poison!.dur === 10 && COMBO_EFFECTS.mori!.poison!.dur === 8 && COMBO_EFFECTS.pixing!.stun === 3, '数值未改：中毒 10s / 掉血 8s / 麻痹 3s');
+{ // 素材接入方案：专用 loop/end/stun/icon 优先；缺图逐级回退；回退动画 key 不与素材 key 冲突
+  const all = (k: string) => true, none = (k: string) => false, baseOnly = (k: string) => /^fx_combo_(shihun|mori|pixing)$/.test(k);
+  for (const id of ['shihun', 'mori']) {
+    const p = comboStatusPlan(id, all); ok(p.loop?.anim === `fx_combo_${id}_loop` && !p.loop.fallback && p.end === `fx_combo_${id}_end`, `${id}：有素材 → _loop 循环 + _end 收尾`);
+    const q = comboStatusPlan(id, baseOnly); ok(q.loop?.fallback === true && q.loop.tex === `fx_combo_${id}` && q.end === null, `${id}：缺 _loop/_end → 回退起手帧往返，不播收尾`);
+  }
+  const px = comboStatusPlan('pixing', all); ok(px.loop?.tex === 'fx_combo_pixing_stun' && px.icon === 'icon_status_stun' && px.end === null, 'pixing：有素材 → pixing_stun + 图标');
+  const pn = comboStatusPlan('pixing', none); ok(pn.loop === null && pn.icon === null, 'pixing：全缺 → Graphics/文字回退');
+  for (const id of Object.keys(COMBO_STATUS)) { const k = fallbackAnimKey(id); ok(!FX_DEFS[k] && !(k in MANIFEST) && !existsSync(`public/assets/fx/${k}.png`), `回退动画 key ${k} 不与素材 key 重名`); }
+  for (const d of Object.values(COMBO_STATUS)) for (const k of [d.loopKey, d.endKey].filter(Boolean) as string[]) ok(!!FX_DEFS[k] && existsSync(`public/assets/fx/${k}.png`) && existsSync(`public/assets/fx/${k}.json`), `素材在库且已注册：${k}`);
+  ok((MANIFEST as any).icon_status_stun && existsSync('public/assets/ui/icon_status_stun.png'), '素材在库且已注册：icon_status_stun');
+}
 console.log(`combo-status: ${pass} passed`);
