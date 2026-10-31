@@ -1395,7 +1395,8 @@ export class World {
       if (b.tier !== 'boss' || b.ai !== 'chase' || b.pet) continue;
       const m = b.boss ??= { stage: 0, dazeUntil: 0, crazyUntil: 0, crazyOn: false, flyT: 0, summonT: 0, spikeT: OFFICIAL.spikeEvery, minions: [] };
       const half = b.hp <= b.maxHp * WORLD.bossEnrageAt, official = BOSS_MECH.has(b.id);
-      if (half && !m.enraged && b.id !== 'boss_woma') {
+      const ea = this.floors !== FLOORS || WORLD.bossMainEnrageAoe; // 主线默认关（9 种子：开 0.15/0.08 战士中位 9→18）
+      if (ea && half && !m.enraged && b.id !== 'boss_woma') {
         m.enraged = true; m.enrageUntil = this.time + WORLD.bossEnrageSec;
         this.events.push({ type: 'bossfx', uid: b.uid, kind: 'enrage', x: b.x }, { type: 'log', text: `${b.name}狂暴了！攻击 +30%（8 秒）` });
       }
@@ -1409,6 +1410,7 @@ export class World {
           this.events.push({ type: 'summon', uid: u.uid }, { type: 'bossfx', uid: b.uid, kind: 'call', x: u.x }, { type: 'log', text: `${b.name}召唤了${base.name}` });
         }
       }
+      if (!ea) continue;
       if (m.aoeX === undefined) {
         m.aoeT = (m.aoeT ?? WORLD.bossAoeEvery) - dt;
         if (m.aoeT <= 0) { m.aoeX = h.x; m.aoeAt = this.time + WORLD.bossAoeWarn; m.aoeT = WORLD.bossAoeEvery; this.events.push({ type: 'bossfx', uid: b.uid, kind: 'aoe_warn', x: h.x }, { type: 'log', text: `${b.name}正在蓄力范围攻击，快走开！` }); }
