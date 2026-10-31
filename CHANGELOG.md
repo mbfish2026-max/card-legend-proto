@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## feat/multi-save
+- 多存档位（默认 5，可配 5–10）：选择/新建/删除（二次确认）/改名，显示职业·等级·层数·最后游玩·游玩时长；旧档即槽 1 并写备份键（不覆盖已有备份）；设置全局；游戏内设置加「切换存档」。详见 docs/multi-save.md。
+
 ## feat/towns
 - 盟重土城/白日门/封魔谷/苍月岛接入长街美术与 NPC/店铺摆位（TOWN_LAYOUT），龙人 x=5300，封魔谷/苍月岛用换色门面；装饰店不可进入；进店取最近门；城镇美术登记 assets-manifest 并懒加载。
 - 新增 tests/towns.test.ts、tests/e2e/towns-shots.mjs。

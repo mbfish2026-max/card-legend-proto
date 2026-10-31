@@ -499,7 +499,7 @@ export class Panel {
     const w = this.world();
     renderSettingsView(this.s, R, top, {
       cls: w.cls, learned: w.learned, rerender: () => this.render(),
-      footer: [{ label: '保存并返回标题', w: 200, fn: () => { this.close(); this.onTitle(); } }, { label: '继续游戏', w: 160, fn: () => this.close() }],
+      footer: [{ label: '保存并返回标题', w: 180, fn: () => { this.close(); this.onTitle(); } }, { label: '切换存档', w: 140, fn: () => { this.close(); this.s.game.registry.set('openSlots', true); this.onTitle(); } }, { label: '继续游戏', w: 140, fn: () => this.close() }],
     });
   }
   showTip(it: InvItem, x: number, y: number, touch = false) {
