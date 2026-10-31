@@ -97,9 +97,20 @@ export const CLASSES: Record<ClassId, ClassDef> = {
  */
 export const CAST_GAP = 0.8;
 export const COOLDOWN_BEFORE: Record<string, number> = {};
-for (const c of Object.values(CLASSES)) for (const s of c.skills) { COOLDOWN_BEFORE[s.id] = s.cooldown; if (!s.passive) s.cooldown = CAST_GAP; }
+/**
+ * 轻量冷却（feat/skill-cd-light，用户：「稍微增加一点点冷却」）：取消冷却后自动施放被首个技能占满，给每个主动技能 1.5–6s 短冷却 [适配]。
+ * 依据：原 [适配] 冷却（COOLDOWN_BEFORE）按约一半压缩并夹到 1.5–6s；召唤/盾类按持续/语义取上限 6s。官方「延迟」单位 未查到，不换算。
+ * 公共施法间隔 CAST_GAP 0.8s 保留（任一技能施放后所有技能 ≥0.8s）。CD_BEFORE_LIGHT = 本次改前值（即 0.8s 公共间隔）。
+ */
+export const SKILL_CD: Record<string, number> = {
+  thrust: 1.5, half_moon: 2, rush: 4, fire_sword: 4,
+  fireball: 1.5, thunder: 2.5, fire_wall: 5, magic_shield: 6, ice_roar: 4, big_fireball: 2, burst_fire: 3, hell_fire: 2, lightning_flash: 3, hell_thunder: 4, charm: 2,
+  heal: 2, poison: 2, soul_fire: 1.5, summon_skeleton: 6, summon_beast: 6, ghost_shield: 6, holy_armor: 6, mass_heal: 3,
+};
+export const CD_BEFORE_LIGHT: Record<string, number> = {};
+for (const c of Object.values(CLASSES)) for (const s of c.skills) { COOLDOWN_BEFORE[s.id] = s.cooldown; if (!s.passive) { CD_BEFORE_LIGHT[s.id] = CAST_GAP; s.cooldown = SKILL_CD[s.id] ?? 2; } }
 /** 取消冷却后的再平衡 [适配]：法/道 主动技能 耗魔×mana、倍率×mult（9 种子模拟调参；战士不动）。改前值见 MANA_BEFORE/MULT_BEFORE */
-export const REBALANCE = { mage: { mana: 1.5, mult: 0.56 }, taoist: { mana: 1.35, mult: 1 } } as const;
+export const REBALANCE = { mage: { mana: 1.5, mult: 0.85 }, taoist: { mana: 1.9, mult: 1 } } as const;
 export const MANA_BEFORE: Record<string, number> = {}, MULT_BEFORE: Record<string, number> = {};
 for (const c of ['mage', 'taoist'] as const) for (const s of CLASSES[c].skills) if (!s.passive) {
   MANA_BEFORE[s.id] = s.mana; if (s.mult) MULT_BEFORE[s.id] = s.mult;

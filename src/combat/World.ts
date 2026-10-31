@@ -739,6 +739,18 @@ export class World {
   /** buff 持续秒数（#12 幽灵盾/神甲按道术；其余沿用 duration + durPerLv×等级） */
   buffDuration(s: SkillDef) { const slv = Math.max(0, this.skillLevel(s)); return s.buffStat ? taoBuffDur(slv, this.hero?.tao ?? 0) : (s.duration ?? 8) + (s.durPerLv ?? 0) * slv; }
   // ---------- 技能 ----------
+  /** 自动施放轮转（feat/skill-cd-light）：从上次自动施放技能 last 的下一项开始扫描 list，冷却中/不满足条件（召唤物已存在、已中毒、诱惑门槛等）跳过，施放第一个成功的 */
+  autoCast(list: string[], cds: number[], last = ''): { id: string; r: Extract<CastResult, { ok: true }> } | null {
+    const st = Math.max(0, list.indexOf(last) + 1);
+    for (let n = 0; n < list.length; n++) {
+      const id = list[(st + n) % list.length], si = this.skills.findIndex(s => s.id === id);
+      if (si < 0 || cds[si] > 0) continue;
+      if (id === 'charm' && !this.charmAutoOk()) continue;
+      const r = this.cast(si, cds, { auto: true });
+      if (r.ok) return { id, r };
+    }
+    return null;
+  }
   /** opts.auto：自动施法（施毒术跳过已中毒的怪，无未中毒目标则不施放）；手动释放不受限 */
   cast(i: number, cds: number[], opts: { auto?: boolean } = {}): CastResult {
     const s = this.skills[i], h = this.hero;
@@ -747,7 +759,7 @@ export class World {
     if (this.level < need) return { ok: false, reason: `${s.name} 需等级 ${need}` };
     if (s.passive) return { ok: false, reason: `${s.name} 为被动技能` };
     const slv = Math.max(0, this.skillLevel(s)), lvF = 1 + 0.1 * slv;
-    if (cds[i] > 0) return { ok: false, reason: `${s.name} 冷却中` };
+    if (cds[i] > 0) return { ok: false, reason: `${s.name} 冷却中（${cds[i].toFixed(1)}s）` };
     if ((h.mp ?? 0) < s.mana) return { ok: false, reason: '魔法值不足' };
     if (s.kind === 'summon' && opts.auto) {
       const ex = this.summon;
@@ -802,7 +814,7 @@ export class World {
       }
     }
     if (s.area) targets = [h, ...this.units.filter(u => u.summon && u.alive && Math.abs(u.x - h.x) <= s.area!)];
-    h.mp = (h.mp ?? 0) - s.mana; for (let j = 0; j < cds.length; j++) cds[j] = Math.max(cds[j], CAST_GAP); cds[i] = Math.max(cds[i], s.cooldown); // 公共施法间隔（取消冷却）
+    h.mp = (h.mp ?? 0) - s.mana; for (let j = 0; j < cds.length; j++) cds[j] = Math.max(cds[j], CAST_GAP); cds[i] = Math.max(cds[i], s.cooldown); // 公共施法间隔 0.8s + 本技能轻量冷却（手动/自动共用）
     this.events.push({ type: 'attack', source: h.uid, target: targets[0]?.uid ?? h.uid, skill: s.id });
     this.addTrain(s, 100);
     const pw = this.power(s.stat) * this.skillScale() * (s.lvMult ? 1 : lvF);
