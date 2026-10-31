@@ -1,0 +1,223 @@
+{
+ "frames": {
+  "fx_fire_wall_loop_00": {
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 192,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 192,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 192,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9167
+   }
+  },
+  "fx_fire_wall_loop_01": {
+   "frame": {
+    "x": 192,
+    "y": 0,
+    "w": 192,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 192,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 192,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9167
+   }
+  },
+  "fx_fire_wall_loop_02": {
+   "frame": {
+    "x": 384,
+    "y": 0,
+    "w": 192,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 192,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 192,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9167
+   }
+  },
+  "fx_fire_wall_loop_03": {
+   "frame": {
+    "x": 576,
+    "y": 0,
+    "w": 192,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 192,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 192,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9167
+   }
+  },
+  "fx_fire_wall_loop_04": {
+   "frame": {
+    "x": 768,
+    "y": 0,
+    "w": 192,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 192,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 192,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9167
+   }
+  },
+  "fx_fire_wall_loop_05": {
+   "frame": {
+    "x": 0,
+    "y": 192,
+    "w": 192,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 192,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 192,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9167
+   }
+  },
+  "fx_fire_wall_loop_06": {
+   "frame": {
+    "x": 192,
+    "y": 192,
+    "w": 192,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 192,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 192,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9167
+   }
+  },
+  "fx_fire_wall_loop_07": {
+   "frame": {
+    "x": 384,
+    "y": 192,
+    "w": 192,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 192,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 192,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.9167
+   }
+  }
+ },
+ "meta": {
+  "app": "card-legend fx proc (python numpy/Pillow)",
+  "image": "fx_fire_wall_loop.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 960,
+   "h": 384
+  },
+  "scale": "1",
+  "fx": {
+   "w": 192,
+   "h": 192,
+   "n": 8,
+   "fps": 16,
+   "loop": true,
+   "pivot": [
+    96,
+    176
+   ],
+   "anchor": "ground",
+   "skill": "fire_wall",
+   "phase": "loop",
+   "blend": "ADD",
+   "ms": 500,
+   "cols": 5
+  }
+ }
+}

@@ -72,7 +72,7 @@ export class World {
   /** [适配] 修炼点获得：施放 +100，被动 +10（原版获得量未查到） */
   addTrain(s: SkillDef, n: number) {
     const before = this.skillLevel(s); this.skillTrain[s.id] = Math.min((this.skillTrain[s.id] ?? 0) + n, s.train?.[2] ?? 0);
-    const after = this.skillLevel(s); if (after > before) this.events.push({ type: 'log', text: `${s.name} 修炼到 ${after} 级` });
+    const after = this.skillLevel(s); if (after > before) { this.events.push({ type: 'log', text: `${s.name} 修炼到 ${after} 级` }); if (s.passive && this.hero) this.events.push({ type: 'proc', skill: s.id, target: this.hero.uid }); }
   }
   constructor(public rng: () => number = Math.random, public level = 1, public floors: Floor[] = FLOORS, public cls: ClassId = 'warrior', save?: SaveData) {
     if (save) {
@@ -741,7 +741,7 @@ export class World {
           const lv = this.skillLevel(sl); if (lv < 0) continue;
           if (sl.lvBonus && sl.lvChance) {
             this.addTrain(sl, 10);
-            if (this.lootRng() < sl.lvChance[lv]) { dmg += sl.lvBonus[lv]; this.events.push({ type: 'log', text: `${sl.name} +${sl.lvBonus[lv]}` }); }
+            if (this.lootRng() < sl.lvChance[lv]) { dmg += sl.lvBonus[lv]; this.events.push({ type: 'log', text: `${sl.name} +${sl.lvBonus[lv]}` }, { type: 'proc', skill: sl.id, target: f.uid }); }
           } else if (sl.accBonus) this.addTrain(sl, 10);
         }
         this.damage(f, dmg, h);

@@ -5,6 +5,7 @@ import { CLASSES } from './data/classes';
 import { ITEMS } from './data/items';
 import { ENEMIES } from './data/units';
 import { FLOORS, Floor } from './data/world';
+import { fxLoadOrder, fxUrl } from './ui/FxPlayer';
 
 /** 生产构建：大图（立绘/背景/地图）在构建期压成 webp（vite.config 插件），原 PNG/JPG 仍保留在 public/ */
 const OPT = typeof import.meta !== 'undefined' && !!(import.meta as any).env?.PROD;
@@ -53,6 +54,9 @@ export class PreloadScene extends Phaser.Scene {
     // 每批 4 张，避免与当前层抢带宽
     const batch = order.filter(k => ASSETS[k] && !this.textures.exists(k)).slice(0, 4);
     if (batch.length) { queueImages(this.load, this.textures, batch); this.load.once('complete', () => this.pump()); this.load.start(); return; }
+    // R12 技能特效图集：图片之后、音乐之前；本职业已学技能优先（registry 由 BattleScene 写入）
+    const fx = fxLoadOrder(this.registry.get('fxCls') ?? '', this.registry.get('fxLearned') ?? []).filter(k => !this.textures.exists(k)).slice(0, 4);
+    if (fx.length) { for (const k of fx) this.load.atlas(k, ...fxUrl(k)); this.load.once('complete', () => this.pump()); this.load.start(); return; }
     let m = 0; for (const [id, p] of Object.entries(MUSIC)) if (!this.cache.audio.exists('bgm_' + id)) { this.load.audio('bgm_' + id, p); m++; }
     if (m) { this.load.once('complete', () => this.game.events.emit('music-ready')); this.load.start(); }
   }

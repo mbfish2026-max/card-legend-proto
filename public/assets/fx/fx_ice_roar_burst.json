@@ -1,0 +1,271 @@
+{
+ "frames": {
+  "fx_ice_roar_burst_00": {
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   }
+  },
+  "fx_ice_roar_burst_01": {
+   "frame": {
+    "x": 256,
+    "y": 0,
+    "w": 256,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   }
+  },
+  "fx_ice_roar_burst_02": {
+   "frame": {
+    "x": 512,
+    "y": 0,
+    "w": 256,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   }
+  },
+  "fx_ice_roar_burst_03": {
+   "frame": {
+    "x": 768,
+    "y": 0,
+    "w": 256,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   }
+  },
+  "fx_ice_roar_burst_04": {
+   "frame": {
+    "x": 0,
+    "y": 192,
+    "w": 256,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   }
+  },
+  "fx_ice_roar_burst_05": {
+   "frame": {
+    "x": 256,
+    "y": 192,
+    "w": 256,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   }
+  },
+  "fx_ice_roar_burst_06": {
+   "frame": {
+    "x": 512,
+    "y": 192,
+    "w": 256,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   }
+  },
+  "fx_ice_roar_burst_07": {
+   "frame": {
+    "x": 768,
+    "y": 192,
+    "w": 256,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   }
+  },
+  "fx_ice_roar_burst_08": {
+   "frame": {
+    "x": 0,
+    "y": 384,
+    "w": 256,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   }
+  },
+  "fx_ice_roar_burst_09": {
+   "frame": {
+    "x": 256,
+    "y": 384,
+    "w": 256,
+    "h": 192
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 192
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 192
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.875
+   }
+  }
+ },
+ "meta": {
+  "app": "card-legend fx proc (python numpy/Pillow)",
+  "image": "fx_ice_roar_burst.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 1024,
+   "h": 576
+  },
+  "scale": "1",
+  "fx": {
+   "w": 256,
+   "h": 192,
+   "n": 10,
+   "fps": 20,
+   "loop": false,
+   "pivot": [
+    128,
+    168
+   ],
+   "anchor": "ground",
+   "skill": "ice_roar",
+   "phase": "hit",
+   "blend": "NORMAL",
+   "ms": 500,
+   "cols": 4
+  }
+ }
+}

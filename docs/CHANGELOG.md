@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## R12 技能攻击特效（FX v2 接入）
+- 新增 src/ui/FxPlayer.ts：配置驱动 FX_DEFS（fps/loop/blend/depth/scale），26 个 v2 图集，JSON anchor 直接作 pivot（浏览器验证 origin=pivot）。
+- 命中/雷电 1×；混合模式按 MANIFEST（ice_roar/rush_dash/poison_loop/soul_fire_fly/召唤阵 NORMAL）；职业刀光着色；depth 一次性 55–60、火墙 30、召唤阵 9、护盾 11。
+- 冰咆哮对 420 范围内每个目标各播一次；被动升级与刺杀触发 passive_glint/slaying_proc。
+- 后台按需加载（已学技能优先，每批 4 个）；低画质限 10 个 sprite 并跳过装饰特效；缺资源回退 Graphics 简易特效。
+- 截图：screenshots/r12/。
+
 ## R11 — 初始单技能 + 技能书 + 原版地图递进（2026-10-31）
 - 新角色只会 1 个技能（战士 基本剑术〔被动〕/ 法师 火球术 / 道士 治愈术），其余技能靠技能书学习；学会后才出现在 F 键栏、手机技能键、自动技能勾选。
 - 商店新增「书店」分页（本职业有售的书，显示需求等级与价格）；背包点击技能书学习；部分书只从怪物掉落（首领 25% / 普通 2%，[适配]）。

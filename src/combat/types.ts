@@ -31,6 +31,7 @@ export interface InvItem { uid: number; item: string; name: string; rarity: Rari
 export interface GroundItem { gid: number; item: string; name: string; rarity: Rarity; x: number; y: number; landAt: number; atk: number; hp: number; amount: number; inv?: InvItem }
 export type BattleEvent =
   | { type: 'attack'; source: number; target: number; skill?: string }
+  | { type: 'proc'; skill: string; target: number }
   | { type: 'damage'; source?: number; target: number; amount: number; x: number; heal?: boolean; crit?: boolean; dot?: boolean }
   | { type: 'death'; uid: number }
   | { type: 'learned'; skill: string }

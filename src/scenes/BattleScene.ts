@@ -1,4 +1,5 @@
 import { floorKeys, PreloadScene } from '../loader';
+import { playFx, flyFx, follow, SLASH_TINT } from '../ui/FxPlayer';
 import Phaser from 'phaser';
 import { IS_MOBILE } from '../mobile';
 import { HoldKeys, stepDir } from '../input/stepKeys';
@@ -66,6 +67,7 @@ export class BattleScene extends Phaser.Scene {
     this.world = new World(Math.random, lv, FLOORS, data?.cls ?? 'warrior', data?.save);
     this.world.requireUse = true;
     this.cds = this.world.skills.map(() => 0);
+    this.registry.set('fxCls', this.world.cls); this.registry.set('fxLearned', [...this.world.learned]);
     this.buildPortal(this.world.exitX); this.buildMerchant();
     const h = this.world.hero!;
     this.views.set(h.uid, new CardView(this, h));
@@ -189,30 +191,74 @@ export class BattleScene extends Phaser.Scene {
   skillFx(skill: string, hv: CardView, targets: number[], evs: BattleEvent[]) {
     const tv = targets.map(id => this.views.get(id)).filter((v): v is CardView => !!v);
     const sk = this.world.skills.find(s => s.id === skill); this.sfx(sk?.sfx ?? skill);
-    const done = () => this.handle(evs), dir = hv.unit.facing;
+    const done = () => this.handle(evs), dir = hv.unit.facing, flip = dir < 0;
+    const dur = (sk?.duration ?? 8) + (sk?.durPerLv ?? 0) * Math.max(0, sk ? this.world.skillLevel(sk) : 0);
+    // R12：优先播放图集特效（ui/FxPlayer），素材缺失/超上限时回落到 Fx.ts 的 Graphics 特效
     switch (skill) {
-      case 'fire_sword': hv.lunge(dir, 34); if (tv[0]) fx.bloodBlade(this, tv[0].cx, tv[0].cy, tv[0].h); return done();
+      case 'fire_sword': hv.lunge(dir, 34); if (tv[0] && !playFx(this, 'fx_fire_sword_hit', tv[0].cx, tv[0].cy, { flip })) fx.bloodBlade(this, tv[0].cx, tv[0].cy, tv[0].h); return done();
       case 'half_moon': if (tv.length) {
         const last = tv[tv.length - 1]; hv.lunge(dir, 20);
-        fx.halfMoon(this, hv.cx + dir * hv.w / 2, last.cx + dir * 40, tv[0].cy, Math.max(...tv.map(v => v.h)));
-        tv.forEach(v => fx.bloodBlade(this, v.cx, v.cy, v.h * 0.7, FX.halfMoonColor));
+        if (!playFx(this, 'fx_half_moon_sweep', hv.cx, hv.cy, { flip })) {
+          fx.halfMoon(this, hv.cx + dir * hv.w / 2, last.cx + dir * 40, tv[0].cy, Math.max(...tv.map(v => v.h)));
+          tv.forEach(v => fx.bloodBlade(this, v.cx, v.cy, v.h * 0.7, FX.halfMoonColor));
+        }
       } return done();
-      case 'thrust': hv.lunge(dir, 34); if (tv[0]) fx.shadowSlash(this, tv[0].cx, tv[0].cy, tv[0].h); return done();
-      case 'fire_wall': if (tv[0]) { fx.fireWall(this, tv[0].cx, tv[0].cy + 40); tv.forEach(v => fx.hitSpark(this, v.cx, v.cy)); } return done();
-      case 'rush': hv.lunge(dir, 50); tv.forEach(v => fx.shadowSlash(this, v.cx, v.cy, v.h)); return done();
-      case 'summon_beast': fx.summonCircle(this, hv.cx - dir * 80, hv.cy); return done();
+      case 'thrust': hv.lunge(dir, 34); if (tv[0] && !playFx(this, 'fx_thrust_hit', hv.cx + dir * hv.w * 0.3, tv[0].cy, { flip })) fx.shadowSlash(this, tv[0].cx, tv[0].cy, tv[0].h); return done();
+      case 'fire_wall': if (tv[0]) {
+        const fw = playFx(this, 'fx_fire_wall_loop', tv[0].cx, tv[0].y, { ms: dur * 1000 });
+        if (!fw) fx.fireWall(this, tv[0].cx, tv[0].cy + 40);
+        tv.forEach(v => fx.hitSpark(this, v.cx, v.cy));
+      } return done();
+      case 'rush': {
+        hv.lunge(dir, 50);
+        const d = playFx(this, 'fx_rush_dash', hv.cx, hv.cy, { flip, decorative: true }); if (d) follow(this, d, () => hv.active ? { x: hv.cx, y: hv.cy } : null);
+        tv.forEach(v => { if (!playFx(this, 'fx_rush_hit', v.cx, v.cy)) fx.shadowSlash(this, v.cx, v.cy, v.h); });
+        return done();
+      }
+      case 'summon_beast': case 'summon_skeleton': {
+        const x = skill === 'summon_beast' ? hv.cx - dir * 80 : hv.x - dir * 110, y = GROUND_Y + WORLD.summonLane;
+        const c = playFx(this, skill === 'summon_beast' ? 'fx_summon_beast_circle' : 'fx_summon_circle', x, y, { onFrame: [4, () => playFx(this, 'fx_summon_pillar', x, y)] });
+        if (!c) fx.summonCircle(this, x, skill === 'summon_beast' ? hv.cy : y);
+        return done();
+      }
       case 'fireball': case 'soul_fire': if (tv[0]) {
-        const t = tv[0];
-        return fx.projectile(this, hv.cx + dir * hv.w * 0.4, hv.cy - 20, t.cx, t.cy, skill === 'fireball' ? 'fire' : 'talisman', () => {
-          this.sfx('fireball_impact', 0.5); fx.explosion(this, t.cx, t.cy, t.h * 0.35, skill === 'fireball' ? 0xffdd55 : 0xfff2a0, skill === 'fireball' ? 0xff4400 : 0x3ac83a); done();
-        });
+        const t = tv[0], fb = skill === 'fireball', x0 = hv.cx + dir * hv.w * 0.4, y0 = hv.cy - 20;
+        const hit = () => {
+          this.sfx('fireball_impact', 0.5);
+          if (!playFx(this, fb ? 'fx_fireball_hit' : 'fx_soul_fire_hit', t.cx, t.cy)) fx.explosion(this, t.cx, t.cy, t.h * 0.35, fb ? 0xffdd55 : 0xfff2a0, fb ? 0xff4400 : 0x3ac83a);
+          done();
+        };
+        if (fb) playFx(this, 'fx_fireball_cast', x0, y0, { decorative: true });
+        const go = () => { if (!flyFx(this, fb ? 'fx_fireball_fly' : 'fx_soul_fire_fly', x0, y0, t.cx, t.cy, hit)) fx.projectile(this, x0, y0, t.cx, t.cy, fb ? 'fire' : 'talisman', hit); };
+        if (fb && this.textures.exists('fx_fireball_cast')) this.time.delayedCall(150, go); else go();
+        return;
       } return done();
-      case 'thunder': if (tv[0]) { fx.lightning(this, tv[0].cx, tv[0].y - 600, tv[0].cy); if (!FxQuality.low) this.cameras.main.shake(120, 0.004); } return done();
-      case 'ice_roar': fx.iceRoar(this, hv.cx, GROUND_Y + hv.unit.y - 10, sk?.range ?? 420); tv.forEach(v => fx.frostTint(v.art, (sk?.duration ?? 4) * 1000)); return done();
-      case 'magic_shield': fx.magicShield(this, hv, hv.cy, hv.h, (sk?.duration ?? 12) * 1000); fx.floatNumber(this, hv.cx, hv.cy - hv.h * 0.2, hv.h, '魔法盾', '#88ccff', 0.7); return done();
-      case 'poison': if (tv[0]) { const t = tv[0]; return fx.projectile(this, hv.cx + dir * hv.w * 0.4, hv.cy - 20, t.cx, t.cy, 'poison', () => { fx.poisonCloud(this, t.cx, t.cy, t.h); done(); }); } return done();
-      case 'summon_skeleton': { const x = hv.x - dir * 110; fx.summonCircle(this, x, GROUND_Y + WORLD.summonLane); return done(); }
-      case 'heal': fx.holyLight(this, hv.cx, hv.cy, hv.h); fx.floatNumber(this, hv.cx, hv.cy - hv.h * 0.2, hv.h, '治愈术', '#80ff90', 0.7); return done();
+      case 'thunder': if (tv[0]) {
+        const t = tv[0], shake = () => { if (!FxQuality.low) this.cameras.main.shake(120, 0.004); };
+        if (playFx(this, 'fx_thunder_strike', t.cx, t.y, { onFrame: [1, () => { shake(); done(); }] })) return;
+        fx.lightning(this, t.cx, t.y - 600, t.cy); shake();
+      } return done();
+      case 'ice_roar': {
+        let anyFx = true;
+        tv.forEach((v, i) => this.time.delayedCall(i * 40, () => { if (v.active && !playFx(this, 'fx_ice_roar_burst', v.cx, v.y)) anyFx = false; }));
+        if (!this.textures.exists('fx_ice_roar_burst') || !tv.length) anyFx = false;
+        if (!anyFx) fx.iceRoar(this, hv.cx, GROUND_Y + hv.unit.y - 10, sk?.range ?? 420);
+        tv.forEach(v => fx.frostTint(v.art, (sk?.duration ?? 4) * 1000)); return done();
+      }
+      case 'magic_shield': {
+        const sc = Phaser.Math.Clamp(hv.h / 256 * 1.1, 1.0, 1.3), ms = dur * 1000;
+        const startLoop = () => { const l = playFx(this, 'fx_magic_shield_loop', hv.cx, hv.cy, { scale: sc, ms }); if (l) follow(this, l, () => hv.active ? { x: hv.cx, y: hv.cy } : null); return !!l; };
+        const c = playFx(this, 'fx_magic_shield_cast', hv.cx, hv.cy, { scale: sc, onDone: () => { startLoop(); } });
+        if (!c && !startLoop()) fx.magicShield(this, hv, hv.cy, hv.h, ms);
+        fx.floatNumber(this, hv.cx, hv.cy - hv.h * 0.2, hv.h, '魔法盾', '#88ccff', 0.7); return done();
+      }
+      case 'poison': if (tv[0]) {
+        const t = tv[0], x0 = hv.cx + dir * hv.w * 0.4, y0 = hv.cy - 20;
+        const hit = () => { const l = playFx(this, 'fx_poison_loop', t.cx, t.cy, { ms: dur * 1000 }); if (l) follow(this, l, () => t.active && t.unit.alive ? { x: t.cx, y: t.cy } : null); else fx.poisonCloud(this, t.cx, t.cy, t.h); done(); };
+        if (!flyFx(this, 'fx_poison_fly', x0, y0, t.cx, t.cy, hit)) fx.projectile(this, x0, y0, t.cx, t.cy, 'poison', hit);
+        return;
+      } return done();
+      case 'heal': if (!playFx(this, 'fx_heal_pillar', hv.cx, hv.y)) fx.holyLight(this, hv.cx, hv.cy, hv.h); fx.floatNumber(this, hv.cx, hv.cy - hv.h * 0.2, hv.h, '治愈术', '#80ff90', 0.7); return done();
       default: return done();
     }
   }
@@ -223,14 +269,16 @@ export class BattleScene extends Phaser.Scene {
         if (e.skill) continue;
         const sv = this.views.get(e.source), tv = this.views.get(e.target); if (!sv || !tv) continue;
         const dir = tv.x >= sv.x ? 1 : -1; sv.swing(dir); sv.lunge(dir, 18);
-        if (sv.unit.isHero && this.world.cls !== 'warrior') fx.projectile(this, sv.cx + dir * 30, sv.cy - 20, tv.cx, tv.cy, this.world.cls === 'mage' ? 'fire' : 'talisman', () => fx.hitSpark(this, tv.cx, tv.cy));
+        if (sv.unit.isHero) playFx(this, 'fx_common_slash', sv.cx + dir * sv.w * 0.25, sv.cy - 10, { tint: SLASH_TINT[this.world.cls], flip: dir < 0, decorative: this.world.cls !== 'warrior' });
+        if (sv.unit.isHero && this.world.cls !== 'warrior') fx.projectile(this, sv.cx + dir * 30, sv.cy - 20, tv.cx, tv.cy, this.world.cls === 'mage' ? 'fire' : 'talisman', () => { if (this.world.cls !== 'mage' || !playFx(this, 'fx_common_explosion', tv.cx, tv.cy, { scale: 0.7, decorative: true })) fx.hitSpark(this, tv.cx, tv.cy); });
+        else if (sv.unit.isHero && this.textures.exists('fx_common_slash')) { /* 已播放图集挥砍 */ }
         else fx.slash(this, sv.x + dir * (sv.w / 2 + 6), sv.cy - 10, sv.h, dir);
       } else if (e.type === 'damage') {
         const v = this.views.get(e.target); if (!v) continue;
         const y = v.cy - v.h * 0.15;
         if (e.heal) { fx.floatNumber(this, v.cx, y, v.h, '+' + e.amount, FX.healColor, 0.8); continue; }
         if (e.dot) { fx.floatNumber(this, v.cx + 20, y, v.h, '-' + e.amount, '#5aff3a', 0.7); v.hit(); continue; }
-        v.hit(); fx.hitSpark(this, v.cx, v.cy);
+        v.hit(); if (!playFx(this, 'fx_common_hitspark', v.cx, v.cy)) fx.hitSpark(this, v.cx, v.cy);
         fx.floatNumber(this, v.cx, y, v.h, '-' + e.amount + (e.crit ? '!' : ''), e.crit ? '#ff5a1a' : FX.dmgColor, e.crit ? FX.critScale : 1);
         if (e.crit && !FxQuality.low) this.cameras.main.shake(80, 0.003);
         if (e.source !== undefined) this.sfx(v.unit.isHero ? 'hit_hero' : e.crit ? 'swing_crit' : 'hit', 0.35);
@@ -261,7 +309,8 @@ export class BattleScene extends Phaser.Scene {
       else if (e.type === 'cleared') this.log('首领已被击败！出口已开启，向右前往下一层');
       else if (e.type === 'win') this.end();
       else if (e.type === 'exp') { this.expTotal += e.amount; this.log(`获得 经验 ${e.amount}`, true); }
-      else if (e.type === 'learned') { this.skillsDirty = true; this.saveGame(); }
+      else if (e.type === 'learned') { this.skillsDirty = true; this.saveGame(); this.registry.set('fxLearned', [...this.world.learned]); }
+      else if (e.type === 'proc') { const v = this.views.get(e.target); if (v) { if (e.skill === 'slaying') playFx(this, 'fx_slaying_proc', v.cx, v.cy); else playFx(this, 'fx_passive_glint', v.cx, v.y, { tint: e.skill === 'spirit_force' ? 0xc0f070 : 0xffd080, decorative: true }); } }
       else if (e.type === 'levelup') {
         this.sfx('levelup'); this.log(`等级提升到 ${e.level}！属性提升`, true);
         const hv = this.world.hero && this.views.get(this.world.hero.uid);
