@@ -407,6 +407,7 @@ const free = (w: World) => w.skills.map(() => 0);
   const median = (a: number[]) => { const b = [...a].sort((x, y) => x - y); return b[(b.length - 1) >> 1] / 2 + b[b.length >> 1] / 2; };
   for (const c of ['warrior', 'mage', 'taoist'] as ClassId[]) {
     const rs = SEEDS.map(sd => simRun(c, sd)); const ds = rs.map(r => r.deaths); const med = median(ds);
+    if (process.env.LEARNLOG) rs.forEach((r, k) => console.log(`   学书 ${CLASSES[c].name} 种子${SEEDS[k]}: ${r.learnLog.filter(x => !x.includes('死@')).join(' ')}`));
     console.log(`  ${CLASSES[c].name}: 种子 ${SEEDS.join('/')} 死亡 ${ds.join('/')} 中位数 ${med} 等级 ${rs.map(r => r.level).join('/')} 红药 ${rs.map(r => r.potUsed).join('/')}`);
     if (!process.env.SIM) ok(med >= 1 && med <= 4, `${CLASSES[c].name} 难度适中：${SEEDS.length} 种子死亡中位数 1–4（实际 ${med}，${ds.join('/')}）`);
     ok(median(rs.map(r => r.potUsed)) >= 3, `${CLASSES[c].name} 通关需要吃药（红药中位数 ${median(rs.map(r => r.potUsed))} 瓶）`);
