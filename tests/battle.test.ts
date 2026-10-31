@@ -255,9 +255,12 @@ const free = (w: World) => w.skills.map(() => 0);
   for (let i = 0; i < 80; i++) { wr.step(0.05); for (const e of wr.drainEvents()) if (e.type === 'damage' && e.target === rh.uid) hit++; }
   ok(hit >= 1, '站在地刺上会受伤');
 }
-{ // 平衡：每个职业的自动脚本能打通全部 5 层（允许死亡复活）
-  for (const c of ['warrior', 'mage', 'taoist'] as ClassId[]) {
-    const w = (process.env.ALL ? learnAll : (x: World) => x)(new World(seeded(11), 1, FLOORS, c)); let cds = w.skills.map(() => 0); let t = 0, potUsed = 0; const learnLog: string[] = [];
+{ // 平衡：多种子自动脚本（单种子对随机序列太敏感，任何改动 RNG 消耗顺序的提交都会让结果漂移）
+  const SEEDS = [3, 7, 11, 19, 23, 42, 57, 88, 101];
+  // 可通关上限：调参时 9 种子×3 职业实测死亡最大 9（战士种子 57），中位数 2–3；取 12 = 实测最大 +3 余量，超过即视为明显卡关
+  const PASS_MAX_DEATHS = 12;
+  const simRun = (c: ClassId, seed: number) => {
+    const w = (process.env.ALL ? learnAll : (x: World) => x)(new World(seeded(seed), 1, FLOORS, c)); let cds = w.skills.map(() => 0); let t = 0, potUsed = 0; const learnLog: string[] = [];
     while (!w.done && t < 7200) {
       const h = w.hero;
       if (!h) { learnLog.push(`死@${w.floorIndex + 1}层Lv${w.level}`); w.respawn(); continue; }
@@ -280,11 +283,15 @@ const free = (w: World) => w.skills.map(() => 0);
       while (w.gold >= 60 && w.pots[3] < cap) w.buyPotion(3);
       w.step(0.05, { dx: (() => { const f = w.queue(1)[0]; return f && w.inMelee(h, f) ? 0 : 1; })(), dy: 0 }); w.drainEvents(); t += 0.05; /* 玩家：前方接战时站定输出（可穿怪） */ for (let i = 0; i < cds.length; i++) cds[i] = Math.max(0, cds[i] - 0.05);
     }
-    if (process.env.SIM) console.log(JSON.stringify(Object.fromEntries(Object.entries(w.equip).map(([k,v])=>[k,(v as any)?.name]))), w.hero?.maxHp, w.hero?.atk); console.log(`  ${CLASSES[c].name}: 通关=${w.done} 等级 ${w.level} 死亡 ${w.deaths} 学书 ${learnLog.join(' ')}`);
-    if (!process.env.SIM) ok(w.deaths >= 1 && w.deaths <= 4, `${CLASSES[c].name} 难度适中：模拟通关死亡 1–4 次（实际 ${w.deaths}）`);
-    console.log(`  ${CLASSES[c].name}: 通关=${w.done} 用时 ${Math.round(t)}s 等级 ${w.level} 死亡 ${w.deaths} 次 层 ${w.floorIndex + 1} 红药 ${potUsed} 瓶`);
-    ok(potUsed >= 3, `${CLASSES[c].name} 通关需要吃药（${potUsed} 瓶，难度不再过于简单）`);
-    if (!process.env.SIM) ok(w.done && w.deaths <= 6, `${CLASSES[c].name} 可通关全部层（死亡 ${w.deaths} 次）`);
+    return { deaths: w.deaths, done: w.done, potUsed, t, level: w.level, learnLog };
+  };
+  const median = (a: number[]) => { const b = [...a].sort((x, y) => x - y); return b[(b.length - 1) >> 1] / 2 + b[b.length >> 1] / 2; };
+  for (const c of ['warrior', 'mage', 'taoist'] as ClassId[]) {
+    const rs = SEEDS.map(sd => simRun(c, sd)); const ds = rs.map(r => r.deaths); const med = median(ds);
+    console.log(`  ${CLASSES[c].name}: 种子 ${SEEDS.join('/')} 死亡 ${ds.join('/')} 中位数 ${med} 等级 ${rs.map(r => r.level).join('/')} 红药 ${rs.map(r => r.potUsed).join('/')}`);
+    if (!process.env.SIM) ok(med >= 1 && med <= 4, `${CLASSES[c].name} 难度适中：${SEEDS.length} 种子死亡中位数 1–4（实际 ${med}，${ds.join('/')}）`);
+    ok(median(rs.map(r => r.potUsed)) >= 3, `${CLASSES[c].name} 通关需要吃药（红药中位数 ${median(rs.map(r => r.potUsed))} 瓶）`);
+    if (!process.env.SIM) ok(rs.every(r => r.done && r.deaths <= PASS_MAX_DEATHS), `${CLASSES[c].name} 每个种子都可通关全部层且死亡 ≤ ${PASS_MAX_DEATHS}（${rs.map(r => (r.done ? '' : '未通关') + r.deaths).join('/')}）`);
   }
 }
 { // 难度曲线：怪物强度倍率已上调
