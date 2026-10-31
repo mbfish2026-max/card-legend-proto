@@ -198,3 +198,20 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 4. UI 九宫格/边框（ui/UI-*：48–256px）→ 2x 版本；set_badge 48 → 96。
 5. 角色/NPC 立绘（600–960px 源图，构建缩到 640）：放宽构建上限即可，暂不需重画。
 文字与 Graphics（血条、面板底、按钮框）为矢量/运行时栅格化，已按倍率清晰，无需素材。
+
+<!-- CH-L -->
+## L. 缺口补图（art/gap-fill）接入说明
+
+只给接入说明，本分支未改任何 src 代码。
+
+- 怪物立绘：`public/assets/portraits/<art>_full.png`。普通怪 art 默认等于单位 id；Boss 的 art 是 `src/data/units.ts` 中 `b()` 的第 2 个参数。接入时在 `src/assets-manifest.ts` 的 ASSETS 加 `<art>: P + '<art>_full.png'`，并确认 units 的 art 字段指向该 key（如原先借用别的怪图，改为下表 id）。
+- 装备图标：`public/assets/items/eq_<id>.png`（64×64）+ `eq_<id>@2x.png`（128×128）。把 `src/data/items.ts` / `items-town.ts` 中 ITEMS[id].icon 改为 `items/eq_<id>.png`，加载 key 仍是 `item_<id>`。
+- 道具图标（I1）：同上规则，文件名见下表，替换原 WoW 图标路径。
+
+| 批次 | id | 名称 | 文件 | 接入改动 | 外观 |
+|---|---|---|---|---|---|
+| M1 | tree_demon | 千年树妖 | `public/assets/portraits/tree_demon_full.png` | ASSETS 加 `tree_demon`，units 中 art 指向 `tree_demon` | 参考原作 |
+| M1 | boss_chulong | 触龙神 | `public/assets/portraits/boss_chulong_full.png` | ASSETS 加 `boss_chulong`，units 中 art 指向 `boss_chulong` | 参考原作 |
+| M1 | boss_white_boar | 白野猪 | `public/assets/portraits/boss_white_boar_full.png` | ASSETS 加 `boss_white_boar`，units 中 art 指向 `boss_white_boar` | 参考原作 |
+| M1 | boss_bull_king | 牛魔王 | `public/assets/portraits/boss_bull_king_full.png` | ASSETS 加 `boss_bull_king`，units 中 art 指向 `boss_bull_king` | 参考原作 |
+| M1 | boss_hongmo | 虹魔教主 | `public/assets/portraits/boss_hongmo_full.png` | ASSETS 加 `boss_hongmo`，units 中 art 指向 `boss_hongmo` | 参考原作 |
