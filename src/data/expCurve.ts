@@ -42,7 +42,9 @@ export const NEW_FLOOR_EXP_DAMP = 0.3;
 export const NEW_FLOOR_MULT_NEIGHBORS: readonly [number, number][] = [[4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5]];
 /** [适配] feat/maps-batch2 下标 24–33：沃玛寺庙 3 层取 原第7/8 层（石墓/沃玛），矿区 5 层与山谷矿区 2 层取 原第4/5 层（白骨墓穴/尸王殿）几何平均 ×衰减 */
 export const BATCH2_MULT_NEIGHBORS: readonly [number, number][] = [[7, 8], [7, 8], [7, 8], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5]];
-export const FLOOR_EXP_MULT: number[] = [...BASE_MULT, ...NEW_FLOOR_MULT_NEIGHBORS.map(([a, b]) => NEW_FLOOR_EXP_DAMP * Math.sqrt(BASE_MULT[a] * BASE_MULT[b])), ...floorExpMult(HJ_FLOOR_ANCHORS), ...BATCH2_MULT_NEIGHBORS.map(([a, b]) => NEW_FLOOR_EXP_DAMP * Math.sqrt(BASE_MULT[a] * BASE_MULT[b]))];
+/** [适配] feat/maps-batch3 下标 34–55：蜈蚣洞地牢一层 5 张取 原第5/6 层（尸王殿/蜈蚣洞），蜈蚣洞深层 7 张、石墓 6 张、香石墓穴 3 张取 原第6/7 层（蜈蚣洞/石墓）几何平均 ×衰减 */
+export const BATCH3_MULT_NEIGHBORS: readonly [number, number][] = [[5, 6], [5, 6], [5, 6], [5, 6], [5, 6], [6, 7], [6, 7], [6, 7], [6, 7], [6, 7], [6, 7], [6, 7], [6, 7], [6, 7], [6, 7], [6, 7], [6, 7], [6, 7], [6, 7], [6, 7], [6, 7], [6, 7]];
+export const FLOOR_EXP_MULT: number[] = [...BASE_MULT, ...NEW_FLOOR_MULT_NEIGHBORS.map(([a, b]) => NEW_FLOOR_EXP_DAMP * Math.sqrt(BASE_MULT[a] * BASE_MULT[b])), ...floorExpMult(HJ_FLOOR_ANCHORS), ...BATCH2_MULT_NEIGHBORS.map(([a, b]) => NEW_FLOOR_EXP_DAMP * Math.sqrt(BASE_MULT[a] * BASE_MULT[b])), ...BATCH3_MULT_NEIGHBORS.map(([a, b]) => NEW_FLOOR_EXP_DAMP * Math.sqrt(BASE_MULT[a] * BASE_MULT[b]))];
 /** 第 floor 层获得的经验（怪物 def.exp / 悬赏 exp 为旧曲线下的基准值） */
 export const scaledExp = (base: number, floor: number): number => {
   if (base <= 0) return 0;
