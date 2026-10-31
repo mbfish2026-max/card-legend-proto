@@ -28,18 +28,21 @@ export const WORLD = {
   exitMargin: 160,
   mpRegen: 4,                  // 每秒回蓝
   hpRegen: 1,                  // 每秒回血（脱战时 ×5）
-  defFactor: 0.5,              // 伤害 = 原始 − 防御×该值（最低保留 dmgFloor）。feat/balance-battle：0.6→0.5 [适配]（balance-plan B）
+  defFactor: 0.6,              // 伤害 = 原始 − 防御×该值（最低保留 dmgFloor）。feat/balance-battle：方案 B 的 0.5 在 merge balance-sys 后回退为 0.6（balance-sys 怪物攻击公式按 0.6×防御校准，0.5 会让战士死亡 ×10+）[适配]
   dmgFloor: 0.3,               // 保底伤害比例。feat/balance-battle：20%→30% [适配]（balance-plan B）
   /** 首图（幽暗森林）保持旧公式：balance-plan「不变量」——首图所有系数取改前值 */
   legacyDefFactor: 0.6, legacyDmgFloor: 0.2,
   /** 等级差修正（balance-plan B [适配]，官方公式未查到）：怪物每高主角 1 级伤害 +3%；每低 1 级 −2%，下限 −30% */
   /** BOSS 调整（balance-plan I [适配]，官方数值未查到）：首图豁免 */
+  summonHpMul: 0.3, summonAtkMul: 0.3, summonNerfLv: 15, summonNerfFullLv: 25, // feat/balance-battle：道士召唤物血/攻倍率，人物 15 级起线性降到 25 级的 ×0.3（避免断崖） [适配]
+  bossAtkEarly: 0.6, bossAtkMid: 1.12, bossAtkLate: 1.15, bossEarlyLv: 15, bossMidLv: 30,
   bossAtkVsNormal: 1.6, bossHpVsNormal: 4, bossAtkInterval: 1.2,
+  bossMechMinLv: 16,          // 主线 BOSS 通用机制起始层目标等级（早期层只保留攻速）[适配]
   bossEnrageAt: 0.5, bossEnrageAtk: 0.3, bossEnrageSec: 8,
   bossAoeEvery: 12, bossAoePct: 0.18, bossAoeWarn: 1.0, bossAoeRadius: 260,
   bossCallAt: 0.5, bossCallN: 2,
   /** 药水（balance-plan E [适配]；官方回血间隔未查到）：冷却 1s，2s 内分 4 跳回满额（总量不变） */
-  potCd: 1.0, potHotSec: 2, potHotTicks: 4,
+  potCd: 1.0, potHotSec: 0.5, potHotTicks: 2,
   lvDiffUp: 0.03, lvDiffDown: 0.02, lvDiffMin: 0.7,
   rarityRoll: { magic: 0.3, rare: 0.1 },
   affix: { magic: 0.5, rare: 1.2 },
@@ -51,6 +54,8 @@ export const WORLD = {
 export interface Spawn { id: string; x: number; y?: number }
 export interface Floor { name: string; spawns: Spawn[]; boss?: boolean; bg?: string; /** 来源链接 */ src?: string; /** 官方多层图中的第几层（1 起） */ depth?: number; /** 图群 id */ group?: string; /** 官方子层名 */ sub?: string; /** R11 对应原版区域（docs/legend-research.md「地图递进」） */ zone?: string; /** 练级图：小怪死后定时原地刷新（[适配]，见 FARM_RESPAWN） */ farm?: boolean }
 /** 练级图小怪刷新间隔（秒）。官方各图刷怪间隔未查到 → [适配] 20s，且主角在 400px 内时顺延，避免贴脸刷出 */
+/** 召唤物倍率：<summonNerfLv 为 1，之后线性到 summonNerfFullLv 时为 summon*Mul */
+export const summonMulAt = (lv: number, full: number) => { const t = Math.min(1, Math.max(0, (lv - WORLD.summonNerfLv + 1) / (WORLD.summonNerfFullLv - WORLD.summonNerfLv + 1))); return 1 + (full - 1) * t; };
 export const FARM_RESPAWN = 20, FARM_SAFE_DIST = 400;
 export const FLOORS: Floor[] = [
   { name: '幽暗森林', bg: 'bg_floor1', boss: true, farm: true, zone: '比奇省·新手村周边（原版 1–7 级）', spawns: [
@@ -252,3 +257,4 @@ export const floorNo = (i: number, floors: Floor[] = FLOORS) => floors === FLOOR
 /** 下一层下标；最后一层返回 -1 */
 export const nextFloorOf = (i: number, floors: Floor[] = FLOORS) => { if (floors !== FLOORS) return i + 1 < floors.length ? i + 1 : -1; const k = FLOOR_ORDER.indexOf(i); return k >= 0 && k + 1 < FLOOR_ORDER.length ? FLOOR_ORDER[k + 1] : -1; };
 
+/*WXTMP*/if (typeof process !== "undefined" && process.env.WX) Object.assign(WORLD, JSON.parse(process.env.WX));

@@ -261,7 +261,7 @@ export class BattleScene extends Phaser.Scene {
       return;
     }
     const pi = POTIONS.findIndex(p => p.key === k);
-    if (pi >= 0) { const hh = this.world.hero, cdl = hh ? (hh.potReady ?? 0) - this.world.time : 0; const n = this.world.usePotion(pi); if (n) { this.sfx('potion'); this.log(`${n}使用（2 秒内回复）`, true); } else if (cdl > 0 && this.world.pots[pi] > 0) this.log(`药水冷却中（${cdl.toFixed(1)} 秒）`); }
+    if (pi >= 0) { const hh = this.world.hero, cdl = hh ? ((POTIONS[pi]?.mp && !POTIONS[pi]?.hp ? hh.mpReady : hh.potReady) ?? 0) - this.world.time : 0; const n = this.world.usePotion(pi); if (n) { this.sfx('potion'); this.log(`${n}使用（2 秒内回复）`, true); } else if (cdl > 0 && this.world.pots[pi] > 0) this.log(`药水冷却中（${cdl.toFixed(1)} 秒）`); }
   }
   skillFx(skill: string, hv: CardView, targets: number[], evs: BattleEvent[]) {
     const tv = targets.map(id => this.views.get(id)).filter((v): v is CardView => !!v);

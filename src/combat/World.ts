@@ -5,12 +5,12 @@ import { sortBag } from './bagSort';
 // 自动战斗与技能、召唤物、掉落/背包/装备/商店、死亡复活、存档序列化。
 import { BattleEvent, EquipSlot, GroundItem, InvItem, Rarity, Slot, Stats, Team, Unit, UnitDef } from './types';
 import { POTIONS } from '../data/skills';
-import { CLASSES, ClassId, SkillDef, CAST_GAP } from '../data/classes';
+import { CLASSES, ClassId, SkillDef, castGapOf } from '../data/classes';
 import { ITEMS, SLOTS, SETS, equipSlotsFor, EQUIP_VERSION, ENHANCE_SLOTS, ENHANCE_MAX, ENHANCE_STAT, IRON_PRICE, IRON_MAX_PURITY, enhanceChance, shatterChance } from '../data/items';
 import { HERO, ENEMIES, SUMMON, SUMMON_BEAST } from '../data/units';
 import { EXP_PER_LEVEL, EXP_VERSION, migrateExp, scaledExp, fmtExp } from '../data/expCurve';
-import { killExp, foeStatsAt } from '../data/balance';
-import { WORLD, FLOORS, Floor, FARM_RESPAWN, FARM_SAFE_DIST, nextFloorOf, SIDE_FLOORS, DEPTH_STEP, prevLayerOf, prevFloorOf } from '../data/world';
+import { killExp, foeStatsAt, FLOOR_TARGET_LV } from '../data/balance';
+import { WORLD, FLOORS, Floor, FARM_RESPAWN, FARM_SAFE_DIST, nextFloorOf, SIDE_FLOORS, DEPTH_STEP, prevLayerOf, prevFloorOf, summonMulAt } from '../data/world';
 import { TOWNS, townFloors, townOfFloor, returnTownOf, STORAGE_SIZE, TOWN_W, TOWN_GATE_X, GATE_RANGE, TOWN_SPAWN_X, DOOR_RANGE, streetDoors } from '../data/towns';
 import { CONSUMABLE } from '../data/items-town';
 import { WOMA_FLOOR_NAME, WOMA_SECTIONS, WOMA_DOOR_X, HORN_MOB_CHANCE, HORN_MOBS, RING_MIN_LEVEL, RingQuest, ringReward, IDENT_MIN_LEVEL, IDENT_PRICE, IDENT_POOL, identValue } from '../data/r14b';
@@ -436,8 +436,9 @@ export class World {
       const kd = d > 1 ? 1 + DEPTH_STEP * (d - 1) : 1;
       const ns = this.floor.spawns.map(s => s.id).filter(sid => ENEMIES[sid] && ENEMIES[sid].tier !== 'boss')
         .map(sid => (this.floors === FLOORS ? foeStatsAt(sid, this.floorIndex) : null) ?? { hp: ENEMIES[sid].hp * kd, atk: ENEMIES[sid].atk * kd });
+      if (bs) u.atk = Math.round(u.atk * (FLOOR_TARGET_LV[this.floorIndex] <= WORLD.bossEarlyLv ? WORLD.bossAtkEarly : FLOOR_TARGET_LV[this.floorIndex] <= WORLD.bossMidLv ? WORLD.bossAtkMid : WORLD.bossAtkLate)); // 主线：在 balance-sys 面板上乘倍率（早期 BOSS 削弱）
+      else if (ns.length) u.atk = Math.max(u.atk, Math.round(WORLD.bossAtkVsNormal * ns.reduce((a, x) => a + x.atk, 0) / ns.length));
       if (ns.length) {
-        u.atk = Math.max(u.atk, Math.round(WORLD.bossAtkVsNormal * ns.reduce((a, x) => a + x.atk, 0) / ns.length));
         u.hp = u.maxHp = Math.min(u.maxHp, Math.round(WORLD.bossHpVsNormal * ns.reduce((a, x) => a + x.hp, 0) / ns.length));
       }
       u.atkInterval = Math.min(u.atkInterval, WORLD.bossAtkInterval);
@@ -548,8 +549,8 @@ export class World {
   }
   /** 召唤物等级 → 属性（相对初始等级按官方 HP/攻击上限比例放大）、名字「骷髅·3级」、名字颜色 */
   applySummonLv(u: Unit) {
-    const b = u.sBase!, L = u.sLv ?? 0, O = SKELETON_OFFICIAL, r = u.maxHp > 0 ? u.hp / u.maxHp : 1;
-    u.maxHp = u.hp = Math.round(b.hp * O.hp[L] / O.hp[b.start]); u.hp = Math.round(u.maxHp * r); u.atk = Math.round(b.atk * O.atkMax[L] / O.atkMax[b.start]);
+    const b = u.sBase!, L = u.sLv ?? 0, O = SKELETON_OFFICIAL, hm = summonMulAt(this.level, WORLD.summonHpMul), am = summonMulAt(this.level, WORLD.summonAtkMul), r = u.maxHp > 0 ? u.hp / u.maxHp : 1;
+    u.maxHp = u.hp = Math.round(hm * b.hp * O.hp[L] / O.hp[b.start]); u.hp = Math.round(u.maxHp * r); u.atk = Math.round(am * b.atk * O.atkMax[L] / O.atkMax[b.start]);
     u.name = `${b.name}·${L}级`; u.nameColor = SUMMON_NAME_COLORS[L];
   }
   private summonKill() {
@@ -862,7 +863,7 @@ export class World {
       }
     }
     if (s.area) targets = [h, ...this.units.filter(u => u.summon && u.alive && Math.abs(u.x - h.x) <= s.area!)];
-    h.mp = (h.mp ?? 0) - s.mana; for (let j = 0; j < cds.length; j++) cds[j] = Math.max(cds[j], CAST_GAP); cds[i] = Math.max(cds[i], s.cooldown); // 公共施法间隔 0.8s + 本技能轻量冷却（手动/自动共用）
+    h.mp = (h.mp ?? 0) - s.mana; for (let j = 0; j < cds.length; j++) cds[j] = Math.max(cds[j], castGapOf(this.cls)); cds[i] = Math.max(cds[i], s.cooldown); // 公共施法间隔 0.8s + 本技能轻量冷却（手动/自动共用）
     this.events.push({ type: 'attack', source: h.uid, target: targets[0]?.uid ?? h.uid, skill: s.id });
     this.addTrain(s, 100);
     const pw = this.power(s.stat) * this.skillScale() * (s.lvMult ? 1 : lvF);
@@ -955,8 +956,8 @@ export class World {
     const p = POTIONS[i], h = this.hero;
     if (!p?.item || !h || this.pots[i] <= 0) return null;
     if ((p.hp && h.hp >= h.maxHp && !p.mp) || (p.mp && (h.mp ?? 0) >= h.maxMp && !p.hp)) return null;
-    if (this.time < (h.potReady ?? 0)) return null; // 1s 冷却（HP/MP 共用，[适配]）
-    this.pots[i]--; h.potReady = this.time + WORLD.potCd;
+    if ((p.hp && this.time < (h.potReady ?? 0)) || (p.mp && this.time < (h.mpReady ?? 0))) return null; // 1s 冷却（红/蓝各自独立，[适配]）
+    this.pots[i]--; if (p.hp) h.potReady = this.time + WORLD.potCd; if (p.mp) h.mpReady = this.time + WORLD.potCd;
     this.addHot(h, p.hp ?? 0, p.mp ?? 0);
     return ITEMS[p.item].name;
   }
@@ -1066,11 +1067,11 @@ export class World {
     const c = this.companion!, tb = this.potTable();
     for (const need of ['hp', 'mp'] as const) {
       const low = need === 'hp' ? u.hp < u.maxHp * COMPANION_POT_HP : u.maxMp > 0 && (u.mp ?? 0) < u.maxMp * COMPANION_POT_MP; if (!low) continue;
-      if (this.time < (u.potReady ?? 0)) return; // 与主角同规则：1s 冷却 + HoT
+      if (this.time < ((need === 'hp' ? u.potReady : u.mpReady) ?? 0)) continue; // 与主角同规则：红/蓝各 1s 冷却 + HoT
       if (u.hots?.some(x => need === 'hp' ? x.hp > 0 : x.mp > 0)) continue; // 回复中不重复喝
       const i = pickPotion(c, need, tb); if (i < 0) continue; const it = c.bag[i], p = tb[it.item];
       if ((it.qty ?? 1) > 1) it.qty!--; else c.bag.splice(i, 1);
-      u.potReady = this.time + WORLD.potCd; this.addHot(u, p.hp ?? 0, p.mp ?? 0);
+      if (p.hp) u.potReady = this.time + WORLD.potCd; if (p.mp) u.mpReady = this.time + WORLD.potCd; this.addHot(u, p.hp ?? 0, p.mp ?? 0);
       this.events.push({ type: 'log', text: `英雄使用 ${it.name}` }, { type: 'inventory' });
     }
   }
@@ -1422,7 +1423,7 @@ export class World {
   /** 首图（主线 FLOORS 第 0 层 幽暗森林）：balance-plan 不变量，战斗系数全部保持改前值 */
   get newbieFloor(): boolean { return this.floors === FLOORS && this.floorIndex === 0 && !this.town; }
   bossStep(dt: number, h: Unit) {
-    if (!this.newbieFloor) this.bossGeneric(dt, h);
+    if (!this.newbieFloor && (this.floors !== FLOORS || FLOOR_TARGET_LV[this.floorIndex] >= WORLD.bossMechMinLv)) this.bossGeneric(dt, h); // 主线：仅目标等级 ≥bossMechMinLv 的层启用通用狂暴/AOE/召唤
     for (const b of this.alive('enemy')) {
       if (!BOSS_MECH.has(b.id) || b.ai !== 'chase') continue;
       const m = b.boss ??= { stage: 0, dazeUntil: 0, crazyUntil: 0, crazyOn: false, flyT: 0, summonT: 0, spikeT: OFFICIAL.spikeEvery, minions: [] };

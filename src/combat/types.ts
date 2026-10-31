@@ -40,7 +40,7 @@ export interface Unit extends UnitDef {
   /** R13 官方 BOSS 机制状态（沃玛发呆/狂暴、瞬移计时；祖玛召唤；赤月地刺） */
   boss?: BossState;
   /** feat/balance-battle 药水：冷却就绪时间、持续回复队列 */
-  potReady?: number; hots?: Hot[];
+  potReady?: number; mpReady?: number; hots?: Hot[];
   mag?: number; tao?: number;
   homeX: number; homeY: number; ai: AIState; alertT: number; facing: 1 | -1; moving: boolean;
 }
