@@ -746,3 +746,17 @@ thunder_sword 雷霆剑、break_strike 破击剑法、shield_break 破盾斩、v
 | sq_nimo_guard_full.png | 728x960 | 逆魔卫士 | 复用 art/sq-mir3 的 nimo_guard_full.png |
 | sq_nimo_shiwei_full.png | 731x960 | 逆魔侍卫 | 复用 art/sq-mir3 的 nimo_attendant_full.png |
 | sq_nimo_statue_full.png | 708x960 | 逆魔雕像 | 复用 art/sq-mir3 的 nimo_statue_full.png |
+
+
+## art/maps-sq-mir3 交付·第 5 批（沙漠，6 张）
+
+路径：`public/assets/portraits/<id>_full.png`，透明 PNG，最长边 960。预览：`docs/art-gap-preview/sq_mir3_batch5.jpg`。
+
+| 文件 | 尺寸 | 名称 | 来源 |
+|---|---|---|---|
+| m3_noma_full.png | 754x960 | 诺玛 | 复用 art/sq-mir3 的 noma_full.png |
+| m3_noma_pharaoh_full.png | 699x960 | 诺玛法老 | 复用 art/sq-mir3 的 noma_pharaoh_full.png |
+| m3_desert_fish_full.png | 721x960 | 沙漠鱼 | 复用 art/sq-mir3 的 desert_fish_full.png |
+| m3_desert_wind_full.png | 704x960 | 沙漠风魔 | 复用 art/sq-mir3 的 desert_wind_full.png |
+| m3_desert_tree_full.png | 724x960 | 沙漠树魔 | 复用 art/sq-mir3 的 desert_tree_full.png |
+| m3_desert_stone_full.png | 761x960 | 沙漠石人 | 复用 art/sq-mir3 的 desert_golem_full.png |
