@@ -39,9 +39,13 @@ export interface Unit extends UnitDef {
   redUntil?: number;
   /** R13 官方 BOSS 机制状态（沃玛发呆/狂暴、瞬移计时；祖玛召唤；赤月地刺） */
   boss?: BossState;
+  /** feat/balance-battle 药水：冷却就绪时间、持续回复队列 */
+  potReady?: number; hots?: Hot[];
   mag?: number; tao?: number;
   homeX: number; homeY: number; ai: AIState; alertT: number; facing: 1 | -1; moving: boolean;
 }
+/** 药水持续回复 */
+export interface Hot { hp: number; mp: number; next: number; left: number }
 export interface BossState { stage: number; dazeUntil: number; crazyUntil: number; crazyOn: boolean; flyT: number; summonT: number; spikeT: number; spikeX?: number; spikeAt?: number; minions: number[];
   /** feat/balance-battle 通用 BOSS 机制 [适配]：狂暴截止/已触发、AOE 计时与落点、召唤已触发 */
   enrageUntil?: number; enraged?: boolean; aoeT?: number; aoeX?: number; aoeAt?: number; called?: boolean }

@@ -38,6 +38,8 @@ export const WORLD = {
   bossEnrageAt: 0.5, bossEnrageAtk: 0.3, bossEnrageSec: 8,
   bossAoeEvery: 12, bossAoePct: 0.18, bossAoeWarn: 1.0, bossAoeRadius: 260,
   bossCallAt: 0.5, bossCallN: 2,
+  /** 药水（balance-plan E [适配]；官方回血间隔未查到）：冷却 1s，2s 内分 4 跳回满额（总量不变） */
+  potCd: 1.0, potHotSec: 2, potHotTicks: 4,
   lvDiffUp: 0.03, lvDiffDown: 0.02, lvDiffMin: 0.7,
   rarityRoll: { magic: 0.3, rare: 0.1 },
   affix: { magic: 0.5, rare: 1.2 },

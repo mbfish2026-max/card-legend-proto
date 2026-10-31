@@ -935,13 +935,21 @@ export class World {
     }
     return { ok: true, targets: targets.map(t => t.uid), skill: s.id, kind: s.kind };
   }
+  /** 药水 HoT：总量 hp/mp 在 potHotSec 内分 potHotTicks 跳回复 */
+  addHot(u: Unit, hp: number, mp: number) { (u.hots ??= []).push({ hp: hp / WORLD.potHotTicks, mp: mp / WORLD.potHotTicks, next: this.time, left: WORLD.potHotTicks }); }
+  tickHots(u: Unit) {
+    if (!u.hots?.length) return;
+    for (const x of u.hots) while (x.left > 0 && this.time >= x.next - 1e-9) { x.left--; x.next += WORLD.potHotSec / WORLD.potHotTicks;
+      if (x.hp) this.heal(u, x.hp); if (x.mp) u.mp = Math.min(u.maxMp, (u.mp ?? 0) + x.mp); }
+    u.hots = u.hots.filter(x => x.left > 0);
+  }
   usePotion(i: number): string | null {
     const p = POTIONS[i], h = this.hero;
     if (!p?.item || !h || this.pots[i] <= 0) return null;
     if ((p.hp && h.hp >= h.maxHp && !p.mp) || (p.mp && (h.mp ?? 0) >= h.maxMp && !p.hp)) return null;
-    this.pots[i]--;
-    if (p.hp) this.heal(h, p.hp);
-    if (p.mp) h.mp = Math.min(h.maxMp, (h.mp ?? 0) + p.mp);
+    if (this.time < (h.potReady ?? 0)) return null; // 1s 冷却（HP/MP 共用，[适配]）
+    this.pots[i]--; h.potReady = this.time + WORLD.potCd;
+    this.addHot(h, p.hp ?? 0, p.mp ?? 0);
     return ITEMS[p.item].name;
   }
 
@@ -1050,9 +1058,11 @@ export class World {
     const c = this.companion!, tb = this.potTable();
     for (const need of ['hp', 'mp'] as const) {
       const low = need === 'hp' ? u.hp < u.maxHp * COMPANION_POT_HP : u.maxMp > 0 && (u.mp ?? 0) < u.maxMp * COMPANION_POT_MP; if (!low) continue;
+      if (this.time < (u.potReady ?? 0)) return; // 与主角同规则：1s 冷却 + HoT
+      if (u.hots?.some(x => need === 'hp' ? x.hp > 0 : x.mp > 0)) continue; // 回复中不重复喝
       const i = pickPotion(c, need, tb); if (i < 0) continue; const it = c.bag[i], p = tb[it.item];
       if ((it.qty ?? 1) > 1) it.qty!--; else c.bag.splice(i, 1);
-      if (p.hp) this.heal(u, p.hp); if (p.mp) u.mp = Math.min(u.maxMp, (u.mp ?? 0) + p.mp);
+      u.potReady = this.time + WORLD.potCd; this.addHot(u, p.hp ?? 0, p.mp ?? 0);
       this.events.push({ type: 'log', text: `英雄使用 ${it.name}` }, { type: 'inventory' });
     }
   }
@@ -1309,6 +1319,7 @@ export class World {
       }
     }
     if (h && h.alive && this.companion?.out) this.companionStep(dt, h);
+    for (const u of this.units) if (u.alive && u.hots?.length) this.tickHots(u);
     if (h && h.alive) this.bossStep(dt, h);
     if (h && h.alive) {
       const side = this.meleeSide();

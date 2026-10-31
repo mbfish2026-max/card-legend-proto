@@ -47,3 +47,12 @@ const run = (w: World, sec: number) => { for (let t = 0; t < sec; t += 0.05) w.s
   run(ww, 14); ok(!ww.events.some(e => e.type === 'bossfx' && (e.kind === 'enrage' || e.kind === 'aoe')), '沃玛教主不触发通用狂暴/AOE');
 }
 console.log(`战斗平衡测试全部通过 ${pass} 项`);
+{ // 3. 药水：1s 冷却 + 2s HoT
+  const w = mk([]); const h = w.hero!; h.hp = 10; h.maxHp = 5000; w.pots[0] = 5; w.pots[1] = 5;
+  ok(w.usePotion(0) !== null && h.hp === 10, '喝药不立即回满（HoT）');
+  ok(w.usePotion(1) === null && w.pots[1] === 5, '1s 冷却内不能再喝');
+  run(w, 0.06); const hp1 = h.hp; ok(hp1 > 10 && hp1 < 10 + 120, `第 1 跳 ${hp1 - 10}`);
+  run(w, 2.1); ok(h.hp >= 130 - 1e-6, `2s 内总回复 ≥120（${Math.round(h.hp - 10)}，含自然回血）`);
+  ok(w.usePotion(1) !== null, '冷却后可再喝');
+}
+console.log(`战斗平衡测试(药水)全部通过 ${pass} 项`);
