@@ -88,4 +88,19 @@ export const CLASSES: Record<ClassId, ClassDef> = {
     ],
   },
 };
+/**
+ * 取消冷却（用户：「学习官方，先不要冷却」）：官方只有施法延迟与耗魔，无独立冷却。
+ * 21cq 技能表「延迟」60/40/100 等单位 未查到 → 不直接换算；[适配] 统一公共施法间隔 CAST_GAP 秒（任意技能施放后所有技能共享，防同帧连放/刷屏）。
+ * COOLDOWN_BEFORE 保留改前 [适配] 冷却供文档/对照。
+ */
+export const CAST_GAP = 0.8;
+export const COOLDOWN_BEFORE: Record<string, number> = {};
+for (const c of Object.values(CLASSES)) for (const s of c.skills) { COOLDOWN_BEFORE[s.id] = s.cooldown; if (!s.passive) s.cooldown = CAST_GAP; }
+/** 取消冷却后的再平衡 [适配]：法/道 主动技能 耗魔×mana、倍率×mult（9 种子模拟调参；战士不动）。改前值见 MANA_BEFORE/MULT_BEFORE */
+export const REBALANCE = { mage: { mana: 1.5, mult: 0.56 }, taoist: { mana: 1.2, mult: 1 } } as const;
+export const MANA_BEFORE: Record<string, number> = {}, MULT_BEFORE: Record<string, number> = {};
+for (const c of ['mage', 'taoist'] as const) for (const s of CLASSES[c].skills) if (!s.passive) {
+  MANA_BEFORE[s.id] = s.mana; if (s.mult) MULT_BEFORE[s.id] = s.mult;
+  s.mana = Math.round(s.mana * REBALANCE[c].mana); if (s.mult) s.mult = +(s.mult * REBALANCE[c].mult).toFixed(2);
+}
 export const CLASS_IDS: ClassId[] = ['warrior', 'mage', 'taoist'];

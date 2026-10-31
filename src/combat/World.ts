@@ -3,7 +3,7 @@ import { BOOKS, BookDef, BOOK_DROP, BOOK_RATES, STARTER, bookItemId } from '../d
 // 自动战斗与技能、召唤物、掉落/背包/装备/商店、死亡复活、存档序列化。
 import { BattleEvent, EquipSlot, GroundItem, InvItem, Rarity, Slot, Stats, Team, Unit, UnitDef } from './types';
 import { POTIONS } from '../data/skills';
-import { CLASSES, ClassId, SkillDef } from '../data/classes';
+import { CLASSES, ClassId, SkillDef, CAST_GAP } from '../data/classes';
 import { ITEMS, SLOTS, SETS, equipSlotsFor, EQUIP_VERSION, ENHANCE_SLOTS, ENHANCE_MAX, ENHANCE_STAT, IRON_PRICE, IRON_MAX_PURITY, enhanceChance, shatterChance } from '../data/items';
 import { HERO, ENEMIES, SUMMON, SUMMON_BEAST } from '../data/units';
 import { EXP_PER_LEVEL, EXP_VERSION, migrateExp, scaledExp, fmtExp } from '../data/expCurve';
@@ -44,10 +44,10 @@ export const FLOOR_MIGRATE_V3 = [0, 1, 2, 4, 5, 8, 9, 12];
 /** 商店祝福油价格（较贵，每层限购 1） */
 export const OIL_PRICE = 400;
 export { IRON_PRICE } from '../data/items';
+/** 新书接入（#11/#12 书）：无 learned 字段的旧档迁移时不白送这些技能（保持接入前行为） */
+const LATE_BOOKS: Record<string, true> = { big_fireball: true, burst_fire: true, hell_fire: true, lightning_flash: true, hell_thunder: true, ghost_shield: true, holy_armor: true, mass_heal: true };
 export type CastResult = { ok: true; targets: number[]; skill: string; kind: string } | { ok: false; reason: string };
 /** R13 官方 BOSS 机制（来源见 docs/combat-official.md）：沃玛教主/祖玛教主/赤月恶魔由 bossStep 接管攻击 */
-/** #12：已在 BOOKS 但尚未接入获取途径的书（S9 沃玛教主表含群疗，接入前不掉）；接入时从此表删除即可 */
-export const PENDING_BOOKS: Record<string, true> = { ghost_shield: true, holy_armor: true, mass_heal: true };
 /**
  * #12 幽灵盾/神圣战甲术（docs/skills-official.md #12）：
  * 增益 官方（新浪 2003 实测）= 0~(2 + ⌊目标等级/7⌋) 加在上限；[适配] 取区间中值 ×3（同装备防/魔御系数）= round(1.5 × (2 + ⌊等级/7⌋))
@@ -138,7 +138,7 @@ export class World {
       // 旧存档兼容：已达到学习等级的技能视为已学
       this.storage = [...(save.storage ?? [])]; this.skillOrder = [...(save.skillOrder ?? [])]; this.ringQ = save.ringQ ?? null; this.ringDone = save.ringDone ?? 0;
       // #11：旧档推导排除尚无获取途径的新书技能（shop:false 且无掉落）
-      this.learned = new Set(save.learned ?? this.skillPool.filter(s => this.level >= (s.unlock ?? s.learn?.[0] ?? 1) && (!BOOKS[s.id] || BOOKS[s.id].shop || BOOKS[s.id].drops.length)).map(s => s.id));
+      this.learned = new Set(save.learned ?? this.skillPool.filter(s => this.level >= (s.unlock ?? s.learn?.[0] ?? 1) && !(s.id in LATE_BOOKS) && (!BOOKS[s.id] || BOOKS[s.id].shop || BOOKS[s.id].drops.length)).map(s => s.id));
     }
     this.learned.add(this.starter);
     this.expNext = EXP_PER_LEVEL(this.level);
@@ -472,7 +472,7 @@ export class World {
     const extra: { id: string; purity?: number }[] = [];
     if (u.tier === 'boss' || this.lootRng() < (u.oilChance ?? 0)) extra.push({ id: 'bless_oil' });
     // R11 技能书掉落（本职业、未学、背包里也没有）
-    { const pool = Object.values(BOOKS).filter(b => b.cls === this.cls && (b.shop || b.drops.length || !(b.skill in PENDING_BOOKS)) && (u.id in BOOK_RATES ? (BOOK_RATES[u.id][b.skill] ?? 0) > 0 : b.drops.includes(u.id)) && !this.learned.has(b.skill) && !this.bag.some(x => x.item === bookItemId(b.skill)));
+    { const pool = Object.values(BOOKS).filter(b => b.cls === this.cls && (u.id in BOOK_RATES ? (BOOK_RATES[u.id][b.skill] ?? 0) > 0 : b.drops.includes(u.id)) && !this.learned.has(b.skill) && !this.bag.some(x => x.item === bookItemId(b.skill)));
       // R13：有资料的怪逐本按资料爆率（1/N）独立判定；无资料的怪沿用 [适配] 首领/普通几率随机一本
       if (u.id in BOOK_RATES) { for (const b of pool) if (this.lootRng() < BOOK_RATES[u.id][b.skill]) { extra.push({ id: bookItemId(b.skill) }); break; } }
       else if (pool.length && this.lootRng() < (u.tier === 'boss' ? BOOK_DROP.boss : BOOK_DROP.normal)) extra.push({ id: bookItemId(pool[Math.floor(this.lootRng() * pool.length)].skill) }); }
@@ -713,7 +713,7 @@ export class World {
     if (s.kind === 'buff' && s.reduce && (h.armorUntil ?? 0) > this.time) return { ok: false, reason: `${s.name}持续中（官方：持续期间重复开启无效）` };
     if (s.buffStat && ((s.buffStat === 'def' ? h.defUpUntil : h.mdefUpUntil) ?? 0) > this.time) return { ok: false, reason: `${s.name}持续中（沿用魔法盾：持续期间重复开启无效）` };
     if (s.area) targets = [h, ...this.units.filter(u => u.summon && u.alive && Math.abs(u.x - h.x) <= s.area!)];
-    h.mp = (h.mp ?? 0) - s.mana; cds[i] = s.cooldown;
+    h.mp = (h.mp ?? 0) - s.mana; for (let j = 0; j < cds.length; j++) cds[j] = Math.max(cds[j], CAST_GAP); cds[i] = Math.max(cds[i], s.cooldown); // 公共施法间隔（取消冷却）
     this.events.push({ type: 'attack', source: h.uid, target: targets[0]?.uid ?? h.uid, skill: s.id });
     this.addTrain(s, 100);
     const pw = this.power(s.stat) * this.skillScale() * (s.lvMult ? 1 : lvF);
