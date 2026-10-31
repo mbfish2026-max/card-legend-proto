@@ -2,7 +2,7 @@ declare const process: { env: Record<string, string | undefined> };
 import { World, SaveData, OIL_PRICE, IRON_PRICE, OFFICIAL, mitigate, taoBuffValue, taoBuffDur } from '../src/combat/World';
 import { ITEMS, SETS, ENHANCE_MAX, enhanceChance, shatterChance } from '../src/data/items';
 import { WORLD, CARD, Floor, FLOORS } from '../src/data/world';
-import { CLASSES, ClassId } from '../src/data/classes';
+import { CLASSES, ClassId, CAST_GAP, COOLDOWN_BEFORE, REBALANCE, MANA_BEFORE } from '../src/data/classes';
 import { ENEMIES, DIFF } from '../src/data/units';
 import { QUESTS, ACHIEVES } from '../src/data/quests';
 import { REGIONS, floorBoss, regionOf, entrances, nodeOfFloor, clampView, zoomAt, WORLD_W, WORLD_H } from '../src/data/map';
@@ -108,7 +108,7 @@ const free = (w: World) => w.skills.map(() => 0);
   mg.step(0.6, { dx: 0, dy: 0 });
   ok(mg.zones[0] && mg.zones[0].until > mg.time, '火墙持续燃烧');
   ok(mg.skills.some(s => s.id === 'fire_wall') && mg.skills.some(s => s.id === 'ice_roar'), '法师快捷栏含火墙与冰咆哮');
-  ok(CLASSES.mage.skills.find(s => s.id === 'fire_wall')!.mana === 60, '火墙耗魔 = D Spell20 ×3（适配）');
+  ok(CLASSES.mage.skills.find(s => s.id === 'fire_wall')!.mana === Math.round(60 * REBALANCE.mage.mana) && MANA_BEFORE.fire_wall === 60, '火墙耗魔 = D Spell20 ×3 ×再平衡（适配）');
   const td = mk([{ id: 'orc', x: 700 }], [], 'taoist', 35);
   const sb = td.cast(idx(td, 'summon_beast'), free(td));
   ok(!!(sb.ok && td.summon && td.summon.id === 'summon_beast'), '35 级召唤神兽');
@@ -142,7 +142,7 @@ const free = (w: World) => w.skills.map(() => 0);
   const sh = w4.cast(idx(w4, 'magic_shield'), free(w4)); ok(sh.ok && OFFICIAL.shieldReduce.includes(w4.hero!.armorReduce!), `魔法盾按官方等级减伤（${w4.hero!.armorReduce}）`);
   ok(!w4.cast(idx(w4, 'magic_shield'), free(w4)).ok, '魔法盾持续期间重复开启无效（官方）');
   ok(!mk([{ id: 'orc', x: 900 }], [], 'mage', 30).cast(idx(w4, 'magic_shield'), free(w4)).ok, '魔法盾 31 级前不可用');
-  ok(w4.skills[idx(w4, 'fireball')].mana === 12, '火球耗魔 = 官方 4 × 3（适配）');
+  ok(w4.skills[idx(w4, 'fireball')].mana === Math.round(12 * REBALANCE.mage.mana) && MANA_BEFORE.fireball === 12, '火球耗魔 = 官方 4 × 3 ×再平衡（适配）');
 }
 { // 道士：施毒持续掉血 + 召唤骷髅协同作战
   const w = mk([{ id: 'orc', x: 800 }], [], 'taoist'); const o = w.alive('enemy')[0]; o.hp = o.maxHp = 1e6;
@@ -842,12 +842,12 @@ const free = (w: World) => w.skills.map(() => 0);
   const NEW: [string, number, number[], number][] = [['big_fireball', 19, [8000, 14000, 25000], 9], ['burst_fire', 22, [3000, 6000, 18000], 45], ['hell_fire', 16, [1000, 4000, 8000], 30], ['lightning_flash', 26, [3000, 6000, 12000], 75], ['hell_thunder', 30, [4000, 8000, 12000], 105]];
   for (const [id, lv, tr, mana] of NEW) {
     const d = CLASSES.mage.skills.find(s => s.id === id)!;
-    ok(d.learn![0] === lv && JSON.stringify(d.train) === JSON.stringify(tr) && d.mana === mana && d.stat === 'mag', `${d.name}：官方学习 Lv${lv}、修炼点 ${tr.join('/')}，耗魔 ${mana}`);
+    ok(d.learn![0] === lv && JSON.stringify(d.train) === JSON.stringify(tr) && MANA_BEFORE[d.id] === mana && d.mana === Math.round(mana * REBALANCE.mage.mana) && d.stat === 'mag', `${d.name}：官方学习 Lv${lv}、修炼点 ${tr.join('/')}，耗魔 ${mana}`);
     const lo = mk([{ id: 'orc', x: 900 }], [], 'mage', lv - 1); lo.hero!.x = 600; ok(!lo.cast(idx(lo, id), free(lo)).ok, `${d.name} ${lv - 1} 级不可用`);
     const w = mk([{ id: 'orc', x: 900 }], [], 'mage', lv); tough(w); w.hero!.x = 600; ok(w.skillLevel(pool(w, id)) === 0, `${d.name} ${lv} 级解锁为 0 级`);
     w.skillTrain[id] = tr[0]; w.level = Math.max(lv, d.learn![1]); ok(w.skillLevel(pool(w, id)) === 1, `${d.name} 修炼点 ${tr[0]} + Lv${d.learn![1]} → 1 级`);
     const mp0 = w.hero!.mp!, cds = free(w), r = w.cast(idx(w, id), cds);
-    ok(r.ok && w.hero!.mp === mp0 - mana && cds[idx(w, id)] === d.cooldown, `${d.name} 施放扣魔 ${mana}，进入冷却 ${d.cooldown}s`);
+    ok(r.ok && w.hero!.mp === mp0 - d.mana && cds[idx(w, id)] === d.cooldown, `${d.name} 施放扣魔 ${mana}，进入冷却 ${d.cooldown}s`);
     ok(!w.cast(idx(w, id), cds).ok, `${d.name} 冷却中不能再放`);
     // 魔御：同一怪物魔御 0 vs 40，伤害下降（固定随机）
     const dmg = (mdef: number) => { const x = mk([{ id: 'orc', x: 900 }], [], 'mage', 40); tough(x); x.hero!.x = 600; x.rng = () => 0.5; x.alive('enemy')[0].mdef = mdef; x.alive('enemy')[0].def = 999; x.cast(idx(x, id), free(x)); return (x.drainEvents().find(e => e.type === 'damage') as any).amount as number; };
@@ -884,11 +884,11 @@ const free = (w: World) => w.skills.map(() => 0);
   ok(CLASSES.taoist.skills.filter(s => !s.passive).length === 8 && CLASSES.taoist.skills.every(s => !s.key || +s.key.slice(1) <= 10), '道士 8 主动，快捷栏不超过 F10');
   for (const [id, lv, tr, mana] of NEW) {
     const d = CLASSES.taoist.skills.find(s => s.id === id)!;
-    ok(d.learn![0] === lv && JSON.stringify(d.train) === JSON.stringify(tr) && d.mana === mana && d.stat === 'tao', `${d.name}：官方学习 Lv${lv}、修炼点 ${tr.join('/')}，耗魔 ${mana}`);
+    ok(d.learn![0] === lv && JSON.stringify(d.train) === JSON.stringify(tr) && MANA_BEFORE[d.id] === mana && d.mana === Math.round(mana * REBALANCE.taoist.mana) && d.stat === 'tao', `${d.name}：官方学习 Lv${lv}、修炼点 ${tr.join('/')}，耗魔 ${mana}`);
     const lo = mk([{ id: 'orc', x: 900 }], [], 'taoist', lv - 1); ok(!lo.cast(idx(lo, id), free(lo)).ok, `${d.name} ${lv - 1} 级不可用`);
     const w = mk([{ id: 'orc', x: 3000 }], [], 'taoist', lv); tough(w); ok(w.skillLevel(pool(w, id)) === 0, `${d.name} ${lv} 级解锁为 0 级`);
     w.skillTrain[id] = tr[0]; w.level = Math.max(lv, d.learn![1]); ok(w.skillLevel(pool(w, id)) === 1, `${d.name} 修炼点 ${tr[0]} + Lv${d.learn![1]} → 1 级`);
-    const mp0 = w.hero!.mp!, cds = free(w); ok(w.cast(idx(w, id), cds).ok && w.hero!.mp === mp0 - mana && cds[idx(w, id)] === d.cooldown, `${d.name} 扣魔 ${mana}，冷却 ${d.cooldown}s`);
+    const mp0 = w.hero!.mp!, cds = free(w); ok(w.cast(idx(w, id), cds).ok && w.hero!.mp === mp0 - d.mana && cds[idx(w, id)] === d.cooldown, `${d.name} 扣魔 ${mana}，冷却 ${d.cooldown}s`);
   }
   // 数值与时长（按道术）
   ok(taoBuffValue(22) === 8 && taoBuffValue(35) === 11 && taoBuffValue(48) === 12, '增益 = round(1.5×(2+⌊等级/7⌋))（官方上限区间中值×3）');
@@ -921,5 +921,15 @@ const free = (w: World) => w.skills.map(() => 0);
   const old = new World(seeded(1), 40, FLOORS, 'taoist', JSON.parse(JSON.stringify({ ...new World(seeded(1), 40, FLOORS, 'taoist').toSave(), learned: undefined })));
   ok(NEW.every(([id]) => !old.learned.has(id)) && old.learned.has('heal'), '旧档（无 learned）不会白送新技能');
   ok(!JSON.stringify(new World(seeded(1), 40, FLOORS, 'taoist').toSave()).includes('UpUntil'), 'buff 状态不存档');
+}
+{ // 取消冷却：官方无独立冷却，只保留公共施法间隔
+  const act = (Object.keys(CLASSES) as ClassId[]).flatMap(c => CLASSES[c].skills.filter(s => !s.passive));
+  ok(act.every(s => s.cooldown === CAST_GAP) && COOLDOWN_BEFORE.summon_beast === 15 && COOLDOWN_BEFORE.magic_shield === 20, `所有主动技能冷却 = 公共施法间隔 ${CAST_GAP}s（改前值保留在 COOLDOWN_BEFORE）`);
+  const w = new World(seeded(2), 30, FLOORS, 'mage'); w.learned.add('thunder'); w.learned.add('hell_fire'); const h = w.hero!; h.mp = h.maxMp = 9999;
+  w.units.push(...[]); w.spawn(ENEMIES.orc, 'enemy', h.x + 200).ai = 'idle'; const cds = w.skills.map(() => 0);
+  const a = w.cast(idx(w, 'fireball'), cds), b = w.cast(idx(w, 'thunder'), cds);
+  ok(a.ok && !b.ok && cds.every(c => c >= CAST_GAP - 1e-9), '同帧不能连放第二个技能（公共间隔）');
+  for (let i = 0; i < cds.length; i++) cds[i] = Math.max(0, cds[i] - CAST_GAP); ok(w.cast(idx(w, 'fireball'), cds).ok, `间隔 ${CAST_GAP}s 后可再次施放同一技能（无独立冷却）`);
+  const ws = new World(seeded(2), 30, FLOORS, 'mage', JSON.parse(JSON.stringify(w.toSave()))); ok(ws.learned.has('hell_fire') && !('cds' in w.toSave()), '冷却不存档，旧档读档正常');
 }
 console.log(`全部通过 ${pass} 项`);

@@ -223,8 +223,8 @@ export class Panel {
       const compact = rowH < 50;
       if (!compact) R.add(txt(s, 212, y - rowH / 2 + 4 + fs + 5, `${k.desc}  各级：${lvVals.map((v, l) => `${l}级${v}`).join(' ')}`.slice(0, 64), fs, locked ? '#777' : '#ddd', { strokeThickness: 2 }));
       const up = lv >= 0 && lv < 3 && k.learn && k.train ? `升级：人物Lv${k.learn[lv + 1]} + 修炼点${k.train[lv]}` : lv === 3 ? '已满级' : '';
-      if (compact) R.add(txt(s, 212, y - rowH / 2 + 4 + fs + 5, `${k.passive ? '无需施放' : `耗魔${k.mana} 冷却${k.cooldown}s`} 修炼${pts}${k.train ? '/' + k.train[2] : ''} ${up}  ${k.desc}`.slice(0, 46), fs, locked ? '#777' : '#9fd', { strokeThickness: 2 }));
-      else R.add(txt(s, 212, y - rowH / 2 + 4 + (fs + 5) * 2, `${k.passive ? '无需施放' : `耗魔 ${k.mana}  冷却 ${k.cooldown}s`}  修炼点 ${pts}${k.train ? '/' + k.train[2] : ''}  ${up}`, fs, locked ? '#666' : '#9fd', { strokeThickness: 2 }));
+      if (compact) R.add(txt(s, 212, y - rowH / 2 + 4 + fs + 5, `${k.passive ? '无需施放' : `耗魔${k.mana} 间隔${k.cooldown}s`} 修炼${pts}${k.train ? '/' + k.train[2] : ''} ${up}  ${k.desc}`.slice(0, 46), fs, locked ? '#777' : '#9fd', { strokeThickness: 2 }));
+      else R.add(txt(s, 212, y - rowH / 2 + 4 + (fs + 5) * 2, `${k.passive ? '无需施放' : `耗魔 ${k.mana}  施法间隔 ${k.cooldown}s`}  修炼点 ${pts}${k.train ? '/' + k.train[2] : ''}  ${up}`, fs, locked ? '#666' : '#9fd', { strokeThickness: 2 }));
       // 修炼进度条（官方：修炼点达到下一级要求 + 人物等级达到即自动升级）
       if (k.train && lv >= 0 && lv < 3) { const p = Math.min(1, pts / k.train[lv]); R.add(s.add.rectangle(212, y + rowH / 2 - 6, 220, 4, 0x333333).setOrigin(0, 0.5)); R.add(s.add.rectangle(212, y + rowH / 2 - 6, 220 * p, 4, 0x55cc77).setOrigin(0, 0.5)); }
       if (inBar) {

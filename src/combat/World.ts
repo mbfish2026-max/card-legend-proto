@@ -3,7 +3,7 @@ import { BOOKS, BookDef, BOOK_DROP, BOOK_RATES, STARTER, bookItemId } from '../d
 // 自动战斗与技能、召唤物、掉落/背包/装备/商店、死亡复活、存档序列化。
 import { BattleEvent, EquipSlot, GroundItem, InvItem, Rarity, Slot, Stats, Team, Unit, UnitDef } from './types';
 import { POTIONS } from '../data/skills';
-import { CLASSES, ClassId, SkillDef } from '../data/classes';
+import { CLASSES, ClassId, SkillDef, CAST_GAP } from '../data/classes';
 import { ITEMS, SLOTS, SETS, equipSlotsFor, EQUIP_VERSION, ENHANCE_SLOTS, ENHANCE_MAX, ENHANCE_STAT, IRON_PRICE, IRON_MAX_PURITY, enhanceChance, shatterChance } from '../data/items';
 import { HERO, ENEMIES, SUMMON, SUMMON_BEAST } from '../data/units';
 import { EXP_PER_LEVEL, EXP_VERSION, migrateExp, scaledExp, fmtExp } from '../data/expCurve';
@@ -708,7 +708,7 @@ export class World {
     if (s.kind === 'buff' && s.reduce && (h.armorUntil ?? 0) > this.time) return { ok: false, reason: `${s.name}持续中（官方：持续期间重复开启无效）` };
     if (s.buffStat && ((s.buffStat === 'def' ? h.defUpUntil : h.mdefUpUntil) ?? 0) > this.time) return { ok: false, reason: `${s.name}持续中（沿用魔法盾：持续期间重复开启无效）` };
     if (s.area) targets = [h, ...this.units.filter(u => u.summon && u.alive && Math.abs(u.x - h.x) <= s.area!)];
-    h.mp = (h.mp ?? 0) - s.mana; cds[i] = s.cooldown;
+    h.mp = (h.mp ?? 0) - s.mana; for (let j = 0; j < cds.length; j++) cds[j] = Math.max(cds[j], CAST_GAP); cds[i] = Math.max(cds[i], s.cooldown); // 公共施法间隔（取消冷却）
     this.events.push({ type: 'attack', source: h.uid, target: targets[0]?.uid ?? h.uid, skill: s.id });
     this.addTrain(s, 100);
     const pw = this.power(s.stat) * this.skillScale() * (s.lvMult ? 1 : lvF);
