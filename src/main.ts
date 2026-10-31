@@ -1,3 +1,4 @@
+import { PreloadScene } from './loader';
 import Phaser from 'phaser';
 import { TitleScene } from './scenes/TitleScene';
 import { BattleScene } from './scenes/BattleScene';
@@ -16,13 +17,15 @@ const game = new Phaser.Game({
   type: Phaser.AUTO, width: 1280, height: 720, parent: 'game', backgroundColor: '#111', pixelArt: true,
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
   input: { activePointers: 5 },
-  scene: [TitleScene, BattleScene, UIScene],
+  scene: [TitleScene, BattleScene, UIScene, PreloadScene],
 });
 (window as any).__game = game; (window as any).__mobile = IS_MOBILE;
 // 画布创建后再应用一次缩放
-game.events.once('ready', () => Settings.applyZoom());
+game.events.once('ready', () => { Settings.applyZoom(); document.getElementById('boot')?.remove(); });
 // 尺寸变化/旋转实时重算（iOS 旋转后视口晚到，补两次）
 const reflow = () => { Settings.applyZoom(); setTimeout(() => Settings.applyZoom(), 120); setTimeout(() => Settings.applyZoom(), 400); };
 window.addEventListener('resize', reflow);
 window.addEventListener('orientationchange', reflow);
 window.visualViewport?.addEventListener('resize', reflow);
+// R10：生产环境注册 Service Worker（重复访问走缓存）
+if (import.meta.env.PROD && 'serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register(import.meta.env.BASE_URL + 'sw.js').catch(() => {}));

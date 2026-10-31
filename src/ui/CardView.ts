@@ -6,6 +6,17 @@ const FALLBACK: Record<string, number> = { hero: 0x3366cc, deer: 0x887744, wolf:
 // 卡框背景色：敌方深红，战士深灰/黑（法师蓝 0x1c3a7a、道士金黄 0x7a5c14 预留）
 const BG: Record<string, number> = { player: 0x2a2a2e, normal: 0x4a0c0c, boss: 0x3a0606 };
 const EDGE: Record<string, number> = { player: 0xb8a070, normal: 0x8a8a92, boss: 0xd4a64a };
+/** 通用人形剪影纹理（占位用，tint 成卡牌主色） */
+function silhouette(s: Phaser.Scene) {
+  const k = '__silhouette';
+  if (!s.textures.exists(k)) {
+    const g = s.make.graphics({}, false); g.fillStyle(0xffffff, 1);
+    g.fillCircle(100, 52, 34); g.fillRoundedRect(52, 92, 96, 130, 28); g.fillRoundedRect(60, 200, 34, 96, 12); g.fillRoundedRect(106, 200, 34, 96, 12);
+    g.fillRoundedRect(28, 100, 28, 100, 12); g.fillRoundedRect(144, 100, 28, 100, 12);
+    g.generateTexture(k, 200, 300); g.destroy();
+  }
+  return k;
+}
 const DEFAULT_CARD = { w: 140, h: 190, figureScale: 1.15, anchorX: 0.5, footSink: 2, artFacing: -1 as 1 | -1 };
 
 /**
@@ -14,7 +25,7 @@ const DEFAULT_CARD = { w: 140, h: 190, figureScale: 1.15, anchorX: 0.5, footSink
  * 立绘脚底锚定在信息条上边缘；动作全部用整张立绘的缩放/位移/倾斜实现。
  */
 export class CardView extends Phaser.GameObjects.Container {
-  inner: Phaser.GameObjects.Container; art: Phaser.GameObjects.Image | Phaser.GameObjects.Text;
+  inner: Phaser.GameObjects.Container; art: Phaser.GameObjects.Image; figH0 = 0; maxW = 0;
   hpFill: Phaser.GameObjects.Rectangle; hpText: Phaser.GameObjects.Text; lvlText: Phaser.GameObjects.Text;
   flash: Phaser.GameObjects.Rectangle;
   /** w = 卡框宽；h = 视觉高度（立绘顶到地面），供特效定位 */
@@ -42,11 +53,22 @@ export class CardView extends Phaser.GameObjects.Container {
     let figH = Math.round(faceH * c.figureScale);
     this.artX = 0; this.artY = -barH + (c.footSink ?? 2);
     const tex = unit.art ?? unit.id;
-    if (scene.textures.exists(tex)) {
-      const im = scene.add.image(this.artX, this.artY, tex).setOrigin(c.anchorX ?? 0.5, 1);
-      let s = figH / im.height; if (im.width * s > maxW) { s = maxW / im.width; figH = Math.round(im.height * s); } im.setScale(s); this.artSX = this.artSY = s; this.art = im;
-    } else {
-      this.art = scene.add.text(0, this.artY, unit.name[0], { fontFamily: FONT, fontSize: '48px', color: '#fff' }).setOrigin(0.5, 1).setBackgroundColor('#' + (FALLBACK[unit.id] ?? 0x555555).toString(16).padStart(6, '0'));
+    this.figH0 = figH; this.maxW = maxW;
+    const has = scene.textures.exists(tex);
+    // 立绘未到：同色剪影占位（不显示大字），立绘加载完成后自动替换
+    const im = scene.add.image(this.artX, this.artY, has ? tex : silhouette(scene)).setOrigin(c.anchorX ?? 0.5, 1);
+    this.art = im; figH = this.fitArt();
+    if (!has) {
+      im.setTint(FALLBACK[unit.id] ?? (unit.tier === 'player' ? 0x3a3a44 : 0x2a1414)).setAlpha(0.85);
+      const pulse = scene.tweens.add({ targets: im, alpha: 0.55, duration: 700, yoyo: true, repeat: -1 });
+      const onAdd = (key: string) => {
+        if (key !== tex || !this.active) return;
+        scene.textures.off('addtexture', onAdd); pulse.stop();
+        im.setTexture(tex).clearTint().setAlpha(0); this.fitArt();
+        scene.tweens.add({ targets: im, alpha: 1, duration: 250 });
+      };
+      scene.textures.on('addtexture', onAdd);
+      this.once('destroy', () => scene.textures.off('addtexture', onAdd));
     }
     this.h = Math.max(ch, figH + barH - (c.footSink ?? 2));
     // 底部信息条：名字/等级 + 血条（怪物只有红条）
@@ -76,6 +98,12 @@ export class CardView extends Phaser.GameObjects.Container {
     this.inner.add([g, this.flash, this.art, bar, hpBg, this.hpFill, lv, this.lvlText, name, this.hpText]);
     this.add([shadow, this.inner]);
     scene.add.existing(this); this.sync();
+  }
+  /** 按卡面高度/最大宽度缩放立绘，返回实际图高 */
+  private fitArt() {
+    const im = this.art; let s = this.figH0 / im.height, figH = this.figH0;
+    if (im.width * s > this.maxW) { s = this.maxW / im.width; figH = Math.round(im.height * s); }
+    im.setScale(s); this.artSX = this.artSY = s; return figH;
   }
   get cx() { return this.x; } get cy() { return this.y - this.h / 2; }
   sync() {

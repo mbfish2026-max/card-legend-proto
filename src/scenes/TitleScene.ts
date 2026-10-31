@@ -5,6 +5,9 @@ import { CLASSES, CLASS_IDS, ClassId } from '../data/classes';
 import { FONT } from '../data/fx';
 import { Settings, SaveStore } from '../settings';
 import { renderSettingsView } from '../ui/SettingsView';
+import { queueCritical, queueImages, floorKeys, PreloadScene } from '../loader';
+import { FLOORS } from '../data/world';
+import type { SaveData } from '../combat/World';
 import { MUSIC, playMusic } from '../music';
 import { IS_MOBILE } from '../mobile';
 
@@ -32,17 +35,16 @@ export class TitleScene extends Phaser.Scene {
     this.add.rectangle(640, 360, 604, 22).setStrokeStyle(2, 0x8a7a55);
     this.load.on('progress', (p: number) => (bar.width = 600 * p));
     this.load.on('loaderror', (f: any) => console.warn('素材缺失，使用回退:', f?.key));
-    for (const [id, p] of Object.entries(ASSETS)) if (p) this.load.image(id, p);
-    for (const c of Object.values(CLASSES)) for (const s of c.skills) this.load.image('sk_' + s.id, s.icon);
-    for (const it of Object.values(ITEMS)) this.load.image('item_' + it.id, it.icon);
-    for (const [id, p] of Object.entries(SFX)) if (p) this.load.audio('sfx_' + id, p);
-    for (const [id, p] of Object.entries(MUSIC)) this.load.audio('bgm_' + id, p);
+    // R10：首屏只等关键资源（小图标/音效/三职业立绘/第 1 层）；其余由常驻 Preload 场景后台加载
+    queueCritical(this);
   }
   create() {
     Settings.load(); Settings.apply(this.sound);
+    if (!this.scene.isActive('Preload')) this.scene.launch('Preload');
+    this.game.events.off('music-ready'); this.game.events.once('music-ready', () => { if (this.scene.isActive()) playMusic(this, 'title'); });
     const qs = new URLSearchParams(location.search);
     // 调试/截图参数：?class=mage&floor=3 直接进入战斗；?title=class 直接显示职业选择
-    if (qs.has('class') || qs.has('floor')) { this.scene.start('Battle', { cls: (qs.get('class') as ClassId) || 'warrior' }); return; }
+    if (qs.has('class') || qs.has('floor')) { this.startBattle({ cls: (qs.get('class') as ClassId) || 'warrior' }); return; }
     playMusic(this, 'title');
     if (this.textures.exists('bg_floor1')) this.add.image(640, 360, 'bg_floor1').setDisplaySize(1280, 720).setTint(0x777777);
     this.add.rectangle(640, 360, 1280, 720, 0x000000, 0.35);
@@ -55,10 +57,24 @@ export class TitleScene extends Phaser.Scene {
   mainMenu() {
     const L = this.clear(), has = SaveStore.has(), save = SaveStore.load();
     L.add([...button(this, 640, 320, 280, 56, '新 游 戏', () => this.classSelect())]);
-    L.add([...button(this, 640, 395, 280, 56, '继 续', () => save && this.scene.start('Battle', { save }), 22, has && !!save)]);
+    L.add([...button(this, 640, 395, 280, 56, '继 续', () => save && this.startBattle({ save }), 22, has && !!save)]);
     if (save) L.add(txt(this, 640, 432, `${CLASSES[save.cls].name}  Lv${save.level}  第 ${save.floorIndex + 1} 层  金币 ${save.gold}`, 14, '#cfc0a0').setOrigin(0.5, 0));
     L.add([...button(this, 640, 490, 280, 56, '设 置', () => this.settings())]);
     L.add(txt(this, 640, 690, '素材：魔兽世界图标/音效（仅供个人原型）+ AI 生成立绘与背景', 13, '#999').setOrigin(0.5));
+  }
+  /** 进战斗前等待目标层关键资源（继续存档可能在高层），显示进度条 */
+  startBattle(data: { cls?: ClassId; save?: SaveData }) {
+    const fi = data.save ? Math.min(data.save.floorIndex, FLOORS.length - 1) : 0;
+    const keys = floorKeys(FLOORS[fi]);
+    (this.scene.get('Preload') as PreloadScene | undefined)?.prioritize?.(floorKeys(FLOORS[fi + 1]));
+    if (!queueImages(this.load, this.textures, keys)) { this.scene.start('Battle', data); return; }
+    const L = this.clear();
+    L.add(txt(this, 640, 320, `载入 第 ${fi + 1} 层…`, 22, '#ffe8a0').setOrigin(0.5));
+    L.add(this.add.rectangle(640, 360, 604, 22).setStrokeStyle(2, 0x8a7a55));
+    const bar = this.add.rectangle(340, 360, 0, 16, 0xd4a64a).setOrigin(0, 0.5); L.add(bar);
+    this.load.on('progress', (v: number) => (bar.width = 600 * v));
+    this.load.once('complete', () => { this.load.off('progress'); this.scene.start('Battle', data); });
+    this.load.start();
   }
   setCls: ClassId = 'warrior';
   settings() {
@@ -86,7 +102,7 @@ export class TitleScene extends Phaser.Scene {
       L.add(txt(this, x, y + 80, c.desc, 13, '#ddd', { align: 'center', strokeThickness: 2 }).setOrigin(0.5, 0));
       c.skills.forEach((s, k) => { if (this.textures.exists('sk_' + s.id)) L.add(this.add.image(x - 66 + k * 44, y - h / 2 - 26, 'sk_' + s.id).setDisplaySize(38, 38)); });
       card.on('pointerover', () => card.setStrokeStyle(4, 0xffe080)).on('pointerout', () => card.setStrokeStyle(3, 0xb8a070))
-        .on('pointerdown', () => { sfx(this, 'click2'); SaveStore.clear(); this.scene.start('Battle', { cls: id }); });
+        .on('pointerdown', () => { sfx(this, 'click2'); SaveStore.clear(); this.startBattle({ cls: id }); });
     });
     L.add([...button(this, 640, 670, 160, 40, '返回', () => this.mainMenu(), 18)]);
   }

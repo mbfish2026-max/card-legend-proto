@@ -1,3 +1,4 @@
+import { floorKeys, PreloadScene } from '../loader';
 import Phaser from 'phaser';
 import { IS_MOBILE } from '../mobile';
 import { HoldKeys, stepDir } from '../input/stepKeys';
@@ -305,6 +306,10 @@ export class BattleScene extends Phaser.Scene {
     const s = this.world.summon; if (s) { const v = this.views.get(s.uid); if (v) v.x = s.x; }
     const bg = this.world.floor.bg && this.textures.exists(this.world.floor.bg) ? this.world.floor.bg : 'bg';
     this.bgImgs.forEach(b => b.setTexture(bg).setDisplaySize(1280, 720));
+    // R10：本层背景未到 → 到了自动替换；下一层资源插队预加载
+    const want = this.world.floor.bg;
+    if (want && bg !== want) { const on = (k: string) => { if (k === want && this.world.floor.bg === want) { this.textures.off('addtexture', on); this.bgImgs.forEach(b => b.setTexture(want).setDisplaySize(1280, 720)); } }; this.textures.on('addtexture', on); this.events.once('shutdown', () => this.textures.off('addtexture', on)); }
+    (this.scene.get('Preload') as PreloadScene | undefined)?.prioritize?.([...floorKeys(this.world.floor), ...floorKeys(this.world.floors[this.world.floorIndex + 1])]);
     this.hud?.setFloor(name, this.floorIcons());
     this.log(`进入 第 ${i + 1} 层 · ${name}（首领在地图尽头）`);
     this.cameras.main.centerOn(WORLD.heroStartX, 360); this.cameras.main.fadeIn(700, 0, 0, 0);
