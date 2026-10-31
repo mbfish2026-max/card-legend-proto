@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import type { World } from '../combat/World';
-import { InvItem, Slot } from '../combat/types';
-import { SLOTS, SLOT_NAMES, STAT_NAMES, ITEMS, SETS, ENHANCE_SLOTS, ENHANCE_MAX, IRON_PRICE } from '../data/items';
+import { EquipSlot, InvItem, Slot } from '../combat/types';
+import { EQUIP_SLOTS, EQUIP_SLOT_NAMES, SLOT_NAMES, STAT_NAMES, ITEMS, SETS, ENHANCE_SLOTS, ENHANCE_MAX, IRON_PRICE } from '../data/items';
 import { OIL_PRICE } from '../combat/World';
 import { POTIONS } from '../data/skills';
 import { WORLD } from '../data/world';
@@ -86,16 +86,18 @@ export class Panel {
     // 装备上身预览：衣服/武器分层合成；缺素材回退原立绘，层图就绪后重绘面板
     const look = equipLook(s, w.cls, c.art, w.equip, () => { if (this.mode === 'bag' && this.root === R) this.render(); });
     if (s.textures.exists(look.key)) { const im = s.add.image(cx, top + 330, look.key).setOrigin(0.5, 1).setName('equipPreview'); im.setScale(Math.min(250 / im.height, 200 / im.width)); R.add(im); }
-    const pos: Record<Slot, [number, number]> = { helmet: [cx - 130, top + 90], necklace: [cx - 130, top + 160], weapon: [cx - 130, top + 230], bracelet: [cx - 130, top + 300],
-      armor: [cx + 130, top + 90], ring: [cx + 130, top + 160], boots: [cx + 130, top + 230] } as any;
-    for (const sl of SLOTS) {
+    // 左列：头盔/项链/武器/左手镯/左戒指；右列：衣服/靴子/右手镯/右戒指（间距 58，末行底边 top+342 不压属性文字，竖屏同坐标系不越界）
+    const L = cx - 130, Rx = cx + 130, y0 = top + 80, dy = 58;
+    const pos: Record<EquipSlot, [number, number]> = { helmet: [L, y0], necklace: [L, y0 + dy], weapon: [L, y0 + dy * 2], bracelet1: [L, y0 + dy * 3], ring1: [L, y0 + dy * 4],
+      armor: [Rx, y0], boots: [Rx, y0 + dy], bracelet2: [Rx, y0 + dy * 3], ring2: [Rx, y0 + dy * 4] };
+    for (const sl of EQUIP_SLOTS) {
       const [x, y] = pos[sl];
-      this.slotBox(R, x, y, size, w.equip[sl], SLOT_NAMES[sl], () => {
+      this.slotBox(R, x, y, size, w.equip[sl], EQUIP_SLOT_NAMES[sl], () => {
         if (this.ironIdx != null) {
           const m = w.enhanceWithIron(this.ironIdx, sl); this.ironIdx = null;
           sfx(s, 'loot', 0.5); this.onChange(m, m.includes('成功')); this.render(); return;
         }
-        const e = w.unequip(sl); this.onChange(e ?? `卸下 ${SLOT_NAMES[sl]}`); sfx(s, 'loot', 0.4); this.render();
+        const e = w.unequip(sl); this.onChange(e ?? `卸下 ${EQUIP_SLOT_NAMES[sl]}`); sfx(s, 'loot', 0.4); this.render();
       }, 'eq_' + sl);
     }
     const st = w.stats(), h = w.hero;
@@ -335,12 +337,12 @@ export class Panel {
     if (it.item === 'bless_oil') lines.push(['点击：作用于当前武器（幸运+1，上限7，可能诅咒）', '#9fd']);
     if (it.item === 'black_iron') lines.push([`纯度 ${it.purity ?? 1} ×${it.qty ?? 1}：点装备栏强化；再点可提纯`, '#9fd']);
     if (it.enhance) lines.push([`强化 +${it.enhance}（上限 +${ENHANCE_MAX}）`, '#c8c8ff']);
-    if (it.slot && ENHANCE_SLOTS.includes(it.slot) && (it.enhance ?? 0) < ENHANCE_MAX) lines.push(['可用黑铁矿石强化（武器/头盔/衣服/靴）', '#9ab']);
+    if (it.slot && ENHANCE_SLOTS.includes(it.slot as any) && (it.enhance ?? 0) < ENHANCE_MAX) lines.push(['可用黑铁矿石强化（武器/头盔/衣服/靴）', '#9ab']);
     const sd = ITEMS[it.item]?.set ? SETS[ITEMS[it.item].set!] : undefined;
     if (sd) { const n = w.setCounts()[sd.id] ?? 0; lines.push([`【${sd.name}套装】已穿 ${n}/${sd.pieces.length}`, '#ffb040']);
       for (const b of sd.bonus) lines.push([`  ${b.n}件：${b.text}`, n >= b.n ? '#7aff7a' : '#777']); }
     if (it.slot) {
-      const cur = w.equip[it.slot];
+      const ts = w.targetSlot(it), cur = ts ? w.equip[ts] : undefined;
       if (cur && cur !== it) lines.push([`当前：${cur.name}`, '#888']);
       lines.push([`需要等级 ${it.req}`, w.level >= it.req ? '#fff' : '#ff4040']);
     }

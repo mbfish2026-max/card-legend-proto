@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import type { InvItem, Slot } from '../combat/types';
+import type { EquipSlot, InvItem, Slot } from '../combat/types';
 import { resolveLayers, pickTexture, comboKey, ResolvedLayer, CANVAS, COMPOSE_SCALE } from '../data/equipLayers';
 import { assetUrl } from '../loader';
 
@@ -46,7 +46,7 @@ export interface Look { key: string; state: 'base' | 'fallback' | 'pending' | 'c
 /**
  * 求当前应显示的纹理 key。pending 时先返回原立绘，并在加载完成后调用 onReady（调用方重绘）。
  */
-export function equipLook(s: Phaser.Scene, cls: string, baseKey: string, equip: Partial<Record<Slot, InvItem>> | undefined, onReady?: () => void): Look {
+export function equipLook(s: Phaser.Scene, cls: string, baseKey: string, equip: Partial<Record<EquipSlot, InvItem>> | undefined, onReady?: () => void): Look {
   const ls = resolveLayers(cls, equip), sig = comboKey(cls, ls);
   const r = pickTexture(cls, baseKey, ls, k => s.textures.exists(k), equipFailed);
   if (r.state === 'composed') compose(s, r.key, ls);
