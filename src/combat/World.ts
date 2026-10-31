@@ -73,7 +73,11 @@ export const SUMMON_NAME_COLORS = ['#ffffff', '#a8d8ff', '#7cc0ff', '#4fa3ff', '
 export const HEAL_SUMMON_RANGE = 170;
 /** [适配] 自动施放召唤技能：已有召唤物且血量 ≥ 该比例时跳过（不耗魔、不占公共间隔）；低于则自动重召（= 回满血/替换）。手动不受限 */
 export const AUTO_RESUMMON_HP = 0.5;
-export const BOSS_MECH = new Set(['boss_woma', 'boss_zuma', 'boss_redmoon', 'boss_molong']);
+export const BOSS_MECH = new Set(['boss_woma', 'boss_zuma', 'boss_redmoon', 'boss_molong', 'boss_huangquan', 'boss_twinhead_kong', 'boss_twinhead_blood']);
+/** M4：新 BOSS 复用已有机制（不新增机制）。黄泉教主=祖玛式火球+召唤（召唤骷髅系）；双头金刚=魔龙式近战+瞬移；双头血魔=沃玛式发呆/狂暴/瞬移/闪电 */
+export const MECH_ALIAS: Record<string, string> = { boss_huangquan: 'boss_zuma', boss_twinhead_kong: 'boss_molong', boss_twinhead_blood: 'boss_woma' };
+/** 召唤型 BOSS 的小怪池（按已召唤数轮换）；黄泉教主原版召唤骷髅弓箭手/长枪兵/刀斧手（本作未实装）→ [适配] 用已有骷髅系 */
+export const MECH_MINIONS: Record<string, string[]> = { boss_zuma: ['zuma_statue', 'zuma_guard'], boss_huangquan: ['axe_skeleton', 'cave_skel_warrior'] };
 /**
  * 诱惑之光（docs/skills-official.md「诱惑之光」）
  * 官方 C：可驯服等级 ≤ 法师等级+2 的生物系怪物；A：对高智商对手无效。资料站（17173）：宠物上限 Lv0..3 = 2/3/4/5。
@@ -1347,7 +1351,8 @@ export class World {
       const m = b.boss ??= { stage: 0, dazeUntil: 0, crazyUntil: 0, crazyOn: false, flyT: 0, summonT: 0, spikeT: OFFICIAL.spikeEvery, minions: [] };
       const sm = this.summon, slow = b.slowUntil && b.slowUntil > this.time ? 1.5 : 1;
       const pick = () => (sm && this.inMelee(sm, b) && this.rng() < 0.5 ? sm : h);
-      if (b.id === 'boss_woma') {
+      const mid = MECH_ALIAS[b.id] ?? b.id;
+      if (mid === 'boss_woma') {
         // 血量跌破 5/7…1/7：先发呆 8 秒（不攻击）再狂暴 8 秒（每秒攻击 2 次）
         const st = OFFICIAL.womaStages.filter(k => b.hp <= b.maxHp * k / 7).length;
         if (st > m.stage) {
@@ -1369,7 +1374,7 @@ export class World {
         b.cd = crazy ? OFFICIAL.womaCrazyInterval : b.atkInterval * slow;
         this.events.push({ type: 'attack', source: b.uid, target: t.uid, skill: 'boss' }, { type: 'bossfx', uid: b.uid, kind: 'spark', x: t.x, target: t.uid });
         this.damage(t, b.atk * (0.9 + this.rng() * 0.2), b, true, false, false, OFFICIAL.womaMagic); // 官方 50% 物理 + 50% 魔法
-      } else if (b.id === 'boss_molong') {
+      } else if (mid === 'boss_molong') {
         // 阶段 B 魔龙教主：国服只用翅膀近战 + 保留瞬移（21cq）。瞬移复用沃玛教主 fly 计时（30 秒 + 被贴身）[适配]：瞬移到主角身后
         m.flyT += dt;
         if (m.flyT >= OFFICIAL.womaFlySec && this.inMelee(h, b)) {
@@ -1382,7 +1387,7 @@ export class World {
         b.cd = b.atkInterval * slow;
         this.events.push({ type: 'attack', source: b.uid, target: t.uid, skill: 'boss' }, { type: 'bossfx', uid: b.uid, kind: 'spark', x: t.x, target: t.uid });
         this.damage(t, b.atk * (0.9 + this.rng() * 0.2), b);
-      } else if (b.id === 'boss_zuma') {
+      } else if (mid === 'boss_zuma') {
         // 丢火球远程攻击，边攻击边召唤祖玛雕像/卫士
         if (b.cd > 0 || Math.abs(b.x - h.x) > OFFICIAL.zumaRange) continue;
         const t = pick(); b.cd = b.atkInterval * slow; b.facing = (Math.sign(t.x - b.x) || 1) as 1 | -1;
@@ -1391,7 +1396,7 @@ export class World {
         m.minions = m.minions.filter(id => this.units.some(u => u.uid === id && u.alive));
         if (this.time >= m.summonT && m.minions.length < OFFICIAL.zumaCallMax) {
           m.summonT = this.time + OFFICIAL.zumaCallSec;
-          const base = ENEMIES[m.minions.length % 2 ? 'zuma_guard' : 'zuma_statue'];
+          const pool = MECH_MINIONS[b.id] ?? MECH_MINIONS.boss_zuma, base = ENEMIES[pool[m.minions.length % pool.length]];
           // [适配] 召唤物不给经验/掉落，防止刷怪
           const u = this.spawn({ ...base, exp: 0, drops: [], setDrop: undefined, oilChance: 0 }, 'enemy', b.x + b.facing * 90, b.y);
           u.ai = 'chase'; m.minions.push(u.uid);
