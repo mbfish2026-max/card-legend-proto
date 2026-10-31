@@ -126,7 +126,7 @@ export const CLASSES: Record<ClassId, ClassDef> = {
       { key: 'P', id: 'clear_mind', name: '道心清明', kind: 'melee', stat: 'tao', mana: 0, cooldown: 0, cs: true, passive: true, doubleExp: [0.05, 0.1, 0.15, 0.2], learn: [30, 30, 30, 30], train: [3000, 6000, 12000], icon: S + 'skill_clear_mind.png', sfx: 'heal', desc: '被动：击杀怪物有几率获得双倍经验（官方）；几率 [适配]' },
       { key: 'F12', id: 'holy_light', name: '神光术', kind: 'ranged', stat: 'tao', mana: 48, cooldown: 3, cs: true, mult: 1.4, range: 520, undeadBonus: 0.2, cleanse: [0.4, 0.6, 0.8, 1], learn: [36, 36, 36, 36], train: [3000, 6000, 12000], icon: S + 'skill_holy_light.png', sfx: 'heal2', desc: '几率解除己方石化/诅咒类状态（官方）；[适配] 解除减速/定身，并以圣光攻击目标' },
       { key: 'F13', id: 'cleanse', name: '解毒术', kind: 'buff', stat: 'tao', mana: 60, cooldown: 4, cs: true, heal: 1, area: 170, cleanse: [0.4, 0.6, 0.8, 1], learn: [38, 38, 38, 38], train: [3000, 6000, 12000], icon: S + 'skill_cleanse.png', sfx: 'heal', desc: '几率解除 3×3 内己方中毒（官方）；[适配] 并小量治疗' },
-      { key: 'F14', id: 'summon_golden_skeleton', name: '金甲骷髅', kind: 'summon', stat: 'tao', mana: 90, cooldown: 12, cs: true, learn: [42, 42, 44, 46], train: [600, 1200, 1800], icon: S + 'skill_summon_skeleton.png', sfx: 'summon', desc: '召唤重甲金甲骷髅（传世强化骷髅术）；[适配] 单只，属性 = 骷髅 HP×2 攻×1.6 防×1.5' },
+      { key: 'F14', id: 'summon_golden_skeleton', name: '金甲骷髅', kind: 'summon', stat: 'tao', mana: 90, cooldown: 12, cs: true, learn: [42, 42, 44, 46], train: [600, 1200, 1800], icon: S + 'skill_summon_skeleton.png', sfx: 'summon', desc: '召唤重甲金甲骷髅（传世强化骷髅术）；官方一次 2 只（上限 2，再召唤替换最旧）；[适配] 单只 = 骷髅 HP×1.1 攻×0.85 防×1.5' },
     ],
   },
 };

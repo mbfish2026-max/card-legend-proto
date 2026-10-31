@@ -85,7 +85,7 @@ export class Hud {
       else if (k.name) txt(s, x, y, k.name, 12).setOrigin(0.5).setDepth(20);
       txt(s, x - SK / 2 + 2, y - SK / 2 + 1, k.key, 11, '#ffff66').setDepth(24);
       // 鼠标/触屏点击释放：与 F 键同走 onKey（公共间隔/耗魔/被动/魔不足提示一致）；stopPropagation 防止穿透到战斗场景的点地行走
-      if (onSkill) s.add.rectangle(x, y, SK, SK, 0, 0.001).setDepth(25).setInteractive({ useHandCursor: true })
+      if (onSkill) s.add.rectangle(x, y, SK, SK, 0, 0.001).setDepth(25).setName('skSlot' + i).setInteractive({ useHandCursor: true })
         .on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); onSkill(k.key); });
     });
     this.radar = s.add.graphics().setDepth(23);
@@ -98,6 +98,9 @@ export class Hud {
       if (s.textures.exists('potion_' + i)) s.add.image(x, y, 'potion_' + i).setDisplaySize(38, 38).setDepth(20);
       txt(s, x - 18, y - 21, p.key, 11, '#ffff66').setDepth(22);
       this.potT.push(txt(s, x + 19, y + 20, '', 12).setOrigin(1, 1).setDepth(22));
+      // R54：药水格鼠标/触屏点击 = 按数字键（同走 onKey→World.usePotion：数量不足/间隔判断一致）；按下即拦截，不穿透到地图点地行走
+      if (onSkill) s.add.rectangle(x, y, 44, 44, 0, 0.001).setDepth(25).setName('potSlot' + i).setInteractive({ useHandCursor: true })
+        .on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); onSkill(p.key); });
     });
     // 右侧 5 个圆形菜单按钮
     if (!mobile) MENU_LABELS.forEach((label, i) => {

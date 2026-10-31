@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 传世后续（fix/chuanshi-followup）
+- 金甲骷髅按官方一次召唤 2 只：同时上限 2，再召唤补足/替换最旧；单只下调为骷髅 HP×1.1 攻×0.85 防×1.5（合计≈旧单只 1.1 倍，见 docs/skills-official.md）；自动施法：2 只健康时不重放。
+- 手机 HUD 技能弧翻页：主动技能 >10 时出现「翻页 n/m」键，每页内 4 外 6，所有已学技能（含传世、F12 之后）均可点击施放；e2e tests/e2e/mobile-skills-verify.mjs。
+- 商店「金币」标签上移缩小。
+- R54 书店：只卖学习等级 ≤25 的书（覆盖之前的「传世秘籍」页，该页取消），按等级升序；书名不被「购买」按钮遮挡；每本显示「需LvXX」/「已学会」，等级不够按钮置灰并显示「差 N 级」；书店 NPC 两列先填满左列再右列，按等级连续阅读。
+- R54 >25 级技能书（含传世）改为 BOSS 掉落：26–35 级只由尸王及以上 BOSS 掉、尸王掉率最高；>35 级由层等级≈书等级的 BOSS 掉。全表见 docs/skill-book-drops.md（数据 src/data/skillBookDrops.ts）。旧存档已学技能、背包里的书不受影响。
+- R54 技能面板：按学习等级升序 + [Fn] 标签，两行不重叠，状态颜色，未学显示「需 LvX」及获取途径，全设备翻页，手机字号 ≥12。
+- R54 动画不放大：攻击/受击/蓄力/待机呼吸关键帧 scale ≤1（src/ui/cardMotion.ts），主角、怪物、全部召唤物（骷髅/神兽/尸灵/金甲/替身，含升级变色骷髅）一致；e2e 实采 scale 全为 1.0。
+- R54 快捷栏点击即用：桌面药水格新增点击（技能格原已支持），与按键同走 BattleScene.onKey/World 处理（数量不足、冷却、满血判断一致）；格子 pointerdown 即 stopPropagation。手机 HUD tap 同时拦截 touchstart/touchend/mousedown/mouseup，修复城里点药水槽导致角色走动的穿透 bug。商店书行：已学会/差 N 级时不显示价格，避免压按钮；掉落说明改单行。e2e tests/e2e/hotbar-click-verify.mjs。
+- e2e 修正：mobile-skills-verify 诱惑之光目标改非免疫怪（骷髅在免疫表内）；chuanshi-verify 适配传世页取消（>25 级书模拟 BOSS 掉落入包后学习）并输出 ok/FAIL 判定。
+- R54 技能数字整数显示（仅显示，不改计算）：统一 src/ui/fmt.ts（fmtInt/fmtText，四舍五入）。
+
 ## 传世技能（feat/chuanshi-skills）
 - 新增传世 16 技能（战士 雷霆剑/破击剑法/破盾斩/金刚护体/突斩；法师 冰箭术/冰龙破/玄冰刃/五雷轰/冰旋风；道士 赶尸/替身法符/灵魂墙/道心清明/神光术/解毒术）+ 金甲骷髅。学习等级取 DB 官方表，耗魔 DB×3，未查到项标 [适配]，详见 docs/skills-official.md。
 - 书店新增「传世秘籍」页签（书店 NPC 第二栏），不进掉落池；旧存档不自动学会。

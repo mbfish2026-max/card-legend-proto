@@ -1,4 +1,6 @@
 import { CompanionState, migrateCompanion, companionGainExp, COMPANION_BAG, COMPANION_UNLOCK_LEVEL, newCompanion, feedHeart, heartFeedValue, HEART_STORE_MAX, RAGE_MAX, COMBO_LEVEL, COMBO_GOLD_BARS, BRM_BOOK, BOOK_PAGE, GOLD_BAR, PAGES_PER_BOOK, comboFor, HEART_ITEM, COMPANION_UNIT_ID, COMPANION_RECALL_CD, COMPANION_MODES, COMPANION_MODE_NAME, CompanionMode, companionStats, rageTick, unleash, canUnleash, comboEffect, COMBO_RANGE, pickPotion, COMPANION_POT_HP, COMPANION_POT_MP } from '../data/companion';
+import { fmtInt } from '../ui/fmt';
+import { BOOK_DROPS_BY_BOSS } from '../data/skillBookDrops';
 import { BOOKS, BookDef, BOOK_DROP, BOOK_RATES, STARTER, bookItemId } from '../data/books';
 import { sortBag } from './bagSort';
 // 纯逻辑世界模块（无 Phaser 依赖，可在 node 中单测）：职业/等级成长、分层横版地图、怪物 AI、
@@ -55,8 +57,13 @@ export const isUndead = (u: { id: string; team?: string }) => u.team !== 'ally' 
 /** 传世召唤：基础单位与相对骷髅的属性倍率 [适配] */
 const CS_SUMMON: Record<string, { base: UnitDef; hp: number; atk: number; def: number }> = {
   drive_corpse: { base: SUMMON_CORPSE, hp: 1.25, atk: 1.25, def: 1.2 },
-  summon_golden_skeleton: { base: SUMMON_GOLDEN, hp: 2, atk: 1.6, def: 1.5 },
+  // 官方一次召唤 2 只；[适配] 单只 HP×1.1 攻×0.85 防×1.5（2 只合计 HP×2.2 攻×1.7 ≈ 原单只 HP×2/攻×1.6 的 1.1 倍，另分摊仇恨）
+  summon_golden_skeleton: { base: SUMMON_GOLDEN, hp: 1.1, atk: 0.85, def: 1.5 },
 };
+/** 书店出售学习等级 ≤ 此值的全部本职业技能书（用户需求 R54） */
+export const SHOP_BOOK_MAX_LV = 25;
+/** 同时存在上限（官方金甲骷髅一次 2 只；其余召唤 1 只） */
+export const SUMMON_MAX: Record<string, number> = { summon_golden_skeleton: 2 };
 export type CastResult = { ok: true; targets: number[]; skill: string; kind: string } | { ok: false; reason: string };
 /** R13 官方 BOSS 机制（来源见 docs/combat-official.md）：沃玛教主/祖玛教主/赤月恶魔由 bossStep 接管攻击 */
 /**
@@ -204,6 +211,8 @@ export class World {
   get hero() { return this.units.find(u => u.isHero && u.alive); }
   /** 道士骷髅/神兽（不含诱惑之光宠物） */
   get summon() { return this.units.find(u => u.summon && !u.pet && u.alive); }
+  /** 全部存活召唤物（不含宠物） */
+  get summons() { return this.units.filter(u => u.summon && !u.pet && u.alive); }
   get decoy() { return this.units.find(u => u.decoy && u.alive); }
   /** 自动施放门槛 [适配]：射程内最近目标可驯服且成功率 ≥50% 才放（免疫/等级过高/满宠不浪费魔法） */
   charmAutoOk() {
@@ -219,6 +228,21 @@ export class World {
     if (t.level > this.level + CHARM.levelGap) return { res: 'high', p: 0 };
     if (this.pets.length >= CHARM.maxPets[Math.min(3, slv)]) return { res: 'full', p: 0 };
     return { res: 'ok', p: CHARM.chance(slv, this.level, t) };
+  }
+  private spawnSummon(base: UnitDef, beast: boolean, cs: { hp: number; atk: number; def: number } | undefined, slv: number, lvF: number, h: Unit, off: number) {
+    const tao = h.tao ?? 0;
+    // 骷髅 / 神兽：随道术与技能等级成长（C：神兽 1/2/3 级）
+    const hp0 = beast ? 250 + tao * 7 : 140 + tao * 5;
+    const atk0 = beast ? 14 + tao * 1.15 : SKELETON_OFFICIAL.atkMin + tao * 1.0;
+    const def0 = beast ? 7 + this.level * 1.0 : 3 + this.level * 0.8;
+    // [适配] 加强骷髅：按官方成长比例（相对 0 级）放大，HP ×1/1.4/2/2.8、攻击 ×(官方攻击上限/25)；基础攻击 8+道术×0.9 → 10+道术×1.0（10=官方下限）；神兽仍 ×(1+0.1×等级)
+    const L = Math.min(3, slv), hpF = beast ? lvF : SKELETON_OFFICIAL.hp[L] / SKELETON_OFFICIAL.hp[0], atkF = beast ? lvF : SKELETON_OFFICIAL.atkMax[L] / SKELETON_OFFICIAL.atkMax[0];
+    const k = cs ?? { hp: 1, atk: 1, def: 1 }; // 传世：赶尸/金甲骷髅 = 骷髅公式 × 倍率 [适配]
+    const def: UnitDef = { ...base, level: this.level + (beast ? slv : 0), hp: Math.round(hp0 * hpF * k.hp), atk: Math.round(atk0 * atkF * k.atk), def: Math.round(def0 * k.def) };
+    const u = this.spawn(def, 'ally', h.x - h.facing * (110 + off), WORLD.summonLane); u.summon = true; u.facing = h.facing; u.ai = 'chase';
+    // 召唤物等级：初始 = 技能等级（最高 3）；「重启」= 重新召唤从技能等级对应初始等级开始，不继承上一只已升等级
+    u.sLv = L; u.sKills = 0; u.sBase = { hp: def.hp, atk: def.atk, start: L, name: base.name }; this.applySummonLv(u);
+    this.events.push({ type: 'summon', uid: u.uid });
   }
   /** [适配] 召唤物仇恨：怪被召唤物打过（aggroUid）且主角离怪 > summonAggroNear 时，返回该召唤物；否则 undefined（走原主角/50% 规则） */
   summonAggro(u: Unit): Unit | undefined {
@@ -568,10 +592,12 @@ export class World {
     const extra: { id: string; purity?: number }[] = [];
     if (u.tier === 'boss' || this.lootRng() < (u.oilChance ?? 0)) extra.push({ id: 'bless_oil' });
     // R11 技能书掉落（本职业、未学、背包里也没有）
-    { const pool = Object.values(BOOKS).filter(b => b.cls === this.cls && (u.id in BOOK_RATES ? (BOOK_RATES[u.id][b.skill] ?? 0) > 0 : b.drops.includes(u.id)) && !this.learned.has(b.skill) && !this.bag.some(x => x.item === bookItemId(b.skill)));
+    { const pool = Object.values(BOOKS).filter(b => b.cls === this.cls && this.bookLv(b) <= SHOP_BOOK_MAX_LV && (u.id in BOOK_RATES ? (BOOK_RATES[u.id][b.skill] ?? 0) > 0 : b.drops.includes(u.id)) && !this.learned.has(b.skill) && !this.bag.some(x => x.item === bookItemId(b.skill)));
       // R13：有资料的怪逐本按资料爆率（1/N）独立判定；无资料的怪沿用 [适配] 首领/普通几率随机一本
       if (u.id in BOOK_RATES) { for (const b of pool) if (this.lootRng() < BOOK_RATES[u.id][b.skill]) { extra.push({ id: bookItemId(b.skill) }); break; } }
       else if (pool.length && this.lootRng() < (u.tier === 'boss' ? BOOK_DROP.boss : BOOK_DROP.normal)) extra.push({ id: bookItemId(pool[Math.floor(this.lootRng() * pool.length)].skill) }); }
+    // R54：>25 级技能书只按 BOSS 掉落表（skillBookDrops.ts）掉；仅当 BOSS 在表内才消耗 lootRng，表外怪物的随机序列不变
+    if (BOOK_DROPS_BY_BOSS[u.id]) for (const d of BOOK_DROPS_BY_BOSS[u.id]) if (d.cls === this.cls && !this.learned.has(d.skill) && !this.bag.some(x => x.item === bookItemId(d.skill)) && !extra.some(x => x.id === bookItemId(d.skill)) && this.lootRng() < d.rate) extra.push({ id: bookItemId(d.skill) });
     if (u.setDrop?.length && this.lootRng() < (u.setChance ?? 1)) { const own = u.setDrop.filter(id => ITEMS[id]?.cls?.includes(this.cls)), pool = own.length ? own : u.setDrop; extra.push({ id: pool[Math.floor(this.lootRng() * pool.length)] }); } // R14 #13：职业套优先掉本职业
     if (this.womaPending) { const has = this.bag.some(x => x.item === 'woma_horn') || this.ground.some(g => g.item === 'woma_horn');
       if (!has && HORN_MOBS.includes(u.id) && this.lootRng() < HORN_MOB_CHANCE) extra.push({ id: 'woma_horn' });
@@ -657,11 +683,17 @@ export class World {
     this.gold -= p.price; this.pots[i]++; return null;
   }
   /** R11 书店：本职业 shop 书 */
-  shopBooks(): BookDef[] { return Object.values(BOOKS).filter(b => b.cls === this.cls && b.shop); }
-  /** 传世秘籍页（书店第二页）：本职业传世技能书 */
-  csBooks(): BookDef[] { return Object.values(BOOKS).filter(b => b.cls === this.cls && b.cs).sort((a, b) => a.price - b.price); }
+  /** R54 书店：本职业 shop 书 + 所有学习等级 ≤ SHOP_BOOK_MAX_LV 的书（含原掉落/传世），按学习等级升序；掉落池不变 */
+  shopBooks(): BookDef[] { return Object.values(BOOKS).filter(b => b.cls === this.cls && this.bookLv(b) <= SHOP_BOOK_MAX_LV).sort((a, b) => this.bookLv(a) - this.bookLv(b)); }
+  /** 传世秘籍页（书店第二页）：本职业学习等级 > 25 的传世技能书 */
+  /** 全部召唤物定义（测试/e2e 遍历用：立绘缩放采样） */
+  readonly summonDefs = [SUMMON, SUMMON_BEAST, SUMMON_CORPSE, SUMMON_GOLDEN, DECOY];
+  csBooks(): BookDef[] { return []; } // R54：>25 级（含传世）一律不进商店，改为 BOSS 掉落（src/data/skillBookDrops.ts）
+  /** R54 技能面板顺序：学习等级升序（同级保持技能池顺序） */
+  skillsByLevel() { return [...this.skillPool].sort((x, y) => this.needLevel(x) - this.needLevel(y)); }
+  bookLv(b: BookDef) { const s = this.skillPool.find(x => x.id === b.skill); return s ? this.needLevel(s) : 99; }
   buyBook(skill: string): string | null {
-    const b = BOOKS[skill]; if (!b || !(b.shop || b.cs) || b.cls !== this.cls) return '书店没有这本书';
+    const b = BOOKS[skill]; if (!b || b.cls !== this.cls || ![...this.shopBooks(), ...this.csBooks()].includes(b)) return '书店没有这本书';
     if (this.gold < b.price) return `金币不足（需 ${b.price}）`;
     if (this.bag.length >= WORLD.bagSize) return '背包已满';
     this.gold -= b.price; this.bag.push(this.makeItem(bookItemId(skill))); this.events.push({ type: 'inventory' }); return null;
@@ -800,11 +832,12 @@ export class World {
     if (this.level < need) return { ok: false, reason: `${s.name} 需等级 ${need}` };
     if (s.passive) return { ok: false, reason: `${s.name} 为被动技能` };
     const slv = Math.max(0, this.skillLevel(s)), lvF = 1 + 0.1 * slv;
-    if (cds[i] > 0) return { ok: false, reason: `${s.name} 冷却中（${cds[i].toFixed(1)}s）` };
+    if (cds[i] > 0) return { ok: false, reason: `${s.name} 冷却中（${fmtInt(Math.max(1, cds[i]))}s）` };
     if ((h.mp ?? 0) < s.mana) return { ok: false, reason: '魔法值不足' };
     if (s.kind === 'summon' && opts.auto) {
-      const ex = this.summon;
-      if (ex && ex.hp >= ex.maxHp * AUTO_RESUMMON_HP) return { ok: false, reason: `${ex.name}已存在` };
+      const max = SUMMON_MAX[s.id] ?? 1, mine = this.summons.filter(u => u.id === (CS_SUMMON[s.id]?.base.id ?? ''));
+      if (max > 1) { if (mine.length >= max && mine.every(u => u.hp >= u.maxHp * AUTO_RESUMMON_HP)) return { ok: false, reason: `${s.name}已有 ${max} 只` }; }
+      else { const ex = this.summon; if (ex && ex.hp >= ex.maxHp * AUTO_RESUMMON_HP) return { ok: false, reason: `${ex.name}已存在` }; }
     }
     if (s.buffBoth && ((h.defUpUntil ?? 0) > this.time || (h.mdefUpUntil ?? 0) > this.time)) return { ok: false, reason: `${s.name}持续中（持续期间重复开启无效）` };
     if (s.kind === 'decoy') {
@@ -898,24 +931,19 @@ export class World {
     } else if (s.kind === 'summon') {
       const beast = s.id === 'summon_beast', cs = CS_SUMMON[s.id];
       const base = beast ? SUMMON_BEAST : cs?.base ?? SUMMON;
-      const ex = this.summon;
-      if (ex && ex.id === base.id) {
+      const max = SUMMON_MAX[s.id] ?? 1, ex = this.summon;
+      if (max > 1) {
+        // 金甲骷髅：解散其他召唤物；补足到 2 只，已满则替换最旧（uid 最小）一只
+        for (const o of this.summons) if (o.id !== base.id) { o.alive = false; this.events.push({ type: 'death', uid: o.uid }, { type: 'log', text: `解散 ${o.name}，召唤 ${base.name}` }); }
+        const mine = this.summons.filter(o => o.id === base.id).sort((a, b) => a.uid - b.uid);
+        let n = max - mine.length;
+        if (n <= 0) { const old = mine[0]; old.alive = false; this.events.push({ type: 'death', uid: old.uid }, { type: 'log', text: `替换旧的${base.name}` }); n = 1; }
+        for (let k = 0; k < n; k++) this.spawnSummon(base, beast, cs, slv, lvF, h, k * 60);
+      } else if (ex && ex.id === base.id) {
         this.heal(ex, ex.maxHp); this.events.push({ type: 'log', text: `${base.name}已存在：恢复其生命` });
       } else {
         if (ex) { ex.alive = false; this.events.push({ type: 'death', uid: ex.uid }); this.events.push({ type: 'log', text: `解散 ${ex.name}，召唤 ${base.name}` }); }
-        const tao = h.tao ?? 0;
-        // 骷髅 / 神兽：随道术与技能等级成长（C：神兽 1/2/3 级）
-        const hp0 = beast ? 250 + tao * 7 : 140 + tao * 5;
-        const atk0 = beast ? 14 + tao * 1.15 : SKELETON_OFFICIAL.atkMin + tao * 1.0;
-        const def0 = beast ? 7 + this.level * 1.0 : 3 + this.level * 0.8;
-        // [适配] 加强骷髅：按官方成长比例（相对 0 级）放大，HP ×1/1.4/2/2.8、攻击 ×(官方攻击上限/25)；基础攻击 8+道术×0.9 → 10+道术×1.0（10=官方下限）；神兽仍 ×(1+0.1×等级)
-        const L = Math.min(3, slv), hpF = beast ? lvF : SKELETON_OFFICIAL.hp[L] / SKELETON_OFFICIAL.hp[0], atkF = beast ? lvF : SKELETON_OFFICIAL.atkMax[L] / SKELETON_OFFICIAL.atkMax[0];
-        const k = cs ?? { hp: 1, atk: 1, def: 1 }; // 传世：赶尸/金甲骷髅 = 骷髅公式 × 倍率 [适配]
-        const def: UnitDef = { ...base, level: this.level + (beast ? slv : 0), hp: Math.round(hp0 * hpF * k.hp), atk: Math.round(atk0 * atkF * k.atk), def: Math.round(def0 * k.def) };
-        const u = this.spawn(def, 'ally', h.x - h.facing * 110, WORLD.summonLane); u.summon = true; u.facing = h.facing; u.ai = 'chase';
-        // 召唤物等级：初始 = 技能等级（最高 3）；「重启」= 重新召唤从技能等级对应初始等级开始，不继承上一只已升等级
-        u.sLv = L; u.sKills = 0; u.sBase = { hp: def.hp, atk: def.atk, start: L, name: base.name }; this.applySummonLv(u);
-        this.events.push({ type: 'summon', uid: u.uid });
+        this.spawnSummon(base, beast, cs, slv, lvF, h, 0);
       }
     } else if (s.kind === 'charm') {
       const t = targets[0], c = this.charmCheck(t);
