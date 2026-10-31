@@ -707,3 +707,22 @@ thunder_sword 雷霆剑、break_strike 破击剑法、shield_break 破盾斩、v
 | m3_ant_armor_full.png | 960x673 | 盔甲蚂蚁 | 复用 art/sq-mir3 的 ant_armored_full.png |
 | m3_ant_bomb_full.png | 960x490 | 爆毒蚂蚁 | 复用 art/sq-mir3 的 ant_poison_full.png |
 | m3_ant_tao_full.png | 783x960 | 蚂蚁道士 | 复用 art/sq-mir3 的 ant_taoist_full.png |
+
+
+## art/maps-sq-mir3 交付·第 3 批（机关+潘夜石窟骷髅，11 张）
+
+路径：`public/assets/portraits/<id>_full.png`，透明 PNG，最长边 960。预览：`docs/art-gap-preview/sq_mir3_batch3.jpg`。
+
+| 文件 | 尺寸 | 名称 | 来源 |
+|---|---|---|---|
+| sq_stone_man_full.png | 795x960 | 石人 | 复用 art/sq-mir3 的 stone_man_full.png |
+| sq_bronze_man_full.png | 699x960 | 铜人 | 复用 art/sq-mir3 的 bronze_man_full.png |
+| sq_bronze_beast_full.png | 960x720 | 铜兽 | 复用 art/sq-mir3 的 bronze_beast_full.png |
+| sq_blade_man_full.png | 790x960 | 滚刀手 | 复用 art/sq-mir3 的 blade_roller_full.png |
+| sq_hammer_man_full.png | 721x960 | 锤手 | 复用 art/sq-mir3 的 hammer_man_full.png |
+| sq_jingang_full.png | 702x960 | 金刚人 | 复用 art/sq-mir3 的 vajra_man_full.png |
+| m3_skel_wushi_full.png | 698x960 | 骷髅武士 | 复用 art/sq-mir3 的 skel_samurai_full.png |
+| m3_skel_wujiang_full.png | 717x960 | 骷髅武将 | 复用 art/sq-mir3 的 skel_general_full.png |
+| m3_skel_soldier_full.png | 755x960 | 骷髅士兵 | 复用 art/sq-mir3 的 skel_soldier_full.png |
+| m3_skel_archer_full.png | 674x960 | 骷髅弓箭手 | 复用 art/sq-mir3 的 skel_archer_full.png |
+| m3_bone_general_full.png | 721x960 | 骨鬼将 | 复用 art/sq-mir3 的 bone_ghost_general_full.png |
