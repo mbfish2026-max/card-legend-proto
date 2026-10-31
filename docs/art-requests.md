@@ -283,3 +283,13 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 | E2 | tianzhu_necklace | 天珠项链 | `public/assets/items/eq_tianzhu_necklace.png` | ITEMS.tianzhu_necklace.icon → `items/eq_tianzhu_necklace.png` | 参考原作 |
 | E2 | platinum_ring | 铂金戒指 | `public/assets/items/eq_platinum_ring.png` | ITEMS.platinum_ring.icon → `items/eq_platinum_ring.png` | 参考原作 |
 | E2 | heart_bracelet | 心灵手镯 | `public/assets/items/eq_heart_bracelet.png` | ITEMS.heart_bracelet.icon → `items/eq_heart_bracelet.png` | 参考原作 |
+| M3 | red_snake | 红蛇 | `public/assets/portraits/red_snake_full.png` | ASSETS 加 `red_snake`，units 中 art 指向 `red_snake` | 参考原作 |
+| M3 | tiger_snake | 虎蛇 | `public/assets/portraits/tiger_snake_full.png` | ASSETS 加 `tiger_snake`，units 中 art 指向 `tiger_snake` | 参考原作 |
+| M3 | scorpion | 蝎子 | `public/assets/portraits/scorpion_full.png` | ASSETS 加 `scorpion`，units 中 art 指向 `scorpion` | 参考原作 |
+| M3 | centipede | 蜈蚣 | `public/assets/portraits/centipede_full.png` | ASSETS 加 `centipede`，units 中 art 指向 `centipede` | 参考原作 |
+| M3 | jump_bee | 跳跳蜂 | `public/assets/portraits/jump_bee_full.png` | ASSETS 加 `jump_bee`，units 中 art 指向 `jump_bee` | 参考原作 |
+| M3 | black_maggot | 黑色恶蛆 | `public/assets/portraits/black_maggot_full.png` | ASSETS 加 `black_maggot`，units 中 art 指向 `black_maggot` | 改编 |
+| M3 | red_boar | 红野猪 | `public/assets/portraits/red_boar_full.png` | ASSETS 加 `red_boar`，units 中 art 指向 `red_boar` | 参考原作 |
+| M3 | black_boar | 黑野猪 | `public/assets/portraits/black_boar_full.png` | ASSETS 加 `black_boar`，units 中 art 指向 `black_boar` | 参考原作 |
+| M3 | scorpion_snake | 蝎蛇 | `public/assets/portraits/scorpion_snake_full.png` | ASSETS 加 `scorpion_snake`，units 中 art 指向 `scorpion_snake` | 参考原作 |
+| M3 | summon_beast | 神兽 | `public/assets/portraits/summon_beast_full.png` | ASSETS 加 `summon_beast`，units 中 art 指向 `summon_beast` | 推测 |

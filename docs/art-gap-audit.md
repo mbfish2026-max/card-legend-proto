@@ -236,3 +236,13 @@
 | E2 | tianzhu_necklace | 天珠项链 | `public/assets/items/eq_tianzhu_necklace.png`（+@2x） | 64×64 | 参考原作 |
 | E2 | platinum_ring | 铂金戒指 | `public/assets/items/eq_platinum_ring.png`（+@2x） | 64×64 | 参考原作 |
 | E2 | heart_bracelet | 心灵手镯 | `public/assets/items/eq_heart_bracelet.png`（+@2x） | 64×64 | 参考原作 |
+| M3 | red_snake | 红蛇 | `public/assets/portraits/red_snake_full.png` | 944×960 | 参考原作 |
+| M3 | tiger_snake | 虎蛇 | `public/assets/portraits/tiger_snake_full.png` | 934×960 | 参考原作 |
+| M3 | scorpion | 蝎子 | `public/assets/portraits/scorpion_full.png` | 960×803 | 参考原作 |
+| M3 | centipede | 蜈蚣 | `public/assets/portraits/centipede_full.png` | 960×728 | 参考原作 |
+| M3 | jump_bee | 跳跳蜂 | `public/assets/portraits/jump_bee_full.png` | 960×751 | 参考原作 |
+| M3 | black_maggot | 黑色恶蛆 | `public/assets/portraits/black_maggot_full.png` | 918×960 | 改编：首版像轮胎已重绘为卷身甲虫幼体 |
+| M3 | red_boar | 红野猪 | `public/assets/portraits/red_boar_full.png` | 718×960 | 参考原作 |
+| M3 | black_boar | 黑野猪 | `public/assets/portraits/black_boar_full.png` | 730×960 | 参考原作 |
+| M3 | scorpion_snake | 蝎蛇 | `public/assets/portraits/scorpion_snake_full.png` | 897×960 | 参考原作 |
+| M3 | summon_beast | 神兽 | `public/assets/portraits/summon_beast_full.png` | 960×747 | 推测：未查到原作外观，按金色神兽犬推测 |
