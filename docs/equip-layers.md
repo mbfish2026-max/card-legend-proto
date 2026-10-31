@@ -79,3 +79,15 @@ body → armor → weapon（武器和握持手在最上层）。
 
 ## 预览
 `docs/equip-preview/mage_light.png`、`mage_dark.png`（11 种组合）。
+
+## 道士（taoist）
+
+- 目录：`public/assets/equip/taoist/`，画布 1024×1024 透明 PNG，原点 (0,0) 叠放，顺序 body → armor → weapon（武器层含握持的手）。
+- 锚点（右手握拳中心）：约 (640,475)。
+- body.png：米色短衫 + 卡其扎脚裤，右手空握拳。
+- armor/cloth.png：灰蓝交领素道袍；armor/armor.png：金色云纹道袍 + 青铜甲片、太极纹护心。
+- 武器：tao_sword（主武器，银色蛇纹剑带红穗）、wood_sword、iron_sword、dragon_sword。
+- 屠龙刀：src/data/items.ts 无职业限制字段，判定道士可装备。
+- 回退：magic_staff → iron_sword。
+- 外接框（x0,y0,x1,y1）：body 51,2,691,1007；cloth 115,252,652,904；armor 55,255,693,1016；tao_sword 547,419,1007,806；wood_sword 587,423,1005,785；iron_sword 585,424,1012,814；dragon_sword 547,419,1017,806。
+- 预览：`docs/equip-preview/taoist_light.png`、`taoist_dark.png`。
