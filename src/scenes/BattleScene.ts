@@ -1,3 +1,4 @@
+import { areaOf } from '../data/worldmap';
 import { overview, posBar } from '../data/mapOverview';
 import { foesWithoutView } from '../ui/foeViews';
 import { hdFixed, Render, MAX_LW } from '../render';
@@ -299,6 +300,12 @@ export class BattleScene extends Phaser.Scene {
     const e = w.returnToTown(); if (e) this.log(e === '回城入口在本层起点（左侧）' ? `走回本层起点左侧的入口，回到 ${w.returnTownName()}` : e); else this.sfx('click');
   }
   nearMerchant() { const h = this.world.hero; return !!h && h.x - MERCHANT_X < SHOP_RANGE; }
+  /** 地图总览「在世界地图中查看」：打开世界地图并定位到当前区域 */
+  openWorldMapHere() {
+    if (this.state !== 'play') return;
+    this.hud?.toggleOverview(null); (this.ui as any).mhud?.ovw && (this.ui as any).mhud.toggleOverview();
+    this.sfx('click'); this.ui.panel.openWorldMap(areaOf(this.world.floorIndex));
+  }
   openPanel(m: PanelMode) {
     if (this.state !== 'play') return;
     if (m === 'shop' && !this.world.town && !this.ui.panel.open) { this.log(`战斗地图没有商人：从起点回城入口（S）回 ${this.world.returnTownName()} 补给`); return; }
@@ -827,7 +834,7 @@ export class BattleScene extends Phaser.Scene {
     const pw = { atk: '攻击', mag: '魔法', tao: '道术' }[w.classDef.autoStat];
     const info = `${w.classDef.name} Lv${w.level}   经验 ${fmtExp(w.exp)}/${fmtExp(w.expNext)}   金币 ${w.gold}   ${pw} ${st[w.classDef.autoStat]}  防御 ${Math.round(st.def)}   第 ${floorNo(w.floorIndex, w.floors)}/${w.floors.length} 层`;
     this.hud?.update(dt, h?.hp ?? 0, h?.maxHp ?? st.hp, h?.mp ?? 0, h?.maxMp ?? st.mp, this.cds, dead, w.pots, info);
-    if (this.hud) { this.hud.onOverview ??= () => this.hud!.toggleOverview(this.mapOverview()); this.hud.setPos(this.mapPos()); }
+    if (this.hud) { this.hud.onOverview ??= () => this.hud!.toggleOverview(this.mapOverview()); this.hud.onWorldMap ??= () => this.openWorldMapHere(); this.hud.setPos(this.mapPos()); }
   }
   /** 地图总览/位置条数据（城内与自定义层表不显示） */
   mapOverview() { const w = this.world; return w.town || w.floors !== FLOORS ? null : overview(w.floorIndex); }

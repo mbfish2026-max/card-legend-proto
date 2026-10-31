@@ -86,7 +86,23 @@ export const REGION_GEO: Record<string, RegionGeo> = { /* … */ };
 | W3 | 接美术（底图/插画/图标）、摆位校准、截图回归 | 美术交付 | 0.5 天 |
 | W4 | 总览联动、传送员列表与地图统一数据、文档 | W2 | 0.5 天 |
 
-## 5. 需决定
+## 5. 决定（2026-11-01 更新，覆盖之前的飞地方案）
+1. 苍月岛：海路虚线（zuma↔cangyue）[适配]，官方连接 NPC/坐标仍未查到。
+2. 合击/魔龙（1.80+）：**不单做「魔龙大陆」飞地**，归入区域 hejiban（盟重·合击，魔龙=hejiban），图上用 NPC 点线连盟重（盟重老兵传送）。
+3. 异界裂隙：**不单做「异界」浮岛**，节点留在各自所属区域，用 icon_wm_rift；底图东北角紫雾浮岛仅作装饰，不可点、不挂节点。
+4. 迷雾：显示 ？？？ + 等级段（已实现）。
+5. 底图：4×2 分块 world_map_{c}_{r}.jpg（4096×2304，每块 1024×1152），按需加载。
+6. 区域节点用插画像素坐标（2048×1152），按 docs/art-requests.md W-1/W-2/W-3 锚点回填；无锚点的节点标 [适配]（见 src/data/worldmap.ts ANCHORS_ADAPT）。
+7. 区域出口没有单独图标，用 icon_wm_portal。
+8. 美术：三批真图已在 public/assets/worldmap/（8 底图块、8 区域插画、8 图标 + world_fog + wm_frame），登记于 assets-manifest WM_ASSETS，打开地图时按需加载，失败回退占位。
+
+## 6. 实现状态（feat/world-map）
+- W1 数据层：src/data/worldmap.ts（8 区域/83 层节点/锚点/迷雾/传送限制），存档 townsSeen（每存档位，旧存档兼容），Settings.wmZoom/wmArea（全局）。单测 tests/worldmap.test.ts。
+- W2 界面：src/ui/WorldMapView.ts 接入 Panel 地图页；e2e tests/e2e/worldmap-shots.mjs（1280×720、844×390）。
+- W3 真图替换占位、坐标回填。
+- W4 地图总览「在世界地图中查看」（桌面/手机）、传送员列表按世界地图区域分组。
+
+## 7. 原「需决定」（已在 §5 决定）
 1. 苍月岛与大陆连接官方未查到：海路虚线（适配）是否可以？
 2. 合击/魔龙（1.80+）是否单独成「魔龙大陆」飞地，还是挂在盟重北？
 3. 异界裂隙（sq/mir3 侧线，30+ 层）：挂所属区域边缘，还是单独「异界」浮岛？

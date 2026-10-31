@@ -7,6 +7,8 @@
 - assets-manifest 登记 26 张世界地图美术（按需加载，加载失败回退占位）。
 - 单测 tests/worldmap.test.ts（36 项）。
 - W2 src/ui/WorldMapView.ts 接入 Panel 地图页：总图 ↔ 区域图、拖动/双指/滚轮/＋－缩放、群节点展开、确认卡传送/回城、Esc 逐级返回；手机 844×390 节点 82、字号 ≥24 逻辑像素，不与 HUD 重叠。e2e tests/e2e/worldmap-shots.mjs。
+- W3 真图替换占位（底图/区域插画/图标/迷雾/边框），docs/art-requests.md 记 W 接入状态与 [适配] 节点。
+- W4 地图总览新增「在世界地图中查看」（桌面按钮 / 手机 ≥44px），直接打开当前区域；传送员列表按世界地图区域分组并带区域名；docs/world-map-plan.md 更新决定（8 区域、hejiban=魔龙、裂隙留区域内、浮岛装饰、出口用 portal）。
 
 ## 传世后续（fix/chuanshi-followup）
 - 金甲骷髅按官方一次召唤 2 只：同时上限 2，再召唤补足/替换最旧；单只下调为骷髅 HP×1.1 攻×0.85 防×1.5（合计≈旧单只 1.1 倍，见 docs/skills-official.md）；自动施法：2 只健康时不重放。

@@ -24,6 +24,7 @@ import { sfx } from '../scenes/TitleScene';
 import { txt, button } from './mtext';
 import { IS_MOBILE } from '../mobile';
 import { FxQuality } from './Fx';
+import { areaOf, WM_IDS, REGION_GEO } from '../data/worldmap';
 import { renderWorldMap, newWMState, wmBack, type WMState } from './WorldMapView';
 import { QUESTS, ACHIEVES } from '../data/quests';
 import { ENEMIES } from '../data/units';
@@ -360,8 +361,8 @@ export class Panel {
       else CLASS_IDS.forEach((k, i) => row(i + 1, `领取${CLASSES[k].name}英雄`, w.level < COMPANION_UNLOCK_LEVEL ? `${COMPANION_UNLOCK_LEVEL} 级开放 · 免费` : RECRUIT_DIALOG[i % 2].slice(0, 14) + '…', '领取', () => {
         const nm = CLASSES[k].name + '英雄'; // [适配] 起名用默认名（输入框后续做）
         const e = w.recruitCompanion(k, nm); this.onChange(e ?? `获得英雄 ${nm}`, !e); this.render(); }, w.level >= COMPANION_UNLOCK_LEVEL, undefined, X + 250)); }
-    if (n.kind === 'teleport' || n.kind === 'veteran') { const fl = [...w.reached].sort((a, b) => a - b); // 不再截断前 8 个：全部可滚动
-      fl.forEach((f, i) => row(i, w.floors[f].name, `${w.teleportCost(f)} 金 · 冷却 ${WorldCls.TELEPORT_CD}s`, '传送', () => { const e = w.townTeleport(f); this.onChange(e ?? `传送到 ${w.floors[f].name}`, !e); if (!e) { this.mode = null; this.close(); this.onTeleport?.(); } else this.render(); }, w.gold >= w.teleportCost(f))); }
+    if (n.kind === 'teleport' || n.kind === 'veteran') { const ri = (f: number) => { const a = areaOf(f); return a ? WM_IDS.indexOf(a) : 99; }, fl = [...w.reached].sort((a, b) => ri(a) - ri(b) || a - b); // 按世界地图区域分组（docs/world-map-plan.md），全部可滚动
+      fl.forEach((f, i) => row(i, `${REGION_GEO[areaOf(f) ?? '']?.name ?? ''}·${w.floors[f].name}`, `${w.teleportCost(f)} 金 · 冷却 ${WorldCls.TELEPORT_CD}s`, '传送', () => { const e = w.townTeleport(f); this.onChange(e ?? `传送到 ${w.floors[f].name}`, !e); if (!e) { this.mode = null; this.close(); this.onTeleport?.(); } else this.render(); }, w.gold >= w.teleportCost(f))); }
     flushCols();
     if (n.kind === 'storage') {
       R.add(txt(s, X, top + 74, `仓库 ${w.storage.length}/${STORAGE_SIZE}：点仓库取回，点背包存入`, 13, '#9fd'));

@@ -79,7 +79,12 @@ export class Hud {
     close.on('pointerdown', (_p: any, _x: any, _y: any, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); this.toggleOverview(null); });
     c.add([close, txt(s, W - 30, 28, '✕', 22, '#ffe8a0').setOrigin(0.5)]);
     rows.forEach(([t, col], k) => c.add(txt(s, 20, 66 + k * lh, t, 16, col, { strokeThickness: 2, wordWrap: { width: W - 40 } } as any)));
+    if (this.onWorldMap) { const b = s.add.rectangle(W / 2, H + 26, 240, 44, 0x2a1d10).setStrokeStyle(2, 0xb8893a).setInteractive({ useHandCursor: true }).setName('ovwWorld');
+      b.on('pointerdown', (_p: any, _x: any, _y: any, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); this.onWorldMap?.(); });
+      c.add([s.add.rectangle(W / 2, H + 26, 600, 60, 0x05060c, 0.96).setStrokeStyle(2, 0xd4a64a), b, txt(s, W / 2, H + 26, '在世界地图中查看', 18, '#ffe8a0').setOrigin(0.5)]); }
   }
+  /** 总览面板「在世界地图中查看」 */
+  onWorldMap?: () => void;
   static SK = 60; gold = 0;
   /** 手机：Phaser 版 HUD 全部隐藏，由 DOM 版 MobileHud 显示（读 lines/dead/floorName） */
   mobile = false; floorName = ''; dead: boolean[] = [];

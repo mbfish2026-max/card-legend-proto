@@ -40,7 +40,7 @@ const CSS = `
 #mh-ovw{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:50;pointer-events:auto}
 #mh-ovw .box{background:#05060c;border:2px solid #d4a64a;border-radius:8px;padding:8px 12px;max-width:min(92vw,640px);max-height:88vh;overflow:auto;box-sizing:border-box;color:#ddd;font-size:13px;line-height:1.45;position:relative}
 #mh-ovw h3{margin:0 52px 4px 0;font-size:15px;color:#ffe8a0}#mh-ovw .x{position:absolute;right:4px;top:4px;width:44px;height:44px;font-size:20px;background:#2a1d10;color:#ffe8a0;border:1px solid #b8893a;border-radius:6px}
-#mh-ovw p{margin:2px 0;white-space:normal;word-break:break-all}
+#mh-ovw .wm{display:block;margin:8px auto 2px;min-width:200px;min-height:44px;font-size:15px;background:#2a1d10;color:#ffe8a0;border:2px solid #b8893a;border-radius:6px}#mh-ovw p{margin:2px 0;white-space:normal;word-break:break-all}
 #mh-joy{position:absolute;left:0;bottom:0;width:34vw;height:60vh;pointer-events:auto;touch-action:none}
 #mh-joy .base{position:absolute;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;display:none;
  background:rgba(0,0,0,.18);border:2px solid rgba(255,232,160,.35)}
@@ -164,6 +164,7 @@ export class MobileHud {
     const m = this.ovw = document.createElement('div'); m.id = 'mh-ovw'; const esc = (t: string) => t.replace(/[<&>]/g, c => ({ '<': '&lt;', '&': '&amp;', '>': '&gt;' } as any)[c]);
     m.innerHTML = `<div class="box"><button class="x" id="mh-ovw-x">✕</button><h3>当前地图：${esc(o.name)}</h3>` +
       [o.main, o.layer, `推荐等级：Lv${o.recLevel}`, `<b style="color:#f88">BOSS：</b>${o.bosses.join('、') || '无'}`, `<b style="color:#fb4">精英：</b>${o.elites.join('、') || '无'}`, `怪物：${o.monsters.join('、') || '无'}`, o.left, o.right].map(t => `<p>${t.startsWith('<') ? t : esc(t)}</p>`).join('') + '</div>';
+    { const box = m.querySelector('.box'); if (box) { const wb = document.createElement('button'); wb.className = 'wm'; wb.id = 'mh-ovw-wm'; wb.textContent = '在世界地图中查看'; wb.addEventListener('pointerdown', ev => { ev.stopPropagation(); this.toggleOverview(); this.b.openWorldMapHere(); }); box.appendChild(wb); } }
     m.addEventListener('pointerdown', ev => { ev.stopPropagation(); if (ev.target === m || (ev.target as HTMLElement).id === 'mh-ovw-x') this.toggleOverview(); });
     this.root.appendChild(m);
   }

@@ -65,6 +65,12 @@ try {
     await p.keyboard.press('Escape'); await sleep(500);
     chk(await p.evaluate(() => window.__game.scene.getScene('UI').panel.mode === null), `${tag} Esc：世界 → 关闭`);
     chk(await p.evaluate(() => JSON.parse(localStorage.getItem('fcl_settings_v1') || '{}').wmArea === 'zuma'), `${tag} 上次查看区域写入全局设置`);
+    // 地图总览「在世界地图中查看」→ 打开世界地图并定位当前区域（第 35 层 → zuma）
+    if (touch) { await p.evaluate(() => window.__game.scene.getScene('UI').mhud.toggleOverview()); await sleep(400); const r = await p.evaluate(() => { const e = document.getElementById('mh-ovw-wm'); if (!e) return null; const b = e.getBoundingClientRect(); return { x: b.x + b.width / 2, y: b.y + b.height / 2, h: b.height }; });
+      chk(r && r.h >= 44, `${tag} 总览内「在世界地图中查看」按钮 ≥44px`); if (r) await p.touchscreen.tap(r.x, r.y); }
+    else { await p.evaluate(() => { const B = window.__game.scene.getScene('Battle'); B.hud.onOverview(); }); await sleep(400); const r = (await findPos(p, 'Battle', '^在世界地图中查看$')) ?? (await findPos(p, 'UI', '^在世界地图中查看$')); chk(!!r, `${tag} 总览内「在世界地图中查看」按钮`); if (r) await p.mouse.click(r.x, r.y); }
+    await sleep(1500); await p.screenshot({ path: `${dir}/worldmap-from-overview-${tag}.png` });
+    chk(await p.evaluate(() => { const P = window.__game.scene.getScene('UI').panel; return P.mode === 'map' && P.wm.area === 'zuma'; }), `${tag} 从总览打开世界地图并定位盟重省`);
     const errs = ww.errs.filter(e => !/favicon|Failed to load resource/.test(e)); chk(errs.length === 0, `${tag} 无报错 ${errs.slice(0, 3).join(' | ')}`);
     await p.close();
   }
