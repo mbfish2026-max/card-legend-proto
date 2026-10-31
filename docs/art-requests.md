@@ -1101,3 +1101,57 @@ public/assets/ui/UI-Tooltip-Border.png
 - 锚点建议底部中心 (0.5, 1)。光圈下沿离底边约 4px，需要贴地时可以把 y 往下偏一点。
 - 用途：替换地图里的回城/出口入口「小房子」。只加了素材，src 没改，接入要另外改代码。
 - 预览：docs/art-gap-preview/portal_preview.jpg（上排深色底，下排棋盘格底，用来检查边缘）
+
+## L-P1. 盟重土城街景（art/towns 分支交付）
+
+规格来源：feat/balance-sys 分支 docs/art-requests.md 第 L 章，以及 docs/towns-plan.md 的盟重排序。所有素材都是原创生成，没有用、也没有描摹任何 WoW 或传奇原作素材。画风对齐 art/town 分支的比奇街道。
+
+### 文件
+
+| 文件 | 尺寸 | 用途 |
+|---|---|---|
+| public/assets/town/bg_town_mengzhong.jpg | 7680×1080（4 屏）| 盟重长街背景：沙黄土街，下部地面留空；西端是城门，留出传送门位置；东端远处是沙巴克城门 |
+| public/assets/town/shop_mz_weapon.png | 540×720 透明 | 武器店/铁匠 |
+| public/assets/town/shop_mz_pharmacy.png | 540×720 透明 | 药店 |
+| public/assets/town/shop_mz_book.png | 540×720 透明 | 书店 |
+| public/assets/town/shop_mz_storage.png | 540×720 透明 | 仓库（王家） |
+| public/assets/town/shop_mz_clothes.png | 540×720 透明 | 服装店 |
+| public/assets/town/shop_mz_jewelry.png | 540×720 透明 | 首饰店 |
+| public/assets/town/shop_mz_grocer.png | 540×720 透明 | 杂货（罗家铺子） |
+| public/assets/town/shop_mz_inn.png | 540×720 透明 | 客栈（悦来客栈） |
+| public/assets/town/shop_mz_butcher.png | 540×720 透明 | 肉店（黄家肉店） |
+| public/assets/town/shop_mz_alchemist.png | 540×720 透明 | 炼金师（外观为推测） |
+| public/assets/town/npc_mz_veteran.png | 768×960 透明 | 盟重老兵 |
+| public/assets/town/npc_mz_book.png | 768×960 透明 | 书店老板 |
+| public/assets/town/npc_mz_pharmacy.png | 768×960 透明 | 药店老板 |
+| public/assets/town/npc_mz_weapon.png | 768×960 透明 | 武器店老板 |
+| public/assets/town/npc_mz_storage.png | 768×960 透明 | 仓库保管员 |
+| docs/town-preview/mengzhong_preview.jpg | 3840×540 | 摆位预览（半尺寸，白线是屏分隔） |
+
+说明：
+- 门面按第 L 章做成 3:4（540×720）。这和第 K 章比奇门面的 640×720 不一致，如果需要统一，可以在加载时缩放，或者让美术重新留边。
+- 门面底边贴画布底，水平居中。门头上方都有空白木招牌，店名由游戏绘制，图上没有任何文字。
+- 文件名 shop_mz_* / npc_mz_* 是本分支自己定的（第 L 章没有给出具体文件名），id 可以按代码需要再改。
+- NPC 外观在资料里未查到，均为推测。炼金师的原版坐标也未查到。
+
+### 摆位表（背景坐标，x 为中心点）
+
+门面底边 y=760（和比奇台阶线一致），origin (0.5, 1)。NPC 脚底 y=1040，origin (0.5, 1)，预览里按 0.35 倍显示（约 269×336）。
+
+| 屏 | x 范围 | 内容 | x 中心 |
+|---|---|---|---|
+| 1 | 0–1920 | 城门 / 传送门位 | 约 300（背景自带城门）|
+| 1 | | npc_mz_veteran | 520 |
+| 1 | | shop_mz_grocer | 1000 |
+| 1 | | shop_mz_storage + npc_mz_storage | 1650 / 1880 |
+| 2 | 1920–3840 | shop_mz_inn | 2250 |
+| 2 | | shop_mz_weapon + npc_mz_weapon | 2950 / 3200 |
+| 2 | | shop_mz_clothes | 3550 |
+| 3 | 3840–5760 | shop_mz_jewelry | 4150 |
+| 3 | | shop_mz_alchemist | 4850 |
+| 3 | | shop_mz_butcher | 5450 |
+| 4 | 5760–7680 | shop_mz_pharmacy + npc_mz_pharmacy | 6050 / 6290 |
+| 4 | | shop_mz_book + npc_mz_book | 6700 / 6940 |
+| 4 | | 远景沙巴克城门（背景自带） | 约 7300 |
+
+顺序依据 towns-plan（由西向东）：城门·老兵 → 杂货 → 仓库·客栈 → 武器·服装·首饰 → 炼金·肉店·药店 → 书店。每屏最多 3 间店。屏 1 的仓库中心在 1650，右半跨到 1920 附近，接入时可按需微调。
