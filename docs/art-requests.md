@@ -459,3 +459,23 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 - 外观依据（热血传奇官方背景，百度百科）：原为人们祭奠的神将，与龙共同守护人类，龙堕落后随之化为妖魔；「神所赐的双翅」「由天地灵气化成的短枪」；作为龙命令的执行者带来血与火。据此绘制：龙角头盔的堕落神将、暗红金边重甲、一对龙翼、紫红灵气短枪、血火缭绕。
 - 未查到：原作具体配色与头部造型的官方立绘描述（配色暗红/黑红为玩家资料推测）；短枪画成两端带刃，属自由发挥。
 - 原创绘制，未描摹原作素材。
+
+## maps-batch2 交付（art/maps-batch2）
+
+预览：`docs/art-gap-preview/maps_batch2.jpg`。原创绘制，外观参照原版传奇设定（名称/地图），未描摹原作贴图。
+
+| 文件 | 尺寸 | id | 名称 | 外观依据 |
+|---|---|---|---|---|
+| portraits/dung_beetle_full.png | 960x831 | dung_beetle | 粪虫 | 甲虫推滚粪球（按名称推测） |
+| portraits/woma_brave_full.png | 722x960 | woma_brave | 沃玛勇士 | 沃玛族獠牙兽人+弯刀（推测，与现有 woma_warrior 同族风格） |
+| portraits/woma_general_full.png | 707x960 | woma_general | 沃玛战将 | 重甲+红披风+战斧（推测） |
+| portraits/fire_woma_full.png | 722x960 | fire_woma | 火焰沃玛 | 熔岩裂纹+火球法杖（原作会喷火，造型推测） |
+| portraits/dark_warrior_full.png | 705x960 | dark_warrior | 暗黑战士 | 黑甲角盔+巨剑+暗影（推测） |
+| portraits/mine_zombie_full.png | 685x960 | mine_zombie | 僵尸（矿区） | 矿工僵尸+矿镐（21cq 僵尸1–5 合一 [适配]） |
+
+背景（1920×1080 jpg）：
+- `bg/bg_floor25.jpg` 沃玛寺庙（红石兽首柱神殿）
+- `bg/bg_floor28.jpg` 比奇矿区（木支架矿道、矿车）
+- `bg/bg_floor33.jpg` 毒蛇矿区（绿色毒雾矿洞）
+
+说明：规格写的是区间（25–27 / 28–32 / 33–34），每套只出 1 张，用区间首号命名；其余层号可直接复用同套图或另行补图（存疑，接入方自定）。
