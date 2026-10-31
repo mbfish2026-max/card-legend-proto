@@ -8,11 +8,11 @@ const ROOT = new URL('../../dist', import.meta.url).pathname;
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.png': 'image/png', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.m4a': 'audio/mp4', '.wav': 'audio/wav', '.webmanifest': 'application/manifest+json', '.css': 'text/css' };
 /** 静态服务 dist（base=/card-legend-proto/）；block(url) 返回 true 时回 404，用于模拟素材缺失 */
 export async function startPreview(opts = {}) {
-  const block = opts.block ?? (() => false);
+  const block = opts.block ?? (() => false), root = opts.root ?? ROOT;
   const srv = http.createServer((req, res) => {
     const u = decodeURIComponent(req.url.split('?')[0]);
     if (!u.startsWith(BASE)) { res.writeHead(404); return res.end(); }
-    let f = join(ROOT, u.slice(BASE.length)); if (u.endsWith('/')) f = join(f, 'index.html');
+    let f = join(root, u.slice(BASE.length)); if (u.endsWith('/')) f = join(f, 'index.html');
     if (block(u) || !existsSync(f) || !statSync(f).isFile()) { res.writeHead(404); return res.end('404'); }
     res.writeHead(200, { 'Content-Type': MIME[extname(f)] ?? 'application/octet-stream' }); res.end(readFileSync(f));
   });

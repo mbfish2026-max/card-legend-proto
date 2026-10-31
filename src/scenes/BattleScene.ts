@@ -152,7 +152,7 @@ export class BattleScene extends Phaser.Scene {
     for (let i = -3; i <= 3; i++) { const a = Math.PI * (1 + (i + 3) / 6); arch.fillStyle(0x6a7080, 1).fillRect(Math.cos(a) * 85 - 7, -100 + Math.sin(a) * 85 - 7, 14, 14); }
     const motes = this.add.particles(0, 0, '__WHITE', { x: { min: -60, max: 60 }, y: { min: 60, max: 110 }, speedY: { min: -60, max: -25 }, lifespan: 1800, scale: { start: 3, end: 0 }, alpha: { start: 0.8, end: 0 }, tint: [0xd090ff, 0xaa66ff], frequency: 120 });
     const t = this.add.text(0, -205, '下一层', { fontFamily: FONT, fontSize: '22px', color: '#e0c8ff', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5);
-    this.portalHint = this.add.text(0, -235, IS_MOBILE ? '点「传送」进入' : '按 W/空格 进入', { fontFamily: FONT, fontSize: '18px', color: '#ffffff', fontStyle: 'bold', stroke: '#2a0a5a', strokeThickness: 5 }).setOrigin(0.5).setVisible(false);
+    this.portalHint = this.add.text(0, -235, IS_MOBILE ? '点「进入」' : '按 W/空格 进入', { fontFamily: FONT, fontSize: '18px', color: '#ffffff', fontStyle: 'bold', stroke: '#2a0a5a', strokeThickness: 5 }).setOrigin(0.5).setVisible(false);
     this.tweens.add({ targets: this.portalHint, y: -242, duration: 500, yoyo: true, repeat: -1 });
     c.add([arch, core, swirl, ...rings, motes, t, this.portalHint]); this.portal = c;
   }
@@ -215,7 +215,7 @@ export class BattleScene extends Phaser.Scene {
     g.lineStyle(2, 0xd4a64a).strokeRect(-60, -10, 120, 70);
     c.add(g);
     if (this.textures.exists('merchant')) c.add(this.add.image(0, 22, 'merchant').setDisplaySize(52, 52));
-    this.gateLabel = this.add.text(0, -92, '回城 [S]', { fontFamily: FONT, fontSize: '16px', color: '#ffe8a0', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5); c.add(this.gateLabel);
+    this.gateLabel = this.add.text(0, -92, IS_MOBILE ? '回城' : '回城 [S]', { fontFamily: FONT, fontSize: '16px', color: '#ffe8a0', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5); c.add(this.gateLabel);
     g.setInteractive(new Phaser.Geom.Rectangle(-75, -70, 150, 130), Phaser.Geom.Rectangle.Contains).on('pointerdown', () => this.goBackTown());
     this.merchant = c;
   }
@@ -441,7 +441,7 @@ export class BattleScene extends Phaser.Scene {
       } else if (e.type === 'aggro') this.views.get(e.uid)?.alert(WORLD.alertSec);
       else if (e.type === 'leap') this.views.get(e.uid)?.leap(WORLD.leapSec * 1000);
       else if (e.type === 'leash') { const v = this.views.get(e.uid); if (v) fx.floatNumber(this, v.cx, v.cy - v.h * 0.3, v.h, '脱离战斗', FX.statusColor, 0.6); }
-      else if (e.type === 'floor') { this.enterFloor(e.index, e.name); this.gateLabel?.setText(`回${this.world.returnTownName().replace(/（.*）/, '')} [S]`); }
+      else if (e.type === 'floor') { this.enterFloor(e.index, e.name); this.gateLabel?.setText(`回${this.world.returnTownName().replace(/（.*）/, '')}${IS_MOBILE ? '' : ' [S]'}`); }
       else if (e.type === 'town') this.buildStreet(e.id);
       else if (e.type === 'cleared') this.log('首领已被击败！出口已开启，向右前往下一层');
       else if (e.type === 'win') this.end();
