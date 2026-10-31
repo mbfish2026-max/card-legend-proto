@@ -34,7 +34,7 @@ export interface Unit extends UnitDef {
   armorUntil?: number; armorReduce?: number;
   /** #12 幽灵盾（魔御）/神圣战甲术（防御）增益，不存档 */
   mdefUpUntil?: number; mdefUp?: number; defUpUntil?: number; defUp?: number;
-  leapUntil?: number; leapReady?: number; slowUntil?: number; poisonUntil?: number; poisonDps?: number; poisonTick?: number;
+  leapUntil?: number; leapReady?: number; slowUntil?: number; stunUntil?: number; vulnUntil?: number; vulnPhys?: number; vulnMag?: number; poisonUntil?: number; poisonDps?: number; poisonTick?: number;
   /** R13 红毒：受到伤害 +20% 截止时间 */
   redUntil?: number;
   /** R13 官方 BOSS 机制状态（沃玛发呆/狂暴、瞬移计时；祖玛召唤；赤月地刺） */
@@ -66,7 +66,7 @@ export type BattleEvent =
   | { type: 'exp'; amount: number }
   | { type: 'levelup'; level: number }
   | { type: 'summon'; uid: number }
-  | { type: 'combo'; id: string; name: string; source: number; partner: number; target: number; amount: number }
+  | { type: 'combo'; id: string; name: string; source: number; partner: number; target: number; amount: number; hits?: number }
   | { type: 'charm'; uid: number; result: 'ok' | 'fail' | 'immune' | 'high' | 'betray' }
   | { type: 'respawn' }
   | { type: 'inventory' }

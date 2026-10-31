@@ -141,10 +141,36 @@ export function canUnleash(c: CompanionState): boolean { return hasHeart(c) && c
 export function unleash(c: CompanionState): boolean { if (!canUnleash(c)) return false; c.burst = true; return true; }
 /** [适配] 合击触发范围（px，≈ 5 格；官方「都在攻击范围内」具体格数未查到） */
 export const COMBO_RANGE = 400;
-/** 合击效果表（阶段 B 按 combo id 填 6 种真实伤害/范围）；阶段 A 全部走占位：(主人主属性 + 英雄主属性) × 3 [适配] 单体 */
-export interface ComboEffect { mult: number; magic: number; aoe: number }
+/**
+ * 合击效果表（阶段 B，docs/hejiban-official.md §3、docs/skills-official.md「合击」）。
+ * 官方：职业组合→合击一一对应、效果描述（多目标/破防/吸血、麻痹、持续掉血、中毒、受伤加深）见百科「合擊」；
+ * 倍率/范围/持续时间官方未查到 → 全部 [适配]：伤害 = (主人主属性 + 英雄主属性) × mult，
+ * 两人属性之和 ≈ 主人主属性 × 2，故 mult 1.0~2.0 ≈ 主人 2~4 倍主属性，对标同级大招（烈火剑法 lv3 2.6×、地狱雷光 2.2× 群体）。
+ * aoe：0 = 单体；>0 = 以目标为圆心半径 px 的群体。status 复用现有机制：poison(poisonUntil/poisonDps)、slow(slowUntil)；
+ * 新增最小 [适配]：stun(麻痹，stunUntil：不移动不攻击)、vuln(受伤加深，vulnUntil/vulnPhys/vulnMag)、lifesteal(吸血)、ignoreDef(破防)。
+ */
+export interface ComboEffect {
+  mult: number; magic: number; aoe: number;
+  ignoreDef?: boolean; lifesteal?: number;
+  poison?: { dur: number; frac: number }; // 每秒掉 (本次伤害 × frac)，持续 dur 秒
+  stun?: number; slow?: number;
+  vuln?: { dur: number; phys?: number; mag?: number };
+}
 export const COMBO_PLACEHOLDER: ComboEffect = { mult: 3, magic: 0.5, aoe: 0 };
-export const COMBO_EFFECTS: Partial<Record<string, ComboEffect>> = {};
+export const COMBO_EFFECTS: Partial<Record<string, ComboEffect>> = {
+  // 战战 破魂斩：官方「多目标；修炼后附破防+吸血」→ 圆形群体 180px、无视防御、吸血 20% [适配数值]
+  pohun: { mult: 1.4, magic: 0, aoe: 180, ignoreDef: true, lifesteal: 0.2 },
+  // 法法 火龙气焰：官方「顷刻间生灵化灰」大范围；之后火系伤害对其加深 → 半径 300、魔法，魔法受伤 +15% 8s [适配：本作无火系标记，按魔法]
+  huolong: { mult: 1.3, magic: 1, aoe: 300, vuln: { dur: 8, mag: 0.15 } },
+  // 道道 噬魂沼泽：官方「范围中毒」→ 半径 250 道术，中毒 10s 每秒 6% [适配]
+  shihun: { mult: 1.0, magic: 1, aoe: 250, poison: { dur: 10, frac: 0.06 } },
+  // 战法 雷霆一击：官方「强力一击，目标受物理伤害加深」→ 单体，物理受伤 +20% 8s [适配]
+  leiting: { mult: 2.0, magic: 0.5, aoe: 0, vuln: { dur: 8, phys: 0.2 } },
+  // 法道 末日审判：官方「HP/MP 持续下降」→ 单体魔法 + 持续掉血 8s 每秒 5%（怪无 MP，只掉 HP）[适配]
+  mori: { mult: 1.5, magic: 1, aoe: 0, poison: { dur: 8, frac: 0.05 } },
+  // 战道 劈星斩：官方「麻痹；目标魔法防御变弱」→ 单体，麻痹 3s，魔法受伤 +20% 8s [适配]
+  pixing: { mult: 1.6, magic: 0.5, aoe: 0, stun: 3, vuln: { dur: 8, mag: 0.2 } },
+};
 export function comboEffect(id: string | undefined): ComboEffect { return (id && COMBO_EFFECTS[id]) || COMBO_PLACEHOLDER; }
 
 // ---- 阶段 A #3 自动用药 ----
