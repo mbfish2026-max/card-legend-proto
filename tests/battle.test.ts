@@ -184,6 +184,7 @@ const free = (w: World) => w.skills.map(() => 0);
   ok(w.equipItem(si) === null && w.equip.weapon === sw && h.atk === atk0 + (sw.stats.atk ?? 0), `装备屠龙刀攻击 +${sw.stats.atk}`);
   ok(w.unequip('weapon') === null && h.atk === atk0 && w.bag.includes(sw), '卸下回到背包，属性还原');
   const low = mk([], [], 'warrior', 1); low.bag.push(low.makeItem('dragon_sword')); ok(low.equipItem(0)?.includes('需要等级') === true, '等级不足不能装备');
+  w.bag.push(w.makeItem('bone'), w.makeItem('bone')); // 阶段4：BOSS 不再必掉油/铁，补两件供丢弃/出售用例
   const n = w.bag.length; w.dropItem(0); ok(w.bag.length === n - 1, '丢弃物品');
   const g0 = w.gold, price = w.bag[0].price; w.sellItem(0); ok(w.gold === g0 + price, '出售给商人得金币');
   w.gold = 100; const p0 = w.pots[0]; ok(w.buyPotion(0) === null && w.pots[0] === p0 + 1 && w.gold === 100 - POTIONS[0].price, '购买药水');

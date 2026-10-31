@@ -11,6 +11,7 @@ import { HERO, ENEMIES, SUMMON, SUMMON_BEAST, SUMMON_CORPSE, SUMMON_GOLDEN, DECO
 import { EXP_PER_LEVEL, EXP_VERSION, migrateExp, scaledExp, fmtExp } from '../data/expCurve';
 import { killExp, foeStatsAt } from '../data/balance';
 import '../data/drop-plan';
+import { REGIONS } from '../data/map';
 import { MINE_FLOORS, MINE_CAST, MINE_RESPAWN, MINE_RADIUS, mineX, minePurity, OIL_BOSSES, OIL_RATE } from '../data/mining'; // 阶段4：drop-plan 覆盖（副作用：改写 ENEMIES.drops）
 import { WORLD, FLOORS, Floor, FARM_RESPAWN, FARM_SAFE_DIST, nextFloorOf, SIDE_FLOORS, DEPTH_STEP, prevLayerOf, prevFloorOf, floorWidth, OLD_MAP_W } from '../data/world';
 /** 任务 A：待机怪离主角超过「半屏 + 2 屏」即休眠 */
@@ -597,7 +598,8 @@ export class World {
     else if (this.floor?.farm && !u.summon) this.farmQueue.push({ id: u.id, x: u.homeX, y: u.homeY, at: this.time + FARM_RESPAWN });
     const extra: { id: string; purity?: number }[] = [];
     // 阶段4：祝福油只由高级 BOSS（OIL_BOSSES）掉，[适配] 1/8；普通怪/精英不掉（oilChance 已停用）
-    if (u.tier === 'boss' && OIL_BOSSES.includes(u.id) && this.lootRng() < OIL_RATE) extra.push({ id: 'bless_oil' });
+    // 随机序列保持与改动前一致（原：普通怪 2 次抽签 油/铁，BOSS 1 次 铁纯度）→ 其余掉落与难度基线不漂移
+    if (u.tier !== 'boss') this.lootRng(); // 原 oilChance 抽签位（弃用）
     // R11 技能书掉落（本职业、未学、背包里也没有）
     { const pool = Object.values(BOOKS).filter(b => b.cls === this.cls && (u.id in BOOK_RATES ? (BOOK_RATES[u.id][b.skill] ?? 0) > 0 : b.drops.includes(u.id)) && !this.learned.has(b.skill) && !this.bag.some(x => x.item === bookItemId(b.skill)));
       // R13：有资料的怪逐本按资料爆率（1/N）独立判定；无资料的怪沿用 [适配] 首领/普通几率随机一本
@@ -608,7 +610,8 @@ export class World {
       if (!has && HORN_MOBS.includes(u.id) && this.lootRng() < HORN_MOB_CHANCE) extra.push({ id: 'woma_horn' });
     } // R14 #14：号角 [适配] 8%；清怪保底见 womaTick
     // 黑铁：Boss 必掉 1 块纯度 1–3；普通怪 8% 掉纯度 1（lootRng，不影响平衡模拟主序列）
-    // 阶段4：黑铁矿只能挖矿（startMine），怪物不掉
+    // 阶段4：黑铁矿只能挖矿（startMine），怪物不掉；原黑铁抽签位保留：BOSS 用它判定祝福油，普通怪弃用
+    { const r = this.lootRng(); if (u.tier === 'boss' && OIL_BOSSES.includes(u.id) && r < OIL_RATE) extra.push({ id: 'bless_oil' }); }
     if (extra.length) {
       const items = extra.map((e, i) => {
         const inv = this.makeItem(e.id, 'common', e.purity ? { purity: e.purity } : undefined);
@@ -1589,6 +1592,13 @@ export class World {
   }
   /** 每张战斗层起点都有「回城/回村」入口：原路回到进来的城镇（未查到官方连接的统一回本区域主城） */
   returnTownName(): string { return TOWNS[returnTownOf(this.floorIndex)].name; }
+  /** 任务B：本层最左端「返回上一层」传送门的去向。第 1 层/区域首层 → 回城镇（新手为小村），其它 → 上一层（prevFloorOf） */
+  backGate(): { kind: 'portal'; to: 'town' | 'floor'; index: number; name: string; label: string } | null {
+    if (this.town) return null; const i = this.floorIndex;
+    const p = i > 0 && !REGIONS.some(r => r.floors[0] === i) ? prevFloorOf(i, this.floors) : -1;
+    const name = p >= 0 ? this.floors[p].name : this.returnTownName().replace(/（.*）/, '');
+    return { kind: 'portal', to: p >= 0 ? 'floor' : 'town', index: p, name, label: `传送门：返回 ${name}` };
+  }
   atReturnGate(): boolean { const h = this.hero; return !this.town && !!h && h.x <= WORLD.heroStartX + 150; }
   returnToTown(): string | null {
     if (this.town) return '已在城内'; if (!this.atReturnGate()) return '回城入口在本层起点（左侧）';

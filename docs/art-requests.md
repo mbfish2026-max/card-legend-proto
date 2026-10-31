@@ -1103,4 +1103,5 @@ public/assets/ui/UI-Tooltip-Border.png
 - 帧率建议 8fps，循环播放。
 - 锚点建议底部中心 (0.5, 1)。光圈下沿离底边约 4px，需要贴地时可以把 y 往下偏一点。
 - 用途：替换地图里的回城/出口入口「小房子」。只加了素材，src 没改，接入要另外改代码。
+- **状态：已满足、已接入（feat/balance-sys 任务B）**：`assets-manifest` 注册 `portal_exit` / `portal_exit_sheet`（SHEETS 256×384 切 4 帧），BattleScene 每层最左端播 `portal_exit_loop` 8fps 循环、origin (0.5,1)、显示 150×225（约主角 1.6 倍高）；贴图缺失时退回程序绘制椭圆。文案「传送门：返回 XXX」，第 1 层返回小村。测试 tests/back-portal.test.ts。
 - 预览：docs/art-gap-preview/portal_preview.jpg（上排深色底，下排棋盘格底，用来检查边缘）

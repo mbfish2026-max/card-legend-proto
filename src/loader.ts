@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { ASSETS, SFX } from './assets-manifest';
+import { ASSETS, SFX, SHEETS } from './assets-manifest';
 import { MUSIC } from './music';
 import { CLASSES } from './data/classes';
 import { ITEMS } from './data/items';
@@ -41,7 +41,7 @@ function hook(load: Phaser.Loader.LoaderPlugin) {
 }
 export function queueImages(load: Phaser.Loader.LoaderPlugin, tex: Phaser.Textures.TextureManager, keys: string[]) {
   let n = 0; hook(load);
-  for (const k of new Set(keys)) if (ASSETS[k] && !tex.exists(k) && !pending.has(k)) { pending.add(k); load.image(k, assetUrl(ASSETS[k])); n++; }
+  for (const k of new Set(keys)) if (ASSETS[k] && !tex.exists(k) && !pending.has(k)) { pending.add(k); if (SHEETS[k]) load.spritesheet(k, ASSETS[k], SHEETS[k]); else load.image(k, assetUrl(ASSETS[k])); n++; }
   return n;
 }
 /** 特效图集失败次数：首次 + 最多重试 2 次，之后放弃（走 Graphics 兜底），不再阻塞音乐队列（BUG-001） */

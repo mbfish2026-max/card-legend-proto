@@ -214,18 +214,36 @@ export class BattleScene extends Phaser.Scene {
     const d = w.nearDoor(), g = w.atTownGate(), act = IS_MOBILE ? '点门面' : 'W/空格';
     this.streetHint.setVisible(!!d || g).setText(g ? `${act} 出城` : d ? `${act} 进入 ${d.npc.name.replace(/（.*）/, '')}` : '').setX(g ? TOWN_GATE_X + 90 : d?.x ?? 0);
   }
-  /** 商人：本层起点的小摊（背景层，不参与战斗） */
+  /** 任务B：本层最左端「返回上一层」传送门（public/assets/portal_exit_sheet.png 4 帧 8fps；缺图 → 程序绘制光圈占位）。去向见 World.backGate() */
+  backPortalArt?: Phaser.GameObjects.GameObject;
   buildMerchant() {
-    const c = this.add.container(MERCHANT_X, GROUND_Y - 70).setDepth(5);
-    const g = this.add.graphics();
-    g.fillStyle(0x5a3a1a).fillRect(-60, -10, 120, 70); g.fillStyle(0x8a1010).fillTriangle(-75, -10, 75, -10, 0, -70);
-    g.lineStyle(2, 0xd4a64a).strokeRect(-60, -10, 120, 70);
-    c.add(g);
-    if (this.textures.exists('merchant')) c.add(this.add.image(0, 22, 'merchant').setDisplaySize(52, 52));
-    this.gateLabel = this.add.text(0, -92, IS_MOBILE ? '回城' : '回城 [S]', { fontFamily: FONT, fontSize: '16px', color: '#ffe8a0', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5); c.add(this.gateLabel);
-    g.setInteractive(new Phaser.Geom.Rectangle(-75, -70, 150, 130), Phaser.Geom.Rectangle.Contains).on('pointerdown', () => this.goBackTown());
-    this.merchant = c;
+    const c = this.add.container(MERCHANT_X, GROUND_Y + 14).setDepth(5);
+    this.gateLabel = this.add.text(0, -236, '', { fontFamily: FONT, fontSize: '16px', color: '#cfe0ff', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5);
+    const hit = this.add.zone(0, -110, 150, 220).setInteractive().on('pointerdown', () => this.backPortalUse());
+    c.add([hit, this.gateLabel]); this.merchant = c; this.syncBackPortal();
   }
+  /** 贴图晚到时也能切换：每次进层/切层调用 */
+  syncBackPortal() {
+    const c = this.merchant; if (!c) return;
+    const sheet = this.textures.exists('portal_exit_sheet'), still = this.textures.exists('portal_exit');
+    const want = sheet ? 'sheet' : still ? 'still' : 'gfx';
+    if (this.backPortalArt?.getData('kind') !== want) {
+      this.backPortalArt?.destroy();
+      let o: Phaser.GameObjects.GameObject;
+      if (sheet) {
+        if (!this.anims.exists('portal_exit_loop')) this.anims.create({ key: 'portal_exit_loop', frames: this.anims.generateFrameNumbers('portal_exit_sheet', { start: 0, end: 3 }), frameRate: 8, repeat: -1 });
+        o = this.add.sprite(0, 0, 'portal_exit_sheet', 0).setOrigin(0.5, 1).setDisplaySize(150, 225).play('portal_exit_loop'); // 与英雄高度相当（约 0.6× 原图）
+      } else if (still) o = this.add.image(0, 0, 'portal_exit').setOrigin(0.5, 1).setDisplaySize(150, 225);
+      else { // 程序占位：脉动椭圆 + 旋转光圈
+        const g = this.add.graphics(); g.fillStyle(0x3a6cff, 0.35).fillEllipse(0, -110, 130, 210); g.lineStyle(4, 0x9fc0ff, 0.9).strokeEllipse(0, -110, 130, 210); g.lineStyle(2, 0xd0e0ff, 0.7).strokeEllipse(0, -110, 90, 160);
+        this.tweens.add({ targets: g, alpha: { from: 0.6, to: 1 }, duration: 800, yoyo: true, repeat: -1 }); o = g;
+      }
+      o.setData('kind', want); c.addAt(o, 0); this.backPortalArt = o;
+    }
+    const b = this.world.backGate(); this.gateLabel?.setText(b ? `${b.label}${IS_MOBILE ? '' : ' [S]'}` : '');
+  }
+  /** 点传送门/S：上一层或（首层）回城镇；与回城卷轴（任务C，H 键）无关 */
+  backPortalUse() { const b = this.world.backGate(); if (!b) return; if (b.to === 'town') this.goBackTown(); else this.onKey('S'); }
   /** 阶段4：矿点（代码绘制，docs/art-requests.md「矿点」）；有矿层才显示，挖空时变暗 */
   mineNode?: Phaser.GameObjects.Container; mineLabel?: Phaser.GameObjects.Text;
   syncMine() {
@@ -250,7 +268,7 @@ export class BattleScene extends Phaser.Scene {
     const W = this.world.mapW;
     this.bgImgs.forEach((b, k) => b.setVisible(!this.street && k * 1280 < (W - 1280) * 0.7 + 1280)); // 背景视差 0.7：最右可见到 (W−1280)×0.7+1280
     this.rightWall?.setX(W - 6); this.portal?.setX(this.world.exitX);
-    this.syncMine();
+    this.syncMine(); this.syncBackPortal();
     this.cameras.main.setBounds(0, 0, W, 720);
   }
   /** 回城/回村入口（原「商人」位置，战斗地图不再有商人） */
@@ -503,7 +521,7 @@ export class BattleScene extends Phaser.Scene {
       } else if (e.type === 'aggro') this.views.get(e.uid)?.alert(WORLD.alertSec);
       else if (e.type === 'leap') this.views.get(e.uid)?.leap(WORLD.leapSec * 1000);
       else if (e.type === 'leash') { const v = this.views.get(e.uid); if (v) fx.floatNumber(this, v.cx, v.cy - v.h * 0.3, v.h, '脱离战斗', FX.statusColor, 0.6); }
-      else if (e.type === 'floor') { this.enterFloor(e.index, e.name); this.gateLabel?.setText(`回${this.world.returnTownName().replace(/（.*）/, '')}${IS_MOBILE ? '' : ' [S]'}`); }
+      else if (e.type === 'floor') { this.enterFloor(e.index, e.name); this.syncBackPortal(); }
       else if (e.type === 'town') this.buildStreet(e.id);
       else if (e.type === 'cleared') this.log('首领已被击败！出口已开启，向右前往下一层');
       else if (e.type === 'win') this.end();

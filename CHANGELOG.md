@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 任务B：每层左端「返回上一层」传送门（feat/balance-sys）
+- 去掉「回比奇城 [S]」红顶小房子和女头像，每层最左端换成传送门（public/assets/portal_exit_sheet.png 4 帧 8fps 循环，静态图 portal_exit.png 兜底，再缺就程序绘制）。
+- 去向 `World.backGate()`：上一层（prevFloorOf）；第 1 层 / 区域首层 → 城镇（新手为小村）。文案「传送门：返回 XXX」，电脑端加 [S]；手机大按钮显示「上一层」/「回村」「回城」。
+- assets-manifest 新增 SHEETS（portal_exit_sheet 256×384），loader 用 spritesheet 载入。
+- 阶段4 补：普通怪原来的油/铁两次 lootRng 抽签位保留（弃用），BOSS 的油用原黑铁抽签位判定，避免掉落随机序列漂移把难度基线带偏（不改任何测试目标）。
+- 测试：tests/back-portal.test.ts（门类型、目标、文案，manifest 两个 key 和文件）；battle.test 丢弃/出售用例补两件夹具。
+- m4-monsters「再次进入重新刷新」：首领有刷新冷却（bossCdUntil），改为先断言小怪全刷、清冷却后整层全刷（7f5d285 合并 main 后即失败，非本次引入）。
+
 ## 祝福油只由高级 BOSS 掉 / 黑铁矿只能挖矿（feat/balance-sys 阶段4 追加）
 - 祝福油：取消「BOSS 必掉」与 oilChance 小怪掉落；只在 OIL_BOSSES（祖玛教主、牛魔王、虹魔教主、赤月恶魔、黄泉教主、双头金刚、双头血魔；1.76 掉油名单 ∩ L≥28 BOSS）按 1/8 [适配] 掉；杂货铺停售（代码保留 SELL_OIL_IRON 开关）。
 - 黑铁矿石：怪物不再掉（原 BOSS 必掉/小怪 5%），铁匠停售；新增最简挖矿 src/data/mining.ts：矿层 28–34 层（比奇矿区五层 + 山谷矿区两层，附官方链接），矿点在层宽 45%，W/空格 或手机大键「挖矿」读条 4s，移动/受伤/施法/死亡打断，产出纯度 1–2（31 层后 1–3），矿脉 300s 刷新，存档 mineCd（旧档兼容）。矿点图代码绘制，见 docs/art-requests.md F。

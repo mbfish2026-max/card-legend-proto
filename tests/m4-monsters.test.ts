@@ -31,7 +31,10 @@ for (const fl of [80, 81, 82]) {
   ok(FLOORS[fl].spawns.every(s => ids.has(s.id)), `进入 ${FLOORS[fl].name} 生成全部怪`);
   for (const u of w.alive('enemy')) w.kill(u);
   ok(w.alive('enemy').length === 0, `${FLOORS[fl].name} 全部可击杀`);
-  w.loadFloor(fl); ok(w.alive('enemy').length === FLOORS[fl].spawns.length, `${FLOORS[fl].name} 再次进入重新刷新`);
+  // BOSS 刷新冷却（bossCdUntil）期间首领不在，其余怪全刷；冷却过后整层全刷
+  w.loadFloor(fl); const nb = FLOORS[fl].spawns.filter(s => ENEMIES[s.id]?.tier !== 'boss').length;
+  ok(w.alive('enemy').length === nb, `${FLOORS[fl].name} 再次进入：小怪重新刷新（首领冷却中）`);
+  w.bossCdUntil = {}; w.loadFloor(fl); ok(w.alive('enemy').length === FLOORS[fl].spawns.length, `${FLOORS[fl].name} 再次进入重新刷新`);
 }
 // 4. 掉落：只用已有物品；击杀产出的掉落都在掉落表内
 for (const id of Object.keys(M4)) ok(ENEMIES[id].drops!.every(d => !!ITEMS[d.item] && d.chance > 0 && d.chance <= 1), `${M4[id][0]} 掉落物品均已存在`);
