@@ -75,7 +75,7 @@ export class MobileHud {
     const icon = (ic: string, label: string, k: string, id: string) => { const e = this.btn(top, `<span class="ic">${ic}</span>${label}`, () => b.onKey(k)); e.dataset.id = id; return e; };
     icon('🎒', '角色', 'B', 'bag'); icon('📜', '技能', 'K', 'skills'); icon('🎯', '悬赏', 'Q', 'quests'); icon('🗺', '传送', 'M', 'map'); // 地图面板即传送界面（点已到达入口传送）
     // 商人/传送合并为右下「对话/进入」键（城里 T 与 W 同为 townUse；战斗地图没有商人），不再单列商店图标
-    icon('🏯', '回城', 'S', 'town'); icon('⚙', '设置', 'ESCAPE', 'settings');
+    { const e = this.btn(top, '<span class="ic">🏯</span>回城', () => { const en = b.entranceHere(); if (en === 'town' || en === 'prev' || b.world.town) b.mobileAct(); else b.onKey('H'); }); e.dataset.id = 'town'; } // 任务C：在起点入口=回城/上一层，野外其余位置=用回城卷 icon('⚙', '设置', 'ESCAPE', 'settings');
     // 左下：浮动摇杆（左下区域任意处按下即在指下出现，不常驻遮挡主角；角落只留一个小提示），多点触控按 pointerId 区分
     const joy = this.el('div', r, 'ctl'); joy.id = 'mh-joy'; this.el('div', joy, 'hint').innerHTML = '◀ ▶<br>移动';
     const base = this.el('div', joy, 'base'); const knob = this.el('div', base, 'knob');

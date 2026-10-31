@@ -24,16 +24,19 @@ export const ITEMS: Record<string, ItemDef> = {
   bless_oil: { id: 'bless_oil', name: '祝福油', icon: 'assets/items/bless_oil.png', price: 50 },
   // 黑铁矿石：强化武器/头盔/衣服/靴子（手机版规则简化，见 World.enhanceWithIron）
   black_iron: { id: 'black_iron', name: '黑铁矿石', icon: 'assets/items/black_iron.png', price: 20 },
+  // 阶段3（balance-sys）：需求等级对齐——屠龙 34 = 官方需求（21cq）；重盔甲 12（官方 22）、金戒指 9（官方 22）暂保留 [待决定]：9 种子模拟抬到 22 后战士 2 种子卡尸王殿 L29、法师死亡中位 35→54；自创沃玛/祖玛/赤月套 = equip-official TIER_REQ 24/30/35 [适配]。
+  // 魔杖/银蛇 保留 6（官方 26）[适配]：二者是法师/道士 6–20 级唯一职业武器，抬到 26 会使法师前期无武器（与「法师不得更难」冲突），待决定。
+  // 旧存档：背包/身上实例保留存档时的 req（不追溯），新掉落按新 req。
   // 套装（R2，参考传奇沃玛/祖玛/赤月套装概念，数值为本作重新设计）。图标为占位副本，美术交付后同名替换
-  set_woma_helm: { id: 'set_woma_helm', name: '沃玛头盔', icon: 'assets/items/set_woma_helm.png', slot: 'helmet', equip: { def: 10, hp: 60 }, req: 14, price: 90, set: 'woma' },
-  set_woma_necklace: { id: 'set_woma_necklace', name: '沃玛项链', icon: 'assets/items/set_woma_necklace.png', slot: 'necklace', equip: { atk: 7, mag: 7, tao: 7 }, req: 14, price: 90, set: 'woma' },
-  set_woma_bracelet: { id: 'set_woma_bracelet', name: '沃玛手镯', icon: 'assets/items/set_woma_bracelet.png', slot: 'bracelet', equip: { def: 5, hp: 50 }, req: 14, price: 90, set: 'woma' },
-  set_zuma_helm: { id: 'set_zuma_helm', name: '祖玛头盔', icon: 'assets/items/set_zuma_helm.png', slot: 'helmet', equip: { def: 13, hp: 90 }, req: 18, price: 140, set: 'zuma' },
-  set_zuma_ring: { id: 'set_zuma_ring', name: '祖玛戒指', icon: 'assets/items/set_zuma_ring.png', slot: 'ring', equip: { atk: 11, mag: 11, tao: 11 }, req: 18, price: 140, set: 'zuma' },
-  set_zuma_boots: { id: 'set_zuma_boots', name: '祖玛靴', icon: 'assets/items/set_zuma_boots.png', slot: 'boots', equip: { def: 8, hp: 70 }, req: 18, price: 140, set: 'zuma' },
-  set_chiyue_necklace: { id: 'set_chiyue_necklace', name: '赤月项链', icon: 'assets/items/set_chiyue_necklace.png', slot: 'necklace', equip: { atk: 14, mag: 14, tao: 14 }, req: 22, price: 220, set: 'chiyue' },
-  set_chiyue_ring: { id: 'set_chiyue_ring', name: '赤月戒指', icon: 'assets/items/set_chiyue_ring.png', slot: 'ring', equip: { atk: 14, mag: 14, tao: 14 }, req: 22, price: 220, set: 'chiyue' },
-  set_chiyue_bracelet: { id: 'set_chiyue_bracelet', name: '赤月手镯', icon: 'assets/items/set_chiyue_bracelet.png', slot: 'bracelet', equip: { def: 8, hp: 120 }, req: 22, price: 220, set: 'chiyue' },
+  set_woma_helm: { id: 'set_woma_helm', name: '沃玛头盔', icon: 'assets/items/set_woma_helm.png', slot: 'helmet', equip: { def: 10, hp: 60 }, req: 24, price: 90, set: 'woma' },
+  set_woma_necklace: { id: 'set_woma_necklace', name: '沃玛项链', icon: 'assets/items/set_woma_necklace.png', slot: 'necklace', equip: { atk: 7, mag: 7, tao: 7 }, req: 24, price: 90, set: 'woma' },
+  set_woma_bracelet: { id: 'set_woma_bracelet', name: '沃玛手镯', icon: 'assets/items/set_woma_bracelet.png', slot: 'bracelet', equip: { def: 5, hp: 50 }, req: 24, price: 90, set: 'woma' },
+  set_zuma_helm: { id: 'set_zuma_helm', name: '祖玛头盔', icon: 'assets/items/set_zuma_helm.png', slot: 'helmet', equip: { def: 13, hp: 90 }, req: 30, price: 140, set: 'zuma' },
+  set_zuma_ring: { id: 'set_zuma_ring', name: '祖玛戒指', icon: 'assets/items/set_zuma_ring.png', slot: 'ring', equip: { atk: 11, mag: 11, tao: 11 }, req: 30, price: 140, set: 'zuma' },
+  set_zuma_boots: { id: 'set_zuma_boots', name: '祖玛靴', icon: 'assets/items/set_zuma_boots.png', slot: 'boots', equip: { def: 8, hp: 70 }, req: 30, price: 140, set: 'zuma' },
+  set_chiyue_necklace: { id: 'set_chiyue_necklace', name: '赤月项链', icon: 'assets/items/set_chiyue_necklace.png', slot: 'necklace', equip: { atk: 14, mag: 14, tao: 14 }, req: 35, price: 220, set: 'chiyue' },
+  set_chiyue_ring: { id: 'set_chiyue_ring', name: '赤月戒指', icon: 'assets/items/set_chiyue_ring.png', slot: 'ring', equip: { atk: 14, mag: 14, tao: 14 }, req: 35, price: 220, set: 'chiyue' },
+  set_chiyue_bracelet: { id: 'set_chiyue_bracelet', name: '赤月手镯', icon: 'assets/items/set_chiyue_bracelet.png', slot: 'bracelet', equip: { def: 8, hp: 120 }, req: 35, price: 220, set: 'chiyue' },
   gold: { id: 'gold', name: '金币', icon: 'assets/items/gold.png' },
   // 杂物（可卖）
   chicken: { id: 'chicken', name: '鸡肉', icon: 'assets/items/chicken.png', price: 3 },
@@ -44,7 +47,7 @@ export const ITEMS: Record<string, ItemDef> = {
   iron_sword: { id: 'iron_sword', name: '铁剑', icon: 'assets/items/eq_iron_sword.png', slot: 'weapon', equip: { atk: 14 }, req: 4, price: 30 },
   magic_staff: { id: 'magic_staff', name: '魔杖', icon: 'assets/items/eq_magic_staff.png', slot: 'weapon', equip: { mag: 16, atk: 3 }, req: 6, price: 45 },
   tao_sword: { id: 'tao_sword', name: '银蛇剑', icon: 'assets/items/eq_tao_sword.png', slot: 'weapon', equip: { tao: 14, atk: 6 }, req: 6, price: 45 },
-  dragon_sword: { id: 'dragon_sword', name: '屠龙刀', icon: 'assets/items/eq_dragon_sword.png', slot: 'weapon', equip: { atk: 45, mag: 20, tao: 20 }, req: 15, price: 300 },
+  dragon_sword: { id: 'dragon_sword', name: '屠龙刀', icon: 'assets/items/eq_dragon_sword.png', slot: 'weapon', equip: { atk: 45, mag: 20, tao: 20 }, req: 34, price: 300 },
   // 防具
   helmet: { id: 'helmet', name: '青铜头盔', icon: 'assets/items/eq_helmet.png', slot: 'helmet', equip: { def: 4, hp: 20 }, req: 3, price: 20 },
   bone_helm: { id: 'bone_helm', name: '骷髅头盔', icon: 'assets/items/eq_bone_helm.png', slot: 'helmet', equip: { def: 9, hp: 50 }, req: 10, price: 60 },

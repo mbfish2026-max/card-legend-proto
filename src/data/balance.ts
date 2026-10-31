@@ -103,6 +103,7 @@ export const atkK = (L: number) => L <= 6 ? 0.04 : L <= 15 ? 0.06 : L <= 30 ? 0.
 /** [适配] 文档 T=4/5/6/7；7–30 级段模拟校准下调到 4.5/5（战士无群攻，同屏 2–3 怪时原值死亡过多） */
 export const hpT = (L: number) => L <= 6 ? 4 : L <= 15 ? 4.5 : L <= 30 ? 5 : 7;
 /** [适配] 本作同屏多怪同时出手（文档公式按单怪推），攻击按等级段 ×0.8/0.7/0.9/0.85（1–6/7–20/21–30/31+），模拟校准值 */
+/** 8:37 校准：试过 21–30 段 0.9→1.0、31+ 0.85→0.92，法师死亡中位 35→77、战士卡尸王殿，已回退；21–30 压力改由掉落节奏（drop-plan 越级封顶）提供 */
 export const FOE_ATK_SCALE_AT = (L: number) => L <= 6 ? 0.8 : L <= 20 ? 0.7 : L <= 30 ? 0.9 : 0.85;
 export const formulaStats = (L: number) => { const e = expectWarrior(L);
   return { atk: Math.round(FOE_ATK_SCALE_AT(L) * (0.6 * e.def + atkK(L) * e.hp)), hp: Math.round(e.pw * hpT(L)), def: Math.round(0.25 * e.pw * 0.6) }; };

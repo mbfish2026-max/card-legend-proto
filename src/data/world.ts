@@ -54,7 +54,7 @@ export const FLOORS: Floor[] = [
   { name: '蛛网晶洞', bg: 'bg_floor2', boss: true, zone: '沃玛森林深处（原版 8–14 级）', spawns: [
     { id: 'spider', x: 800 }, { id: 'bat', x: 880, y: 20 },
     { id: 'spider', x: 1500 }, { id: 'spider', x: 1610, y: -15 },
-    { id: 'wolf', x: 2200 }, { id: 'spider', x: 2300 }, { id: 'bat', x: 2400, y: 15 },
+    { id: 'wolf', x: 2200 }, { id: 'spider', x: 2300 }, { id: 'bat', x: 2700, y: 15 }, // 8:37 校准：原 3 只一包（狼+蜘蛛+蝙蝠，道士/战士在此连死）拆为 2+1 [适配]
     { id: 'spider_queen', x: 3350 } ] },
   { name: '毒蛇山谷', bg: 'bg_floor9', boss: true, zone: '毒蛇山谷（原版 21 级起推荐练级；BOSS 取自经毒蛇山谷进入的情缘峡谷）', spawns: [
     { id: 'red_snake', x: 800 }, { id: 'tiger_snake', x: 910, y: 20 },

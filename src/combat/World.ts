@@ -10,6 +10,7 @@ import { ITEMS, SLOTS, SETS, equipSlotsFor, EQUIP_VERSION, ENHANCE_SLOTS, ENHANC
 import { HERO, ENEMIES, SUMMON, SUMMON_BEAST } from '../data/units';
 import { EXP_PER_LEVEL, EXP_VERSION, migrateExp, scaledExp, fmtExp } from '../data/expCurve';
 import { killExp, foeStatsAt } from '../data/balance';
+import '../data/drop-plan'; // 阶段4：drop-plan 覆盖（副作用：改写 ENEMIES.drops）
 import { WORLD, FLOORS, Floor, FARM_RESPAWN, FARM_SAFE_DIST, nextFloorOf, SIDE_FLOORS, DEPTH_STEP, prevLayerOf, prevFloorOf, floorWidth, OLD_MAP_W } from '../data/world';
 /** 任务 A：待机怪离主角超过「半屏 + 2 屏」即休眠 */
 export const SLEEP_DIST = 640 + 2 * 1280;
@@ -43,7 +44,15 @@ export interface SaveData {
   eqV?: number;
   /** R22 经验曲线版本：缺省=1（旧线性），2=官方形状 */
   expV?: number;
+  /** balance-sys 任务B：BOSS 刷新冷却剩余秒数（层 index → 秒），存档时写剩余值；缺省=旧档，无冷却 */
+  bossCd?: Record<string, number>;
 }
+/** balance-sys 任务B：BOSS 击杀后 600 秒刷新 [适配]（官方各服不一，未查到统一值）；按游戏时间计（离线不走） */
+export const BOSS_RESPAWN = 600;
+/** 任务C：回城卷读条秒数 [适配]（官方回城卷为瞬发，本作加读条防战斗中秒逃）；移动/受伤/施法打断，不消耗 */
+export const RECALL_CAST = 3;
+/** 任务C：新角色赠送回城卷数量 [适配]（官方未查到新手赠送数）；旧档不补发 */
+export const STARTER_SCROLLS = 3;
 /** R11 旧层号 → 新层号（按原版递进重排：兽人要塞提前到第 2 层） */
 export const FLOOR_MIGRATE = [0, 2, 3, 1, 4, 5, 6, 7];
 /** R13 新增 5 张地图后，mapV2 的 8 层层号 → mapV3 层号 */
@@ -139,6 +148,9 @@ export class World {
   /** 技能修炼点（官方等级要求/点数见 docs/skills-official.md） */
   skillTrain: Record<string, number> = {};
   reached = new Set<number>(); bossKilled = new Set<number>();
+  /** 任务B：层 index → BOSS 可再刷新的游戏时间（this.time） */
+  bossCdUntil: Record<number, number> = {};
+  bossCdLeft(i = this.floorIndex) { return Math.max(0, Math.ceil((this.bossCdUntil[i] ?? 0) - this.time)); }
   questProg: Record<string, number> = {}; questDone = new Set<string>(); achieves = new Set<string>();
   /** R11 已学技能（新角色只有初始技能，其余用技能书学习） */
   learned = new Set<string>();
@@ -163,6 +175,7 @@ export class World {
       this.cls = save.cls; this.level = save.level; this.exp = migrateExp(save.level, save.exp, save.expV); this.gold = save.gold; this.pots = [...save.pots];
       this.equip = migrateEquip(save); this.bag = [...save.bag]; this.kills = save.kills; this.nextItem = save.nextUid;
       this.skillTrain = { ...(save.skillTrain ?? {}) }; this.reached = new Set(save.reached ?? []); this.bossKilled = new Set(save.bossKilled ?? []);
+      for (const [k, v] of Object.entries(save.bossCd ?? {})) if (v > 0) this.bossCdUntil[+k] = Math.min(BOSS_RESPAWN, v);
       this.questProg = { ...(save.questProg ?? {}) }; this.questDone = new Set(save.questDone ?? []); this.achieves = new Set(save.achieves ?? []);
       if (save.mapV !== 2 && save.mapV !== 3 && this.floors === FLOORS) {
         const m = (i: number) => FLOOR_MIGRATE[i] ?? i;
@@ -410,17 +423,20 @@ export class World {
     if (isHero) u.level = this.level;
     this.units.push(u); return u;
   }
-  loadFloor(i: number) { this.stepTarget = null; this.stepQueued = 0;
+  loadFloor(i: number) { this.recall = null; this.stepTarget = null; this.stepQueued = 0;
     this.floorIndex = i; this.cleared = false; this.womaPending = null; this.womaSec = -1; this.womaWarnAt = -99; this.ground = []; this.zones = []; this.farmQueue = []; this.reached.add(i); this.checkAchieves();
     this.units = this.units.filter(u => u.isHero || u.summon || u.companion); this.companionTarget = null;
     const h = this.hero; if (h) { h.x = WORLD.heroStartX; h.y = 0; h.facing = 1; }
     this.units.filter(u => u.summon).forEach((s, k) => { s.x = WORLD.heroStartX - 110 - k * 60; s.y = WORLD.summonLane; });
     const cu = this.companionUnit; if (cu) { cu.x = WORLD.heroStartX - 80; cu.y = WORLD.summonLane; }
+    const cd = this.bossCdLeft(i); // 任务B：进层时普通怪全量重刷；BOSS 冷却中不刷（防反复进出刷 BOSS）
     for (const sp of this.floor.spawns) {
+      if (cd > 0 && ENEMIES[sp.id]?.tier === 'boss') continue;
       if (sp.id === 'boss_woma' && this.floor.name === WOMA_FLOOR_NAME) { this.womaPending = { x: sp.x, y: sp.y ?? 0 }; continue; } // R14 #14：教主之家需号角
       this.spawnFoe(sp.id, sp.x, sp.y ?? 0);
     }
     this.events.push({ type: 'floor', index: i, name: this.floor.name });
+    if (cd > 0) this.events.push({ type: 'log', text: `本层首领已被击败，${Math.ceil(cd / 60)} 分钟内不会刷新（出口已开启）` });
   }
   /** feat/maps-more：刷怪并按子层深度加成（官方第 d 层 攻/血 ×(1+DEPTH_STEP×(d−1))，原有层 depth 缺省=1 不变） */
   spawnFoe(id: string, x: number, y: number) { const u = this.spawn(ENEMIES[id], 'enemy', x, y), d = this.floor.depth ?? 1;
@@ -561,7 +577,7 @@ export class World {
       this.events.push({ type: 'drop', uid: u.uid, x: u.x, y: u.y, items });
     }
     // 额外掉落：独立随机流 lootRng（不消耗主 rng，保持平衡模拟稳定）。Boss 必掉 1 瓶祝福油；setDrop 随机 1 件套装
-    if (u.tier === 'boss') this.bossKilled.add(this.floorIndex);
+    if (u.tier === 'boss') { this.bossKilled.add(this.floorIndex); this.bossCdUntil[this.floorIndex] = this.time + BOSS_RESPAWN; }
     else if (this.floor?.farm && !u.summon) this.farmQueue.push({ id: u.id, x: u.homeX, y: u.homeY, at: this.time + FARM_RESPAWN });
     const extra: { id: string; purity?: number }[] = [];
     if (u.tier === 'boss' || this.lootRng() < (u.oilChance ?? 0)) extra.push({ id: 'bless_oil' });
@@ -701,7 +717,7 @@ export class World {
     if (!TOWNS[t]) return '无此城镇';
     if (this.town === t) return null;
     if (!free && this.inCombat()) return '战斗中无法回城';
-    this.town = t; this.stepTarget = null; this.stepQueued = 0;
+    this.town = t; this.recall = null; this.stepTarget = null; this.stepQueued = 0;
     const h = this.hero; if (h) { h.hp = h.maxHp; h.mp = h.maxMp; h.x = TOWN_SPAWN_X; h.y = WORLD.laneMin + (WORLD.laneMax - WORLD.laneMin) / 2; }
     // 横版长街：清掉野外怪物/地上物品（出城时重新刷层）
     this.units = this.units.filter(u => u.isHero || u.summon); this.ground = []; this.zones = [];
@@ -750,13 +766,37 @@ export class World {
     if (c.town) {
       const t = c.town === 'bichi' ? 'bichi' : townOfFloor(this.floorIndex);
       if (this.town === t) return '已在城内';
-      this.bag.splice(bagIdx, 1); this.enterTown(t, true); this.events.push({ type: 'inventory' }); return `使用 ${it.name}：回到 ${TOWNS[t].name}`;
+      if (this.town) { this.bag.splice(bagIdx, 1); this.enterTown(t, true); this.events.push({ type: 'inventory' }); return `使用 ${it.name}：回到 ${TOWNS[t].name}`; }
+      const h = this.hero; if (!h || !h.alive) return '无法使用';
+      if (this.recall) return '正在读条';
+      this.recall = { item: it.item, town: t, at: this.time + RECALL_CAST, x: h.x, y: h.y, hp: h.hp };
+      this.events.push({ type: 'log', text: `${it.name}读条 ${RECALL_CAST} 秒：移动/受伤/施法会打断（不消耗）` }); return `使用 ${it.name}：读条中`;
     }
     const h = this.hero; if (!h) return '无法使用';
     this.bag.splice(bagIdx, 1);
     if (c.hp) h.hp = Math.min(h.maxHp, h.hp + c.hp);
     if (c.mp) h.mp = Math.min(h.maxMp, (h.mp ?? 0) + c.mp);
     this.events.push({ type: 'inventory' }); return `使用 ${it.name}`;
+  }
+  /** 任务C：新建角色赠送回城卷（BattleScene 无存档开局时调用；读旧档不调用 → 旧档不补发） */
+  grantStarterKit() { for (let k = 0; k < STARTER_SCROLLS; k++) this.bag.push(this.makeItem('return_scroll')); }
+  /** 任务C：回城卷读条状态（null=无） */
+  recall: { item: string; town: string; at: number; x: number; y: number; hp: number } | null = null;
+  /** 快捷键/手机键：用背包里第一张回城卷（无则地牢逃脱卷） */
+  useRecallScroll(): string {
+    const i = ['return_scroll', 'dungeon_scroll'].map(id => this.bag.findIndex(b => b.item === id)).find(k => k >= 0);
+    if (i === undefined) return '没有回城卷（城镇杂货商有售）'; return this.useConsumable(i);
+  }
+  cancelRecall(why: string) { if (!this.recall) return; this.recall = null; this.events.push({ type: 'log', text: `回城读条被${why}打断（卷轴未消耗）` }); }
+  private recallStep(h: Unit) {
+    const r = this.recall; if (!r) return;
+    if (!h.alive) return this.cancelRecall('死亡');
+    if (Math.abs(h.x - r.x) > 0.5 || Math.abs(h.y - r.y) > 0.5) return this.cancelRecall('移动');
+    if (h.hp < r.hp - 0.01) return this.cancelRecall('受伤');
+    r.hp = h.hp;
+    if (this.time < r.at) return;
+    const k = this.bag.findIndex(b => b.item === r.item); this.recall = null; if (k < 0) return;
+    const name = this.bag[k].name; this.bag.splice(k, 1); this.enterTown(r.town, true); this.events.push({ type: 'inventory' }, { type: 'log', text: `使用 ${name}：回到 ${TOWNS[r.town].name}` });
   }
   /** 技能页：快捷栏顺序（拖放/上下移） */
   moveSkill(id: string, to: number) {
@@ -784,6 +824,7 @@ export class World {
   cast(i: number, cds: number[], opts: { auto?: boolean } = {}): CastResult {
     const s = this.skills[i], h = this.hero;
     if (!s || !h) return { ok: false, reason: '' };
+    if (this.recall && !opts.auto) this.cancelRecall('施法');
     const need = this.needLevel(s);
     if (this.level < need) return { ok: false, reason: `${s.name} 需等级 ${need}` };
     if (s.passive) return { ok: false, reason: `${s.name} 为被动技能` };
@@ -1106,7 +1147,7 @@ export class World {
     this.events.push({ type: 'combo', id: cb?.id ?? 'placeholder', name: cb?.name ?? '合击', source: h.uid, partner: u.uid, target: t.uid, amount: dealt, hits: targets.length, affected, statusUntil }, { type: 'log', text: `合击「${cb?.name ?? '合击'}」造成 ${dealt} 伤害`, color: 'green' });
   }
   toSave(): SaveData {
-    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, town: this.town, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], ringQ: this.ringQ, ringDone: this.ringDone, eqV: EQUIP_VERSION, expV: EXP_VERSION, companion: this.companion ? JSON.parse(JSON.stringify(this.companion)) : null  };
+    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, town: this.town, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], ringQ: this.ringQ, ringDone: this.ringDone, eqV: EQUIP_VERSION, expV: EXP_VERSION, bossCd: Object.fromEntries(Object.keys(this.bossCdUntil).map(k => [k, this.bossCdLeft(+k)]).filter(e => (e[1] as number) > 0)), companion: this.companion ? JSON.parse(JSON.stringify(this.companion)) : null  };
   }
 
   /** 点按一格：滑行中的按键全部排队（同向最多 10 格，反向则替换队列），每次按键都会走一格 */
@@ -1344,6 +1385,7 @@ export class World {
     }
     this.units = this.units.filter(u => u.alive);
     const hh = this.hero; if (!hh) return;
+    if (this.recall) { this.recallStep(hh); if (this.town) return; }
     for (const g of [...this.ground]) if (g.landAt <= this.time && Math.hypot(g.x - hh.x, (g.y - hh.y) * 0.5) <= WORLD.pickupRadius) this.pickup(g);
     this.atExit = Math.abs(hh.x - this.exitX) <= WORLD.exitRadius || hh.x >= this.exitX;
     if (this.atExit && this.requireUse && !inp.use) {

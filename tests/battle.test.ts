@@ -4,7 +4,7 @@ import * as EXPC from '../src/data/expCurve';
 import * as B from '../src/data/balance';
 import { OFFICIAL_MON_EXP } from '../src/data/monsterExp';
 import { returnTownOf } from '../src/data/towns';
-import { World, SaveData, OIL_PRICE, IRON_PRICE, OFFICIAL, mitigate, taoBuffValue, taoBuffDur, SKELETON_OFFICIAL, SUMMON_NAME_COLORS, SUMMON_MAX_LV, SUMMON_LV_KILLS } from '../src/combat/World';
+import { World, SaveData, OIL_PRICE, IRON_PRICE, OFFICIAL, mitigate, taoBuffValue, taoBuffDur, SKELETON_OFFICIAL, SUMMON_NAME_COLORS, SUMMON_MAX_LV, SUMMON_LV_KILLS, BOSS_RESPAWN } from '../src/combat/World';
 import { ITEMS, SETS, ENHANCE_MAX, enhanceChance, shatterChance } from '../src/data/items';
 import { WORLD, CARD, Floor, FLOORS, FLOOR_ORDER, SIDE_FLOORS, nextFloorOf, floorNo, DEPTH_STEP, prevLayerOf, groupOf, floorWidth } from '../src/data/world';
 import { comboFor } from '../src/data/companion';
@@ -1131,7 +1131,8 @@ console.log('# 诱惑之光');
   w.hero!.x = 3600; for (let t = 0; t < FARM_RESPAWN + 1; t += 0.05) w.step(0.05);
   ok(w.floorIndex === 0 && w.alive('enemy').filter(u => u.tier !== 'boss').length > 0, '清完仍可刷（小怪刷新，不强制进下一层）');
   ok(!w.alive('enemy').some(u => u.tier === 'boss'), 'BOSS 不随小怪刷新（重进地图才刷）');
-  w.loadFloor(0); ok(w.alive('enemy').some(u => u.tier === 'boss') && w.farmQueue.length === 0, '重进首图：BOSS 与小怪重置');
+  w.loadFloor(0); ok(!w.alive('enemy').some(u => u.tier === 'boss') && w.alive('enemy').length > 0 && w.farmQueue.length === 0, '重进首图（BOSS 600s 冷却内，任务B）：小怪重置、BOSS 不刷');
+  w.time += BOSS_RESPAWN; w.loadFloor(0); ok(w.alive('enemy').some(u => u.tier === 'boss') && w.farmQueue.length === 0, '重进首图（冷却结束）：BOSS 与小怪重置');
   const w2 = new World(seeded(5), 30, FLOORS, 'warrior'); w2.loadFloor(1); const k = w2.alive('enemy')[0]; w2.kill(k); ok(w2.farmQueue.length === 0, '其他层不刷新');
   const sv = w.toSave(); ok(new World(seeded(5), 1, FLOORS, 'warrior', sv).floorIndex === 0, '旧档兼容');
 }

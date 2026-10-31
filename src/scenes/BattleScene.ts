@@ -74,6 +74,7 @@ export class BattleScene extends Phaser.Scene {
     this.add.rectangle(6, 300, 12, 600, 0x000000, 0.8); this.rightWall = this.add.rectangle(W - 6, 300, 12, 600, 0x000000, 0.8);
     const lv = Number(qs.get('lv')) || 1;
     this.world = new World(Math.random, lv, FLOORS, data?.cls ?? 'warrior', data?.save);
+    if (!data?.save) this.world.grantStarterKit(); // 任务C：新角色 3 张回城卷 [适配]
     this.world.requireUse = true;
     if (!data?.save && !qs.get('floor')) this.world.startInVillage(); // 新档出生在新手村
     this.cds = this.world.skills.map(() => 0);
@@ -254,6 +255,7 @@ export class BattleScene extends Phaser.Scene {
     if (k === 'B' || k === 'C' || k === 'I') return this.openPanel('bag');
     if (k === 'T') { if (this.world.town) { this.townUse(); return; } return this.openPanel('shop'); }
     if (k === 'K') return this.openPanel('skills');
+    if (k === 'H') { this.log(this.world.useRecallScroll()); return; } // 任务C：回城卷快捷键
     if (k === 'Q') return this.openPanel('quests');
     if (this.paused || this.state !== 'play') return;
     // 合击版 A2/A4 [适配] 键位：R 召唤/收回、E 切换状态（官方 Ctrl+E）、G 合击爆发（官方 Ctrl+S，本作 S 已用于回城）
@@ -565,7 +567,7 @@ export class BattleScene extends Phaser.Scene {
     if (e === 'talk' || e === 'gate' || this.world.town) return this.townUse();
     if (e === 'exit' || e === 'sealed') return this.usePortal();
     if (e === 'town' || e === 'prev') return this.onKey('S');
-    this.log('走到右端传送门进入下一层，或走到左端入口回城/返回上一层');
+    this.log('走到右端传送门进入下一层，或走到左端入口回城/返回上一层；顶栏「回城」可用回城卷');
   }
   usePortal() {
     const w = this.world; if (!w.atExit || this.fading) return;
