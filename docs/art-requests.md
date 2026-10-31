@@ -726,3 +726,23 @@ thunder_sword 雷霆剑、break_strike 破击剑法、shield_break 破盾斩、v
 | m3_skel_soldier_full.png | 755x960 | 骷髅士兵 | 复用 art/sq-mir3 的 skel_soldier_full.png |
 | m3_skel_archer_full.png | 674x960 | 骷髅弓箭手 | 复用 art/sq-mir3 的 skel_archer_full.png |
 | m3_bone_general_full.png | 721x960 | 骨鬼将 | 复用 art/sq-mir3 的 bone_ghost_general_full.png |
+
+
+## art/maps-sq-mir3 交付·第 4 批（蛇谷/百虫+逆魔古刹，12 张）
+
+路径：`public/assets/portraits/<id>_full.png`，透明 PNG，最长边 960。预览：`docs/art-gap-preview/sq_mir3_batch4.jpg`。
+
+| 文件 | 尺寸 | 名称 | 来源 |
+|---|---|---|---|
+| sq_red_snake_yao_full.png | 720x960 | 红蛇妖 | 复用 art/sq-mir3 的 red_snake_yao_full.png |
+| sq_black_snake_yao_full.png | 708x960 | 黑蛇妖 | 复用 art/sq-mir3 的 black_snake_yao_full.png |
+| sq_scarab_full.png | 960x722 | 圣甲虫 | 复用 art/sq-mir3 的 scarab_full.png |
+| sq_magic_beetle_full.png | 960x888 | 魔甲虫 | 复用 art/sq-mir3 的 magic_beetle_full.png |
+| sq_termite_full.png | 960x701 | 白蚁 | 复用 art/sq-mir3 的 termite_full.png |
+| sq_three_snake_full.png | 859x960 | 三头蛇 | 复用 art/sq-mir3 的 three_head_snake_full.png |
+| sq_white_snake_yao_full.png | 716x960 | 白蛇妖 | 复用 art/sq-mir3 的 boss_white_snake_full.png |
+| sq_imp_full.png | 933x960 | 地下小鬼 | 复用 art/sq-mir3 的 underground_imp_full.png |
+| sq_nimo_archer_full.png | 695x960 | 逆魔弓箭手 | 复用 art/sq-mir3 的 nimo_archer_full.png |
+| sq_nimo_guard_full.png | 728x960 | 逆魔卫士 | 复用 art/sq-mir3 的 nimo_guard_full.png |
+| sq_nimo_shiwei_full.png | 731x960 | 逆魔侍卫 | 复用 art/sq-mir3 的 nimo_attendant_full.png |
+| sq_nimo_statue_full.png | 708x960 | 逆魔雕像 | 复用 art/sq-mir3 的 nimo_statue_full.png |
