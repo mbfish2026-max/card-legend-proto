@@ -14,7 +14,7 @@ const W = (lv = 40, cls: any = 'warrior', save?: any) => new World(seeded(1), lv
   ok(companionEquip(w.companion, 0) === null && w.companion.equip.weapon === it, '英雄从英雄包裹穿装');
   ok(companionStats(w.companion).atk > 0, '英雄属性含装备');
   ok(companionUnequip(w.companion, 'weapon') === null && w.takeFromCompanion(0) === null && w.bag.includes(it), '卸下并取回主角包裹');
-  const s = w.toSave(); const w2 = W(40, 'warrior', s); ok(w2.companion?.name === '小法' && w2.companion.cls === 'mage' && w2.companion.mode === 'follow', '英雄存取档');
+  const s = w.toSave(); const w2 = W(40, 'warrior', s); ok(w2.companion?.name === '小法' && w2.companion.cls === 'mage' && w2.companion.mode === 'fight', '英雄存取档');
   ok(migrateCompanion({ cls: 'taoist', name: '道' } as any)!.rage === 0, '缺字段补默认');
   w2.companion!.out = true; w2.gainExp(100000); ok(w2.companion!.exp > 0 || w2.companion!.level > 1, '召唤中的英雄分得经验');
 }
@@ -34,7 +34,7 @@ console.log(`合击版 #2 通过（${pass}）`);
   const n = w.bag.length; ok(w.feedCompanionHeart(n - 1) === null && c.heartStore === 5000 && w.bag.length === n - 1, '元神丹补充并消耗');
   ok(feedHeart(c, 'hl_yuanshen', 99) > 0 && c.heartStore === HEART_STORE_MAX, '储量上限 30000');
   ok(heartFeedValue('meat') > 0 && heartFeedValue('hp_small') === 0, '肉可补，药不可补');
-  ok(!canUnleash(c) && (c.rage = RAGE_MAX, canUnleash(c)) && unleash(c) && c.rage === 0, '满槽可爆发（占位清槽）');
+  ok(!canUnleash(c) && (c.rage = RAGE_MAX, canUnleash(c)) && unleash(c) && c.burst === true, '满槽可爆发（进入爆发态）');
   c.rage = 50; const w2 = W(40, 'warrior', w.toSave()); ok(w2.companion!.heartStore === HEART_STORE_MAX && w2.companion!.rage === 50, '怒槽/储量存档');
 }
 console.log(`合击版 #5 通过（${pass}）`);
