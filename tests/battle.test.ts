@@ -224,7 +224,7 @@ const free = (w: World) => w.skills.map(() => 0);
   const bw = new World(seeded(3), 30, FLOORS, 'warrior'); let got = 0;
   for (let k = 0; k < 40; k++) { const u = bw.spawn(ENEMIES.boss_lich, 'enemy', 1000); bw.kill(u); }
   got = bw.ground.filter(g => g.item.startsWith('book_')).length;
-  ok(got > 0 && bw.ground.every(g => !g.item.startsWith('book_') || ['book_thrust', 'book_half_moon', 'book_rush'].includes(g.item)), `尸王按资料爆率掉战士技能书（刺杀1/10 半月1/500 野蛮1/600）（40 次掉 ${got} 本）`);
+  ok(got > 0 && bw.ground.every(g => !g.item.startsWith('book_') || ['book_thrust', 'book_half_moon', 'book_rush', 'book_thunder_sword', 'book_fire_sword'].includes(g.item)), `尸王掉战士技能书：≤25 级按资料爆率（刺杀1/10），>25 级按 R54 掉落表（半月/野蛮/烈火/雷霆 10% 适配）（40 次掉 ${got} 本）`);
 }
 { // R13 地图扩充：区域覆盖、旧存档迁移、传送
   const all = REGIONS.flatMap(r => r.floors).sort((a, b) => a - b);

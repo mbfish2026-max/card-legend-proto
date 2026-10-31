@@ -1,5 +1,6 @@
 import { CompanionState, migrateCompanion, companionGainExp, COMPANION_BAG, COMPANION_UNLOCK_LEVEL, newCompanion, feedHeart, heartFeedValue, HEART_STORE_MAX, RAGE_MAX, COMBO_LEVEL, COMBO_GOLD_BARS, BRM_BOOK, BOOK_PAGE, GOLD_BAR, PAGES_PER_BOOK, comboFor, HEART_ITEM, COMPANION_UNIT_ID, COMPANION_RECALL_CD, COMPANION_MODES, COMPANION_MODE_NAME, CompanionMode, companionStats, rageTick, unleash, canUnleash, comboEffect, COMBO_RANGE, pickPotion, COMPANION_POT_HP, COMPANION_POT_MP } from '../data/companion';
 import { fmtInt } from '../ui/fmt';
+import { BOOK_DROPS_BY_BOSS } from '../data/skillBookDrops';
 import { BOOKS, BookDef, BOOK_DROP, BOOK_RATES, STARTER, bookItemId } from '../data/books';
 import { sortBag } from './bagSort';
 // 纯逻辑世界模块（无 Phaser 依赖，可在 node 中单测）：职业/等级成长、分层横版地图、怪物 AI、
@@ -591,10 +592,12 @@ export class World {
     const extra: { id: string; purity?: number }[] = [];
     if (u.tier === 'boss' || this.lootRng() < (u.oilChance ?? 0)) extra.push({ id: 'bless_oil' });
     // R11 技能书掉落（本职业、未学、背包里也没有）
-    { const pool = Object.values(BOOKS).filter(b => b.cls === this.cls && (u.id in BOOK_RATES ? (BOOK_RATES[u.id][b.skill] ?? 0) > 0 : b.drops.includes(u.id)) && !this.learned.has(b.skill) && !this.bag.some(x => x.item === bookItemId(b.skill)));
+    { const pool = Object.values(BOOKS).filter(b => b.cls === this.cls && this.bookLv(b) <= SHOP_BOOK_MAX_LV && (u.id in BOOK_RATES ? (BOOK_RATES[u.id][b.skill] ?? 0) > 0 : b.drops.includes(u.id)) && !this.learned.has(b.skill) && !this.bag.some(x => x.item === bookItemId(b.skill)));
       // R13：有资料的怪逐本按资料爆率（1/N）独立判定；无资料的怪沿用 [适配] 首领/普通几率随机一本
       if (u.id in BOOK_RATES) { for (const b of pool) if (this.lootRng() < BOOK_RATES[u.id][b.skill]) { extra.push({ id: bookItemId(b.skill) }); break; } }
       else if (pool.length && this.lootRng() < (u.tier === 'boss' ? BOOK_DROP.boss : BOOK_DROP.normal)) extra.push({ id: bookItemId(pool[Math.floor(this.lootRng() * pool.length)].skill) }); }
+    // R54：>25 级技能书只按 BOSS 掉落表（skillBookDrops.ts）掉；仅当 BOSS 在表内才消耗 lootRng，表外怪物的随机序列不变
+    if (BOOK_DROPS_BY_BOSS[u.id]) for (const d of BOOK_DROPS_BY_BOSS[u.id]) if (d.cls === this.cls && !this.learned.has(d.skill) && !this.bag.some(x => x.item === bookItemId(d.skill)) && !extra.some(x => x.id === bookItemId(d.skill)) && this.lootRng() < d.rate) extra.push({ id: bookItemId(d.skill) });
     if (u.setDrop?.length && this.lootRng() < (u.setChance ?? 1)) { const own = u.setDrop.filter(id => ITEMS[id]?.cls?.includes(this.cls)), pool = own.length ? own : u.setDrop; extra.push({ id: pool[Math.floor(this.lootRng() * pool.length)] }); } // R14 #13：职业套优先掉本职业
     if (this.womaPending) { const has = this.bag.some(x => x.item === 'woma_horn') || this.ground.some(g => g.item === 'woma_horn');
       if (!has && HORN_MOBS.includes(u.id) && this.lootRng() < HORN_MOB_CHANCE) extra.push({ id: 'woma_horn' });
@@ -681,9 +684,9 @@ export class World {
   }
   /** R11 书店：本职业 shop 书 */
   /** R54 书店：本职业 shop 书 + 所有学习等级 ≤ SHOP_BOOK_MAX_LV 的书（含原掉落/传世），按学习等级升序；掉落池不变 */
-  shopBooks(): BookDef[] { return Object.values(BOOKS).filter(b => b.cls === this.cls && (b.shop || this.bookLv(b) <= SHOP_BOOK_MAX_LV)).sort((a, b) => this.bookLv(a) - this.bookLv(b)); }
+  shopBooks(): BookDef[] { return Object.values(BOOKS).filter(b => b.cls === this.cls && this.bookLv(b) <= SHOP_BOOK_MAX_LV).sort((a, b) => this.bookLv(a) - this.bookLv(b)); }
   /** 传世秘籍页（书店第二页）：本职业学习等级 > 25 的传世技能书 */
-  csBooks(): BookDef[] { return Object.values(BOOKS).filter(b => b.cls === this.cls && b.cs && this.bookLv(b) > SHOP_BOOK_MAX_LV).sort((a, b) => this.bookLv(a) - this.bookLv(b)); }
+  csBooks(): BookDef[] { return []; } // R54：>25 级（含传世）一律不进商店，改为 BOSS 掉落（src/data/skillBookDrops.ts）
   /** R54 技能面板顺序：学习等级升序（同级保持技能池顺序） */
   skillsByLevel() { return [...this.skillPool].sort((x, y) => this.needLevel(x) - this.needLevel(y)); }
   bookLv(b: BookDef) { const s = this.skillPool.find(x => x.id === b.skill); return s ? this.needLevel(s) : 99; }

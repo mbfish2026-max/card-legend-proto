@@ -1,3 +1,7 @@
+import { bookItemId } from '../src/data/books';
+import { SKILL_BOOK_DROPS } from '../src/data/skillBookDrops';
+import { ENEMIES } from '../src/data/units';
+import { FLOORS } from '../src/data/world';
 import { fmtInt, fmtText } from '../src/ui/fmt';
 // 传世 16 技能 + 金甲骷髅：学习条件 / 耗魔 / 效果 / 自动 / 点击 / 召唤等级 / 旧存档
 import { World, SaveData, SUMMON_NAME_COLORS } from '../src/combat/World';
@@ -26,9 +30,9 @@ for (const c of Object.keys(CS) as ClassId[]) for (const id of CS[c]) {
   ok(existsSync('public/' + s.icon.replace(/^.*?assets\//, 'assets/')) || existsSync(s.icon.replace(/^\//, 'public/')) || existsSync('public/assets/skills/skill_' + id + '.png') || id === 'summon_golden_skeleton', `${s.name}：图标文件存在`);
   if (id !== 'summon_golden_skeleton') ok(existsSync(`public/assets/skills/skill_${id}@2x.png`), `${s.name}：@2x 图标`);
   // 学习条件
-  const lo = mkW(c, L0 - 1); lo.gold = 1e6; ok(lo.buyBook(id) === null, `${s.name}：可在传世秘籍购买`);
+  const lo = mkW(c, L0 - 1); lo.gold = 1e6; ok(lo.bookLv(BOOKS[id]) <= 25 ? lo.buyBook(id) === null : lo.buyBook(id) !== null, `${s.name}：R54 ≤25 级书店可买 / >25 级书店不卖（BOSS 掉落）`); lo.bag.length = 0; lo.bag.push(lo.makeItem(bookItemId(id)));
   const bi = lo.bag.findIndex(x => ITEMS[x.item]?.book === id); ok(lo.learnBook(bi).includes(`需等级 ${L0}`), `${s.name}：${L0 - 1} 级不能学`);
-  const w = mkW(c, Math.max(s.learn![3], 45)); w.gold = 1e6; w.buyBook(id); const r = w.learnBook(w.bag.findIndex(x => ITEMS[x.item]?.book === id));
+  const w = mkW(c, Math.max(s.learn![3], 45)); w.gold = 1e6; w.bag.push(w.makeItem(bookItemId(id))); const r = w.learnBook(w.bag.findIndex(x => ITEMS[x.item]?.book === id));
   ok(r.startsWith('学会'), `${s.name}：达到等级可学（${r}）`);
   ok(w.skillLevel(s) === 0, `${s.name}：初学 0 级`);
   w.skillTrain[id] = 99999; ok(w.skillLevel(s) === 3, `${s.name}：修炼点满 + 等级足 → 3 级`);
@@ -113,5 +117,21 @@ for (const c of Object.keys(CS) as ClassId[]) for (const id of CS[c]) {
   for (const c of ['warrior', 'mage', 'taoist'] as const) for (const k of new World(seeded(1), 50, [{ name: 't', spawns: [] }], c).skillPool) ok(!/\d\.\d/.test(fmtText(`${k.desc} 耗魔${fmtInt(k.mana)} 冷却${fmtInt(k.cooldown)}s`)), `${k.name} 显示文本无小数`);
   const tw = new World(seeded(1), 50, [{ name: 't', spawns: [] }], 'taoist'); const heal = tw.skillPool.find(k => k.id === 'heal')!;
   ok(fmtText(`+${heal.mult ?? 1.37}`) .indexOf('.') < 0, '治愈术飘字无小数');
+}
+{ // R54：>25 级书不进商店，全部有 BOSS 来源；26–35 尸王掉率最高；书等级与 BOSS 所在层等级匹配；真实掉落接入
+  for (const c of ['warrior', 'mage', 'taoist'] as const) {
+    const w = new World(seeded(5), 50, [{ name: 't', spawns: [] }], c), lv = (b: { skill: string }) => w.bookLv(BOOKS[b.skill]);
+    ok(w.shopBooks().every(b => lv(b) <= 25) && w.csBooks().length === 0, `${c} 商店没有 >25 级书`);
+    for (const b of Object.values(BOOKS).filter(b => b.cls === c && lv(b) > 25)) {
+      const d = SKILL_BOOK_DROPS.find(x => x.skill === b.skill); ok(!!d && d.src.length > 0 && d.lv === lv(b), `${b.skill}(Lv${lv(b)}) 有 BOSS 来源`); if (!d) continue;
+      ok(d.src.every(x => ENEMIES[x.boss]?.tier === 'boss' && FLOORS[x.floor].spawns.some(s => s.id === x.boss)), `${b.skill} 来源 BOSS 存在且在所写层`);
+      if (d.lv <= 35) { const L = d.src.find(x => x.boss === 'boss_lich'); ok(!!L && d.src.every(x => x.rate <= L.rate) && d.src.every(x => x.floorLv >= 22 && x.floorLv <= 35), `${b.skill} 26–35：尸王掉率最高、来源均为尸王及以上`); }
+      else ok(d.src.every(x => x.floorLv >= 35 && Math.abs(x.floorLv - d.lv) <= 3), `${b.skill} >35：BOSS 层等级≈书等级（${d.src.map(x => x.floorLv)}）`);
+    }
+  }
+  const w = new World(seeded(9), 50, [{ name: 't', spawns: [{ id: 'boss_lich', x: 600 }] }], 'warrior'); w.lootRng = () => 0;
+  const boss = w.alive('enemy').find(u => u.id === 'boss_lich')!; w.kill(boss); w.drainEvents();
+  const got = (w as any).ground?.map?.((g: any) => g.item) ?? []; const all = JSON.stringify([got, w.bag.map(x => x.item), (w as any).loot]);
+  ok(/book_half_moon/.test(all), `尸王真实掉落 >25 级书（${all.slice(0, 160)}）`);
 }
 console.log(`全部通过 ${pass} 项`);

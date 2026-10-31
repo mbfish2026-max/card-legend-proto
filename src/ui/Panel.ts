@@ -1,5 +1,6 @@
 import { COMPANION_MODE_NAME } from '../data/companion';
-import { fmtInt, fmtText } from './fmt';
+import { fmtInt, fmtText, bookEntry } from './fmt';
+import { SKILL_BOOK_DROPS } from '../data/skillBookDrops';
 import { COMPANION_UNLOCK_LEVEL, comboFor, BOOK_PAGE, BRM_BOOK, GOLD_BAR, PAGES_PER_BOOK, COMBO_LEVEL, heartFeedValue, RAGE_MAX, HEART_STORE_MAX, RECRUIT_DIALOG } from '../data/companion';
 import { toLogic, toLogicX, MAX_LW } from '../render';
 import { compareLines } from './equipCompare';
@@ -173,22 +174,22 @@ export class Panel {
   }
   /** 书店：本职业有售的技能书（原版比奇书店；掉落书不卖） */
   private renderBooks(R: Phaser.GameObjects.Container, top: number) {
-    const s = this.s, w = this.world(), cs = this.bookCs, list = cs ? w.csBooks() : w.shopBooks(), rh = cs || list.length > 5 ? 44 : 62;
-    // 传世秘籍页（docs/skills-official.md#传世）：书店第二页
-    R.add([...button(s, 250, top + 90, 120, 24, '普通书店', () => { this.bookCs = false; this.render(); }, 14, cs)]);
-    R.add([...button(s, 400, top + 90, 120, 24, '传世秘籍', () => { this.bookCs = true; this.render(); }, 14, !cs)]);
+    const s = this.s, w = this.world(), cs = false, list = cs ? w.csBooks() : w.shopBooks(), rh = list.length > 7 ? 38 : cs || list.length > 5 ? 44 : 62;
+    // R54：传世秘籍页取消——>25 级（含传世）书改为 BOSS 掉落（docs/skill-book-drops.md）
     list.forEach((b, i) => {
-      const y = top + (rh === 44 ? 128 : 130) + i * rh, sk = w.skillPool.find(x => x.id === b.skill)!, id = 'book_' + b.skill, learned = w.learned.has(b.skill), need = w.needLevel(sk);
+      const y = top + (rh < 62 ? 128 : 130) + i * rh, sk = w.skillPool.find(x => x.id === b.skill)!, id = 'book_' + b.skill, learned = w.learned.has(b.skill), need = w.needLevel(sk), be = bookEntry(ITEMS[id].name, need, w.level, learned, b.price);
       R.add(s.add.rectangle(330, y, 320, rh - 6, 0x0a0806).setStrokeStyle(1, cs ? 0x8a6a20 : 0x6a5a28));
       const ic = s.textures.exists('sk_' + b.skill) && cs ? 'sk_' + b.skill : 'item_' + id;
       if (s.textures.exists(ic)) R.add(s.add.image(200, y, ic).setDisplaySize(rh - 16, rh - 16));
-      R.add(txt(s, 232, y - (rh === 44 ? 17 : 20), ITEMS[id].name, rh === 44 ? 14 : 15, learned ? '#888' : '#ffd24a'));
-      R.add(txt(s, 232, y + (rh === 44 ? 1 : 2), `${learned ? '已学会' : `需 Lv${need}`}   ${b.price} 金`, 13, w.level >= need ? '#ccc' : '#f99', { strokeThickness: 2 }));
-      R.add([...button(s, 448, y, 64, rh === 44 ? 30 : 34, '购买', () => { const e = w.buyBook(b.skill); if (!e) sfx(s, 'coin'); this.onChange(e ?? `购买 ${ITEMS[id].name}（背包中点击学习）`, !e); this.render(); }, 15, !learned && w.gold >= b.price)]);
+      // 行高 38（>7 本）时单行显示「书名 需LvX 价格」，避免手机放大字号后两行重叠
+      if (rh < 44) R.add(txt(s, 222, y, `${be.nm} 需Lv${need} ${learned ? '已学会' : be.gap > 0 ? `差${be.gap}级` : ''} ${b.price}金`, 13, learned ? '#888' : w.level >= need ? '#ffd24a' : '#f99', { strokeThickness: 2 }).setOrigin(0, 0.5));
+      else { R.add(txt(s, 232, y - (rh < 62 ? 17 : 20), be.nm, be.fs, learned ? '#888' : '#ffd24a'));
+      R.add(txt(s, 232, y + (rh < 62 ? 0 : 2), be.sub, 13, w.level >= need ? '#ccc' : '#f99', { strokeThickness: 2 })); }
+      R.add([...button(s, rh < 44 ? 458 : 448, y, rh < 44 ? 56 : 64, rh < 62 ? rh - 12 : 34, '购买', () => { const e = w.buyBook(b.skill); if (!e) sfx(s, 'coin'); this.onChange(e ?? `购买 ${ITEMS[id].name}（背包中点击学习）`, !e); this.render(); }, 15, be.buyable && w.gold >= b.price)]);
     });
-    const drops = Object.values(BOOKS).filter(b => b.cls === w.cls && !b.cs && !list.includes(b)).map(b => w.skillPool.find(x => x.id === b.skill)!.name);
-    if (!cs && drops.length) R.add(txt(s, 175, top + (rh === 44 ? 128 : 130) + list.length * rh - rh / 2 + 4, `打怪掉落（书店不卖，Lv>25）：${drops.join('、')}`, 13, '#c9a', { wordWrap: { width: 330 } }));
-    R.add(txt(s, 175, top + 430, '买书后在背包里点击技能书学习（需达到等级）', 14, '#9fd'));
+    const drops = Object.values(BOOKS).filter(b => b.cls === w.cls && !list.includes(b)).map(b => w.skillPool.find(x => x.id === b.skill)!.name);
+    if (!cs && drops.length) R.add(txt(s, 175, top + (rh < 62 ? 128 : 130) + list.length * rh - rh / 2 + 4, `Lv>25 书店不卖，BOSS 掉落（尸王等）：${drops.join('、')}`, 13, '#c9a', { wordWrap: { width: 330 } }));
+    R.add(txt(s, 175, top + 448, '买书后在背包里点击技能书学习（需达到等级）', 13, '#9fd'));
   }
   private renderBag(R: Phaser.GameObjects.Container, top: number) {
     const s = this.s, w = this.world(), cols = 6, size = 56, x0 = 600, y0 = top + 100;
@@ -239,11 +240,11 @@ export class Panel {
     if (pages > 1) {
       const bw = IS_MOBILE ? 64 : 44, bh = IS_MOBILE ? 56 : 30, by = top + 22;
       R.add([...button(s, 380, by, bw, bh, '◀', () => { this.skPage--; this.render(); }, IS_MOBILE ? 22 : 16, this.skPage > 0)]); R.add(txt(s, 440, by, `${this.skPage + 1}/${pages}`, IS_MOBILE ? 18 : 15, '#ffe8a0').setOrigin(0.5)); R.add([...button(s, 500, by, bw, bh, '▶', () => { this.skPage++; this.render(); }, IS_MOBILE ? 22 : 16, this.skPage < pages - 1)]);
-      R.add(txt(s, 560, by, `共 ${full.length} 个技能 · 按学习等级排序`, IS_MOBILE ? 16 : 13, '#9fd').setOrigin(0, 0.5));
+      R.add(txt(s, 700, by, `共 ${full.length} 个技能 · 按学习等级排序`, IS_MOBILE ? 16 : 13, '#9fd').setOrigin(0, 0.5));
     }
     const autoList = Settings.skillsFor(w.cls), autoable = new Set(DEFAULT_AUTO_SKILLS[w.cls]);
-    const rowH = IS_MOBILE ? 68 : 57, y0 = top + 48 + rowH / 2, fs = IS_MOBILE ? 16 : 13;
-    const shopIds = new Set(w.shopBooks().map(b => b.skill)), csIds = new Set(w.csBooks().map(b => b.skill));
+    const rowH = IS_MOBILE ? 66 : 55, y0 = top + 48 + rowH / 2, fs = IS_MOBILE ? 16 : 13;
+    const shopIds = new Set(w.shopBooks().map(b => b.skill)), dropSrc = Object.fromEntries(SKILL_BOOK_DROPS.map(d => [d.skill, d.src.map(x => x.floorName).join('/')]));
     list.forEach((k, i) => {
       const y = y0 + i * rowH, inBar = barIdx.has(k.id);
       const need = w.needLevel(k), lv = w.skillLevel(k), locked = lv < 0, pts = w.skillTrain[k.id] ?? 0, learned = w.learned.has(k.id), bk = BOOKS[k.id];
@@ -256,7 +257,7 @@ export class Panel {
       const stx = txt(s, 212 + l1.width + 12, y - rowH / 2 + 6, `${st.t}${tag ? ' ' + tag : ''}`, fs, st.c, { strokeThickness: 2 }); R.add(stx);
       // 第 2 行：已学→耗魔/冷却/修炼/升级；未学→需 LvX + 获取途径
       const up = lv >= 0 && lv < 3 && k.learn && k.train ? `升级：Lv${k.learn[lv + 1]}+修炼${k.train[lv]}` : lv === 3 ? '已满级' : '';
-      const src = !bk ? '初始技能' : shopIds.has(k.id) ? `比奇书店有售 ${bk.price}金` : csIds.has(k.id) ? `书店「传世秘籍」页 ${bk.price}金` : bk.drops.length ? '打怪掉落技能书' : '暂未开放获取';
+      const src = !bk ? '初始技能' : shopIds.has(k.id) ? `比奇书店有售 ${bk.price}金` : dropSrc[k.id] ? `BOSS 掉落：${dropSrc[k.id]}` : bk.drops.length ? '打怪掉落技能书' : '暂未开放获取';
       const l2 = learned ? `${k.passive ? '无需施放' : `耗魔${fmtInt(k.mana)} 冷却${fmtInt(k.cooldown)}s`}  修炼${pts}${k.train ? '/' + k.train[2] : ''}  ${up}  ${k.desc}` : `需 Lv${need} · 获取：${src} · ${k.desc}`;
       R.add(txt(s, 212, y - rowH / 2 + 5 + fs + 9, fmtText(l2).slice(0, IS_MOBILE ? 32 : 44), fs - 1, learned ? '#9fd' : '#ccc', { strokeThickness: 2 }));
       if (k.train && lv >= 0 && lv < 3) { const p = Math.min(1, pts / k.train[lv]); R.add(s.add.rectangle(212, y + rowH / 2 - 6, 220, 3, 0x333333).setOrigin(0, 0.5)); R.add(s.add.rectangle(212, y + rowH / 2 - 6, 220 * p, 3, 0x55cc77).setOrigin(0, 0.5)); }
@@ -290,11 +291,11 @@ export class Panel {
     const n = this.npcDef(), X = 340;
     if (!n) { R.add(txt(s, X, top + 90, `${t.name}\n选择左侧 NPC。\n来源：${t.src}`, 14, '#ddd', { wordWrap: { width: 600 } })); return; }
     R.add(txt(s, X - 180, top + 44, `${n.name}${n.pos ? `  原版坐标 ${n.pos}` : ''}${n.note ? `  ${n.note}` : ''}`, 13, '#ffe8a0', { wordWrap: { width: this.npcNeedsBag() ? 400 : 700 } }));
-    const row = (i: number, name: string, sub: string, label: string, fn: () => void, ok: boolean, icon?: string, X = 340) => {
+    const row = (i: number, name: string, sub: string, label: string, fn: () => void, ok: boolean, icon?: string, X = 340, nfs = 14) => {
       const y = top + 100 + i * 50;
       R.add(s.add.rectangle(X + 110, y, 230, 44, 0x0a0806).setStrokeStyle(1, 0x4a3a28));
       if (icon && s.textures.exists('item_' + icon)) R.add(s.add.image(X + 16, y, 'item_' + icon).setDisplaySize(36, 36));
-      R.add(txt(s, X + 40, y - 17, name, 14, '#fff')); R.add(txt(s, X + 40, y + 2, sub, 11, '#ccc', { strokeThickness: 2 }));
+      R.add(txt(s, X + 40, y - 17, name, nfs, '#fff')); R.add(txt(s, X + 40, y + 2, sub, 11, '#ccc', { strokeThickness: 2 }));
       R.add([...button(s, X + 196, y, 50, 30, label, fn, 13, ok)]);
     };
     const buy = (e: string | null, nm: string) => { if (!e) sfx(s, 'coin'); this.onChange(e ?? `购买 ${nm}`, !e); this.render(); };
@@ -306,11 +307,11 @@ export class Panel {
       R.add(txt(s, X, top + 160, '修理：本作装备无持久度 [适配]，无需修理。\n强化：背包点黑铁矿石，再点装备栏。', 13, '#9fd'));
       const sl = (Object.keys(w.equip) as (keyof typeof w.equip)[]).filter(k => w.equip[k]).slice(0, 8); // R14 #17 鉴定（S12：35 级，1–3 条）
       sl.forEach((k, i) => { const it = w.equip[k]!; row(i, it.name, it.ided ? `已鉴定 ${it.ided} 条` : `鉴定 ${IDENT_PRICE} 金 · ${IDENT_MIN_LEVEL} 级`, '鉴定', () => { const e = w.identify(k); this.onChange(e ?? `鉴定 ${it.name}`, !e); this.render(); }, !it.ided && w.level >= IDENT_MIN_LEVEL && w.gold >= IDENT_PRICE, it.item, X + 250); }); }
-    if (n.kind === 'book') { R.add(txt(s, X, top + 74, '书店：本职业有售技能书', 13, '#9fd')); w.shopBooks().forEach((b, i) => { const id = 'book_' + b.skill, learned = w.learned.has(b.skill);
-      row(i, ITEMS[id].name, `${b.price} 金 ${learned ? '已学会' : ''}`, '购买', () => buy(w.buyBook(b.skill), ITEMS[id].name), !learned && w.gold >= b.price, id); });
-      R.add(txt(s, X + 250, top + 74, '传世秘籍', 13, '#ffd060'));
-      w.csBooks().forEach((b, i) => { const id = 'book_' + b.skill, learned = w.learned.has(b.skill), sk = w.skillPool.find(x => x.id === b.skill)!;
-        row(i, ITEMS[id].name, `${b.price} 金 · 需Lv${w.needLevel(sk)}${learned ? ' 已学会' : ''}`, '购买', () => buy(w.buyBook(b.skill), ITEMS[id].name), !learned && w.gold >= b.price, id, X + 250); }); }
+    if (n.kind === 'book') { // R54：书店只卖 ≤25 级，按学习等级升序；先填满左列（7 行）再右列
+      const all = [...w.shopBooks(), ...w.csBooks()].sort((x, y) => w.bookLv(x) - w.bookLv(y)), PERC = 7;
+      R.add(txt(s, X, top + 74, '技能书（按学习等级排序：先左列后右列）', 13, '#9fd'));
+      all.forEach((b, i) => { const id = 'book_' + b.skill, e = bookEntry(ITEMS[id].name, w.bookLv(b), w.level, w.learned.has(b.skill), b.price, !!b.cs);
+        row(i % PERC, e.nm, e.sub, '购买', () => buy(w.buyBook(b.skill), ITEMS[id].name), e.buyable && w.gold >= b.price, id, X + Math.floor(i / PERC) * 250, e.fs); }); }
     if (n.kind === 'jewelry') R.add(txt(s, X, top + 90, '首饰店存货：未查到（原版只能买到别人卖的）。\n点击右侧背包物品出售。', 13, '#9fd'));
     if (n.kind === 'dragon') { R.add(txt(s, X, top + 66, '龙人：英雄 43 级，带 2 本白日门技能书和 2 根金条来，我教你们合击。', 13, '#9fd'));
       const c = w.companion, cb = c ? comboFor(w.cls, c.cls) : undefined;
