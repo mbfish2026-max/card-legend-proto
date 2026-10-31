@@ -474,7 +474,8 @@ const free = (w: World) => w.skills.map(() => 0);
   const actives = (Object.keys(CLASSES) as ClassId[]).flatMap(c => CLASSES[c].skills.filter(s => !s.passive && !s.cs)); // 传世秘籍静态键 F12+ 仅占位，快捷栏按学会顺序重标
   const keys = actives.map(s => s.key);
   ok(keys.every(k => /^F([1-9]|1[01])$/.test(k)) && !keys.some(k => 'WASD'.includes(k)), `三职业主动技能键均为 F1~F11（${[...new Set(keys)].join(',')}）`);
-  ok(CLASSES.warrior.skills.filter(s => !s.passive).length === 4 && CLASSES.mage.skills.filter(s => !s.passive).length === 11, '战士 4 主动 / 法师 11 主动（#11 + 诱惑之光）');
+  ok(CLASSES.warrior.skills.filter(s => !s.passive && !s.cs).length === 4 && CLASSES.mage.skills.filter(s => !s.passive && !s.cs).length === 11, '战士 4 主动 / 法师 11 主动（#11 + 诱惑之光）');
+  ok(CLASSES.warrior.skills.filter(s => s.cs).length === 5 && CLASSES.mage.skills.filter(s => s.cs).length === 5 && CLASSES.taoist.skills.filter(s => s.cs).length === 7, '传世秘籍：战士 5 / 法师 5 / 道士 6+金甲骷髅');
   ok(POTIONS.every(p => !keys.includes(p.key)), '药水 1-4 与技能键不冲突');
 }
 { // S 键：起点返回上一层
@@ -619,7 +620,7 @@ const free = (w: World) => w.skills.map(() => 0);
     const bt = Settings.autoTouched; Settings.autoSkills = null; Settings.autoTouched = null;
     Settings.toggleAutoSkill('thrust', 'warrior');
     ok(!Settings.skillsFor('warrior').includes('thrust'), '战士取消刺杀生效');
-    ok(Settings.skillsFor('mage').length === 11 && Settings.skillsFor('taoist').length === 8, '法师/道士仍为推荐默认（#12 道士 +3，法师 +诱惑之光）');
+    ok(Settings.skillsFor('mage').length === 16 && Settings.skillsFor('taoist').length === 14, '法师/道士仍为推荐默认（#12 道士 +3，法师 +诱惑之光；传世：法师 +5，道士 +6）');
     Settings.toggleAutoSkill('fireball', 'mage');
     ok(!Settings.skillsFor('mage').includes('fireball') && !Settings.skillsFor('warrior').includes('thrust'), '两职业改动互不覆盖');
     Settings.autoTouched = bt;
@@ -1022,7 +1023,7 @@ const free = (w: World) => w.skills.map(() => 0);
 }
 { // #12 道士 3 技能：幽灵盾 / 神圣战甲术 / 群体治愈术
   const NEW: [string, number, number[], number][] = [['ghost_shield', 22, [5000, 10000, 15000], 45], ['holy_armor', 25, [5000, 10000, 15000], 45], ['mass_heal', 33, [4000, 8000, 12000], 36]];
-  ok(CLASSES.taoist.skills.filter(s => !s.passive).length === 8 && CLASSES.taoist.skills.every(s => !s.key || +s.key.slice(1) <= 10), '道士 8 主动，快捷栏不超过 F10');
+  ok(CLASSES.taoist.skills.filter(s => !s.passive && !s.cs).length === 8 && CLASSES.taoist.skills.filter(s => !s.cs).every(s => !s.key || +s.key.slice(1) <= 10), '道士 8 主动，快捷栏不超过 F10');
   for (const [id, lv, tr, mana] of NEW) {
     const d = CLASSES.taoist.skills.find(s => s.id === id)!;
     ok(d.learn![0] === lv && JSON.stringify(d.train) === JSON.stringify(tr) && MANA_BEFORE[d.id] === mana && d.mana === Math.round(mana * REBALANCE.taoist.mana) && d.stat === 'tao', `${d.name}：官方学习 Lv${lv}、修炼点 ${tr.join('/')}，耗魔 ${mana}`);

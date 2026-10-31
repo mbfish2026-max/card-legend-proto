@@ -8,7 +8,7 @@ const ls = () => { try { return globalThis.localStorage; } catch { return undefi
 
 /** 各职业自动技能推荐（按优先级） */
 export const DEFAULT_AUTO_SKILLS: Record<ClassId, string[]> = {
-  warrior: ['vajra_body', 'fire_sword', 'thunder_sword', 'shield_break', 'break_strike', 'half_moon', 'dash_slash', 'rush', 'thrust'],
+  warrior: ['fire_sword', 'vajra_body', 'thunder_sword', 'shield_break', 'break_strike', 'half_moon', 'dash_slash', 'rush', 'thrust'],
   mage: ['magic_shield', 'ice_whirl', 'hell_thunder', 'five_thunder', 'frost_blade', 'ice_roar', 'ice_dragon', 'lightning_flash', 'burst_fire', 'fire_wall', 'hell_fire', 'thunder', 'ice_arrow', 'big_fireball', 'fireball', 'charm'],
   taoist: ['summon_golden_skeleton', 'summon_beast', 'drive_corpse', 'summon_skeleton', 'holy_armor', 'ghost_shield', 'decoy_talisman', 'cleanse', 'mass_heal', 'heal', 'soul_wall', 'poison', 'holy_light', 'soul_fire'],
 };
