@@ -1,6 +1,8 @@
 # CHANGELOG
 
 
+## 法师/道士：保持 W 配置；未达标项与决策点见 docs/balance-battle2.md
+
 ## 战斗平衡 R60 草案 balance-battle2 W 战士（9 种子 sim-bands）
 | 项 | 改前 | 改后 | 官方值 | 依据 |
 |---|---|---|---|---|
