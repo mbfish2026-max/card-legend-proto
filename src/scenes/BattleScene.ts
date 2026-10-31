@@ -68,7 +68,8 @@ export class BattleScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, W, 720).startFollow(this.views.get(h.uid)!, true, 0.12, 0.12, 0, 120).setDeadzone(320, 720);
     this.keys = this.input.keyboard!.addKeys('LEFT,RIGHT,UP,DOWN,A,D') as any;
     // F1~F4 技能：阻止浏览器默认行为（F1 帮助等）；不占用 F5 等其它功能键
-    this.input.keyboard!.on('keydown', (e: KeyboardEvent) => { if (/^F[1-4]$/.test(e.key)) e.preventDefault(); this.onKey(e.key.toUpperCase()); });
+    this.input.keyboard!.on('keydown', (e: KeyboardEvent) => {
+      if (/^(a|d|ArrowLeft|ArrowRight)$/i.test(e.key) || e.code === 'KeyA' || e.code === 'KeyD') { if (!e.repeat) this.stepKey(e.code === 'KeyD' || e.key === 'ArrowRight' ? 1 : -1); return; } if (/^F[1-4]$/.test(e.key)) e.preventDefault(); this.onKey(e.key.toUpperCase()); });
     this.input.keyboard!.addCapture('F1,F2,F3,F4');
     // 失焦/切后台时清空按键状态，避免 keyup 丢失导致方向键"卡住"或失灵
     const reset = () => { this.input.keyboard?.resetKeys(); this.ui?.pad?.reset?.(); };
@@ -350,13 +351,15 @@ export class BattleScene extends Phaser.Scene {
     }
   }
 
+  /** 点按移动一格（键盘与虚拟方向键共用）；同帧多次按以最后一次为准，World 内再做 1 次排队 */
+  stepKey(d: number) { if (this.state === 'play' && !this.paused) this.world.queueStep(d); }
   update(time: number, dms: number) {
     const dt = Math.min(0.05, dms / 1000), k = this.keys;
     if (this.state !== 'win' && !this.paused) {
       const pad = this.ui?.pad;
-      const dx = this.state === 'play' ? Math.sign((k.RIGHT.isDown || k.D.isDown ? 1 : 0) - (k.LEFT.isDown || k.A.isDown ? 1 : 0) + (pad?.dx ?? 0)) : 0;
+      
       const dy = this.state === 'play' ? Math.sign((k.DOWN.isDown ? 1 : 0) - (k.UP.isDown ? 1 : 0) + (pad?.dy ?? 0)) : 0;
-      this.world.step(dt, { dx, dy, use: this.useNext }); this.useNext = false;
+      this.world.step(dt, { dx: 0, dy, use: this.useNext }); this.useNext = false;
       this.cds = this.cds.map(c => Math.max(0, c - dt));
       this.saveT += dt; if (this.saveT > 15) { this.saveT = 0; this.saveGame(); }
     }

@@ -211,4 +211,16 @@ const free = (w: World) => w.skills.map(() => 0);
     w.alive('enemy').forEach(e => (e.ai = 'chase', e.atk = 0)); run(w, 3); const x0 = h.x;
     run(w, 0.3, -1); const l = h.x; run(w, 0.3, 1); ok(h.x !== l || l !== x0, `前后夹击时不会两边都锁死（${Math.round(x0)}→${Math.round(l)}→${Math.round(h.x)}）`); }
 }
+{ // 点按一格移动（每按一下 stepPx，按住不连续；滑行中排队 1 次）
+  const w = mk([]); const h = w.hero!; h.x = 1000; const x0 = h.x;
+  w.step(0.05, { dx: 0, dy: 0, step: 1 }); run(w, 1); ok(Math.abs(h.x - x0 - WORLD.stepPx) < 1e-6, `按一下 D 只走一格（${WORLD.stepPx}px）`);
+  run(w, 1); ok(Math.abs(h.x - x0 - WORLD.stepPx) < 1e-6, '不按不动（无持续移动）');
+  const x1 = h.x; w.step(0.05, { dx: 0, dy: 0, step: -1 }); w.step(0.05, { dx: 0, dy: 0, step: -1 }); w.step(0.05, { dx: 0, dy: 0, step: -1 }); run(w, 1);
+  ok(Math.abs(x1 - h.x - 2 * WORLD.stepPx) < 1e-6, '滑行中连按：排队 1 次（共 2 格，多余的丢弃）');
+  const x2 = h.x; w.queueStep(1); for (let i = 0; i < 3; i++) w.step(0.05); ok(Math.abs(h.x - x2 - WORLD.stepPx) < 1e-6, `一格在 ${WORLD.stepSec}s 左右内完成`);
+  const f = mk([{ id: 'zombie', x: 700 }]); tough(f); const fh = f.hero!; fh.hp = fh.maxHp = 1e9; fh.x = 560; f.alive('enemy').forEach(e => (e.ai = 'chase', e.atk = 0)); run(f, 3);
+  const y = fh.x; for (let i = 0; i < 3; i++) { f.queueStep(-1); if (i === 1) f.cast(0, free(f)); run(f, 0.2); } ok(y - fh.x > WORLD.stepPx * 2.5, `战斗中点按 A 后退 3 格 + 技能不丢（${Math.round(y - fh.x)}px）`);
+  run(f, 3); const z = fh.x; f.queueStep(1); run(f, 0.5); const a = f.queue(1)[0]; ok(fh.x >= z && fh.x + (fh.width + a.width) / 2 <= a.x + 1e-6, '贴脸点 D 被阻挡，不重叠、不卡后续输入');
+  f.queueStep(-1); run(f, 0.3); ok(fh.x < z - 50, '被挡后点 A 立即后退');
+}
 console.log(`全部通过 ${pass} 项`);

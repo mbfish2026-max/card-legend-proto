@@ -8,7 +8,7 @@ import { HERO, ENEMIES, EXP_PER_LEVEL, SUMMON } from '../data/units';
 import { WORLD, FLOORS, Floor } from '../data/world';
 
 export const CRIT_CHANCE = 0.15, CRIT_MULT = 1.8;
-export interface Input { dx: number; dy: number; use?: boolean }
+export interface Input { dx: number; dy: number; use?: boolean; step?: number }
 export interface SaveData {
   v: 1; cls: ClassId; level: number; exp: number; gold: number; pots: number[];
   equip: Partial<Record<Slot, InvItem>>; bag: InvItem[]; floorIndex: number; kills: number; nextUid: number;
@@ -78,7 +78,7 @@ export class World {
     if (isHero) u.level = this.level;
     this.units.push(u); return u;
   }
-  loadFloor(i: number) {
+  loadFloor(i: number) { this.stepTarget = null; this.stepQueued = 0;
     this.floorIndex = i; this.cleared = false; this.ground = [];
     this.units = this.units.filter(u => u.isHero || u.summon);
     const h = this.hero; if (h) { h.x = WORLD.heroStartX; h.y = 0; h.facing = 1; }
@@ -87,7 +87,7 @@ export class World {
     this.events.push({ type: 'floor', index: i, name: this.floor.name });
   }
   /** 主角死亡后：损失部分金币，在本层起点满血复活，本层怪物重置 */
-  respawn() {
+  respawn() { this.stepTarget = null; this.stepQueued = 0;
     if (this.hero) return;
     this.deaths++;
     this.gold = Math.floor(this.gold * (1 - WORLD.deathGoldLoss));
@@ -274,14 +274,20 @@ export class World {
     return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, kills: this.kills, nextUid: this.nextItem };
   }
 
+  /** 点按一格：正在滑行时再按排队 1 次（输入缓冲），不丢输入 */
+  stepTarget: number | null = null; stepQueued = 0;
+  queueStep(d: number) { const h = this.hero; if (!h || !d) return; if (this.stepTarget === null) this.stepTarget = h.x + Math.sign(d) * WORLD.stepPx; else this.stepQueued = Math.sign(d); }
   private moveHero(h: Unit, inp: Input, dt: number) {
-    const dx = Math.sign(inp.dx), dy = Math.sign(inp.dy);
+    if (inp.step) this.queueStep(inp.step);
+    let speed = WORLD.heroSpeed, sdx = 0;
+    if (!inp.dx && this.stepTarget !== null) { sdx = Math.sign(this.stepTarget - h.x); speed = WORLD.stepPx / WORLD.stepSec; speed = Math.min(speed, Math.abs(this.stepTarget - h.x) / dt); }
+    const dx = Math.sign(inp.dx) || sdx, dy = Math.sign(inp.dy); const x0 = h.x;
     h.moving = !!(dx || dy);
     if (dx) {
       // 后退：附近有怪在身后（与移动方向相反）时保持面向怪物，速度不变
       const near = this.alive('enemy').filter(u => Math.abs(u.x - h.x) <= WORLD.aggroRange).sort((a, b) => Math.abs(a.x - h.x) - Math.abs(b.x - h.x))[0];
       h.facing = (near && Math.sign(near.x - h.x) === -dx ? -dx : dx) as 1 | -1;
-      let nx = h.x + dx * WORLD.heroSpeed * dt;
+      let nx = h.x + dx * speed * dt;
       // 前后都被怪贴住（夹击）时不阻挡，允许从怪物身边挤过去，避免左右都锁死
       const back = this.queue(-dx)[0], sandwiched = !!back && this.inMelee(h, back);
       if (!sandwiched) for (const u of this.alive('enemy')) if (Math.sign(u.x - h.x || dx) === dx) {
@@ -289,6 +295,10 @@ export class World {
         if (dx > 0 ? nx > limit : nx < limit) nx = dx > 0 ? Math.max(h.x, limit) : Math.min(h.x, limit);
       }
       h.x = Math.max(h.width / 2, Math.min(WORLD.mapWidth - h.width / 2, nx));
+    }
+    if (this.stepTarget !== null && (inp.dx || !sdx || Math.abs(h.x - this.stepTarget) < 0.5 || h.x === x0)) {
+      this.stepTarget = null; // 到达 / 被怪或边界挡住：结束本格
+      if (this.stepQueued) { this.stepTarget = h.x + this.stepQueued * WORLD.stepPx; this.stepQueued = 0; }
     }
     if (dy) h.y = Math.max(WORLD.laneMin, Math.min(WORLD.laneMax, h.y + dy * WORLD.heroLaneSpeed * dt));
   }

@@ -6,6 +6,7 @@ export const WORLD = {
   mapWidth: 1280 * 3,          // 每层地图宽度（3 倍屏宽）
   laneMin: -40, laneMax: 30,   // 纵深带：相对 GROUND_Y 的 Y 偏移范围
   heroStartX: 220,
+  stepPx: 100, stepSec: 0.12, // 点按移动：每按一下滑行一格（100px，约 0.6 卡宽），0.12s 补间
   heroSpeed: 1.2 * CARD,       // 主角速度：每秒 1.2 卡宽
   heroLaneSpeed: 120,
   aggroRange: 2.5 * CARD,
