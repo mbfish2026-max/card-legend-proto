@@ -1,0 +1,127 @@
+{
+ "frames": {
+  "fx_combo_mori_end_00": {
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 384,
+    "h": 384
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 384,
+    "h": 384
+   },
+   "sourceSize": {
+    "w": 384,
+    "h": 384
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   }
+  },
+  "fx_combo_mori_end_01": {
+   "frame": {
+    "x": 384,
+    "y": 0,
+    "w": 384,
+    "h": 384
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 384,
+    "h": 384
+   },
+   "sourceSize": {
+    "w": 384,
+    "h": 384
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   }
+  },
+  "fx_combo_mori_end_02": {
+   "frame": {
+    "x": 0,
+    "y": 384,
+    "w": 384,
+    "h": 384
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 384,
+    "h": 384
+   },
+   "sourceSize": {
+    "w": 384,
+    "h": 384
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   }
+  },
+  "fx_combo_mori_end_03": {
+   "frame": {
+    "x": 384,
+    "y": 384,
+    "w": 384,
+    "h": 384
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 384,
+    "h": 384
+   },
+   "sourceSize": {
+    "w": 384,
+    "h": 384
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   }
+  }
+ },
+ "meta": {
+  "app": "card-legend fx proc (python numpy/Pillow)",
+  "image": "fx_combo_mori_end.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 768,
+   "h": 768
+  },
+  "scale": "1",
+  "fx": {
+   "w": 384,
+   "h": 384,
+   "n": 4,
+   "fps": 12,
+   "loop": false,
+   "pivot": [
+    192,
+    192
+   ],
+   "anchor": "target",
+   "skill": "combo_mori",
+   "phase": "end",
+   "blend": "ADD",
+   "ms": 333,
+   "cols": 2
+  }
+ }
+}
