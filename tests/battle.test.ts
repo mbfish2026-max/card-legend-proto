@@ -373,7 +373,9 @@ const free = (w: World) => w.skills.map(() => 0);
       // 去城镇商人补药（简化：金币够就买）。town-return 后战斗地图无商人，这里抽象为“随时回城补给”（回城免费），不调用战斗图商店。
       // 实测：origin/main 2b14653 同样是战士 5/6/3/2/0/9/5/0/0（种子42=9），非本分支回归；改成仅脱战/换层补给会让战士中位数升到 5–8。
       // 有可学的书店技能书时攒钱（药只补到 1 瓶）
-      const saving = w.shopBooks().some(b => !w.learned.has(b.skill) && w.level >= w.needLevel(w.skillPool.find(x => x.id === b.skill)!)); const cap = saving ? 1 : 3;
+      const saving = w.shopBooks().some(b => !w.learned.has(b.skill) && w.level >= w.needLevel(w.skillPool.find(x => x.id === b.skill)!)); // 补给策略：进图前回村补药，药量随层深增加（存钱买书时也按层深少量补）
+      const depth = w.floorIndex;
+      const cap = saving ? Math.min(3, 1 + Math.floor(depth / 4)) : 3 + Math.floor(depth / 2);
       while (w.gold >= 60 && w.pots[1] < cap) w.buyPotion(1);
       while (w.gold >= 60 && w.pots[3] < cap) w.buyPotion(3);
       w.step(0.05, { dx: (() => { const f = w.queue(1)[0]; return f && w.inMelee(h, f) ? 0 : 1; })(), dy: 0 }); w.drainEvents(); t += 0.05; /* 玩家：前方接战时站定输出（可穿怪） */ for (let i = 0; i < cds.length; i++) cds[i] = Math.max(0, cds[i] - 0.05);
