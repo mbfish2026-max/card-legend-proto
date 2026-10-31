@@ -62,7 +62,7 @@ console.log(`合击版 #7 通过（${pass}）`);
   const bosses = FLOORS.slice(19, 23).map(f => ENEMIES[f.spawns.find(s => ENEMIES[s.id].tier === 'boss')!.id]);
   ok(bosses.every(b => b.drops!.some(d => d.item === 'book_page') && b.drops!.some(d => d.item === 'gold_bar')), '#8 BOSS 掉书页+金条');
   ok(FLOORS.slice(19, 23).every(f => f.spawns.some(s => ENEMIES[s.id].drops?.some(d => d.item === 'book_page' && d.chance < 1))), '#8 小怪低概率掉书页');
-  ok(HJ_FLOOR_ANCHORS.length === 6 && HJ_FLOOR_ANCHORS[1] >= 47 && HJ_FLOOR_ANCHORS[0] >= 43, '#8 等级锚点 ≥43/47');
+  ok(HJ_FLOOR_ANCHORS.length >= 6 && HJ_FLOOR_ANCHORS[1] >= 47 && HJ_FLOOR_ANCHORS[0] >= 43, '#8 等级锚点 ≥43/47');
   const w = new World(seeded(2), 30, FLOORS, 'warrior'); w.floorIndex = 12; const sv = w.toSave(); delete (sv as any).companion;
   ok(new World(seeded(2), 30, FLOORS, 'warrior', sv).floorIndex === 12, '#8 旧存档层号不变');
   const w2 = new World(seeded(3), 50, FLOORS, 'warrior'); w2.floorIndex = 22;

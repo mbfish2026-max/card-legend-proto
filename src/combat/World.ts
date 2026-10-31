@@ -74,7 +74,11 @@ export const SUMMON_NAME_COLORS = ['#ffffff', '#a8d8ff', '#7cc0ff', '#4fa3ff', '
 export const HEAL_SUMMON_RANGE = 170;
 /** [适配] 自动施放召唤技能：已有召唤物且血量 ≥ 该比例时跳过（不耗魔、不占公共间隔）；低于则自动重召（= 回满血/替换）。手动不受限 */
 export const AUTO_RESUMMON_HP = 0.5;
-export const BOSS_MECH = new Set(['boss_woma', 'boss_zuma', 'boss_redmoon', 'boss_molong']);
+export const BOSS_MECH = new Set(['boss_woma', 'boss_zuma', 'boss_redmoon', 'boss_molong', 'boss_huangquan', 'boss_twinhead_kong', 'boss_twinhead_blood']);
+/** M4：新 BOSS 复用已有机制（不新增机制）。黄泉教主=祖玛式火球+召唤（召唤骷髅系）；双头金刚=魔龙式近战+瞬移；双头血魔=沃玛式发呆/狂暴/瞬移/闪电 */
+export const MECH_ALIAS: Record<string, string> = { boss_huangquan: 'boss_zuma', boss_twinhead_kong: 'boss_molong', boss_twinhead_blood: 'boss_woma' };
+/** 召唤型 BOSS 的小怪池（按已召唤数轮换）；黄泉教主原版召唤骷髅弓箭手/长枪兵/刀斧手（本作未实装）→ [适配] 用已有骷髅系 */
+export const MECH_MINIONS: Record<string, string[]> = { boss_zuma: ['zuma_statue', 'zuma_guard'], boss_huangquan: ['axe_skeleton', 'cave_skel_warrior'] };
 /**
  * 诱惑之光（docs/skills-official.md「诱惑之光」）
  * 官方 C：可驯服等级 ≤ 法师等级+2 的生物系怪物；A：对高智商对手无效。资料站（17173）：宠物上限 Lv0..3 = 2/3/4/5。
@@ -1083,7 +1087,7 @@ export class World {
     const amt = (pw(this.classDef.autoStat as any, h) + pw(CLASSES[c.cls].autoStat as any, u)) * fx.mult;
     c.burst = false; c.rage = 0;
     const targets = fx.aoe > 0 ? this.alive('enemy').filter(e => e === t || Math.abs(e.x - t.x) <= fx.aoe) : [t];
-    let dealt = 0;
+    let dealt = 0; const affected: number[] = []; // 表现层用：本次被施加持续状态（毒/麻痹）的目标
     for (const e of targets) {
       const d = this.damage(e, amt, h, false, false, !!fx.ignoreDef, fx.magic); dealt += d;
       if (!e.alive) continue;
@@ -1091,9 +1095,11 @@ export class World {
       if (fx.stun && e.tier !== 'boss') { e.stunUntil = this.time + fx.stun; e.cd = Math.max(e.cd, fx.stun); }
       if (fx.slow) e.slowUntil = this.time + fx.slow;
       if (fx.vuln) { e.vulnUntil = this.time + fx.vuln.dur; e.vulnPhys = fx.vuln.phys ?? 0; e.vulnMag = fx.vuln.mag ?? 0; }
+      if (fx.poison || (fx.stun && e.tier !== 'boss')) affected.push(e.uid);
     }
+    const statusUntil = fx.poison ? this.time + fx.poison.dur : fx.stun ? this.time + fx.stun : undefined;
     if (fx.lifesteal && h.alive) this.heal(h, Math.round(dealt * fx.lifesteal));
-    this.events.push({ type: 'combo', id: cb?.id ?? 'placeholder', name: cb?.name ?? '合击', source: h.uid, partner: u.uid, target: t.uid, amount: dealt, hits: targets.length }, { type: 'log', text: `合击「${cb?.name ?? '合击'}」造成 ${dealt} 伤害`, color: 'green' });
+    this.events.push({ type: 'combo', id: cb?.id ?? 'placeholder', name: cb?.name ?? '合击', source: h.uid, partner: u.uid, target: t.uid, amount: dealt, hits: targets.length, affected, statusUntil }, { type: 'log', text: `合击「${cb?.name ?? '合击'}」造成 ${dealt} 伤害`, color: 'green' });
   }
   toSave(): SaveData {
     return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, town: this.town, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], ringQ: this.ringQ, ringDone: this.ringDone, eqV: EQUIP_VERSION, expV: EXP_VERSION, companion: this.companion ? JSON.parse(JSON.stringify(this.companion)) : null  };
@@ -1350,7 +1356,8 @@ export class World {
       const m = b.boss ??= { stage: 0, dazeUntil: 0, crazyUntil: 0, crazyOn: false, flyT: 0, summonT: 0, spikeT: OFFICIAL.spikeEvery, minions: [] };
       const sm = this.summon, slow = b.slowUntil && b.slowUntil > this.time ? 1.5 : 1;
       const pick = () => (sm && this.inMelee(sm, b) && this.rng() < 0.5 ? sm : h);
-      if (b.id === 'boss_woma') {
+      const mid = MECH_ALIAS[b.id] ?? b.id;
+      if (mid === 'boss_woma') {
         // 血量跌破 5/7…1/7：先发呆 8 秒（不攻击）再狂暴 8 秒（每秒攻击 2 次）
         const st = OFFICIAL.womaStages.filter(k => b.hp <= b.maxHp * k / 7).length;
         if (st > m.stage) {
@@ -1372,7 +1379,7 @@ export class World {
         b.cd = crazy ? OFFICIAL.womaCrazyInterval : b.atkInterval * slow;
         this.events.push({ type: 'attack', source: b.uid, target: t.uid, skill: 'boss' }, { type: 'bossfx', uid: b.uid, kind: 'spark', x: t.x, target: t.uid });
         this.damage(t, b.atk * (0.9 + this.rng() * 0.2), b, true, false, false, OFFICIAL.womaMagic); // 官方 50% 物理 + 50% 魔法
-      } else if (b.id === 'boss_molong') {
+      } else if (mid === 'boss_molong') {
         // 阶段 B 魔龙教主：国服只用翅膀近战 + 保留瞬移（21cq）。瞬移复用沃玛教主 fly 计时（30 秒 + 被贴身）[适配]：瞬移到主角身后
         m.flyT += dt;
         if (m.flyT >= OFFICIAL.womaFlySec && this.inMelee(h, b)) {
@@ -1385,7 +1392,7 @@ export class World {
         b.cd = b.atkInterval * slow;
         this.events.push({ type: 'attack', source: b.uid, target: t.uid, skill: 'boss' }, { type: 'bossfx', uid: b.uid, kind: 'spark', x: t.x, target: t.uid });
         this.damage(t, b.atk * (0.9 + this.rng() * 0.2), b);
-      } else if (b.id === 'boss_zuma') {
+      } else if (mid === 'boss_zuma') {
         // 丢火球远程攻击，边攻击边召唤祖玛雕像/卫士
         if (b.cd > 0 || Math.abs(b.x - h.x) > OFFICIAL.zumaRange) continue;
         const t = pick(); b.cd = b.atkInterval * slow; b.facing = (Math.sign(t.x - b.x) || 1) as 1 | -1;
@@ -1394,7 +1401,7 @@ export class World {
         m.minions = m.minions.filter(id => this.units.some(u => u.uid === id && u.alive));
         if (this.time >= m.summonT && m.minions.length < OFFICIAL.zumaCallMax) {
           m.summonT = this.time + OFFICIAL.zumaCallSec;
-          const base = ENEMIES[m.minions.length % 2 ? 'zuma_guard' : 'zuma_statue'];
+          const pool = MECH_MINIONS[b.id] ?? MECH_MINIONS.boss_zuma, base = ENEMIES[pool[m.minions.length % pool.length]];
           // [适配] 召唤物不给经验/掉落，防止刷怪
           const u = this.spawn({ ...base, exp: 0, drops: [], setDrop: undefined, oilChance: 0 }, 'enemy', b.x + b.facing * 90, b.y);
           u.ai = 'chase'; m.minions.push(u.uid);

@@ -17,6 +17,13 @@ export const ASSETS: Record<string, string> = {
   boss_zuma: P + 'boss_zuma_full.png', blood_zombie: P + 'blood_zombie_full.png', boss_redmoon: P + 'boss_redmoon_full.png',
   // feat/art-integrate：art/gap-fill 交付的独立立绘（原借用他怪贴图，见 docs/art-requests.md §L）
   tree_demon: P + 'tree_demon_full.png', boss_chulong: P + 'boss_chulong_full.png', boss_white_boar: P + 'boss_white_boar_full.png', boss_bull_king: P + 'boss_bull_king_full.png', boss_hongmo: P + 'boss_hongmo_full.png', woma_warrior: P + 'woma_warrior_full.png', zuma_guard: P + 'zuma_guard_full.png', bull_warrior: P + 'bull_warrior_full.png', bull_mage: P + 'bull_mage_full.png', bull_guard: P + 'bull_guard_full.png', hongmo_pig: P + 'hongmo_pig_full.png', hongmo_scorpion: P + 'hongmo_scorpion_full.png', redmoon_spider: P + 'redmoon_spider_full.png', red_snake: P + 'red_snake_full.png', tiger_snake: P + 'tiger_snake_full.png', scorpion: P + 'scorpion_full.png', centipede: P + 'centipede_full.png', jump_bee: P + 'jump_bee_full.png', black_maggot: P + 'black_maggot_full.png', red_boar: P + 'red_boar_full.png', black_boar: P + 'black_boar_full.png', scorpion_snake: P + 'scorpion_snake_full.png', summon_beast: P + 'summon_beast_full.png',
+  // 魔龙教主立绘（art/sq-mir3 108d607）：魔龙教主 / 魔龙守将共用
+  boss_molong: P + 'boss_molong_full.png',
+  // M4 新怪立绘（art/sq-mir3）
+  yeti_king: P + 'yeti_king_full.png', rake_cat_king: P + 'rake_cat_king_full.png', orc_commander: P + 'orc_commander_full.png', evil_lich: P + 'evil_lich_full.png',
+  huangquan_master: P + 'huangquan_master_full.png', hawk_guard: P + 'hawk_guard_full.png', twinhead_kong: P + 'twinhead_kong_full.png', twinhead_blood: P + 'twinhead_blood_full.png',
+  // M4 侧线层背景占位 [适配]：复用现有背景文件（独立 key，fx-requests 已提需求）
+  bg_floor81: 'assets/bg/bg_floor5.jpg', bg_floor82: 'assets/bg/bg_floor4.jpg', bg_floor83: 'assets/bg/bg_floor8.jpg',
   // 召唤物姿态单帧（art-requests L.2）
   summon_skeleton_atk: 'assets/fx/summon_skeleton_atk.png', summon_skeleton_hurt: 'assets/fx/summon_skeleton_hurt.png', summon_beast_atk: 'assets/fx/summon_beast_atk.png', summon_beast_hurt: 'assets/fx/summon_beast_hurt.png',
   merchant: P + 'INV_Misc_Head_Human_02.png',
@@ -39,6 +46,7 @@ export const ASSETS: Record<string, string> = {
   set_badge: 'assets/ui/set_badge.png', menu_0: 'assets/portraits/INV_Misc_Head_Human_01.png', menu_1: 'assets/items/INV_Misc_Bag_08.png',
   menu_2: 'assets/items/INV_Misc_Book_09.png', menu_3: 'assets/items/INV_Misc_Coin_01.png', menu_4: 'assets/skills/Ability_Warrior_BattleShout.png',
   slot_bg: 'assets/ui/UI-Quickslot2.png', slot_empty: 'assets/ui/UI-Backpack-EmptySlot.png',
+  icon_status_stun: 'assets/ui/icon_status_stun.png', // 劈星斩麻痹状态图标 32×32（特效 Bot，fx/combo-loop）；显示接入由战斗开发做
 };
 export const MENU_LABELS = ['角色', '悬赏', '技能', '商店', '设置'];
 const A = 'assets/sfx/';

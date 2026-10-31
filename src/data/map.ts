@@ -90,9 +90,10 @@ export const REGIONS: Region[] = [
     { id: 'rift_66', name: '异界裂隙·潘夜石窟', kind: 'cave', floor: 66, x: 0.8, y: 0.66, orig: '未查到', src: 'https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml' },  // [适配] 异界裂隙入口
     { id: 'rift_67', name: '异界裂隙·沙漠', kind: 'cave', floor: 67, x: 0.92, y: 0.66, orig: '未查到', src: 'https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml' },  // [适配] 异界裂隙入口
   ] },
-  { id: 'cangyue', name: '苍月岛', floors: [10], x: 1700, y: 920, icon: 'map_node_mengzhong', nodes: [
+  { id: 'cangyue', name: '苍月岛', floors: [10, 81], x: 1700, y: 920, icon: 'map_node_mengzhong', nodes: [
     { id: 'cangyue_town', name: '苍月岛', kind: 'town', safe: true, x: 0.3, y: 0.6, orig: '未查到' },
     { id: 'cangyue_bull', name: '牛魔寺庙', kind: 'dungeon', floor: 10, x: 0.7, y: 0.35, orig: '未查到' },
+    { id: 'cangyue_gumo', name: '骨魔洞五层', kind: 'cave', floor: 81, x: 0.55, y: 0.8, orig: '苍月岛骨魔洞（入口坐标未查到）' },
   ] },
   { id: 'fengmo', name: '封魔谷', floors: [11, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78], x: 1900, y: 560, icon: 'map_node_mengzhong', nodes: [
     { id: 'fengmo_town', name: '封魔谷', kind: 'town', safe: true, x: 0.3, y: 0.5, orig: '未查到' },
@@ -109,10 +110,12 @@ export const REGIONS: Region[] = [
     { id: 'rift_77', name: '异界裂隙·禁地·尸上行', kind: 'cave', floor: 77, x: 0.76, y: 0.74, orig: '未查到', src: 'https://woool.52pk.com/data/101222.shtml' },  // [适配] 异界裂隙入口
     { id: 'rift_78', name: '异界裂隙·禁地·魔穴', kind: 'cave', floor: 78, x: 0.93, y: 0.74, orig: '未查到', src: 'https://woool.17173.com/content/2014-11-30/20141130225158263.shtml' },  // [适配] 异界裂隙入口
   ] },
-  { id: 'chiyue', name: '白日门·赤月峡谷', floors: [12, 79], x: 2150, y: 800, icon: 'map_node_chiyue', nodes: [
+  { id: 'chiyue', name: '白日门·赤月峡谷', floors: [12, 79, 80, 82], x: 2150, y: 800, icon: 'map_node_chiyue', nodes: [
     { id: 'chiyue_town', name: '白日门', kind: 'town', safe: true, x: 0.3, y: 0.45, orig: '未查到' },
     { id: 'chiyue_canyon', name: '赤月峡谷/赤月魔穴', kind: 'dungeon', floor: 12, x: 0.72, y: 0.6, orig: '未查到' },
     { id: 'rift_79', name: '异界裂隙·潘夜神殿', kind: 'cave', floor: 79, x: 0.5, y: 0.18, orig: '未查到', src: 'https://mir3.17173.com/content/2012-09-12/20120912115140056.shtml' },  // [适配] 异界裂隙入口
+    { id: 'chiyue_snow', name: '白日门·雪域', kind: 'dungeon', floor: 80, x: 0.15, y: 0.2, orig: '白日门野外（雪人王 348,132）' },
+    { id: 'chiyue_altar', name: '恶魔祭坛', kind: 'dungeon', floor: 82, x: 0.88, y: 0.85, orig: '赤月峡谷恶魔祭坛（入口未查到）' },
   ] },
   // 合击版 #8：盟重出发的合击地图（入口 NPC 见 docs/hejiban-official.md §4；世界图坐标 [适配]）
   { id: 'hejiban', name: '盟重·合击地图', floors: [19, 20, 21, 22, 23], x: 2050, y: 1080, icon: 'map_node_mengzhong', nodes: [
