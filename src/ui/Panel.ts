@@ -188,6 +188,7 @@ export class Panel {
     R.add([...button(s, x0 + 150, top + 52, 40, 30, '◀', () => go(-1), 15)]);
     R.add(txt(s, x0 + 175, top + 50, `${this.bagPage + 1}/${pages}`, 15, '#ffe8a0'));
     R.add([...button(s, x0 + 250, top + 52, 40, 30, '▶', () => go(1), 15)]);
+    R.add([...button(s, x0 + 360, top + 52, 56, 30, '整理', () => { w.sortBag(); this.bagPage = 0; this.sel = null; this.hideTip(); this.render(); }, 13)]);
     R.add([...button(s, x0 + 300, top + 52, 50, 30, '末页', () => { this.bagPage = Math.floor(Math.max(0, w.bag.length - 1) / BAG_PAGE); this.render(); }, 13)]);
     const p0 = this.bagPage * BAG_PAGE;
     for (let i = p0; i < Math.min(WORLD.bagSize, p0 + BAG_PAGE); i++) {

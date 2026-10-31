@@ -1,5 +1,6 @@
 import { CompanionState, migrateCompanion, companionGainExp, COMPANION_BAG, COMPANION_UNLOCK_LEVEL, newCompanion, feedHeart, heartFeedValue, HEART_STORE_MAX, RAGE_MAX, COMBO_LEVEL, COMBO_GOLD_BARS, BRM_BOOK, BOOK_PAGE, GOLD_BAR, PAGES_PER_BOOK, comboFor, HEART_ITEM, COMPANION_UNIT_ID, COMPANION_RECALL_CD, COMPANION_MODES, COMPANION_MODE_NAME, CompanionMode, companionStats, rageTick, unleash, canUnleash, comboEffect, COMBO_RANGE, pickPotion, COMPANION_POT_HP, COMPANION_POT_MP } from '../data/companion';
 import { BOOKS, BookDef, BOOK_DROP, BOOK_RATES, STARTER, bookItemId } from '../data/books';
+import { sortBag } from './bagSort';
 // 纯逻辑世界模块（无 Phaser 依赖，可在 node 中单测）：职业/等级成长、分层横版地图、怪物 AI、
 // 自动战斗与技能、召唤物、掉落/背包/装备/商店、死亡复活、存档序列化。
 import { BattleEvent, EquipSlot, GroundItem, InvItem, Rarity, Slot, Stats, Team, Unit, UnitDef } from './types';
@@ -335,6 +336,8 @@ export class World {
     this.addIron(1);
     return null;
   }
+  /** feat/bag-sort：整理背包（品质→等级降序，合并可叠加）；已穿装备不动 */
+  sortBag(): void { const before = this.bag.length; const nb = sortBag(this.bag); if (nb.length <= Math.max(before, WORLD.bagSize)) this.bag = nb; this.events.push({ type: 'inventory' }); }
   /** 黑铁入包：同纯度堆叠 */
   addIron(purity = 1): boolean {
     purity = Math.max(1, Math.min(IRON_MAX_PURITY, purity));
