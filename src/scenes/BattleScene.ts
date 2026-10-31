@@ -89,7 +89,7 @@ export class BattleScene extends Phaser.Scene {
     // 其它键（F1~F4 技能等）：阻止 F1 帮助等默认行为；不占用 F5 等其它功能键
     this.input.keyboard!.on('keydown', (e: KeyboardEvent) => {
       if (stepDir(e)) return; if (/^F([1-9]|10)$/.test(e.key)) e.preventDefault(); this.onKey(e.key.toUpperCase()); });
-    this.input.keyboard!.addCapture('F1,F2,F3,F4,F5,F6,F7,F8,F9,F10');
+    this.input.keyboard!.addCapture('F1,F2,F3,F4,F5,F6,F7,F8,F9,F10,F11');
     // 失焦/切后台时清空按键状态，避免 keyup 丢失导致方向键"卡住"或失灵
     const reset = () => { hold.reset(); this.input.keyboard?.resetKeys(); this.ui?.pad?.reset?.(); };
     window.addEventListener('blur', reset); document.addEventListener('visibilitychange', reset); this.game.events.on('blur', reset);
@@ -257,6 +257,8 @@ export class BattleScene extends Phaser.Scene {
     const dur = sk ? this.world.buffDuration(sk) : 8;
     // R12：优先播放图集特效（ui/FxPlayer），素材缺失/超上限时回落到 Fx.ts 的 Graphics 特效
     switch (skill) {
+      // 诱惑之光：fx_charm_light（docs/fx-requests.md #诱惑之光）缺失 → Graphics 圣光占位
+      case 'charm': if (tv[0] && !playFx(this, 'fx_charm_light', tv[0].cx, tv[0].cy)) fx.holyLight(this, tv[0].cx, tv[0].cy, tv[0].h); return done();
       case 'fire_sword': hv.lunge(dir, 34); if (tv[0] && !playFx(this, 'fx_fire_sword_hit', tv[0].cx, tv[0].cy, { flip })) fx.bloodBlade(this, tv[0].cx, tv[0].cy, tv[0].h); return done();
       case 'half_moon': if (tv.length) {
         const last = tv[tv.length - 1]; hv.lunge(dir, 20);
@@ -390,6 +392,10 @@ export class BattleScene extends Phaser.Scene {
         fx.floatNumber(this, v.cx, y, v.h, '-' + e.amount + (e.crit ? '!' : ''), e.crit ? '#ff5a1a' : FX.dmgColor, e.crit ? FX.critScale : 1);
         if (e.crit && !FxQuality.low) this.cameras.main.shake(80, 0.003);
         if (e.source !== undefined) this.sfx(v.unit.isHero ? 'hit_hero' : e.crit ? 'swing_crit' : 'hit', 0.35);
+      } else if (e.type === 'charm') {
+        const v = this.views.get(e.uid); if (!v) continue;
+        const t = { ok: ['诱惑成功', '#ff9ad5'], fail: ['诱惑失败', '#cccccc'], immune: ['免疫', '#cccccc'], high: ['诱惑失败', '#cccccc'], betray: ['叛变', '#ff5a5a'] }[e.result];
+        fx.floatNumber(this, v.cx, v.cy - v.h * 0.3, v.h, t[0], t[1], 0.7); v.sync();
       } else if (e.type === 'death') {
         const v = this.views.get(e.uid); if (!v) continue;
         this.views.delete(e.uid);
@@ -397,7 +403,7 @@ export class BattleScene extends Phaser.Scene {
         this.dropOrigin.set(e.uid, { x: v.cx, y: v.cy, h: v.h, w: v.w });
         v.die(() => {});
         if (v.unit.isHero) this.heroDied();
-        if (v.unit.summon) this.log('骷髅战士倒下了');
+        if (v.unit.summon) this.log(`${v.unit.pet ? v.unit.name : '骷髅战士'}倒下了`);
       } else if (e.type === 'drop') {
         const o = this.dropOrigin.get(e.uid) ?? { x: e.x, y: GROUND_Y + e.y - 100, h: 180, w: 130 };
         e.items.forEach(g => this.throwDrop(g, o));
@@ -571,6 +577,7 @@ export class BattleScene extends Phaser.Scene {
     for (const id of list) {
       const si = this.world.skills.findIndex(s => s.id === id);
       if (si < 0 || this.cds[si] > 0) continue;
+      if (id === 'charm' && !this.world.charmAutoOk()) continue;
       const r = this.world.cast(si, this.cds);
       if (!r.ok) continue;
       const evs = this.world.drainEvents();
