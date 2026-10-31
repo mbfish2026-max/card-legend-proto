@@ -957,3 +957,150 @@ thunder_sword 雷霆剑、break_strike 破击剑法、shield_break 破盾斩、v
 ## F. 矿点（阶段4 挖矿，feat/balance-sys）
 - 现状：BattleScene.syncMine() 代码绘制（灰色岩堆 + 4 颗蓝边黑铁矿粒 + 「矿点」标签；挖空时 45% 透明）。位置 = 本层宽 45%，仅矿层 下标 27–33（废矿入口…山谷矿区·二）。
 - 需求：矿点图 256×192 PNG 透明底（可挖 / 枯竭 两态），参考传奇比奇矿区矿壁；交付后挂 ASSETS key `mine_node` / `mine_node_empty` 替换代码绘制。
+## 替换魔兽头像图标（art/replace-wow-heads，2026-10-31）
+
+原创重画 public/assets/portraits/ 下全部 13 个魔兽来源图标，卡通粗描边，同名覆盖，尺寸与原图一致：64x64 RGBA PNG，代码零改动。对比图：docs/wow-heads-preview/wow_heads_old_vs_new.jpg
+
+| 文件（旧→新同名） | 尺寸 | 新内容 | 用途 |
+|---|---|---|---|
+| portraits/INV_Misc_Head_Human_01.png | 64x64 | 人类战士头像 | 主菜单 menu_0（assets-manifest.ts:46） |
+| portraits/INV_Misc_Head_Scourge_01.png | 64x64 | 亡灵骷髅头（兜帽+鬼火） | 未引用 |
+| portraits/INV_Misc_Head_Human_02.png | 64x64 | 女商人头像 | 商人 merchant（assets-manifest.ts:29） |
+| portraits/INV_Misc_Bone_HumanSkull_01.png | 64x64 | 枯骨头骨 | 未引用 |
+| portraits/INV_Misc_Head_Dragon_Black.png | 64x64 | 黑龙头 | 未引用 |
+| portraits/INV_Misc_Head_Gnoll_01.png | 64x64 | 鬣狗兽人头像 | 未引用 |
+| portraits/INV_Misc_Head_Kobold_01.png | 64x64 | 矿工鼠人（蜡烛盔） | 未引用 |
+| portraits/INV_Misc_Head_Murloc_01.png | 64x64 | 鱼人头像 | 未引用 |
+| portraits/INV_Misc_Head_Undead_01.png | 64x64 | 亡灵男子头像 | 未引用 |
+| portraits/INV_Misc_Head_Undead_02.png | 64x64 | 亡灵女术士头像 | 未引用 |
+| portraits/Ability_Hunter_Pet_Wolf.png | 64x64 | 灰狼头 | 未引用 |
+| portraits/INV_Misc_MonsterHead_01.png | 64x64 | 独眼黄蜥怪头 | 未引用 |
+| portraits/Ability_Druid_TravelForm.png | 64x64 | 风灵雄鹿 | 未引用 |
+
+注：Scourge_01 原图其实是带血的人头，这里按要求画成了亡灵骷髅。
+
+### 仓库里剩下的魔兽素材（只列出，本次没替换）
+
+共 81 个：
+- items：25 个
+- potions：20 个
+- skills：22 个
+- ui：14 个
+
+完整路径：
+
+```
+public/assets/items/INV_Chest_Plate01.png
+public/assets/items/INV_Chest_Plate02.png
+public/assets/items/INV_Chest_Plate03.png
+public/assets/items/INV_Helmet_01.png
+public/assets/items/INV_Helmet_02.png
+public/assets/items/INV_Helmet_03.png
+public/assets/items/INV_Helmet_04.png
+public/assets/items/INV_Helmet_05.png
+public/assets/items/INV_Jewelry_Ring_01.png
+public/assets/items/INV_Jewelry_Ring_02.png
+public/assets/items/INV_Jewelry_Ring_03.png
+public/assets/items/INV_Jewelry_Ring_04.png
+public/assets/items/INV_Jewelry_Ring_05.png
+public/assets/items/INV_Misc_Bag_08.png
+public/assets/items/INV_Misc_Bone_01.png
+public/assets/items/INV_Misc_Book_09.png
+public/assets/items/INV_Misc_Coin_01.png
+public/assets/items/INV_Misc_Food_14.png
+public/assets/items/INV_Misc_Food_15.png
+public/assets/items/INV_Misc_Gem_Pearl_01.png
+public/assets/items/INV_Sword_01.png
+public/assets/items/INV_Sword_02.png
+public/assets/items/INV_Sword_03.png
+public/assets/items/INV_Sword_04.png
+public/assets/items/INV_Sword_05.png
+public/assets/potions/INV_Potion_50.png
+public/assets/potions/INV_Potion_51.png
+public/assets/potions/INV_Potion_52.png
+public/assets/potions/INV_Potion_53.png
+public/assets/potions/INV_Potion_54.png
+public/assets/potions/INV_Potion_55.png
+public/assets/potions/INV_Potion_56.png
+public/assets/potions/INV_Potion_57.png
+public/assets/potions/INV_Potion_58.png
+public/assets/potions/INV_Potion_59.png
+public/assets/potions/INV_Potion_70.png
+public/assets/potions/INV_Potion_71.png
+public/assets/potions/INV_Potion_72.png
+public/assets/potions/INV_Potion_73.png
+public/assets/potions/INV_Potion_74.png
+public/assets/potions/INV_Potion_75.png
+public/assets/potions/INV_Potion_76.png
+public/assets/potions/INV_Potion_77.png
+public/assets/potions/INV_Potion_78.png
+public/assets/potions/INV_Potion_79.png
+public/assets/skills/Ability_Warrior_BattleShout.png
+public/assets/skills/Ability_Warrior_Charge.png
+public/assets/skills/Ability_Warrior_Cleave.png
+public/assets/skills/Ability_Warrior_DefensiveStance.png
+public/assets/skills/Ability_Warrior_Revenge.png
+public/assets/skills/Ability_Warrior_SavageBlow.png
+public/assets/skills/Ability_Warrior_ShieldWall.png
+public/assets/skills/Ability_Warrior_Sunder.png
+public/assets/skills/Ability_Warrior_WarCry.png
+public/assets/skills/Ability_Whirlwind.png
+public/assets/skills/Spell_Fire_Fireball.png
+public/assets/skills/Spell_Fire_FlameBolt.png
+public/assets/skills/Spell_Frost_FrostNova.png
+public/assets/skills/Spell_Holy_FlashHeal.png
+public/assets/skills/Spell_Holy_Heal.png
+public/assets/skills/Spell_Holy_HolyBolt.png
+public/assets/skills/Spell_Holy_Renew.png
+public/assets/skills/Spell_Nature_Lightning.png
+public/assets/skills/Spell_Nature_ThunderClap.png
+public/assets/skills/Spell_Shadow_AnimateDead.png
+public/assets/skills/Spell_Shadow_RaiseDead.png
+public/assets/skills/Spell_Shadow_ShadowBolt.png
+public/assets/ui/LoadScreenCave.png
+public/assets/ui/UI-Backpack-EmptySlot.png
+public/assets/ui/UI-DialogBox-Background.png
+public/assets/ui/UI-DialogBox-Border-9slice.png
+public/assets/ui/UI-DialogBox-Border.png
+public/assets/ui/UI-DialogBox-Gold-Border-9slice.png
+public/assets/ui/UI-DialogBox-Gold-Border.png
+public/assets/ui/UI-DialogBox-Header.png
+public/assets/ui/UI-EmptySlot.png
+public/assets/ui/UI-Panel-Button-Up.png
+public/assets/ui/UI-Quickslot2.png
+public/assets/ui/UI-Tooltip-Background.png
+public/assets/ui/UI-Tooltip-Border-9slice.png
+public/assets/ui/UI-Tooltip-Border.png
+```
+
+另外 src/assets-manifest.ts 第 2 行还留着魔兽来源的版权注释，以后全部替换完再删。音效有没有魔兽来源：未查到/推测，本次没核查。
+## 新手地图传奇原有怪物立绘（art/novice-monsters，2026-10-31）
+
+先对照 src/data/units.ts 和 docs/monsters-official.md：鹿（deer）、僵尸（zombie）、半兽人（orc）已经有立绘，这次跳过。下面 6 只是新画的，每只单独一张，没有复用已有图。都是透明底 PNG，最长边 960，卡通半身、粗描边，放在 public/assets/portraits/。数值和刷新地点来自 21cq（1.76 版资料站）。外观是 21cq 上查不到的，按名字自己设计，标「推测」。
+
+| id | 中文名 | 来源 | 原版等级/HP/攻击/经验 | 原版刷新 | 建议层位 | 文件 | 尺寸 | 外观 |
+|---|---|---|---|---|---|---|---|---|
+| hen | 鸡 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=14) | 5 / 5 / 1-1 / 5 | 比奇省 | 第1层 幽暗森林（和鹿同档） | hen_full.png | 883x960 | 推测 |
+| scarecrow | 稻草人 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=21) | 10 / 15 / 1-2 / 12，不死系 | 比奇省 | 第1层 | scarecrow_full.png | 960x955 | 推测 |
+| hook_cat | 多钩猫 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=24) | 13 / 22 / 2-4 / 17 | 比奇省 | 第1层 | hook_cat_full.png | 960x940 | 推测 |
+| rake_cat | 钉耙猫 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=26) | 13 / 23 / 2-4 / 18 | 比奇省 | 第1层 | rake_cat_full.png | 900x960 | 推测 |
+| forest_yeti | 森林雪人 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=28) | 16 / 36 / 7-10 / 30 | 比奇省 | 第1层末到第2层 | forest_yeti_full.png | 925x960 | 推测 |
+| man_eater_flower | 食人花 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=30) | 20 / 28 / 6-9 / 28 | 比奇省 | 第2层 | man_eater_flower_full.png | 928x960 | 推测 |
+
+- 羊：21cq 怪物 ID 1–40 里没有，未查到，所以没画。
+- 本作数值曲线和原版不同，表里的"建议层位"是推测；这次只加了立绘，units.ts 没改。
+- 预览拼图：docs/art-gap-preview/novice_monsters.jpg
+
+## 传送门（替换地图「回城小房子」入口，art/portal，2026-10-31）
+
+原创 Legend of Mir 风格的蓝紫发光椭圆光圈漩涡，没有用 WoW 素材。先在纯黑底上生成一张基础图，再按亮度换算透明度（发光边缘自然淡出，不会留下抠底色边），漩涡内部保留约 85% 不透明。4 帧由脚本 docs/art-gap-preview/portal_gen.py 生成：内部漩涡转 0°/+6°/0°/-6°，整体缩放 0.97→1.0、亮度 1.0→1.13 脉动，首尾衔接可循环，外圈位置不动、不抖。
+
+| 文件 | 尺寸 | 帧数 | 说明 |
+|---|---|---|---|
+| public/assets/portal_exit.png | 256x384，透明底 | 1 | 静态图（第 1 帧） |
+| public/assets/portal_exit_sheet.png | 1024x384，透明底 | 4，横向排列，每帧 256x384 | 循环动画精灵表 |
+
+- 帧率建议 8fps，循环播放。
+- 锚点建议底部中心 (0.5, 1)。光圈下沿离底边约 4px，需要贴地时可以把 y 往下偏一点。
+- 用途：替换地图里的回城/出口入口「小房子」。只加了素材，src 没改，接入要另外改代码。
+- 预览：docs/art-gap-preview/portal_preview.jpg（上排深色底，下排棋盘格底，用来检查边缘）
