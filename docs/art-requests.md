@@ -960,12 +960,12 @@ thunder_sword 雷霆剑、break_strike 破击剑法、shield_break 破盾斩、v
 
 | id | 中文名 | 来源 | 原版等级/HP/攻击/经验 | 原版刷新 | 建议层位 | 文件 | 尺寸 | 外观 |
 |---|---|---|---|---|---|---|---|---|
-| hen | 鸡 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=\14) | 5 / 5 / 1-1 / 5 | 比奇省 | 第1层 幽暗森林（和鹿同档） | hen_full.png | 883x960 | 推测 |
-| scarecrow | 稻草人 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=\21) | 10 / 15 / 1-2 / 12，不死系 | 比奇省 | 第1层 | scarecrow_full.png | 960x955 | 推测 |
-| hook_cat | 多钩猫 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=\24) | 13 / 22 / 2-4 / 17 | 比奇省 | 第1层 | hook_cat_full.png | 960x940 | 推测 |
-| rake_cat | 钉耙猫 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=\26) | 13 / 23 / 2-4 / 18 | 比奇省 | 第1层 | rake_cat_full.png | 900x960 | 推测 |
-| forest_yeti | 森林雪人 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=\28) | 16 / 36 / 7-10 / 30 | 比奇省 | 第1层末到第2层 | forest_yeti_full.png | 925x960 | 推测 |
-| man_eater_flower | 食人花 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=\30) | 20 / 28 / 6-9 / 28 | 比奇省 | 第2层 | man_eater_flower_full.png | 928x960 | 推测 |
+| hen | 鸡 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=14) | 5 / 5 / 1-1 / 5 | 比奇省 | 第1层 幽暗森林（和鹿同档） | hen_full.png | 883x960 | 推测 |
+| scarecrow | 稻草人 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=21) | 10 / 15 / 1-2 / 12，不死系 | 比奇省 | 第1层 | scarecrow_full.png | 960x955 | 推测 |
+| hook_cat | 多钩猫 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=24) | 13 / 22 / 2-4 / 17 | 比奇省 | 第1层 | hook_cat_full.png | 960x940 | 推测 |
+| rake_cat | 钉耙猫 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=26) | 13 / 23 / 2-4 / 18 | 比奇省 | 第1层 | rake_cat_full.png | 900x960 | 推测 |
+| forest_yeti | 森林雪人 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=28) | 16 / 36 / 7-10 / 30 | 比奇省 | 第1层末到第2层 | forest_yeti_full.png | 925x960 | 推测 |
+| man_eater_flower | 食人花 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=30) | 20 / 28 / 6-9 / 28 | 比奇省 | 第2层 | man_eater_flower_full.png | 928x960 | 推测 |
 
 - 羊：21cq 怪物 ID 1–40 里没有，未查到，所以没画。
 - 本作数值曲线和原版不同，表里的"建议层位"是推测；这次只加了立绘，units.ts 没改。
