@@ -281,7 +281,8 @@ const free = (w: World) => w.skills.map(() => 0);
       for (let i = w.bag.length - 1; i >= 0; i--) if (ITEMS[w.bag[i].item]?.book && w.learnBook(i).startsWith('学会')) { cds = w.skills.map(() => 0); learnLog.push(`${w.level}级${w.skillPool.find(x => x.id === [...w.learned].pop())!.name}@${w.floorIndex + 1}层`); }
       // #11 可选对照（NEWBOOKS=1）：模拟新法师书已接入——达到官方学习等级即学会
       if (process.env.NEWBOOKS) for (const b of Object.values(BOOKS)) if (b.cls === w.cls && !b.shop && !b.drops.length && !w.learned.has(b.skill) && w.level >= w.needLevel(w.skillPool.find(x => x.id === b.skill)!)) { w.learned.add(b.skill); cds = w.skills.map(() => 0); }
-      // 去城镇商人补药（简化：金币够就买）
+      // 去城镇商人补药（简化：金币够就买）。town-return 后战斗地图无商人，这里抽象为“随时回城补给”（回城免费），不调用战斗图商店。
+      // 实测：origin/main 2b14653 同样是战士 5/6/3/2/0/9/5/0/0（种子42=9），非本分支回归；改成仅脱战/换层补给会让战士中位数升到 5–8。
       // 有可学的书店技能书时攒钱（药只补到 1 瓶）
       const saving = w.shopBooks().some(b => !w.learned.has(b.skill) && w.level >= w.needLevel(w.skillPool.find(x => x.id === b.skill)!)); const cap = saving ? 1 : 3;
       while (w.gold >= 60 && w.pots[1] < cap) w.buyPotion(1);
