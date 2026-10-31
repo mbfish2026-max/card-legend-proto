@@ -215,3 +215,40 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 | M1 | boss_white_boar | 白野猪 | `public/assets/portraits/boss_white_boar_full.png` | ASSETS 加 `boss_white_boar`，units 中 art 指向 `boss_white_boar` | 参考原作 |
 | M1 | boss_bull_king | 牛魔王 | `public/assets/portraits/boss_bull_king_full.png` | ASSETS 加 `boss_bull_king`，units 中 art 指向 `boss_bull_king` | 参考原作 |
 | M1 | boss_hongmo | 虹魔教主 | `public/assets/portraits/boss_hongmo_full.png` | ASSETS 加 `boss_hongmo`，units 中 art 指向 `boss_hongmo` | 参考原作 |
+| E1 | xiangmo | 降魔 | `public/assets/items/eq_xiangmo.png` | ITEMS.xiangmo.icon → `items/eq_xiangmo.png` | 参考原作 |
+| E1 | yanyue | 偃月 | `public/assets/items/eq_yanyue.png` | ITEMS.yanyue.icon → `items/eq_yanyue.png` | 参考原作 |
+| E1 | xiuluo | 修罗 | `public/assets/items/eq_xiuluo.png` | ITEMS.xiuluo.icon → `items/eq_xiuluo.png` | 参考原作 |
+| E1 | zhanma | 斩马刀 | `public/assets/items/eq_zhanma.png` | ITEMS.zhanma.icon → `items/eq_zhanma.png` | 参考原作 |
+| E1 | pohun | 破魂 | `public/assets/items/eq_pohun.png` | ITEMS.pohun.icon → `items/eq_pohun.png` | 参考原作 |
+| E1 | ningshuang | 凝霜 | `public/assets/items/eq_ningshuang.png` | ITEMS.ningshuang.icon → `items/eq_ningshuang.png` | 参考原作 |
+| E1 | lianyu | 炼狱 | `public/assets/items/eq_lianyu.png` | ITEMS.lianyu.icon → `items/eq_lianyu.png` | 参考原作 |
+| E1 | jingzhongyue | 井中月 | `public/assets/items/eq_jingzhongyue.png` | ITEMS.jingzhongyue.icon → `items/eq_jingzhongyue.png` | 参考原作 |
+| E1 | wujigun | 无极棍 | `public/assets/items/eq_wujigun.png` | ITEMS.wujigun.icon → `items/eq_wujigun.png` | 参考原作 |
+| E1 | longwen | 龙纹剑 | `public/assets/items/eq_longwen.png` | ITEMS.longwen.icon → `items/eq_longwen.png` | 参考原作 |
+| E1 | caijue | 裁决之杖 | `public/assets/items/eq_caijue.png` | ITEMS.caijue.icon → `items/eq_caijue.png` | 参考原作 |
+| E1 | guyu | 骨玉权杖 | `public/assets/items/eq_guyu.png` | ITEMS.guyu.icon → `items/eq_guyu.png` | 参考原作 |
+| E1 | war_armor | 战神盔甲 | `public/assets/items/eq_war_armor.png` | ITEMS.war_armor.icon → `items/eq_war_armor.png` | 参考原作 |
+| E1 | ghost_robe | 幽灵战衣 | `public/assets/items/eq_ghost_robe.png` | ITEMS.ghost_robe.icon → `items/eq_ghost_robe.png` | 参考原作 |
+| E1 | demon_robe | 恶魔长袍 | `public/assets/items/eq_demon_robe.png` | ITEMS.demon_robe.icon → `items/eq_demon_robe.png` | 参考原作 |
+| E1 | black_iron_helm | 黑铁头盔 | `public/assets/items/eq_black_iron_helm.png` | ITEMS.black_iron_helm.icon → `items/eq_black_iron_helm.png` | 参考原作 |
+| E1 | green_necklace | 绿色项链 | `public/assets/items/eq_green_necklace.png` | ITEMS.green_necklace.icon → `items/eq_green_necklace.png` | 参考原作 |
+| E1 | power_ring | 力量戒指 | `public/assets/items/eq_power_ring.png` | ITEMS.power_ring.icon → `items/eq_power_ring.png` | 参考原作 |
+| E1 | knight_bracelet | 骑士手镯 | `public/assets/items/eq_knight_bracelet.png` | ITEMS.knight_bracelet.icon → `items/eq_knight_bracelet.png` | 参考原作 |
+| E1 | demon_bell | 恶魔铃铛 | `public/assets/items/eq_demon_bell.png` | ITEMS.demon_bell.icon → `items/eq_demon_bell.png` | 参考原作 |
+| E1 | zibiluo | 紫碧螺 | `public/assets/items/eq_zibiluo.png` | ITEMS.zibiluo.icon → `items/eq_zibiluo.png` | 参考原作 |
+| E1 | dragon_bracelet | 龙之手镯 | `public/assets/items/eq_dragon_bracelet.png` | ITEMS.dragon_bracelet.icon → `items/eq_dragon_bracelet.png` | 参考原作 |
+| E1 | soul_necklace | 灵魂项链 | `public/assets/items/eq_soul_necklace.png` | ITEMS.soul_necklace.icon → `items/eq_soul_necklace.png` | 参考原作 |
+| E1 | titan_ring | 泰坦戒指 | `public/assets/items/eq_titan_ring.png` | ITEMS.titan_ring.icon → `items/eq_titan_ring.png` | 参考原作 |
+| E1 | sanyan_bracelet | 三眼手镯 | `public/assets/items/eq_sanyan_bracelet.png` | ITEMS.sanyan_bracelet.icon → `items/eq_sanyan_bracelet.png` | 参考原作 |
+| E1 | shengzhan_helm | 圣战头盔 | `public/assets/items/eq_shengzhan_helm.png` | ITEMS.shengzhan_helm.icon → `items/eq_shengzhan_helm.png` | 参考原作 |
+| E1 | shengzhan_necklace | 圣战项链 | `public/assets/items/eq_shengzhan_necklace.png` | ITEMS.shengzhan_necklace.icon → `items/eq_shengzhan_necklace.png` | 参考原作 |
+| E1 | shengzhan_ring | 圣战戒指 | `public/assets/items/eq_shengzhan_ring.png` | ITEMS.shengzhan_ring.icon → `items/eq_shengzhan_ring.png` | 参考原作 |
+| E1 | shengzhan_bracelet | 圣战手镯 | `public/assets/items/eq_shengzhan_bracelet.png` | ITEMS.shengzhan_bracelet.icon → `items/eq_shengzhan_bracelet.png` | 参考原作 |
+| E1 | fashen_helm | 法神头盔 | `public/assets/items/eq_fashen_helm.png` | ITEMS.fashen_helm.icon → `items/eq_fashen_helm.png` | 参考原作 |
+| E1 | fashen_necklace | 法神项链 | `public/assets/items/eq_fashen_necklace.png` | ITEMS.fashen_necklace.icon → `items/eq_fashen_necklace.png` | 参考原作 |
+| E1 | fashen_ring | 法神戒指 | `public/assets/items/eq_fashen_ring.png` | ITEMS.fashen_ring.icon → `items/eq_fashen_ring.png` | 参考原作 |
+| E1 | fashen_bracelet | 法神手镯 | `public/assets/items/eq_fashen_bracelet.png` | ITEMS.fashen_bracelet.icon → `items/eq_fashen_bracelet.png` | 参考原作 |
+| E1 | tianzun_helm | 天尊头盔 | `public/assets/items/eq_tianzun_helm.png` | ITEMS.tianzun_helm.icon → `items/eq_tianzun_helm.png` | 参考原作 |
+| E1 | tianzun_necklace | 天尊项链 | `public/assets/items/eq_tianzun_necklace.png` | ITEMS.tianzun_necklace.icon → `items/eq_tianzun_necklace.png` | 参考原作 |
+| E1 | tianzun_ring | 天尊戒指 | `public/assets/items/eq_tianzun_ring.png` | ITEMS.tianzun_ring.icon → `items/eq_tianzun_ring.png` | 参考原作 |
+| E1 | tianzun_bracelet | 天尊手镯 | `public/assets/items/eq_tianzun_bracelet.png` | ITEMS.tianzun_bracelet.icon → `items/eq_tianzun_bracelet.png` | 参考原作 |
