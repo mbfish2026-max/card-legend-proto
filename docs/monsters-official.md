@@ -3,8 +3,14 @@
 | id | 本作名 | 级别 | 出现楼层 | 原版名 | 来源 |
 |---|---|---|---|---|---|
 | deer | 鹿 | normal | 1.幽暗森林 | 鹿 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=16) |
-| bat | 蝙蝠 | normal | 1.幽暗森林 3.蛛网晶洞 | 蝙蝠 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=127) |
+| bat | 蝙蝠 | normal | 3.蛛网晶洞 | 蝙蝠 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=127) |
 | wolf | 狼 | normal | 1.幽暗森林 3.蛛网晶洞 | 狼 | [21cq](https://www.21cq.com/mir/Mob.Aspx?ID=100) |
+| hen | 鸡 | normal | 1.幽暗森林 | 未查到 | 未查到 |
+| scarecrow | 稻草人 | normal | 1.幽暗森林 | 未查到 | 未查到 |
+| hook_cat | 多钩猫 | normal | 1.幽暗森林 | 未查到 | 未查到 |
+| rake_cat | 钉耙猫 | normal | 1.幽暗森林 | 未查到 | 未查到 |
+| forest_yeti | 森林雪人 | normal | 1.幽暗森林 | 未查到 | 未查到 |
+| man_eater_flower | 食人花 | normal | — | 未查到 | 未查到 |
 | wolf_king | 狼王 | boss | 1.幽暗森林 | 未查到 | 未查到 |
 | spider | 洞穴蜘蛛 | normal | 3.蛛网晶洞 | 未查到 | 未查到 |
 | spider_queen | 蜘蛛女王 | boss | 3.蛛网晶洞 | 未查到 | 未查到 |
@@ -175,3 +181,17 @@
 ### 美术注记
 
 - 魔龙教主 boss_molong 立绘（boss_molong_full.png）已到位：魔龙教主与魔龙守将 boss_hj_home 的 art key 均指向 boss_molong（原占位：沃玛教主贴图 + 紫色着色）。
+
+## 新手怪（9:27，feat/balance-sys）
+
+来源：21cq 1.76 怪物属性表 https://www.21cq.com/mir/Monster.Aspx 。羊：未查到（也无立绘），未加入。
+折算 [适配]（units.ts NOVICE_SCALE）：原始面板 hp = 50 + 2.5×官方HP，atk = 5 + 0.8×官方平均攻，def = 官方防，等级 = clamp(round(0.3×官方等级),1,6)；再乘 n() 的 DIFF（血 ×1.6、攻 ×1.4×2.81）。第 0 层（幽暗森林）豁免层公式，直接用此值；第 1 层（兽人要塞）由 foeStatsAt 按层目标等级重算。掉落：官方未查到 → [适配]。经验：官方经验进 OFFICIAL_MON_EXP，按层经验倍率折算。
+
+|怪|官方 Lv/HP/攻/防/经验|折算原始 Lv/HP/攻/防|游戏面板(第0层) Lv/HP/攻/防|第1层面板 Lv/HP/攻/防|出现层|
+|-|-|-|-|-|-|
+|鸡（hen）|5/5/1-1/0/5|2/63/6/0|2/101/24/0|—|0|
+|稻草人（scarecrow）|10/15/1-2/0/12|3/88/6/0|3/141/24/0|—|0|
+|多钩猫（hook_cat）|13/22/2-4/0/17|4/105/7/0|4/168/28/0|—|0|
+|钉耙猫（rake_cat）|13/23/2-4/0/18|4/108/7/0|4/173/28/0|—|0|
+|森林雪人（forest_yeti）|16/36/7-10/2/30|5/140/12/2|5/224/47/2|—|0|
+|食人花（man_eater_flower）|20/28/6-9/2/28|6/120/11/2|6/192/43/2|—||

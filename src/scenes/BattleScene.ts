@@ -1,3 +1,4 @@
+import { overview, posBar } from '../data/mapOverview';
 import { foesWithoutView } from '../ui/foeViews';
 import { hdFixed, Render, MAX_LW } from '../render';
 import { ComboStatusTracker, COMBO_STATUS, comboStatusPlan } from '../ui/comboStatus';
@@ -12,7 +13,7 @@ import { World, SaveData } from '../combat/World';
 import { BattleEvent, GroundItem, Unit } from '../combat/types';
 import { POTIONS } from '../data/skills';
 import { FX, FONT, GROUND_Y } from '../data/fx';
-import { WORLD, FLOORS, nextFloorOf, floorNo } from '../data/world';
+import { WORLD, FLOORS, nextFloorOf, floorNo, MAX_WIDTH_SCREENS } from '../data/world';
 import { ClassId, CLASSES } from '../data/classes';
 import { playCombatAnim } from '../ui/combatAnim';
 import { CardView } from '../ui/CardView';
@@ -55,7 +56,7 @@ export class BattleScene extends Phaser.Scene {
     Settings.load(); Settings.apply(this.sound);
     this.views.clear(); this.groundObjs.clear(); this.hud = undefined; this.pendingLogs = []; this.overlay = [];
     this.state = 'play'; this.expTotal = 0; this.saveT = 0;
-    const qs = new URLSearchParams(location.search), W = WORLD.mapWidth;
+    const qs = new URLSearchParams(location.search), W = MAX_WIDTH_SCREENS * 1280; // 任务 A：按最宽层预建，进层时 applyFloorWidth 按本层宽显示/限位
     // 横版地图：本层背景分段拼接（交替镜像）
     this.bgImgs = [];
     for (let x = 0; x < W; x += 1280) this.bgImgs.push(this.add.image(x + 640, 300, 'bg').setDisplaySize(1280, 720).setFlipX((x / 1280) % 2 === 1).setTint(0xa0a0a0).setScrollFactor(0.7));
@@ -72,9 +73,10 @@ export class BattleScene extends Phaser.Scene {
       vg.fillGradientStyle(0, 0x000000, 0, 0x000000, 0, 0.5, 0, 0.5).fillRect(1140 + o, 0, 140, 720); };
     drawVg(); this.events.on('fill-resize', drawVg);
     this.add.rectangle(W / 2, GROUND_Y + 10, W, 90, 0x000000, 0.25);
-    this.add.rectangle(6, 300, 12, 600, 0x000000, 0.8); this.add.rectangle(W - 6, 300, 12, 600, 0x000000, 0.8);
+    this.add.rectangle(6, 300, 12, 600, 0x000000, 0.8); this.rightWall = this.add.rectangle(W - 6, 300, 12, 600, 0x000000, 0.8);
     const lv = Number(qs.get('lv')) || 1;
     this.world = new World(Math.random, lv, FLOORS, data?.cls ?? 'warrior', data?.save);
+    if (!data?.save) this.world.grantStarterKit(); // 任务C：新角色 3 张回城卷 [适配]
     this.world.requireUse = true;
     if (!data?.save && !qs.get('floor')) this.world.startInVillage(); // 新档出生在新手村
     this.cds = this.world.skills.map(() => 0);
@@ -200,7 +202,7 @@ export class BattleScene extends Phaser.Scene {
   }
   clearStreet() {
     if (!this.street) return; this.street.destroy(true); this.street = undefined; this.streetHint?.destroy(); this.streetHint = undefined; this.streetFar = undefined; this.townTarget = null;
-    this.bgImgs.forEach(b => b.setVisible(true)); this.portal.setVisible(true); this.merchant.setVisible(true);
+    this.portal.setVisible(true); this.merchant.setVisible(true); this.applyFloorWidth();
   }
   /** 点击门面/城门：走过去，到达后进店/出城 */
   walkTo(x: number, id: string) { if (this.paused || this.state !== 'play' || !this.world.town) return; const h = this.world.hero; if (h && Math.abs(h.x - x) < 100) this.townArrive(id); else this.townTarget = { x, id }; }
@@ -213,19 +215,63 @@ export class BattleScene extends Phaser.Scene {
     const d = w.nearDoor(), g = w.atTownGate(), act = IS_MOBILE ? '点门面' : 'W/空格';
     this.streetHint.setVisible(!!d || g).setText(g ? `${act} 出城` : d ? `${act} 进入 ${d.npc.name.replace(/（.*）/, '')}` : '').setX(g ? TOWN_GATE_X + 90 : d?.x ?? 0);
   }
-  /** 商人：本层起点的小摊（背景层，不参与战斗） */
+  /** 任务B：本层最左端「返回上一层」传送门（public/assets/portal_exit_sheet.png 4 帧 8fps；缺图 → 程序绘制光圈占位）。去向见 World.backGate() */
+  backPortalArt?: Phaser.GameObjects.GameObject;
   buildMerchant() {
-    const c = this.add.container(MERCHANT_X, GROUND_Y - 70).setDepth(5);
-    const g = this.add.graphics();
-    g.fillStyle(0x5a3a1a).fillRect(-60, -10, 120, 70); g.fillStyle(0x8a1010).fillTriangle(-75, -10, 75, -10, 0, -70);
-    g.lineStyle(2, 0xd4a64a).strokeRect(-60, -10, 120, 70);
-    c.add(g);
-    if (this.textures.exists('merchant')) c.add(this.add.image(0, 22, 'merchant').setDisplaySize(52, 52));
-    this.gateLabel = this.add.text(0, -92, IS_MOBILE ? '回城' : '回城 [S]', { fontFamily: FONT, fontSize: '16px', color: '#ffe8a0', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5); c.add(this.gateLabel);
-    g.setInteractive(new Phaser.Geom.Rectangle(-75, -70, 150, 130), Phaser.Geom.Rectangle.Contains).on('pointerdown', () => this.goBackTown());
-    this.merchant = c;
+    const c = this.add.container(MERCHANT_X, GROUND_Y + 14).setDepth(5);
+    this.gateLabel = this.add.text(0, -236, '', { fontFamily: FONT, fontSize: '16px', color: '#cfe0ff', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5);
+    const hit = this.add.zone(0, -110, 150, 220).setInteractive().on('pointerdown', () => this.backPortalUse());
+    c.add([hit, this.gateLabel]); this.merchant = c; this.syncBackPortal();
   }
-  gateLabel?: Phaser.GameObjects.Text;
+  /** 贴图晚到时也能切换：每次进层/切层调用 */
+  syncBackPortal() {
+    const c = this.merchant; if (!c) return;
+    const sheet = this.textures.exists('portal_exit_sheet'), still = this.textures.exists('portal_exit');
+    const want = sheet ? 'sheet' : still ? 'still' : 'gfx';
+    if (this.backPortalArt?.getData('kind') !== want) {
+      this.backPortalArt?.destroy();
+      let o: Phaser.GameObjects.GameObject;
+      if (sheet) {
+        if (!this.anims.exists('portal_exit_loop')) this.anims.create({ key: 'portal_exit_loop', frames: this.anims.generateFrameNumbers('portal_exit_sheet', { start: 0, end: 3 }), frameRate: 8, repeat: -1 });
+        o = this.add.sprite(0, 0, 'portal_exit_sheet', 0).setOrigin(0.5, 1).setDisplaySize(150, 225).play('portal_exit_loop'); // 与英雄高度相当（约 0.6× 原图）
+      } else if (still) o = this.add.image(0, 0, 'portal_exit').setOrigin(0.5, 1).setDisplaySize(150, 225);
+      else { // 程序占位：脉动椭圆 + 旋转光圈
+        const g = this.add.graphics(); g.fillStyle(0x3a6cff, 0.35).fillEllipse(0, -110, 130, 210); g.lineStyle(4, 0x9fc0ff, 0.9).strokeEllipse(0, -110, 130, 210); g.lineStyle(2, 0xd0e0ff, 0.7).strokeEllipse(0, -110, 90, 160);
+        this.tweens.add({ targets: g, alpha: { from: 0.6, to: 1 }, duration: 800, yoyo: true, repeat: -1 }); o = g;
+      }
+      o.setData('kind', want); c.addAt(o, 0); this.backPortalArt = o;
+    }
+    const b = this.world.backGate(); this.gateLabel?.setText(b ? `${b.label}${IS_MOBILE ? '' : ' [S]'}` : '');
+  }
+  /** 点传送门/S：上一层或（首层）回城镇；与回城卷轴（任务C，H 键）无关 */
+  backPortalUse() { const b = this.world.backGate(); if (!b) return; if (b.to === 'town') this.goBackTown(); else this.onKey('S'); }
+  /** 阶段4：矿点（代码绘制，docs/art-requests.md「矿点」）；有矿层才显示，挖空时变暗 */
+  mineNode?: Phaser.GameObjects.Container; mineLabel?: Phaser.GameObjects.Text;
+  syncMine() {
+    const w = this.world;
+    if (!this.mineNode) {
+      const g = this.add.graphics();
+      g.fillStyle(0x3a3530, 1); g.fillTriangle(-70, 30, -20, -55, 30, 30); g.fillTriangle(-10, 30, 35, -35, 75, 30);
+      g.fillStyle(0x24211e, 1); g.fillEllipse(0, 30, 160, 22);
+      g.fillStyle(0x15151f, 1); for (const [x, y, r] of [[-30, -5, 10], [10, 5, 8], [40, -8, 7], [-5, -30, 6]]) g.fillCircle(x, y, r);
+      g.lineStyle(2, 0x8a8aff, 0.8); for (const [x, y] of [[-30, -5], [10, 5], [40, -8]]) g.strokeCircle(x, y, 4);
+      this.mineLabel = this.add.text(0, -80, '矿点', { fontSize: '16px', color: '#c8c8ff', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5);
+      this.mineNode = this.add.container(0, GROUND_Y - 30, [g, this.mineLabel]).setDepth(3);
+    }
+    const on = w.hasMine(); this.mineNode.setVisible(on); if (!on) return;
+    this.mineNode.setX(w.mineX()); const cd = w.mineCdLeft();
+    this.mineNode.setAlpha(cd > 0 ? 0.45 : 1);
+    this.mineLabel!.setText(w.mine ? '挖矿中…' : cd > 0 ? `矿脉枯竭 ${cd}s` : w.atMine() ? '矿点（W/空格 挖矿）' : '矿点');
+  }
+  gateLabel?: Phaser.GameObjects.Text; rightWall?: Phaser.GameObjects.Rectangle;
+  /** 任务 A：按本层宽度显示背景段（交替镜像平铺、不拉伸）、右墙、传送门，并限定相机范围 */
+  applyFloorWidth() {
+    const W = this.world.mapW;
+    this.bgImgs.forEach((b, k) => b.setVisible(!this.street && k * 1280 < (W - 1280) * 0.7 + 1280)); // 背景视差 0.7：最右可见到 (W−1280)×0.7+1280
+    this.rightWall?.setX(W - 6); this.portal?.setX(this.world.exitX);
+    this.syncMine(); this.syncBackPortal();
+    this.cameras.main.setBounds(0, 0, W, 720);
+  }
   /** 回城/回村入口（原「商人」位置，战斗地图不再有商人） */
   goBackTown() {
     if (this.state !== 'play' || this.paused) return; const w = this.world;
@@ -248,12 +294,13 @@ export class BattleScene extends Phaser.Scene {
     if (k === 'B' || k === 'C' || k === 'I') return this.openPanel('bag');
     if (k === 'T') { if (this.world.town) { this.townUse(); return; } return this.openPanel('shop'); }
     if (k === 'K') return this.openPanel('skills');
+    if (k === 'H') { this.log(this.world.useRecallScroll()); return; } // 任务C：回城卷快捷键
     if (k === 'Q') return this.openPanel('quests');
     if (this.paused || this.state !== 'play') return;
     // 合击版 A2/A4 [适配] 键位：R 召唤/收回、E 切换状态（官方 Ctrl+E）、G 合击爆发（官方 Ctrl+S，本作 S 已用于回城）
     if (k === 'R' || k === 'E' || k === 'G') { const w = this.world; const e = k === 'R' ? w.toggleCompanion() : k === 'E' ? w.cycleCompanionMode() : w.unleashCombo();
       if (e) this.log(e); this.handle(w.drainEvents()); this.ui?.panel?.open && this.ui.panel.render(); return; }
-    if (k === ' ' || k === 'W') { if (this.world.town) this.townUse(); else this.usePortal(); return; }
+    if (k === ' ' || k === 'W') { if (this.world.town) this.townUse(); else if (this.entranceHere() === 'mine') this.mobileAct(); else this.usePortal(); return; }
     if (k === 'S' && !this.world.town && this.world.atReturnGate() && (this.world.floorIndex === 0 || REGIONS.some(r => r.floors[0] === this.world.floorIndex))) { this.goBackTown(); return; }
     if (k === 'S') { if (!this.fading && this.world.hero && this.world.floorIndex > 0 && this.world.hero.x <= WORLD.heroStartX + 150) { this.fading = true; this.cameras.main.fadeOut(400, 0, 0, 0); this.cameras.main.once('camerafadeoutcomplete', () => { this.fading = false; this.world.prevFloor(); }); } else this.log('在本层起点按 S 返回上一层，或点左侧入口回城'); return; }
     const h = this.world.hero; if (!h) return;
@@ -475,7 +522,7 @@ export class BattleScene extends Phaser.Scene {
       } else if (e.type === 'aggro') this.views.get(e.uid)?.alert(WORLD.alertSec);
       else if (e.type === 'leap') this.views.get(e.uid)?.leap(WORLD.leapSec * 1000);
       else if (e.type === 'leash') { const v = this.views.get(e.uid); if (v) fx.floatNumber(this, v.cx, v.cy - v.h * 0.3, v.h, '脱离战斗', FX.statusColor, 0.6); }
-      else if (e.type === 'floor') { this.enterFloor(e.index, e.name); this.gateLabel?.setText(`回${this.world.returnTownName().replace(/（.*）/, '')}${IS_MOBILE ? '' : ' [S]'}`); }
+      else if (e.type === 'floor') { this.enterFloor(e.index, e.name); this.syncBackPortal(); }
       else if (e.type === 'town') this.buildStreet(e.id);
       else if (e.type === 'cleared') this.log('首领已被击败！出口已开启，向右前往下一层');
       else if (e.type === 'win') this.end();
@@ -586,10 +633,11 @@ export class BattleScene extends Phaser.Scene {
   useNext = false; fading = false; portalHint!: Phaser.GameObjects.Text;
   /** 传送门：在出口处按空格 → 黑屏淡出 → 切层（新楼层再淡入） */
   /** 当前位置可触发的入口（手机「进入」大键按此显示文字并执行）：右端出口 / 左端回城或上一层 / 城内门面与城门 */
-  entranceHere(): 'talk' | 'gate' | 'exit' | 'sealed' | 'town' | 'prev' | null {
+  entranceHere(): 'talk' | 'gate' | 'exit' | 'sealed' | 'town' | 'prev' | 'mine' | null {
     const w = this.world; if (w.town) return w.atTownGate() ? 'gate' : w.nearDoor() ? 'talk' : null;
     if (w.atExit) return w.floor.boss && w.alive('enemy').some(u => u.tier === 'boss') ? 'sealed' : 'exit';
     if (w.atReturnGate()) return w.floorIndex === 0 || REGIONS.some(r => r.floors[0] === w.floorIndex) ? 'town' : 'prev';
+    if (w.atMine()) return 'mine'; // 阶段4 挖矿点
     return null;
   }
   /** 手机「进入」键 / 点传送门本体：覆盖桌面 W/空格/T/S 的全部入口（docs/mobile-ui.md 入口对照表） */
@@ -599,7 +647,8 @@ export class BattleScene extends Phaser.Scene {
     if (e === 'talk' || e === 'gate' || this.world.town) return this.townUse();
     if (e === 'exit' || e === 'sealed') return this.usePortal();
     if (e === 'town' || e === 'prev') return this.onKey('S');
-    this.log('走到右端传送门进入下一层，或走到左端入口回城/返回上一层');
+    if (e === 'mine') { this.log(this.world.startMine()); this.handle(this.world.drainEvents()); return; }
+    this.log('走到右端传送门进入下一层，或走到左端入口回城/返回上一层；顶栏「回城」可用回城卷');
   }
   usePortal() {
     const w = this.world; if (!w.atExit || this.fading) return;
@@ -641,6 +690,7 @@ export class BattleScene extends Phaser.Scene {
     // 回退图 bg 自身也可能尚未加载（后台队列按层排序，新层多时 bg 排在后面）→ 先显示 __MISSING，bg 到了也要补上
     if (want && bg !== want) { const on = (k: string) => { if (this.world.floor.bg !== want) return; if (k === want) { this.textures.off('addtexture', on); this.bgImgs.forEach(b => b.setTexture(want).setDisplaySize(1280, 720)); } else if (k === 'bg' && this.bgImgs[0]?.texture.key === '__MISSING') this.bgImgs.forEach(b => b.setTexture('bg').setDisplaySize(1280, 720)); }; this.textures.on('addtexture', on); this.events.once('shutdown', () => this.textures.off('addtexture', on)); }
     (this.scene.get('Preload') as PreloadScene | undefined)?.prioritize?.([...(this.textures.exists('bg') ? [] : ['bg']), ...floorKeys(this.world.floor), ...floorKeys(this.world.floors[nextFloorOf(this.world.floorIndex, this.world.floors)])]);
+    this.applyFloorWidth();
     this.hud?.setFloor(name, this.floorIcons());
     this.log(`进入 第 ${i + 1} 层 · ${name}（首领在地图尽头）`);
     this.cameras.main.centerOn(WORLD.heroStartX, 360); this.cameras.main.fadeIn(700, 0, 0, 0);
@@ -724,6 +774,7 @@ export class BattleScene extends Phaser.Scene {
     for (const u of foesWithoutView(this.world, uid => this.views.has(uid))) { const v = new CardView(this, u); v.x = u.x; v.setAlpha(0); this.tweens.add({ targets: v, alpha: 1, duration: 400 }); this.views.set(u.uid, v); }
   }
   update(time: number, dms: number) {
+    if (this.mineNode?.visible || this.world.hasMine()) this.syncMine();
     const dt = Math.min(0.05, dms / 1000), k = this.keys;
     if (this.skillsDirty && !this.paused) { this.skillsDirty = false; this.cds = this.world.skills.map(() => 0); this.scene.stop('UI'); this.scene.launch('UI'); }
     if (this.state !== 'win' && !this.paused) {
@@ -755,7 +806,11 @@ export class BattleScene extends Phaser.Scene {
     const pw = { atk: '攻击', mag: '魔法', tao: '道术' }[w.classDef.autoStat];
     const info = `${w.classDef.name} Lv${w.level}   经验 ${fmtExp(w.exp)}/${fmtExp(w.expNext)}   金币 ${w.gold}   ${pw} ${st[w.classDef.autoStat]}  防御 ${Math.round(st.def)}   第 ${floorNo(w.floorIndex, w.floors)}/${w.floors.length} 层`;
     this.hud?.update(dt, h?.hp ?? 0, h?.maxHp ?? st.hp, h?.mp ?? 0, h?.maxMp ?? st.mp, this.cds, dead, w.pots, info);
+    if (this.hud) { this.hud.onOverview ??= () => this.hud!.toggleOverview(this.mapOverview()); this.hud.setPos(this.mapPos()); }
   }
+  /** 地图总览/位置条数据（城内与自定义层表不显示） */
+  mapOverview() { const w = this.world; return w.town || w.floors !== FLOORS ? null : overview(w.floorIndex); }
+  mapPos() { const w = this.world; return w.town || w.floors !== FLOORS || !w.hero ? null : posBar(w.floorIndex, w.hero.x); }
   end() {
     if (this.state === 'win') return; this.state = 'win'; this.cameras.main.fadeIn(500, 0, 0, 0); SaveStore.clear(); playMusic(this, 'title'); this.ui?.panel?.close();
     const ui = this.scene.get('UI'), w = this.world;

@@ -11,7 +11,7 @@ for (const lw of [1280, 1561, 2016]) {
   const w = new World(seeded(7), 12, FLOORS, 'warrior'); w.loadFloor(0);
   const views = new Set<number>(); const fromEvents = () => { for (const e of w.drainEvents() as any[]) { if (e.type === 'summon') views.add(e.uid); if (e.type === 'death') views.delete(e.uid); } };
   w.alive('enemy').forEach(u => views.add(u.uid)); fromEvents();
-  const h = w.hero!; const camL = () => Math.max(0, Math.min(WORLD.mapWidth - lw, h.x - lw / 2)), camR = () => camL() + lw;
+  const h = w.hero!; const camL = () => Math.max(0, Math.min(w.mapW - lw, h.x - lw / 2)), camR = () => camL() + lw;
   // 打完屏幕内可见的怪
   for (const u of w.alive('enemy')) if (u.x < camR()) w.kill(u); fromEvents();
   h.x = 380; const t0 = w.time;

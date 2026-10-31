@@ -31,7 +31,16 @@ const CSS = `
 #mh-log.open div{white-space:normal}
 #mh-top{position:absolute;right:var(--sr);top:var(--st);display:flex;gap:4px}
 #mh-top .b{width:48px;height:46px}
-#mh-floor{position:absolute;top:var(--st);left:50%;transform:translateX(-50%);font-size:13px;color:#ffe8a0;text-shadow:0 0 3px #000,0 0 3px #000;white-space:nowrap;pointer-events:none;text-align:center}
+#mh-floor{position:absolute;top:var(--st);left:50%;transform:translateX(-50%);font-size:13px;color:#ffe8a0;text-shadow:0 0 3px #000,0 0 3px #000;white-space:nowrap;pointer-events:auto;cursor:pointer;text-align:center;min-height:44px;min-width:120px;padding:2px 8px;box-sizing:border-box}
+#mh-pos{position:absolute;top:calc(var(--st) + 22px);left:50%;transform:translateX(-50%);width:200px;height:12px;background:rgba(0,0,0,.55);border:1px solid #8a7040;pointer-events:none}
+#mh-pos i{position:absolute;top:-1px;width:5px;height:12px}#mh-pos .on{outline:2px solid #ffe040;background:#ffe040!important}
+#mh-pos .h{width:10px;height:10px;top:0;margin-left:-5px;border-radius:50%;background:#fff;border:1px solid #000;box-sizing:border-box}
+#mh-pos .bs{width:0;height:0;top:-1px;margin-left:-5px;border:5px solid transparent;border-top:7px solid #f33}
+#mh-posT{position:absolute;top:calc(var(--st) + 36px);left:50%;transform:translateX(-50%);font-size:12px;color:#ffe8a0;text-shadow:0 0 3px #000,0 0 3px #000;white-space:nowrap;pointer-events:none}
+#mh-ovw{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:50;pointer-events:auto}
+#mh-ovw .box{background:#05060c;border:2px solid #d4a64a;border-radius:8px;padding:8px 12px;max-width:min(92vw,640px);max-height:88vh;overflow:auto;box-sizing:border-box;color:#ddd;font-size:13px;line-height:1.45;position:relative}
+#mh-ovw h3{margin:0 52px 4px 0;font-size:15px;color:#ffe8a0}#mh-ovw .x{position:absolute;right:4px;top:4px;width:44px;height:44px;font-size:20px;background:#2a1d10;color:#ffe8a0;border:1px solid #b8893a;border-radius:6px}
+#mh-ovw p{margin:2px 0;white-space:normal;word-break:break-all}
 #mh-joy{position:absolute;left:0;bottom:0;width:34vw;height:60vh;pointer-events:auto;touch-action:none}
 #mh-joy .base{position:absolute;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;display:none;
  background:rgba(0,0,0,.18);border:2px solid rgba(255,232,160,.35)}
@@ -72,12 +81,14 @@ export class MobileHud {
     // 可折叠日志（默认 3 行，点开 6 行）
     this.log = this.el('div', r, 'ctl'); this.log.id = 'mh-log'; this.tap(this.log, () => this.log.classList.toggle('open'));
     this.floor = this.el('div', r, 'ctl'); this.floor.id = 'mh-floor';
+    this.floor.addEventListener('pointerdown', ev => { ev.stopPropagation(); this.toggleOverview(); });
+    this.pos = this.el('div', r, ''); this.pos.id = 'mh-pos'; this.posT = this.el('div', r, ''); this.posT.id = 'mh-posT';
     // 右上：功能图标，每个功能只出现一次
     const top = this.el('div', r, 'ctl'); top.id = 'mh-top';
     const icon = (ic: string, label: string, k: string, id: string) => { const e = this.btn(top, `<span class="ic">${ic}</span>${label}`, () => b.onKey(k)); e.dataset.id = id; return e; };
     icon('🎒', '角色', 'B', 'bag'); icon('📜', '技能', 'K', 'skills'); icon('🎯', '悬赏', 'Q', 'quests'); icon('🗺', '传送', 'M', 'map'); // 地图面板即传送界面（点已到达入口传送）
     // 商人/传送合并为右下「对话/进入」键（城里 T 与 W 同为 townUse；战斗地图没有商人），不再单列商店图标
-    icon('🏯', '回城', 'S', 'town'); icon('⚙', '设置', 'ESCAPE', 'settings');
+    { const e = this.btn(top, '<span class="ic">🏯</span>回城', () => { const en = b.entranceHere(); if (en === 'town' || en === 'prev' || b.world.town) b.mobileAct(); else b.onKey('H'); }); e.dataset.id = 'town'; } // 任务C：在起点入口=回城/上一层，野外其余位置=用回城卷 icon('⚙', '设置', 'ESCAPE', 'settings');
     // 左下：浮动摇杆（左下区域任意处按下即在指下出现，不常驻遮挡主角；角落只留一个小提示），多点触控按 pointerId 区分
     const joy = this.el('div', r, 'ctl'); joy.id = 'mh-joy'; this.el('div', joy, 'hint').innerHTML = '◀ ▶<br>移动';
     const base = this.el('div', joy, 'base'); const knob = this.el('div', base, 'knob');
@@ -145,9 +156,27 @@ export class MobileHud {
     this.comp.style.right = `calc(var(--sr) + ${outerR + 50 + 14}px)`; this.comp.style.bottom = `calc(var(--sb) + 56px)`;
   }
   reset() { this.dx = this.dy = 0; }
+  pos!: HTMLElement; posT!: HTMLElement; ovw?: HTMLElement; private posKey = '';
+  /** 地图总览（手机 DOM 弹层）：点层名开关；✕ ≥44px */
+  toggleOverview() {
+    if (this.ovw) { this.ovw.remove(); this.ovw = undefined; return; }
+    const o = this.b.mapOverview(); if (!o) return;
+    const m = this.ovw = document.createElement('div'); m.id = 'mh-ovw'; const esc = (t: string) => t.replace(/[<&>]/g, c => ({ '<': '&lt;', '&': '&amp;', '>': '&gt;' } as any)[c]);
+    m.innerHTML = `<div class="box"><button class="x" id="mh-ovw-x">✕</button><h3>当前地图：${esc(o.name)}</h3>` +
+      [o.main, o.layer, `推荐等级：Lv${o.recLevel}`, `<b style="color:#f88">BOSS：</b>${o.bosses.join('、') || '无'}`, `<b style="color:#fb4">精英：</b>${o.elites.join('、') || '无'}`, `怪物：${o.monsters.join('、') || '无'}`, o.left, o.right].map(t => `<p>${t.startsWith('<') ? t : esc(t)}</p>`).join('') + '</div>';
+    m.addEventListener('pointerdown', ev => { ev.stopPropagation(); if (ev.target === m || (ev.target as HTMLElement).id === 'mh-ovw-x') this.toggleOverview(); });
+    this.root.appendChild(m);
+  }
+  private drawPos() {
+    const p = this.b.mapPos(); this.pos.style.display = this.posT.style.display = p ? '' : 'none'; if (!p) return;
+    const key = `${Math.round(p.hero * 200)}|${p.near}|${p.hint}|${p.boss}`; if (key === this.posKey) return; this.posKey = key;
+    this.pos.innerHTML = `<i style="left:0;background:#5aa8ff" class="${p.near === 'left' ? 'on' : ''}"></i><i style="right:0;background:#7aff7a" class="${p.near === 'right' ? 'on' : ''}"></i>` +
+      p.boss.map(b => `<i class="bs" style="left:${b * 100}%"></i>`).join('') + `<i class="h" style="left:${p.hero * 100}%"></i>`;
+    this.posT.textContent = p.hint;
+  }
   setVisible(v: boolean) { this.root.classList.toggle('off', !v); if (!v) this.dx = this.dy = 0; }
   update(cds: number[]) {
-    const w = this.b.world, h = w.hero; if (!w) return;
+    const w = this.b.world, h = w.hero; if (!w) return; this.drawPos();
     if (w.skills.map(s => s.id).join() !== this.skSig) this.layoutSkills();
     const set = (k: string, cur: number, max: number, label: string) => { const [i, s] = this.bars[k]; i.style.width = (100 * Math.max(0, Math.min(1, cur / Math.max(1, max)))) + '%'; s.textContent = label; };
     const hp = h?.hp ?? 0, mhp = h?.maxHp ?? 1, mp = h?.mp ?? 0, mmp = h?.maxMp ?? 1;
@@ -159,7 +188,7 @@ export class MobileHud {
     const sig = this.hud.lines.map(l => l.t + l.at).join('|');
     if (sig !== this.logSig) { this.logSig = sig; this.log.innerHTML = ''; this.hud.lines.slice().reverse().forEach(l => { const d = this.el('div', this.log); d.textContent = l.t; d.style.color = l.c; }); }
     const en = this.b.entranceHere(); // 入口在范围内时高亮并显示具体去向
-    this.act.innerHTML = en === 'talk' ? '对话' : en === 'gate' ? '出城' : en === 'town' ? '回城' : en === 'prev' ? '上一层' : en === 'sealed' ? '封印' : w.town ? '对话' : '进入';
+    this.act.innerHTML = en === 'talk' ? '对话' : en === 'gate' ? '出城' : en === 'town' ? (/村/.test(w.backGate()?.name ?? '') ? '回村' : '回城') : en === 'prev' ? '上一层' : en === 'sealed' ? '封印' : en === 'mine' ? '挖矿' : w.town ? '对话' : '进入';
     this.act.classList.toggle('hot', !!en && en !== 'sealed');
     this.auto.innerHTML = `自动<br>${Settings.autoAttack ? '开' : '关'}`; this.auto.classList.toggle('on', Settings.autoAttack);
     this.comp.style.display = w.companion ? 'flex' : 'none';
@@ -175,6 +204,6 @@ export class MobileHud {
     if (bag && cv.width) { const bb = bag.getBoundingClientRect(); this.hud.bagPos = { x: Math.max(0, Math.min(1280, (bb.left + bb.width / 2 - cv.left) * 1280 / cv.width)), y: Math.max(0, (bb.top + bb.height / 2 - cv.top) * 720 / cv.height) }; }
   }
   /** 测试用：所有可点控件 */
-  hits() { return Array.from(this.root.querySelectorAll<HTMLElement>('.b, #mh-log, #mh-joy .hint')); }
+  hits() { return Array.from(this.root.querySelectorAll<HTMLElement>('.b, #mh-log, #mh-joy .hint, #mh-floor, #mh-pos, #mh-posT')); }
   destroy() { this.root.remove(); }
 }

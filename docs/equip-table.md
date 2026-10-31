@@ -54,8 +54,8 @@
 | ghost_robe | 幽灵战衣 | 衣服 | 祖玛 | 精神力 27 | 30 | 道士 | 道1-4 防4-7 魔御3-4 | 防御+16 生命+128 道术+12 魔御+11 | https://www.21cq.com/mir/View.aspx?id=132 |
 | demon_robe | 恶魔长袍 | 衣服 | 祖玛 | 魔法力 28 | 30 | 法师 | 魔1-4 防4-7 魔御3-4 | 防御+16 生命+128 魔法+12 魔御+11 | https://www.21cq.com/mir/View.aspx?id=130 |
 | medium_armor | 中型盔甲 | 衣服 | 普通 | 等级 16 | 16 | 通用 | 防3-5 魔御1-2 | 防御+12 生命+96 魔御+5 | https://www.21cq.com/mir/View.aspx?id=120 |
-| set_woma_helm | 沃玛头盔 | 头盔 | 沃玛 | 自创 | 14 | 通用 | 自创 | 防御+10 生命+60 | 自创 |
-| set_zuma_helm | 祖玛头盔 | 头盔 | 祖玛 | 自创 | 18 | 通用 | 自创 | 防御+13 生命+90 | 自创 |
+| set_woma_helm | 沃玛头盔 | 头盔 | 沃玛 | 自创 | 24 | 通用 | 自创 | 防御+10 生命+60 | 自创 |
+| set_zuma_helm | 祖玛头盔 | 头盔 | 祖玛 | 自创 | 30 | 通用 | 自创 | 防御+13 生命+90 | 自创 |
 | helmet | 青铜头盔 | 头盔 | — | 等级 10 | 3 | 通用 | 防0-1 | 防御+4 生命+20 | https://www.21cq.com/mir/View.aspx?id=147 |
 | bone_helm | 骷髅头盔 | 头盔 | — | 攻击力 30 | 10 | 战士 | 防2-3 | 防御+9 生命+50 | https://www.21cq.com/mir/View.aspx?id=150 |
 | tao_helm | 道士头盔 | 头盔 | — | 等级 24 | 24 | 通用 | 防1-2 魔御2-3 | 防御+5 生命+40 魔御+8 | https://www.21cq.com/mir/View.aspx?id=149 |
@@ -64,8 +64,8 @@
 | fashen_helm | 法神头盔 | 头盔 | 赤月 | 魔法力 28 | 35 | 法师 | 魔0-1 防4-4 魔御1-2 | 魔法+2 防御+12 生命+96 魔御+5 | https://www.21cq.com/mir/View.aspx?id=236 |
 | tianzun_helm | 天尊头盔 | 头盔 | 赤月 | 精神力 25 | 35 | 道士 | 道0-1 防4-4 魔御1-2 | 道术+2 防御+12 生命+96 魔御+5 | https://www.21cq.com/mir/View.aspx?id=240 |
 | black_iron_helm | 黑铁头盔 | 头盔 | 祖玛 | 攻击力 46 | 30 | 战士 | 防4-5 魔御2-3 | 防御+14 生命+112 魔御+8 | https://www.21cq.com/mir/View.aspx?id=151 |
-| set_woma_necklace | 沃玛项链 | 项链 | 沃玛 | 自创 | 14 | 通用 | 自创 | 攻击+7 魔法+7 道术+7 | 自创 |
-| set_chiyue_necklace | 赤月项链 | 项链 | 赤月 | 自创 | 22 | 通用 | 自创 | 攻击+14 魔法+14 道术+14 | 自创 |
+| set_woma_necklace | 沃玛项链 | 项链 | 沃玛 | 自创 | 24 | 通用 | 自创 | 攻击+7 魔法+7 道术+7 | 自创 |
+| set_chiyue_necklace | 赤月项链 | 项链 | 赤月 | 自创 | 35 | 通用 | 自创 | 攻击+14 魔法+14 道术+14 | 自创 |
 | pearl | 黑珍珠项链 | 项链 | — | 自创 | 5 | 通用 | 自创 | 攻击+5 魔法+5 道术+5 | 自创 |
 | ghost_necklace | 幽灵项链 | 项链 | 沃玛 | 等级 24 | 24 | 通用 | 攻0-5 | 攻击+5 | https://www.21cq.com/mir/View.aspx?id=168 |
 | life_necklace | 生命项链 | 项链 | 沃玛 | 魔法力 25 | 24 | 法师 | 魔1-5 准确+1 | 魔法+12 | https://www.21cq.com/mir/View.aspx?id=169 |
@@ -76,8 +76,8 @@
 | shengzhan_necklace | 圣战项链 | 项链 | 赤月 | 攻击力 40 | 35 | 战士 | 攻3-6 | 攻击+9 | https://www.21cq.com/mir/View.aspx?id=233 |
 | fashen_necklace | 法神项链 | 项链 | 赤月 | 魔法力 28 | 35 | 法师 | 魔1-8 准确+2 | 魔法+18 | https://www.21cq.com/mir/View.aspx?id=237 |
 | tianzun_necklace | 天尊项链 | 项链 | 赤月 | 精神力 25 | 35 | 道士 | 道2-7 准确+2 | 道术+18 | https://www.21cq.com/mir/View.aspx?id=241 |
-| set_zuma_ring | 祖玛戒指 | 戒指 | 祖玛 | 自创 | 18 | 通用 | 自创 | 攻击+11 魔法+11 道术+11 | 自创 |
-| set_chiyue_ring | 赤月戒指 | 戒指 | 赤月 | 自创 | 22 | 通用 | 自创 | 攻击+14 魔法+14 道术+14 | 自创 |
+| set_zuma_ring | 祖玛戒指 | 戒指 | 祖玛 | 自创 | 30 | 通用 | 自创 | 攻击+11 魔法+11 道术+11 | 自创 |
+| set_chiyue_ring | 赤月戒指 | 戒指 | 赤月 | 自创 | 35 | 通用 | 自创 | 攻击+14 魔法+14 道术+14 | 自创 |
 | iron_ring | 铁戒指 | 戒指 | — | 自创 | 2 | 通用 | 自创 | 攻击+3 生命+20 | 自创 |
 | gold_ring | 金戒指 | 戒指 | — | 等级 22 | 9 | 通用 | 攻1-1 魔1-1 道1-1 魔御0-3 | 攻击+8 魔法+8 道术+8 魔御+5 | https://www.21cq.com/mir/View.aspx?id=206 |
 | dragon_ring | 龙之戒指 | 戒指 | 沃玛 | 攻击力 37 | 24 | 战士 | 攻0-5 | 攻击+5 | https://www.21cq.com/mir/View.aspx?id=212 |
@@ -89,8 +89,8 @@
 | shengzhan_ring | 圣战戒指 | 戒指 | 赤月 | 攻击力 40 | 35 | 战士 | 攻0-7 魔御0-1 | 攻击+7 魔御+2 | https://www.21cq.com/mir/View.aspx?id=235 |
 | fashen_ring | 法神戒指 | 戒指 | 赤月 | 魔法力 28 | 35 | 法师 | 魔1-6 魔御0-1 | 魔法+14 魔御+2 | https://www.21cq.com/mir/View.aspx?id=239 |
 | tianzun_ring | 天尊戒指 | 戒指 | 赤月 | 精神力 25 | 35 | 道士 | 道2-7 魔御0-1 | 道术+18 魔御+2 | https://www.21cq.com/mir/View.aspx?id=243 |
-| set_woma_bracelet | 沃玛手镯 | 手镯 | 沃玛 | 自创 | 14 | 通用 | 自创 | 防御+5 生命+50 | 自创 |
-| set_chiyue_bracelet | 赤月手镯 | 手镯 | 赤月 | 自创 | 22 | 通用 | 自创 | 防御+8 生命+120 | 自创 |
+| set_woma_bracelet | 沃玛手镯 | 手镯 | 沃玛 | 自创 | 24 | 通用 | 自创 | 防御+5 生命+50 | 自创 |
+| set_chiyue_bracelet | 赤月手镯 | 手镯 | 赤月 | 自创 | 35 | 通用 | 自创 | 防御+8 生命+120 | 自创 |
 | bracelet | 翡翠手镯 | 手镯 | — | 自创 | 4 | 通用 | 自创 | 防御+3 生命+30 | 自创 |
 | ghost_glove | 幽灵手套 | 手镯 | 沃玛 | 等级 25 | 25 | 通用 | 防0-3 | 防御+5 生命+40 | https://www.21cq.com/mir/View.aspx?id=189 |
 | sibeier_bracelet | 思贝儿手镯 | 手镯 | 沃玛 | 魔法力 24 | 24 | 法师 | 魔0-2 | 魔法+4 | https://www.21cq.com/mir/View.aspx?id=190 |
@@ -101,7 +101,7 @@
 | shengzhan_bracelet | 圣战手镯 | 手镯 | 赤月 | 攻击力 40 | 35 | 战士 | 攻2-3 防0-1 | 攻击+5 防御+2 生命+16 | https://www.21cq.com/mir/View.aspx?id=234 |
 | fashen_bracelet | 法神手镯 | 手镯 | 赤月 | 魔法力 28 | 35 | 法师 | 魔0-4 防0-1 | 魔法+8 防御+2 生命+16 | https://www.21cq.com/mir/View.aspx?id=238 |
 | tianzun_bracelet | 天尊手镯 | 手镯 | 赤月 | 精神力 25 | 35 | 道士 | 道1-4 防1-2 | 道术+10 防御+5 生命+40 | https://www.21cq.com/mir/View.aspx?id=242 |
-| set_zuma_boots | 祖玛靴 | 靴子 | 祖玛 | 自创 | 18 | 通用 | 自创 | 防御+8 生命+70 | 自创 |
+| set_zuma_boots | 祖玛靴 | 靴子 | 祖玛 | 自创 | 30 | 通用 | 自创 | 防御+8 生命+70 | 自创 |
 | boots | 铁靴 | 靴子 | — | 自创 | 3 | 通用 | 自创 | 防御+4 生命+25 | 自创 |
 
 ## 去重盘点（存量 → 官方对应）
