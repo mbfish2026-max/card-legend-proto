@@ -11,7 +11,7 @@ import { World, SaveData } from '../combat/World';
 import { BattleEvent, GroundItem, Unit } from '../combat/types';
 import { POTIONS } from '../data/skills';
 import { FX, FONT, GROUND_Y } from '../data/fx';
-import { WORLD, FLOORS, nextFloorOf, floorNo } from '../data/world';
+import { WORLD, FLOORS, nextFloorOf, floorNo, MAX_WIDTH_SCREENS } from '../data/world';
 import { ClassId, CLASSES } from '../data/classes';
 import { playCombatAnim } from '../ui/combatAnim';
 import { CardView } from '../ui/CardView';
@@ -54,7 +54,7 @@ export class BattleScene extends Phaser.Scene {
     Settings.load(); Settings.apply(this.sound);
     this.views.clear(); this.groundObjs.clear(); this.hud = undefined; this.pendingLogs = []; this.overlay = [];
     this.state = 'play'; this.expTotal = 0; this.saveT = 0;
-    const qs = new URLSearchParams(location.search), W = WORLD.mapWidth;
+    const qs = new URLSearchParams(location.search), W = MAX_WIDTH_SCREENS * 1280; // 任务 A：按最宽层预建，进层时 applyFloorWidth 按本层宽显示/限位
     // 横版地图：本层背景分段拼接（交替镜像）
     this.bgImgs = [];
     for (let x = 0; x < W; x += 1280) this.bgImgs.push(this.add.image(x + 640, 300, 'bg').setDisplaySize(1280, 720).setFlipX((x / 1280) % 2 === 1).setTint(0xa0a0a0).setScrollFactor(0.7));
@@ -68,7 +68,7 @@ export class BattleScene extends Phaser.Scene {
     vg.fillGradientStyle(0x000000, 0, 0x000000, 0, 0.5, 0, 0.5, 0).fillRect(0, 0, 140, 720);
     vg.fillGradientStyle(0, 0x000000, 0, 0x000000, 0, 0.5, 0, 0.5).fillRect(1140, 0, 140, 720);
     this.add.rectangle(W / 2, GROUND_Y + 10, W, 90, 0x000000, 0.25);
-    this.add.rectangle(6, 300, 12, 600, 0x000000, 0.8); this.add.rectangle(W - 6, 300, 12, 600, 0x000000, 0.8);
+    this.add.rectangle(6, 300, 12, 600, 0x000000, 0.8); this.rightWall = this.add.rectangle(W - 6, 300, 12, 600, 0x000000, 0.8);
     const lv = Number(qs.get('lv')) || 1;
     this.world = new World(Math.random, lv, FLOORS, data?.cls ?? 'warrior', data?.save);
     this.world.requireUse = true;
@@ -194,7 +194,7 @@ export class BattleScene extends Phaser.Scene {
   }
   clearStreet() {
     if (!this.street) return; this.street.destroy(true); this.street = undefined; this.streetHint?.destroy(); this.streetHint = undefined; this.streetFar = undefined; this.townTarget = null;
-    this.bgImgs.forEach(b => b.setVisible(true)); this.portal.setVisible(true); this.merchant.setVisible(true);
+    this.portal.setVisible(true); this.merchant.setVisible(true); this.applyFloorWidth();
   }
   /** 点击门面/城门：走过去，到达后进店/出城 */
   walkTo(x: number, id: string) { if (this.paused || this.state !== 'play' || !this.world.town) return; const h = this.world.hero; if (h && Math.abs(h.x - x) < 100) this.townArrive(id); else this.townTarget = { x, id }; }
@@ -219,7 +219,14 @@ export class BattleScene extends Phaser.Scene {
     g.setInteractive(new Phaser.Geom.Rectangle(-75, -70, 150, 130), Phaser.Geom.Rectangle.Contains).on('pointerdown', () => this.goBackTown());
     this.merchant = c;
   }
-  gateLabel?: Phaser.GameObjects.Text;
+  gateLabel?: Phaser.GameObjects.Text; rightWall?: Phaser.GameObjects.Rectangle;
+  /** 任务 A：按本层宽度显示背景段（交替镜像平铺、不拉伸）、右墙、传送门，并限定相机范围 */
+  applyFloorWidth() {
+    const W = this.world.mapW;
+    this.bgImgs.forEach((b, k) => b.setVisible(!this.street && k * 1280 < (W - 1280) * 0.7 + 1280)); // 背景视差 0.7：最右可见到 (W−1280)×0.7+1280
+    this.rightWall?.setX(W - 6); this.portal?.setX(this.world.exitX);
+    this.cameras.main.setBounds(0, 0, W, 720);
+  }
   /** 回城/回村入口（原「商人」位置，战斗地图不再有商人） */
   goBackTown() {
     if (this.state !== 'play' || this.paused) return; const w = this.world;
@@ -579,6 +586,7 @@ export class BattleScene extends Phaser.Scene {
     // 回退图 bg 自身也可能尚未加载（后台队列按层排序，新层多时 bg 排在后面）→ 先显示 __MISSING，bg 到了也要补上
     if (want && bg !== want) { const on = (k: string) => { if (this.world.floor.bg !== want) return; if (k === want) { this.textures.off('addtexture', on); this.bgImgs.forEach(b => b.setTexture(want).setDisplaySize(1280, 720)); } else if (k === 'bg' && this.bgImgs[0]?.texture.key === '__MISSING') this.bgImgs.forEach(b => b.setTexture('bg').setDisplaySize(1280, 720)); }; this.textures.on('addtexture', on); this.events.once('shutdown', () => this.textures.off('addtexture', on)); }
     (this.scene.get('Preload') as PreloadScene | undefined)?.prioritize?.([...(this.textures.exists('bg') ? [] : ['bg']), ...floorKeys(this.world.floor), ...floorKeys(this.world.floors[nextFloorOf(this.world.floorIndex, this.world.floors)])]);
+    this.applyFloorWidth();
     this.hud?.setFloor(name, this.floorIcons());
     this.log(`进入 第 ${i + 1} 层 · ${name}（首领在地图尽头）`);
     this.cameras.main.centerOn(WORLD.heroStartX, 360); this.cameras.main.fadeIn(700, 0, 0, 0);

@@ -10,7 +10,9 @@ import { ITEMS, SLOTS, SETS, equipSlotsFor, EQUIP_VERSION, ENHANCE_SLOTS, ENHANC
 import { HERO, ENEMIES, SUMMON, SUMMON_BEAST } from '../data/units';
 import { EXP_PER_LEVEL, EXP_VERSION, migrateExp, scaledExp, fmtExp } from '../data/expCurve';
 import { killExp, foeStatsAt } from '../data/balance';
-import { WORLD, FLOORS, Floor, FARM_RESPAWN, FARM_SAFE_DIST, nextFloorOf, SIDE_FLOORS, DEPTH_STEP, prevLayerOf, prevFloorOf } from '../data/world';
+import { WORLD, FLOORS, Floor, FARM_RESPAWN, FARM_SAFE_DIST, nextFloorOf, SIDE_FLOORS, DEPTH_STEP, prevLayerOf, prevFloorOf, floorWidth, OLD_MAP_W } from '../data/world';
+/** 任务 A：待机怪离主角超过「半屏 + 2 屏」即休眠 */
+export const SLEEP_DIST = 640 + 2 * 1280;
 import { TOWNS, townFloors, townOfFloor, returnTownOf, STORAGE_SIZE, TOWN_W, TOWN_GATE_X, GATE_RANGE, TOWN_SPAWN_X, DOOR_RANGE, streetDoors } from '../data/towns';
 import { CONSUMABLE } from '../data/items-town';
 import { WOMA_FLOOR_NAME, WOMA_SECTIONS, WOMA_DOOR_X, HORN_MOB_CHANCE, HORN_MOBS, RING_MIN_LEVEL, RingQuest, ringReward, IDENT_MIN_LEVEL, IDENT_PRICE, IDENT_POOL, identValue } from '../data/r14b';
@@ -194,7 +196,9 @@ export class World {
     return this.skillPool.filter(s => !s.passive && this.learned.has(s.id)).map((s, i) => ({ s, i })).sort((a, b) => ord(a.s.id) - ord(b.s.id) || a.i - b.i).map(({ s }, i) => ({ ...s, key: `F${i + 1}` }));
   }
   get floor() { return this.floors[this.floorIndex]; }
-  get exitX() { return WORLD.mapWidth - WORLD.exitMargin; }
+  get exitX() { return this.mapW - WORLD.exitMargin; }
+  /** 本层宽度（px，任务 A：按 Floor.widthScreens） */
+  get mapW() { return floorWidth(this.floor); }
   get hero() { return this.units.find(u => u.isHero && u.alive); }
   /** 道士骷髅/神兽（不含诱惑之光宠物） */
   get summon() { return this.units.find(u => u.summon && !u.pet && u.alive); }
@@ -549,7 +553,7 @@ export class World {
     const entries = (u.drops ?? []).filter(d => this.rng() < d.chance);
     if (entries.length) {
       const items = entries.map(d => {
-        const x = Math.max(40, Math.min(WORLD.mapWidth - 40, u.x + (this.rng() - 0.5) * WORLD.dropSpread));
+        const x = Math.max(40, Math.min(this.mapW - 40, u.x + (this.rng() - 0.5) * WORLD.dropSpread));
         const y = WORLD.laneMin + this.rng() * (WORLD.laneMax - WORLD.laneMin);
         return this.rollDrop(d.item, d.rarity, x, y);
       });
@@ -576,7 +580,7 @@ export class World {
     if (extra.length) {
       const items = extra.map((e, i) => {
         const inv = this.makeItem(e.id, 'common', e.purity ? { purity: e.purity } : undefined);
-        const x = Math.max(40, Math.min(WORLD.mapWidth - 40, u.x + (i - (extra.length - 1) / 2) * 50));
+        const x = Math.max(40, Math.min(this.mapW - 40, u.x + (i - (extra.length - 1) / 2) * 50));
         return { gid: this.nextGid++, item: e.id, name: inv.name, rarity: 'common' as const, x, y: 0, landAt: this.time + WORLD.dropLandSec, atk: inv.stats.atk ?? 0, hp: inv.stats.hp ?? 0, amount: 1, inv } as GroundItem;
       });
       this.ground.push(...items); this.events.push({ type: 'drop', uid: u.uid, x: u.x, y: u.y, items });
@@ -906,7 +910,7 @@ export class World {
     } else if (s.kind === 'rush') {
       for (const t of targets) {
         t.x += h.facing * 150;
-        t.x = Math.max(t.width / 2, Math.min(WORLD.mapWidth - t.width / 2, t.x));
+        t.x = Math.max(t.width / 2, Math.min(this.mapW - t.width / 2, t.x));
         this.damage(t, pw * (s.mult ?? 0.5) * this.roll(0.95, 0.1), h, true, false, false, s.stat === 'atk' ? 0 : 1);
       }
       this.events.push({ type: 'log', text: `${s.name}：撞开 ${targets.length} 个低等级目标` });
@@ -1123,7 +1127,7 @@ export class World {
       const f = this.queue(dx)[0];
       if (f) { const reach = (h.width + f.width) / 2 + Math.max(h.range, f.range); const d0 = Math.abs(f.x - h.x), d1 = Math.abs(f.x - nx); if (d0 > reach + 0.5 && d1 < reach) nx = f.x - dx * reach; }
       // 可直接穿过怪物卡牌（不阻挡、不推开）；穿到怪身后后，怪会转身/跳跃追到新的一侧
-      h.x = Math.max(h.width / 2, Math.min(WORLD.mapWidth - h.width / 2, nx));
+      h.x = Math.max(h.width / 2, Math.min(this.mapW - h.width / 2, nx));
     }
     if (this.stepTarget !== null) this.stepAge += dt;
     // 超时保险：补间被打断/卡住（如被暂停、帧率抖动）也必定释放，不会永久 busy
@@ -1215,12 +1219,14 @@ export class World {
       h.hp = Math.min(h.maxHp, h.hp + WORLD.hpRegen * (fighting ? 1 : 5) * dt);
     }
     const chase = WORLD.baseSpeed * WORLD.chaseSpeedRatio, ret = WORLD.baseSpeed * WORLD.returnSpeedRatio;
-    if (h) for (const u of this.alive('enemy')) if (u.ai === 'idle' && Math.hypot(u.x - h.x, u.y - h.y) < WORLD.aggroRange) {
-      for (const v of this.alive('enemy')) if (v.ai === 'idle' && Math.abs(v.homeX - u.homeX) <= WORLD.groupRadius) {
+    // 任务 A 性能：离屏超过 2 屏的待机怪休眠（不跑仇恨/回血/AI；中毒照常结算）
+    const act = this.alive('enemy').filter(u => !h || u.ai !== 'idle' || Math.abs(u.x - h.x) <= SLEEP_DIST || (u.poisonUntil ?? 0) > this.time);
+    if (h) for (const u of act) if (u.ai === 'idle' && Math.hypot(u.x - h.x, u.y - h.y) < WORLD.aggroRange) {
+      for (const v of act) if (v.ai === 'idle' && Math.abs(v.homeX - u.homeX) <= WORLD.groupRadius) {
         v.ai = 'alert'; v.alertT = WORLD.alertSec; this.events.push({ type: 'aggro', uid: v.uid });
       }
     }
-    for (const u of this.alive('enemy')) {
+    for (const u of act) {
       u.moving = false;
       // 中毒（R13 官方绿毒）：每 2.5 秒结算一次，无视防御、不暴击
       if (u.poisonUntil && u.poisonTick !== undefined && this.time >= u.poisonTick && u.poisonTick <= u.poisonUntil) {

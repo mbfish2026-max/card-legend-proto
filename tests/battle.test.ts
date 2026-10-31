@@ -6,7 +6,7 @@ import { OFFICIAL_MON_EXP } from '../src/data/monsterExp';
 import { returnTownOf } from '../src/data/towns';
 import { World, SaveData, OIL_PRICE, IRON_PRICE, OFFICIAL, mitigate, taoBuffValue, taoBuffDur, SKELETON_OFFICIAL, SUMMON_NAME_COLORS, SUMMON_MAX_LV, SUMMON_LV_KILLS } from '../src/combat/World';
 import { ITEMS, SETS, ENHANCE_MAX, enhanceChance, shatterChance } from '../src/data/items';
-import { WORLD, CARD, Floor, FLOORS, FLOOR_ORDER, SIDE_FLOORS, nextFloorOf, floorNo, DEPTH_STEP, prevLayerOf, groupOf } from '../src/data/world';
+import { WORLD, CARD, Floor, FLOORS, FLOOR_ORDER, SIDE_FLOORS, nextFloorOf, floorNo, DEPTH_STEP, prevLayerOf, groupOf, floorWidth } from '../src/data/world';
 import { comboFor } from '../src/data/companion';
 import { CLASSES, ClassId, CAST_GAP, COOLDOWN_BEFORE, REBALANCE, MANA_BEFORE, SKILL_CD, CD_BEFORE_LIGHT } from '../src/data/classes';
 import { ENEMIES, DIFF } from '../src/data/units';
@@ -65,7 +65,7 @@ const free = (w: World) => w.skills.map(() => 0);
   run(w, 20); ok(z.ai === 'idle' && z.x === 3500, '回到原位');
 }
 { // 脱战规则：距离阈值、保留血量、缓慢回血、BOSS 一致、不卡死
-  ok(WORLD.leashRange === 6 * CARD && WORLD.leashRange * 1.5 < WORLD.mapWidth, '脱战距离 6 卡宽（用户反馈 10 卡宽太长跑不掉），离家上限 < 地图宽');
+  ok(WORLD.leashRange === 6 * CARD && WORLD.leashRange * 1.5 < Math.min(...FLOORS.map(f => floorWidth(f))), '脱战距离 6 卡宽（用户反馈 10 卡宽太长跑不掉），离家上限 < 地图宽');
   for (const id of ['zombie', 'boss_woma']) {
     const w = mk([{ id, x: 3000 }]); const h = w.hero!, z = w.alive('enemy')[0]; h.hp = h.maxHp = 1e9;
     z.ai = 'chase'; h.x = z.x - WORLD.leashRange + 20; w.step(0.05); ok(z.ai === 'chase', `${id} 阈值内不脱战`);

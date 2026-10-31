@@ -1,9 +1,9 @@
 // 地图/移动/仇恨/掉落的可调常量（数值均为估计，玩过后按手感调）。距离单位：像素；CARD = 主角卡宽。
-import { HERO } from './units';
+import { HERO, ENEMIES } from './units';
 export const CARD = HERO.width; // 170
 export const WORLD = {
   screenW: 1280,
-  mapWidth: 1280 * 3,          // 每层地图宽度（3 倍屏宽）
+  // mapWidth 已移除：层宽改为每层 Floor.widthScreens（floorWidth()），见 docs/floor-scale.md
   laneMin: -40, laneMax: 30,   // 纵深带：相对 GROUND_Y 的 Y 偏移范围
   heroStartX: 220,
   stepPx: 100, stepSec: 0.12, // 点按移动：每按一下滑行一格（100px，约 0.6 卡宽），0.12s 补间
@@ -37,7 +37,7 @@ export const WORLD = {
   summonLane: -36,             // 召唤物站位（纵深偏后）
 };
 export interface Spawn { id: string; x: number; y?: number }
-export interface Floor { name: string; spawns: Spawn[]; boss?: boolean; bg?: string; /** 来源链接 */ src?: string; /** 官方多层图中的第几层（1 起） */ depth?: number; /** 图群 id */ group?: string; /** 官方子层名 */ sub?: string; /** R11 对应原版区域（docs/legend-research.md「地图递进」） */ zone?: string; /** 练级图：小怪死后定时原地刷新（[适配]，见 FARM_RESPAWN） */ farm?: boolean }
+export interface Floor { name: string; spawns: Spawn[]; /** 层宽（屏数，1 屏 = 1280px）；缺省按 floorScale 规则自动赋值 */ widthScreens?: number; boss?: boolean; bg?: string; /** 来源链接 */ src?: string; /** 官方多层图中的第几层（1 起） */ depth?: number; /** 图群 id */ group?: string; /** 官方子层名 */ sub?: string; /** R11 对应原版区域（docs/legend-research.md「地图递进」） */ zone?: string; /** 练级图：小怪死后定时原地刷新（[适配]，见 FARM_RESPAWN） */ farm?: boolean }
 /** 练级图小怪刷新间隔（秒）。官方各图刷怪间隔未查到 → [适配] 20s，且主角在 400px 内时顺延，避免贴脸刷出 */
 export const FARM_RESPAWN = 20, FARM_SAFE_DIST = 400;
 export const FLOORS: Floor[] = [
@@ -240,3 +240,46 @@ export const floorNo = (i: number, floors: Floor[] = FLOORS) => floors === FLOOR
 /** 下一层下标；最后一层返回 -1 */
 export const nextFloorOf = (i: number, floors: Floor[] = FLOORS) => { if (floors !== FLOORS) return i + 1 < floors.length ? i + 1 : -1; const k = FLOOR_ORDER.indexOf(i); return k >= 0 && k + 1 < FLOOR_ORDER.length ? FLOOR_ORDER[k + 1] : -1; };
 
+
+// ---------------- 层长 + 怪量（feat/balance-sys 任务 A，docs/floor-scale.md） ----------------
+/** 旧版统一层宽：3 屏 = 3840px（原 WORLD.mapWidth）；旧坐标/旧存档以此为基准 */
+export const OLD_MAP_W = 1280 * 3;
+export const MAX_WIDTH_SCREENS = 10;
+/** 第 i 层宽度（px） */
+export const floorWidth = (f?: Floor) => (f?.widthScreens ?? 3) * WORLD.screenW;
+/** [适配] 洞穴/深层判定：名字含洞穴类关键词，或官方多层图第 3 层及以后 */
+const CAVE_RE = /洞|窟|穴|殿|墓|坟|宫|矿|古刹|地下|禁地|迷宫|祭坛|魔域|阁|寺庙/;
+/** [适配] 层宽规则：第一张图 5 屏；普通 6–8 屏；洞穴/深层 8–10 屏（官方地图尺寸与本作横版不可比，未查到可直接换算的数据） */
+export const widthRule = (i: number, f: Floor, depth: number) => {
+  if (i === 0) return 5;
+  if (CAVE_RE.test(f.name) || depth >= 3) return Math.min(10, 8 + (depth >= 4 ? 2 : depth >= 2 ? 1 : 0));
+  return Math.min(8, 6 + (depth >= 2 ? 1 : 0) + (f.boss ? 1 : 0));
+};
+/** [适配] 普通怪倍率：随层宽线性 5 屏 ×1.8 → 10 屏 ×2.5（官方刷怪数量未查到）；BOSS 数量不变（本作无单独精英档，tier='boss' 的头目都按 BOSS 不复制） */
+export const monsterMult = (ws: number) => Math.max(1.8, Math.min(2.5, 1.8 + 0.7 * (ws - 5) / 5));
+/** 每屏（任意 1280px 窗口）普通怪上限：旧图最密一屏 3 只（一个包），新图 ≤6（难度测试同屏 2–3 怪按包计，两包同屏为上限） */
+export const PER_SCREEN_CAP = 6;
+export const ENTRANCE_CLEAR = 800;
+const isBossId = (id: string) => ENEMIES[id]?.tier === 'boss';
+/** 旧 3 屏布局 → 新宽：普通怪按「包」（间距 ≤300px 为一包）循环复制、包中心沿 [800, BOSS−700] 均匀铺开；BOSS 保持离右端同样距离 */
+export function scaleSpawns(old: Spawn[], ws: number): Spawn[] {
+  const W = ws * 1280, norm = old.filter(s => !isBossId(s.id)).sort((a, b) => a.x - b.x), boss = old.filter(s => isBossId(s.id));
+  const packs: Spawn[][] = []; for (const s of norm) { const p = packs[packs.length - 1]; if (p && s.x - p[p.length - 1].x <= 300) p.push(s); else packs.push([s]); }
+  const out: Spawn[] = boss.map(b => ({ ...b, x: W - (OLD_MAP_W - b.x) }));
+  if (!packs.length) return out;
+  const target = Math.round(norm.length * monsterMult(ws));
+  const list: Spawn[][] = []; let n = 0;
+  for (let k = 0; n < target; k++) { const p = packs[k % packs.length].slice(0, target - n); list.push(p); n += p.length; }
+  const firstBoss = boss.length ? Math.min(...out.map(b => b.x)) : W - WORLD.exitMargin;
+  const lo = ENTRANCE_CLEAR, hi = Math.max(lo + 400, firstBoss - 700), step = list.length > 1 ? (hi - lo) / (list.length - 1) : 0;
+  list.forEach((p, k) => { const x0 = Math.round(lo + k * step), base = p[0].x; for (const s of p) out.push({ ...s, x: Math.min(W - 200, x0 + (s.x - base)) }); });
+  return out.sort((a, b) => a.x - b.x);
+}
+/** 旧版每层布局（文档对比/测试用） */
+export const LEGACY_SPAWNS: readonly Spawn[][] = FLOORS.map(f => f.spawns.map(s => ({ ...s })));
+FLOORS.forEach((f, i) => {
+  if (f.widthScreens) return;
+  const depth = f.depth ?? FLOOR_GROUP[i]?.depth ?? 1;
+  f.widthScreens = widthRule(i, f, depth);
+  f.spawns = scaleSpawns(f.spawns, f.widthScreens);
+});
