@@ -23,7 +23,7 @@ try {
   out.speed = { summon: Math.round(r.vs), hero: Math.round(r.vh) }; chk(Math.abs(r.vs - r.vh) < 1, '召唤物移速==英雄移速');
   const s0 = await state(); out.before = s0; await page.screenshot({ path: `${dir}/summon-save-before.png` });
   await page.reload(); await enter(); const s1 = await state(); out.afterReload = s1; await page.screenshot({ path: `${dir}/summon-save-after-reload.png` });
-  const eq = (a, b) => a.s.length === 1 && b.s.length === 1 && a.s[0].lv === b.s[0].lv && a.s[0].name === b.s[0].name && a.s[0].color === b.s[0].color && Math.abs(a.s[0].hp / a.s[0].max - b.s[0].hp / b.s[0].max) < 0.01;
+  const eq = (a, b) => a.s.length === 1 && b.s.length === 1 && a.s[0].lv === b.s[0].lv && a.s[0].name === b.s[0].name && a.s[0].color === b.s[0].color && (b.s[0].hp / b.s[0].max - a.s[0].hp / a.s[0].max) > -0.01 && (b.s[0].hp / b.s[0].max - a.s[0].hp / a.s[0].max) < 0.05 /* 读档后脱战回血会小幅回升 */;
   chk(eq(s0, s1), '刷新后召唤物/等级/HP 一致');
   await setActive(2); await page.reload(); await enter(); const s2 = await state(); out.slot2 = s2; chk(s2.gold === 2222 && s2.s.length === 0, '槽2 无召唤物（不串）');
   await page.evaluate(() => window.__game.scene.getScene('Battle').saveGame());
