@@ -12,18 +12,18 @@ import { ENEMIES } from '../src/data/units';
 import { POTIONS } from '../src/data/skills';
 // ===== feat/potion-combat 补给/用药策略（SIM_POT=1 开；默认关 = potion-expand 原轨迹）=====
 const POTC = !!process.env.SIM_POT;
-const SUN_HP = +(process.env.SIM_SUN_HP ?? 0.3), SUN_CAP = +(process.env.SIM_SUN_CAP ?? 2);
+const SUN_HP = +(process.env.SIM_SUN_HP ?? 0.3), SUN_CAP = +(process.env.SIM_SUN_CAP ?? 2), POT_LV = +(process.env.SIM_POT_LV ?? 0); // POT_LV：模拟玩家从几级起改买强效/太阳水（0 = 药店门槛）
 /** 每格选「有货里最强」那种（玩家习惯：长按换成最好的药） */
 function potSelBest(w: any) { for (const [slot, items] of [[0, ['hp_big', 'hp_mid', 'hp_small']], [1, ['mp_big', 'mp_mid', 'mp_small']], [2, ['sun_big', 'sun']]] as [number, string[]][]) {
   const it = items.find(x => w.pots[POTIONS.findIndex(p => p.item === x)] > 0); if (it && w.getSelectedPotion(slot) !== it) w.setSelectedPotion(slot, it); } }
 /** 补药：够等级买强效（散装），否则中药；太阳水 Lv22 起补到 SUN_CAP；强效太阳水只卖捆，Lv35 起金币够买 1 捆解开 */
 function potBuy(w: any, cap: number) {
-  const hp = w.level >= (POTIONS[4].lv ?? 1) ? 4 : 1, mp = w.level >= (POTIONS[5].lv ?? 1) ? 5 : 3;
+  const L = (i: number) => Math.max(POTIONS[i].lv ?? 1, POT_LV), hp = w.level >= L(4) ? 4 : 1, mp = w.level >= L(5) && process.env.SIM_MP_BIG !== '0' ? 5 : 3; // SIM_MP_BIG=0：蓝只买中蓝
   const n = (a: number, b: number) => w.pots[a] + w.pots[b];
   while (w.gold >= POTIONS[hp].price && n(1, 4) < cap && !w.buyPotion(hp)) { /* buy */ }
   while (w.gold >= POTIONS[mp].price && n(3, 5) < cap && !w.buyPotion(mp)) { /* buy */ }
-  if (w.level >= (POTIONS[7].lv ?? 99) && n(6, 7) < SUN_CAP && w.gold >= 6 * POTIONS[7].price + 1000 && !w.buyBundle('bundle_sun_big')) { const bi = w.bag.findIndex((x: any) => x.item === 'bundle_sun_big'); if (bi >= 0) w.unbundle(bi); }
-  while (w.level >= (POTIONS[6].lv ?? 99) && w.gold >= POTIONS[6].price && n(6, 7) < SUN_CAP && !w.buyPotion(6)) { /* buy */ }
+  if (w.level >= L(7) && n(6, 7) < SUN_CAP && w.gold >= 6 * POTIONS[7].price + 1000 && !w.buyBundle('bundle_sun_big')) { const bi = w.bag.findIndex((x: any) => x.item === 'bundle_sun_big'); if (bi >= 0) w.unbundle(bi); }
+  while (w.level >= L(6) && w.gold >= POTIONS[6].price && n(6, 7) < SUN_CAP && !w.buyPotion(6)) { /* buy */ }
 }
 export function seeded(s: number) { return () => (s = (s * 16807) % 2147483647) / 2147483647; }
 const learnAll = (w: World) => { w.learned = new Set(CLASSES[w.cls].skills.map(s => s.id)); return w; };

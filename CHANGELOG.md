@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 药水战斗侧 P4/P6（feat/potion-combat，未合 main）
+- 用药：键盘 1/2/3 = 药水栏红/蓝/太阳水格当前选中的药（World.usePotionSlot / selectedPotionIndex）；键盘 4 保留中蓝；点格仍转发选中药。
+- 太阳水/强效太阳水立刻回复（HP180+MP240 / HP300+MP480），独立冷却 hero.sunReady 1s，不占红蓝冷却、不产生 HoT；强效红蓝沿用 HoT。与血石 tickStone 独立叠加（只写文档，未合 lingfu-combat）。
+- sim：tests/sim-lib.ts 加 SIM_POT=1 开关（默认关，轨迹不变），9 种子对比见 docs/potion-expand.md §9.3；1–39 偏差 ≤2%，40–50 未达标（战士过易、法师变难），建议见文档。
+- e2e：hotbar-click「点击药水格 = 按 1」在 main/potion-expand 上失败的根因是 fix/town-hot 后城内 HoT 0.5s 即结算清空，断言「HoT 入队数不减」过时；改为「HoT 入队或 HP 回升」。
+- 测试：tests/potion-combat.test.ts（24 项）。
+
 ## 修复：手机药水图标/数量被框盖住（fix/mobile-potion-clip，未合 main）
 - 根因 1：B6 皮肤给药水格（56px）套 btn_normal 框时，border-image-width 用了 1x 边距 14/16/14/16 CSS px。布局边框只有 2px，框图向内画到 padding 区，格内只剩 24×28 净空。图标 background-size 88%（≈45.8px）的上下左右边缘和右下角的数字都被框盖住。
 - 根因 2：MobileHud 每帧用 potBtns[i].textContent 写数量，把角标 span 冲掉了。数字变成按钮里的居中文字，角标 CSS（right:3px/bottom:1px）不生效，2/3 位数会压到框上。

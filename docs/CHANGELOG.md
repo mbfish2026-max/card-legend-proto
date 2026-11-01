@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 药水战斗侧 P4/P6（feat/potion-combat，未合 main）
+- 用药：键盘 1/2/3 = 药水栏红/蓝/太阳水格当前选中的药（World.usePotionSlot / selectedPotionIndex）；键盘 4 保留中蓝；点格仍转发选中药。
+- 太阳水/强效太阳水立刻回复（HP180+MP240 / HP300+MP480），独立冷却 hero.sunReady 1s，不占红蓝冷却、不产生 HoT；强效红蓝沿用 HoT。与血石 tickStone 独立叠加（只写文档，未合 lingfu-combat）。
+- sim：tests/sim-lib.ts 加 SIM_POT=1 开关（默认关，轨迹不变），9 种子对比见 docs/potion-expand.md §9.3；1–39 偏差 ≤2%，40–50 未达标（战士过易、法师变难），建议见文档。
+- e2e：hotbar-click「点击药水格 = 按 1」在 main/potion-expand 上失败的根因是 fix/town-hot 后城内 HoT 0.5s 即结算清空，断言「HoT 入队数不减」过时；改为「HoT 入队或 HP 回升」。
+- 测试：tests/potion-combat.test.ts（24 项）。
+
 ## 药水扩展（feat/potion-expand，未合 main）
 - 数据（P1）：POTIONS 只在末尾追加 hp_big 强效金创药（HP560，180 金，Lv22）、mp_big 强效魔法药（MP900，180 金，Lv22）、sun 太阳水（HP180+MP240，300 金，Lv22）、sun_big 强效太阳水（HP300+MP480，600 金，Lv35，只卖捆）。旧 4 种的 index 和 key 不变。旧 key hp_strong/mp_strong/sun_water 合并到 hp_big/mp_big/sun，读档时迁移，瓶数不丢。
 - 药水捆（P2）：8 种捆，每捆 6 瓶，占背包 1 格，最多叠 999。双击解开，散装每种上限 999，放满时拒绝解开，捆也不扣。「超级」只出现在捆名里。
