@@ -1,7 +1,7 @@
 """预览合成：把切片按九宫格拉伸到实际尺寸（仅预览，不是游戏代码）。"""
 from PIL import Image, ImageDraw, ImageFont
 import json,os
-H=os.path.dirname(os.path.abspath(__file__)); SP=json.load(open(f'{H}/slices.json')); R='/workspace/card-legend-proto/public/assets'
+H=os.path.dirname(os.path.abspath(__file__)); SP=json.load(open(f'{H}/slices.json')); R=os.path.join(H,'..','..','public','assets')
 FONT=ImageFont.truetype([p for p in ['/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc','/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc','/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc'] if os.path.exists(p)][0],14) if True else None
 def F(n):
     return ImageFont.truetype(FONT.path,n)
