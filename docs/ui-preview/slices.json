@@ -1,0 +1,227 @@
+{
+ "panel_frame": {
+  "w": 192,
+  "h": 192,
+  "left": 52,
+  "right": 52,
+  "top": 52,
+  "bottom": 52,
+  "use": "全屏大面板底+框（Panel 1000×500、存档 1000×640、设置 640×580）"
+ },
+ "dialog_frame": {
+  "w": 128,
+  "h": 128,
+  "left": 34,
+  "right": 34,
+  "top": 34,
+  "bottom": 34,
+  "use": "小窗弹框/确认框/传送员面板"
+ },
+ "title_plate": {
+  "w": 160,
+  "h": 40,
+  "left": 24,
+  "right": 24,
+  "top": 12,
+  "bottom": 12,
+  "use": "面板标题底牌、HUD 地图名牌（Hud.ts 1130,36 270×46）"
+ },
+ "inset_frame": {
+  "w": 64,
+  "h": 64,
+  "left": 12,
+  "right": 12,
+  "top": 12,
+  "bottom": 12,
+  "use": "子区域内框：人物展示框、列表容器、对比面板列"
+ },
+ "tooltip_frame": {
+  "w": 48,
+  "h": 48,
+  "left": 10,
+  "right": 10,
+  "top": 10,
+  "bottom": 10,
+  "use": "物品提示框/装备对比框（原 0x05060c + 灰边）"
+ },
+ "btn_normal": {
+  "w": 96,
+  "h": 40,
+  "left": 16,
+  "right": 16,
+  "top": 14,
+  "bottom": 14,
+  "use": "通用按钮（normal）；button() / 手机触控按钮"
+ },
+ "btn_hover": {
+  "w": 96,
+  "h": 40,
+  "left": 16,
+  "right": 16,
+  "top": 14,
+  "bottom": 14,
+  "use": "通用按钮（hover）；button() / 手机触控按钮"
+ },
+ "btn_pressed": {
+  "w": 96,
+  "h": 40,
+  "left": 16,
+  "right": 16,
+  "top": 14,
+  "bottom": 14,
+  "use": "通用按钮（pressed）；button() / 手机触控按钮"
+ },
+ "btn_disabled": {
+  "w": 96,
+  "h": 40,
+  "left": 16,
+  "right": 16,
+  "top": 14,
+  "bottom": 14,
+  "use": "通用按钮（disabled）；button() / 手机触控按钮"
+ },
+ "btn_close": {
+  "w": 40,
+  "h": 40,
+  "left": 0,
+  "right": 0,
+  "top": 0,
+  "bottom": 0,
+  "use": "面板关闭 ✕（固定尺寸，可 setDisplaySize 等比放大到 48/84）"
+ },
+ "list_row": {
+  "w": 128,
+  "h": 40,
+  "left": 10,
+  "right": 10,
+  "top": 10,
+  "bottom": 10,
+  "use": "商店/技能/任务/传送/存档 列表行"
+ },
+ "list_row_sel": {
+  "w": 128,
+  "h": 40,
+  "left": 10,
+  "right": 10,
+  "top": 10,
+  "bottom": 10,
+  "use": "列表行选中/当前存档/已完成高亮"
+ },
+ "tab_on": {
+  "w": 96,
+  "h": 36,
+  "left": 16,
+  "right": 16,
+  "top": 12,
+  "bottom": 4,
+  "use": "标签页选中（商店 杂货/书店、背包页码、地图分区）"
+ },
+ "tab_off": {
+  "w": 96,
+  "h": 36,
+  "left": 16,
+  "right": 16,
+  "top": 12,
+  "bottom": 4,
+  "use": "标签页未选中"
+ },
+ "bar_frame": {
+  "w": 128,
+  "h": 20,
+  "left": 10,
+  "right": 10,
+  "top": 6,
+  "bottom": 6,
+  "use": "血/蓝/经验/读条/训练进度条框"
+ },
+ "bar_fill_hp": {
+  "w": 8,
+  "h": 14,
+  "left": 2,
+  "right": 2,
+  "top": 0,
+  "bottom": 0,
+  "use": "HP 填充（横向拉伸，宽=当前比例）"
+ },
+ "bar_fill_mp": {
+  "w": 8,
+  "h": 14,
+  "left": 2,
+  "right": 2,
+  "top": 0,
+  "bottom": 0,
+  "use": "MP 填充"
+ },
+ "bar_fill_exp": {
+  "w": 8,
+  "h": 14,
+  "left": 2,
+  "right": 2,
+  "top": 0,
+  "bottom": 0,
+  "use": "经验/读条/进度 填充"
+ },
+ "slot": {
+  "w": 64,
+  "h": 64,
+  "left": 14,
+  "right": 14,
+  "top": 14,
+  "bottom": 14,
+  "use": "技能快捷栏格/药品格/背包格/装备格（品质色由代码叠一层细框或 tint）"
+ },
+ "slot_sel": {
+  "w": 64,
+  "h": 64,
+  "left": 14,
+  "right": 14,
+  "top": 14,
+  "bottom": 14,
+  "use": "格子选中/可用高亮"
+ },
+ "divider_gem": {
+  "w": 12,
+  "h": 12,
+  "left": 0,
+  "right": 0,
+  "top": 0,
+  "bottom": 0,
+  "use": "分隔线中央宝石（固定尺寸，代码叠在 divider 中点）"
+ },
+ "divider": {
+  "w": 128,
+  "h": 8,
+  "left": 40,
+  "right": 40,
+  "top": 0,
+  "bottom": 0,
+  "use": "分隔线（横向拉伸，两端渐隐 40px 不拉伸）"
+ },
+ "scroll_track": {
+  "w": 12,
+  "h": 48,
+  "left": 0,
+  "right": 0,
+  "top": 8,
+  "bottom": 8,
+  "use": "滚动条轨道（纵向拉伸）"
+ },
+ "scroll_thumb": {
+  "w": 12,
+  "h": 32,
+  "left": 0,
+  "right": 0,
+  "top": 8,
+  "bottom": 8,
+  "use": "滚动条滑块"
+ },
+ "touch_round": {
+  "w": 112,
+  "h": 112,
+  "left": 0,
+  "right": 0,
+  "top": 0,
+  "bottom": 0,
+  "use": "手机虚拟摇杆/技能圆钮底（固定比例缩放，图标由代码叠加）"
+ }
+}
