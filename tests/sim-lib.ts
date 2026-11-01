@@ -40,7 +40,7 @@ export const simRun = (c: ClassId, seed: number, maxT = SIM_MAX_T) => {
       const h = w.hero;
       if (!h) { if (process.env.SIMDBG && deathAt.length % (+process.env.SIMDBG > 1 ? +process.env.SIMDBG : 25) === 0) console.log('died', w.floorIndex, 'Lv', w.level, (globalThis as any)._near); deathAt.push({ floor: w.floorIndex, lv: w.level }); learnLog.push(`死@${w.floorIndex + 1}层Lv${w.level}`);
         // fix/sim-baseline：死亡分「无损失 / 有损失」计数（实测复活前后金币、经验、等级、背包、装备，不写死）；只读，不改轨迹
-        const lossKey = () => JSON.stringify([w.gold, w.exp, w.level, w.bag.length, Object.values(w.equip).filter(Boolean).length]); const lk0 = lossKey(); w.respawn(); if (lossKey() === lk0) freeDeaths++; else costDeaths++;
+        const lossKey = () => JSON.stringify([w.gold, w.exp, w.level, w.bag.length, Object.values(w.equip).filter(Boolean).length]); const lk0 = lossKey(); { const df = w.floorIndex; w.respawn(); /* 复活回最近城镇后，sim 玩家走回死亡层继续（与旧「本层起点复活」轨迹一致） */ if (w.town && w.leaveTown(df)) { w.town = null; w.loadFloor(df); } } if (lossKey() === lk0) freeDeaths++; else costDeaths++;
         // 任务 A 后层更长、怪更多，死亡即整层重刷：同层连死 SIM_STUCK 次 → 模拟玩家「回上一层练 1 级再来」（虚拟刷怪，只加经验与估算用时，死亡照常计数）
         const fd = deathAt.filter(d => d.floor === w.floorIndex).length, pk = FLOOR_ORDER.indexOf(w.floorIndex);
         if (fd % SIM_STUCK === 0 && pk > 0) { const pf = FLOOR_ORDER[pk - 1], ids = FLOORS[pf].spawns.map(sp => sp.id).filter(id => ENEMIES[id]?.tier !== 'boss'), lv0 = w.level, spk = 6;

@@ -14,7 +14,7 @@ for (const seed of SEEDS) {
   const floorDeaths: Record<string, number> = {}; const f0 = { t: 0, dmgTaken: 0, hits: 0, pots: 0, deaths: 0, lvOut: 0, kills: 0 };
   while (!w.done && t < 7200) {
     const h = w.hero;
-    if (!h) { const n = FLOORS[w.floorIndex].name; floorDeaths[n] = (floorDeaths[n] ?? 0) + 1; if (w.floorIndex === 0) f0.deaths++; w.respawn(); continue; }
+    if (!h) { const n = FLOORS[w.floorIndex].name; floorDeaths[n] = (floorDeaths[n] ?? 0) + 1; if (w.floorIndex === 0) f0.deaths++; { const df = w.floorIndex; w.respawn(); /* 复活回最近城镇后，sim 玩家走回死亡层继续（与旧「本层起点复活」轨迹一致） */ if (w.town && w.leaveTown(df)) { w.town = null; w.loadFloor(df); } } continue; }
     if (h.hp < h.maxHp * 0.4 && w.usePotion(w.pots[1] > 0 ? 1 : 0)) { potUsed++; if (w.floorIndex === 0) f0.pots++; }
     if ((h.mp ?? 0) < 40) w.usePotion(w.pots[3] > 0 ? 3 : 2);
     for (let i = 0; i < w.skills.length; i++) { if (w.skills[i].id === 'charm' && !w.charmAutoOk()) continue; w.cast(i, cds); }
