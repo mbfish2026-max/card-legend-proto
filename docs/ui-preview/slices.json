@@ -1,21 +1,24 @@
 {
  "panel_frame": {
-  "w": 192,
-  "h": 192,
+  "w": 144,
+  "h": 144,
   "left": 52,
   "right": 52,
   "top": 52,
   "bottom": 52,
-  "use": "全屏大面板底+框（Panel 1000×500、存档 1000×640、设置 640×580）"
+  "use": "全屏大面板底+框（Panel 1000×500、存档 1000×640、设置 640×580）",
+  "fixed": false
  },
  "dialog_frame": {
-  "w": 128,
-  "h": 128,
+  "w": 92,
+  "h": 92,
   "left": 34,
   "right": 34,
   "top": 34,
   "bottom": 34,
-  "use": "小窗弹框/确认框/传送员面板"
+  "use": "小窗弹框/确认框/传送员面板",
+  "fixed": false,
+  "dom": true
  },
  "title_plate": {
   "w": 160,
@@ -24,7 +27,8 @@
   "right": 24,
   "top": 12,
   "bottom": 12,
-  "use": "面板标题底牌、HUD 地图名牌（Hud.ts 1130,36 270×46）"
+  "use": "面板标题底牌、HUD 地图名牌（Hud.ts 1130,36 270×46）",
+  "fixed": false
  },
  "inset_frame": {
   "w": 64,
@@ -33,7 +37,8 @@
   "right": 12,
   "top": 12,
   "bottom": 12,
-  "use": "子区域内框：人物展示框、列表容器、对比面板列"
+  "use": "子区域内框：人物展示框、列表容器、对比面板列",
+  "fixed": false
  },
  "tooltip_frame": {
   "w": 48,
@@ -42,7 +47,9 @@
   "right": 10,
   "top": 10,
   "bottom": 10,
-  "use": "物品提示框/装备对比框（原 0x05060c + 灰边）"
+  "use": "物品提示框/装备对比框（原 0x05060c + 灰边）",
+  "fixed": false,
+  "dom": true
  },
  "btn_normal": {
   "w": 96,
@@ -51,7 +58,9 @@
   "right": 16,
   "top": 14,
   "bottom": 14,
-  "use": "通用按钮（normal）；button() / 手机触控按钮"
+  "use": "通用按钮（normal）；button() / 手机触控按钮",
+  "fixed": false,
+  "dom": true
  },
  "btn_hover": {
   "w": 96,
@@ -60,7 +69,9 @@
   "right": 16,
   "top": 14,
   "bottom": 14,
-  "use": "通用按钮（hover）；button() / 手机触控按钮"
+  "use": "通用按钮（hover）；button() / 手机触控按钮",
+  "fixed": false,
+  "dom": true
  },
  "btn_pressed": {
   "w": 96,
@@ -69,7 +80,9 @@
   "right": 16,
   "top": 14,
   "bottom": 14,
-  "use": "通用按钮（pressed）；button() / 手机触控按钮"
+  "use": "通用按钮（pressed）；button() / 手机触控按钮",
+  "fixed": false,
+  "dom": true
  },
  "btn_disabled": {
   "w": 96,
@@ -78,7 +91,9 @@
   "right": 16,
   "top": 14,
   "bottom": 14,
-  "use": "通用按钮（disabled）；button() / 手机触控按钮"
+  "use": "通用按钮（disabled）；button() / 手机触控按钮",
+  "fixed": false,
+  "dom": true
  },
  "btn_close": {
   "w": 40,
@@ -87,7 +102,9 @@
   "right": 0,
   "top": 0,
   "bottom": 0,
-  "use": "面板关闭 ✕（固定尺寸，可 setDisplaySize 等比放大到 48/84）"
+  "use": "面板关闭 ✕（固定尺寸，可 setDisplaySize 等比放大到 48/84）",
+  "fixed": true,
+  "dom": true
  },
  "list_row": {
   "w": 128,
@@ -96,7 +113,9 @@
   "right": 10,
   "top": 10,
   "bottom": 10,
-  "use": "商店/技能/任务/传送/存档 列表行"
+  "use": "商店/技能/任务/传送/存档 列表行",
+  "fixed": false,
+  "dom": true
  },
  "list_row_sel": {
   "w": 128,
@@ -105,7 +124,9 @@
   "right": 10,
   "top": 10,
   "bottom": 10,
-  "use": "列表行选中/当前存档/已完成高亮"
+  "use": "列表行选中/当前存档/已完成高亮",
+  "fixed": false,
+  "dom": true
  },
  "tab_on": {
   "w": 96,
@@ -114,7 +135,9 @@
   "right": 16,
   "top": 12,
   "bottom": 4,
-  "use": "标签页选中（商店 杂货/书店、背包页码、地图分区）"
+  "use": "标签页选中（商店 杂货/书店、背包页码、地图分区）",
+  "fixed": false,
+  "dom": true
  },
  "tab_off": {
   "w": 96,
@@ -123,7 +146,9 @@
   "right": 16,
   "top": 12,
   "bottom": 4,
-  "use": "标签页未选中"
+  "use": "标签页未选中",
+  "fixed": false,
+  "dom": true
  },
  "bar_frame": {
   "w": 128,
@@ -132,7 +157,9 @@
   "right": 10,
   "top": 6,
   "bottom": 6,
-  "use": "血/蓝/经验/读条/训练进度条框"
+  "use": "血/蓝/经验/读条/训练进度条框",
+  "fixed": false,
+  "dom": true
  },
  "bar_fill_hp": {
   "w": 8,
@@ -141,7 +168,9 @@
   "right": 2,
   "top": 0,
   "bottom": 0,
-  "use": "HP 填充（横向拉伸，宽=当前比例）"
+  "use": "HP 填充（横向拉伸，宽=当前比例）",
+  "fixed": false,
+  "dom": true
  },
  "bar_fill_mp": {
   "w": 8,
@@ -150,7 +179,9 @@
   "right": 2,
   "top": 0,
   "bottom": 0,
-  "use": "MP 填充"
+  "use": "MP 填充",
+  "fixed": false,
+  "dom": true
  },
  "bar_fill_exp": {
   "w": 8,
@@ -159,7 +190,9 @@
   "right": 2,
   "top": 0,
   "bottom": 0,
-  "use": "经验/读条/进度 填充"
+  "use": "经验/读条/进度 填充",
+  "fixed": false,
+  "dom": true
  },
  "slot": {
   "w": 64,
@@ -168,7 +201,8 @@
   "right": 14,
   "top": 14,
   "bottom": 14,
-  "use": "技能快捷栏格/药品格/背包格/装备格（品质色由代码叠一层细框或 tint）"
+  "use": "技能快捷栏格/药品格/背包格/装备格（品质色由代码叠一层细框或 tint）",
+  "fixed": false
  },
  "slot_sel": {
   "w": 64,
@@ -177,7 +211,8 @@
   "right": 14,
   "top": 14,
   "bottom": 14,
-  "use": "格子选中/可用高亮"
+  "use": "格子选中/可用高亮",
+  "fixed": false
  },
  "divider_gem": {
   "w": 12,
@@ -186,7 +221,8 @@
   "right": 0,
   "top": 0,
   "bottom": 0,
-  "use": "分隔线中央宝石（固定尺寸，代码叠在 divider 中点）"
+  "use": "分隔线中央宝石（固定尺寸，代码叠在 divider 中点）",
+  "fixed": true
  },
  "divider": {
   "w": 128,
@@ -195,7 +231,8 @@
   "right": 40,
   "top": 0,
   "bottom": 0,
-  "use": "分隔线（横向拉伸，两端渐隐 40px 不拉伸）"
+  "use": "分隔线（横向拉伸，两端渐隐 40px 不拉伸）",
+  "fixed": false
  },
  "scroll_track": {
   "w": 12,
@@ -204,7 +241,8 @@
   "right": 0,
   "top": 8,
   "bottom": 8,
-  "use": "滚动条轨道（纵向拉伸）"
+  "use": "滚动条轨道（纵向拉伸）",
+  "fixed": false
  },
  "scroll_thumb": {
   "w": 12,
@@ -213,7 +251,8 @@
   "right": 0,
   "top": 8,
   "bottom": 8,
-  "use": "滚动条滑块"
+  "use": "滚动条滑块",
+  "fixed": false
  },
  "touch_round": {
   "w": 112,
@@ -222,7 +261,9 @@
   "right": 0,
   "top": 0,
   "bottom": 0,
-  "use": "手机虚拟摇杆/技能圆钮底（固定比例缩放，图标由代码叠加）"
+  "use": "手机虚拟摇杆/技能圆钮底（固定比例缩放，图标由代码叠加）",
+  "fixed": true,
+  "dom": true
  },
  "orb_frame": {
   "w": 128,
@@ -231,7 +272,8 @@
   "right": 0,
   "top": 0,
   "bottom": 0,
-  "use": "HUD 血球/蓝球外框（固定比例；内圆可用区 圆心(64,64) 半径 52）"
+  "use": "HUD 血球/蓝球外框（固定比例；内圆可用区 圆心(64,64) 半径 52）",
+  "fixed": true
  },
  "orb_glass": {
   "w": 128,
@@ -240,7 +282,8 @@
   "right": 0,
   "top": 0,
   "bottom": 0,
-  "use": "血/蓝球玻璃高光层（叠在填充之上、orb_frame 之下或之上均可）"
+  "use": "血/蓝球玻璃高光层（叠在填充之上、orb_frame 之下或之上均可）",
+  "fixed": true
  },
  "divider_v": {
   "w": 8,
@@ -249,7 +292,8 @@
   "right": 0,
   "top": 40,
   "bottom": 40,
-  "use": "竖分隔线（对比面板两列之间；纵向拉伸，两端 40px 渐隐不拉伸；中点可叠 divider_gem）"
+  "use": "竖分隔线（对比面板两列之间；纵向拉伸，两端 40px 渐隐不拉伸；中点可叠 divider_gem）",
+  "fixed": false
  },
  "panel_frame_s": {
   "w": 96,
@@ -258,7 +302,9 @@
   "right": 20,
   "top": 20,
   "bottom": 20,
-  "use": "手机小屏面板/小弹窗：角饰 24px，边距 20，适合 ≤ 390 高的屏幕和半屏面板"
+  "use": "手机小屏面板/小弹窗：角饰 24px，边距 20，适合 ≤ 390 高的屏幕和半屏面板",
+  "fixed": false,
+  "dom": true
  },
  "lingfu_icon_s": {
   "w": 32,
@@ -267,7 +313,8 @@
   "right": 0,
   "top": 0,
   "bottom": 0,
-  "use": "灵符货币小图标 32×32（价格旁、顶栏余额）"
+  "use": "灵符货币小图标 32×32（价格旁、顶栏余额）",
+  "fixed": true
  },
  "lingfu_icon_l": {
   "w": 96,
@@ -276,7 +323,8 @@
   "right": 0,
   "top": 0,
   "bottom": 0,
-  "use": "灵符货币大图标 96×96（充值档位卡、获得弹窗）"
+  "use": "灵符货币大图标 96×96（充值档位卡、获得弹窗）",
+  "fixed": true
  },
  "ribbon_limited": {
   "w": 112,
@@ -285,7 +333,8 @@
   "right": 24,
   "top": 0,
   "bottom": 0,
-  "use": "限时/热卖丝带（横向拉伸，燕尾两端 24px 不拉伸；文字代码渲染）"
+  "use": "限时/热卖丝带（横向拉伸，燕尾两端 24px 不拉伸；文字代码渲染）",
+  "fixed": false
  },
  "badge_corner": {
   "w": 40,
@@ -294,34 +343,38 @@
   "right": 0,
   "top": 0,
   "bottom": 0,
-  "use": "商品格右上红色斜角丝带（不含文字），按 80 格原尺寸设计；setOrigin(1,0) 贴格子右上角，随格子等比 setDisplaySize(size/2)"
+  "use": "商品格右上红色斜角丝带（不含文字），按 80 格原尺寸设计；setOrigin(1,0) 贴格子右上角，随格子等比 setDisplaySize(size/2)",
+  "fixed": true
  },
  "recharge_card_normal": {
-  "w": 128,
-  "h": 160,
+  "w": 80,
+  "h": 100,
   "left": 30,
   "right": 30,
   "top": 30,
   "bottom": 30,
-  "use": "充值档位卡底（常态）；图标/价格/赠送文字由代码叠加"
+  "use": "充值档位卡底（常态）；图标/价格/赠送文字由代码叠加",
+  "fixed": false
  },
  "recharge_card_sel": {
-  "w": 128,
-  "h": 160,
+  "w": 80,
+  "h": 100,
   "left": 30,
   "right": 30,
   "top": 30,
   "bottom": 30,
-  "use": "充值档位卡底（选中）；图标/价格/赠送文字由代码叠加"
+  "use": "充值档位卡底（选中）；图标/价格/赠送文字由代码叠加",
+  "fixed": false
  },
  "recharge_card_rec": {
-  "w": 128,
-  "h": 160,
+  "w": 80,
+  "h": 100,
   "left": 30,
   "right": 30,
   "top": 30,
   "bottom": 30,
-  "use": "充值档位卡底（推荐）；图标/价格/赠送文字由代码叠加"
+  "use": "充值档位卡底（推荐）；图标/价格/赠送文字由代码叠加",
+  "fixed": false
  },
  "goods_slot_normal": {
   "w": 80,
@@ -330,7 +383,8 @@
   "right": 20,
   "top": 20,
   "bottom": 20,
-  "use": "灵符商城/商店商品格（常态）：7px 铜金粗边+四角金三角角饰（10px）+不透明深色内底；对齐用户参考图；图标居中叠加"
+  "use": "灵符商城/商店商品格（常态）：7px 铜金粗边+四角金三角角饰（10px）+不透明深色内底；对齐用户参考图；图标居中叠加",
+  "fixed": false
  },
  "goods_slot_sel": {
   "w": 80,
@@ -339,7 +393,8 @@
   "right": 20,
   "top": 20,
   "bottom": 20,
-  "use": "灵符商城/商店商品格（选中）：7px 铜金粗边+四角金三角角饰（10px）+不透明深色内底；对齐用户参考图；图标居中叠加"
+  "use": "灵符商城/商店商品格（选中）：7px 铜金粗边+四角金三角角饰（10px）+不透明深色内底；对齐用户参考图；图标居中叠加",
+  "fixed": false
  },
  "goods_slot_soldout": {
   "w": 80,
@@ -348,7 +403,8 @@
   "right": 20,
   "top": 20,
   "bottom": 20,
-  "use": "灵符商城/商店商品格（售罄）：7px 铜金粗边+四角金三角角饰（10px）+不透明深色内底；对齐用户参考图；图标居中叠加"
+  "use": "灵符商城/商店商品格（售罄）：7px 铜金粗边+四角金三角角饰（10px）+不透明深色内底；对齐用户参考图；图标居中叠加",
+  "fixed": false
  },
  "slot_bloodstone": {
   "w": 64,
@@ -357,7 +413,8 @@
   "right": 0,
   "top": 0,
   "bottom": 0,
-  "use": "装备栏血石位空槽（与 slot 同 64 体系；中央暗纹宝石，等比缩放，不走九宫格）"
+  "use": "装备栏血石位空槽（与 slot 同 64 体系；中央暗纹宝石，等比缩放，不走九宫格）",
+  "fixed": true
  },
  "qframe_common": {
   "w": 32,
@@ -366,7 +423,8 @@
   "right": 5,
   "top": 5,
   "bottom": 5,
-  "use": "品质框·普通（rarity=common）；细边 3px+内光，中心透明，叠在 slot/goods_slot 或图标之上，任意尺寸 nineslice"
+  "use": "品质框·普通（rarity=common）；细边 3px+内光，中心透明，叠在 slot/goods_slot 或图标之上，任意尺寸 nineslice",
+  "fixed": false
  },
  "qframe_magic": {
   "w": 32,
@@ -375,7 +433,8 @@
   "right": 5,
   "top": 5,
   "bottom": 5,
-  "use": "品质框·精良（rarity=magic）；细边 3px+内光，中心透明，叠在 slot/goods_slot 或图标之上，任意尺寸 nineslice"
+  "use": "品质框·精良（rarity=magic）；细边 3px+内光，中心透明，叠在 slot/goods_slot 或图标之上，任意尺寸 nineslice",
+  "fixed": false
  },
  "qframe_rare": {
   "w": 32,
@@ -384,7 +443,8 @@
   "right": 5,
   "top": 5,
   "bottom": 5,
-  "use": "品质框·极品（rarity=rare）；细边 3px+内光，中心透明，叠在 slot/goods_slot 或图标之上，任意尺寸 nineslice"
+  "use": "品质框·极品（rarity=rare）；细边 3px+内光，中心透明，叠在 slot/goods_slot 或图标之上，任意尺寸 nineslice",
+  "fixed": false
  },
  "lingfu_icon_xs": {
   "w": 16,
@@ -393,6 +453,27 @@
   "right": 0,
   "top": 0,
   "bottom": 0,
-  "use": "价格前小灵符（显示 16~20px，与 12~16px 价格字等高）"
+  "use": "价格前小灵符（显示 16~20px，与 12~16px 价格字等高）",
+  "fixed": true
+ },
+ "orb_fill_red": {
+  "w": 64,
+  "h": 64,
+  "left": 0,
+  "right": 0,
+  "top": 0,
+  "bottom": 0,
+  "fixed": true,
+  "use": "血球液面（红/血）圆盘，半径 32；显示直径=球显示直径×104/128，按水位 setCrop 从上裁；层序 2"
+ },
+ "orb_fill_blue": {
+  "w": 64,
+  "h": 64,
+  "left": 0,
+  "right": 0,
+  "top": 0,
+  "bottom": 0,
+  "fixed": true,
+  "use": "血球液面（蓝/魔）圆盘，半径 32；显示直径=球显示直径×104/128，按水位 setCrop 从上裁；层序 2"
  }
 }
