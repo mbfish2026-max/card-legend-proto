@@ -7,7 +7,9 @@
 - e2e：hotbar-click「点击药水格 = 按 1」在 main/potion-expand 上失败的根因是 fix/town-hot 后城内 HoT 0.5s 即结算清空，断言「HoT 入队数不减」过时；改为「HoT 入队或 HP 回升」。
 - 太阳水瞬回走 heal 事件，显示「+N」回血飘字。
 - e2e：balance-battle 蓝药改按 2（3 = 太阳水格）；新增 tests/e2e/potion-combat-verify.mjs（键盘/点格用选中药、太阳水瞬回飘字，截图 docs/shots/potion-combat/）。
-- 测试：tests/potion-combat.test.ts（24 项）。
+- 测试：tests/potion-combat.test.ts（28 项）。
+- 第 5 轮调参（魔兽授权改价格）：强效金创药 180→360 金；强效红蓝/太阳水/强效太阳水包门槛统一 Lv40。9 种子战士 40–50 63→47、道士 27→25 达标，法师 4→33 仍未达标（价格杠杆无效，见 docs §9.5）。
+- 桌面提示「药水 1-3」；药水拾取 999 上限拒收。
 
 ## 药水扩展（feat/potion-expand，未合 main）
 - 数据（P1）：POTIONS 只在末尾追加 hp_big 强效金创药（HP560，180 金，Lv22）、mp_big 强效魔法药（MP900，180 金，Lv22）、sun 太阳水（HP180+MP240，300 金，Lv22）、sun_big 强效太阳水（HP300+MP480，600 金，Lv35，只卖捆）。旧 4 种的 index 和 key 不变。旧 key hp_strong/mp_strong/sun_water 合并到 hp_big/mp_big/sun，读档时迁移，瓶数不丢。

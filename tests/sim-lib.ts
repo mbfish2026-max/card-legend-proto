@@ -12,6 +12,8 @@ import { ENEMIES } from '../src/data/units';
 import { POTIONS } from '../src/data/skills';
 // ===== feat/potion-combat 补给/用药策略（SIM_POT=1 开；默认关 = potion-expand 原轨迹）=====
 const POTC = !!process.env.SIM_POT;
+if (process.env.SIM_HPBIG_PRICE) POTIONS[4].price = +process.env.SIM_HPBIG_PRICE; // 调参临时杠杆（定值后写回 skills.ts）
+if (process.env.SIM_SUNBIG_PRICE) POTIONS[7].price = +process.env.SIM_SUNBIG_PRICE;
 const SUN_HP = +(process.env.SIM_SUN_HP ?? 0.3), SUN_CAP = +(process.env.SIM_SUN_CAP ?? 2), POT_LV = +(process.env.SIM_POT_LV ?? 0); // POT_LV：模拟玩家从几级起改买强效/太阳水（0 = 药店门槛）
 /** 每格选「有货里最强」那种（玩家习惯：长按换成最好的药） */
 function potSelBest(w: any) { for (const [slot, items] of [[0, ['hp_big', 'hp_mid', 'hp_small']], [1, ['mp_big', 'mp_mid', 'mp_small']], [2, ['sun_big', 'sun']]] as [number, string[]][]) {

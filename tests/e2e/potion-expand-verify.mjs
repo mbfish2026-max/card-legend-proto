@@ -76,9 +76,9 @@ try {
     await p.evaluate(() => window.__game.scene.getScene('UI').panel.close()); await sleep(400);
     // ④ 药店购买（比奇药店）
     await p.evaluate(() => window.__game.scene.getScene('UI').panel.openNpc('bq_potion')); await sleep(800);
-    const locked = await findPos(p, 'UI', '强效太阳水包 需Lv35'); 
+    const locked = await findPos(p, 'UI', '强效太阳水包 需Lv40'); 
     if (!locked) { await p.evaluate(() => { const P = window.__game.scene.getScene('UI').panel; for (const k of Object.keys(P.npcScroll)) P.npcScroll[k] = 99; P.render(); }); await sleep(400); }
-    chk(!!(await findPos(p, 'UI', '强效太阳水包 需Lv35')), `${tag} 强效太阳水包 Lv35 门槛灰显`);
+    chk(!!(await findPos(p, 'UI', '强效太阳水包 需Lv40')), `${tag} 强效太阳水包 Lv40 门槛灰显`);
     const findBuy = () => p.evaluate(() => { const U = window.__game.scene.getScene('UI'), all = []; const walk = l => l.forEach(o => { if (o.type === 'Text' && o.visible) all.push(o); if (o.list) walk(o.list); }); walk(U.children.list);
       const nm = all.find(o => o.text === '超级金创药'); if (!nm) return null; const y = nm.getBounds().centerY; const bt = all.filter(o => o.text === '购买' && Math.abs(o.getBounds().centerY - y) < 24).sort((a, b) => Math.abs(a.getBounds().centerX - nm.getBounds().centerX) - Math.abs(b.getBounds().centerX - nm.getBounds().centerX))[0];
       if (!bt) return null; const c = bt.getBounds(), cv = window.__game.canvas.getBoundingClientRect(), wv = U.cameras.main.worldView; return { x: cv.left + (c.centerX - wv.x) * cv.width / wv.width, y: cv.top + (c.centerY - wv.y) * cv.height / wv.height }; });
