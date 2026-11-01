@@ -20,9 +20,9 @@ try {
     await page.waitForFunction(() => window.__game.scene.getScene('Battle')?.world?.hero, { timeout: 60000 }); await sleep(1500);
     await page.evaluate(() => window.__game.scene.getScene('Battle').openPanel('bag')); await sleep(800);
     const step = async (name) => { await sleep(400); const st = await state(page); r.steps.push({ name, ...st }); await page.screenshot({ path: `${dir}/tapclose-${name}-${vw}.png` }); return st; };
-    // 背包第 1 格（好铁剑）：EQUIP_SLOTS 9 个在前
-    const sl = await slots(page); ok(sl.length >= 11, `${vw} 找到 ${sl.length} 个格子`); // 原脚本漏了这一行（sl 未定义）
-    const s0 = sl[9], s1 = sl[10];
+    // 背包第 1 格（好铁剑）：EQUIP_SLOTS 10 个在前（灵符商城加了血石栏 stone）
+    const sl = await slots(page); ok(sl.length >= 12, `${vw} 找到 ${sl.length} 个格子`); // 原脚本漏了这一行（sl 未定义）
+    const s0 = sl[10], s1 = sl[11];
     if (touch) {
       { const st = await (await page.touchscreen.tap(s0.x, s0.y), step('1-open')); ok(st.tip, '844 点格子 → 对比面板打开'); }
       const pb = await page.evaluate(() => { const t = window.__game.scene.getScene('UI').panel.tip, s = window.__game.scene.getScene('UI'), cv = window.__game.canvas.getBoundingClientRect(), wv = s.cameras.main.worldView, bb = t.getBounds(); return { x: cv.left + (bb.centerX - wv.x) * cv.width / wv.width, y: cv.top + (bb.bottom - 20 - wv.y) * cv.height / wv.height }; });
