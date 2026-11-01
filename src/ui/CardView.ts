@@ -149,13 +149,13 @@ export class CardView extends Phaser.GameObjects.Container {
     this.hpFill.width = Math.max(0, this.barW * Math.max(0, this.unit.hp) / this.unit.maxHp);
   }
   private nameKey = ''; private barH = 0;
-  /** 名字：召唤物「骷髅·3级（道士）的宠物」按卡宽自适应（缩字号→两行→截断），底边贴血条上沿向上排，不压血条/等级圆标 */
+  /** 名字：召唤物「骷髅·3级 道士的宠物」按卡宽自适应（缩字号→两行→截断），底边贴血条上沿向上排，不压血条/等级圆标 */
   private relabel() {
     const u = this.unit, t = this.nameText; this.nameKey = u.name + '|' + !!u.sBase;
     t.setColor(u.nameColor ?? '#fff');
     if (!u.sBase) { t.setFontSize(12).setOrigin(1, 0).setPosition(this.w / 2 - 4, -this.barH + 3).setText(u.name); return; }
     const own = u.name.startsWith(u.sBase.name + '·') ? u.name.slice(u.sBase.name.length + 1) : '';
-    const m = /^(\d+)级（(.*)）的宠物$/.exec(own), parts = m ? summonNameParts(u.sBase.name, +m[1], m[2]) : [u.name, ''] as [string, string];
+    const m = /^(\d+)级 (.*)的宠物$/.exec(own), parts = m ? summonNameParts(u.sBase.name, +m[1], m[2]) : [u.name, ''] as [string, string];
     const f = fitSummonName(parts, (x, sz) => t.setFontSize(sz).setText(x).width, IS_MOBILE ? { max: 14, min: 12, maxW: this.barW - 10 } : { max: 12, min: 11, maxW: this.barW - 14 });
     t.setFontSize(f.size).setAlign('right').setOrigin(1, 1).setPosition(this.w / 2 - 3, -12).setText(f.lines.filter(Boolean).join('\n'));
   }
