@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 药水扩展（feat/potion-expand，未合 main）
+- 数据（P1）：POTIONS 只在末尾追加 hp_big 强效金创药（HP560，180 金，Lv22）、mp_big 强效魔法药（MP900，180 金，Lv22）、sun 太阳水（HP180+MP240，300 金，Lv22）、sun_big 强效太阳水（HP300+MP480，600 金，Lv35，只卖捆）。旧 4 种的 index 和 key 不变。旧 key hp_strong/mp_strong/sun_water 合并到 hp_big/mp_big/sun，读档时迁移，瓶数不丢。
+- 药水捆（P2）：8 种捆，每捆 6 瓶，占背包 1 格，最多叠 999。双击解开，散装每种上限 999，放满时拒绝解开，捆也不扣。「超级」只出现在捆名里。
+- 商店（P3）：城内药店散装在上、捆在下，捆价 = 单价×6，等级不够的行灰显「需LvX」。灵符商城不卖药。
+- UI（P5）：桌面和手机的药水栏都只有 3 格（红药/蓝药/太阳水）。短按喝当前选中的药，长按（桌面也可右键）弹出同类药切换（红/蓝：小/中/强效；太阳水：太阳水/强效太阳水），点弹层外关闭。手机格 56px，点击区不重叠。缺图集时回退旧绘制或文字。存档新增 potSel。热键 1–4 不变。
+- API：World.getSelectedPotion(slot)/setSelectedPotion、buyBundle、unbundle、absorbPotionItem；src/data/potions.ts（BUNDLES、POT_SLOTS、migratePots、potShopRows）。
+- 不改战斗：用药仍走 BattleScene.onKey→usePotion，所以太阳水暂时还是 HoT（不是立刻回复），冷却也和旧药一样。P4 用药和 P6 掉落/平衡交给战斗开发，接口见 docs/potion-expand.md §8。
+- 测试：tests/potion-expand.test.ts；e2e tests/e2e/potion-expand-verify.mjs，4 个视口，有图集和无图集都全过，截图在 docs/shots/potion-expand/；potion-clip 和 mobile-panels 的 e2e 改成按 3 格断言。9 种子 sim（战/法/道）和 main 逐行一致。
+
 ## 药水扩展方案文档（feat/potion-doc，只出文档）
 - docs/potion-expand.md：强效药、太阳水/强效太阳水、6 瓶捆与双击解包、商店掉落、平衡评估方案、存档兼容、实现拆分；art-requests 追加 P1 药水图标。
 

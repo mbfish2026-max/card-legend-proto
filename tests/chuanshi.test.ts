@@ -144,7 +144,9 @@ for (const c of Object.keys(CS) as ClassId[]) for (const id of CS[c]) {
 }
 { // R54 快捷栏点击 = 按键（同一处理函数），且拦截穿透
   const hud = readFileSync('src/ui/Hud.ts', 'utf8'), mh = readFileSync('src/ui/MobileHud.ts', 'utf8');
-  ok(/'potSlot' \+ i[\s\S]{0,300}stopPropagation\(\)[\s\S]{0,80}onSkill\(p\.key\)/.test(hud), '桌面药水格点击 → stopPropagation + onSkill(同按键)');
+  { // feat/potion-expand：药水格移到 potBar.ts（3 格 + 长按换药），短按仍转发 onSkill(选中药的按键)
+    const pb = readFileSync('src/ui/potBar.ts', 'utf8');
+    ok(/new PotBarDesk\(s, onSkill\)/.test(hud) && /'potSlot' \+ i[\s\S]{0,600}stopPropagation\(\)[\s\S]{0,1500}this\.use\(i\)/.test(pb) && /use\(slot: number\)[^\n]*onUse\?\.\(POTIONS\[selIdx\(/.test(pb), '桌面药水格点击 → stopPropagation + onSkill(同按键)'); }
   ok(/stopPropagation\(\)[\s\S]{0,120}onSkill\(/.test(hud.replace(/'potSlot'[\s\S]*$/, '')) || /skSlot/.test(hud), '桌面技能格点击 → onSkill(同按键)');
   ok(/touchstart[\s\S]{0,400}mousedown/.test(mh) && /b\.onKey\(/.test(mh), '手机 HUD tap 拦截 touch/mouse 并调用 BattleScene.onKey');
 }
