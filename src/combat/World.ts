@@ -720,18 +720,25 @@ export class World {
   }
   /** 血石参数 [适配]（官方：每秒 HP10/MP15，扣储量，耗尽消失；本作按 docs/lingfu-shop.md §3.3 加快节奏，见 §10.6） */
   static STONE = { hpAt: 0.6, mpAt: 0.4, pct: 0.15, cd: 2 };
+  /** 小血石（用户决定）：无等级限制、新手可戴；为保持 1–39 难度指纹，按官方节奏每秒 HP+10 / MP+15（固定量，不按上限百分比），阈值同上 [适配] */
+  static STONE_S = { hpAt: 0.6, mpAt: 0.4, hp: 10, mp: 15, cd: 1 };
+  /** 战斗侧佩戴等级覆盖：小血石免等级（商城 catalog 里 req=30 由系统开发改，见 docs §10.6） */
+  static STONE_REQ: Record<string, number> = { stone_s: 1 };
+  /** 物品有效佩戴等级 */
+  reqOf(it: InvItem) { return World.STONE_REQ[it.item] ?? it.req; }
   stoneHpReady = 0; stoneMpReady = 0;
   /** 血石：野外（含战斗/BOSS 房）HP<60% 或 MP<40% 时从储量补 15% 上限，HP/MP 各 2 秒冷却；手动药水优先（药水缓回中或药水冷却中不触发）。城内不生效（安全区 + 进城满血） */
   tickStone() {
-    const h = this.hero, s = this.equip.stone, c = s?.charge, K = World.STONE;
-    if (!h || !h.alive || this.town || !s || !c || this.level < (s.req ?? 0)) return;
+    const h = this.hero, s = this.equip.stone, c = s?.charge, small = s?.item === 'stone_s', K = small ? World.STONE_S : World.STONE;
+    if (!h || !h.alive || this.town || !s || !c || this.level < this.reqOf(s)) return;
+    const addHp = small ? World.STONE_S.hp : Math.ceil(h.maxHp * World.STONE.pct), addMp = small ? World.STONE_S.mp : Math.ceil(h.maxMp * World.STONE.pct);
     const hotHp = h.hots?.some(x => x.hp > 0 && x.left > 0), hotMp = h.hots?.some(x => x.mp > 0 && x.left > 0);
     let hp = 0, mp = 0;
     if (c.hp > 0 && h.hp < h.maxHp * K.hpAt && this.time >= this.stoneHpReady && !hotHp && this.time >= (h.potReady ?? 0)) {
-      hp = Math.min(c.hp, Math.ceil(h.maxHp * K.pct), h.maxHp - h.hp); c.hp -= hp; h.hp += hp; this.stoneHpReady = this.time + K.cd;
+      hp = Math.min(c.hp, addHp, h.maxHp - h.hp); c.hp -= hp; h.hp += hp; this.stoneHpReady = this.time + K.cd;
     }
     if (c.mp > 0 && h.maxMp > 0 && (h.mp ?? 0) < h.maxMp * K.mpAt && this.time >= this.stoneMpReady && !hotMp && this.time >= (h.mpReady ?? 0)) {
-      mp = Math.min(c.mp, Math.ceil(h.maxMp * K.pct), h.maxMp - (h.mp ?? 0)); c.mp -= mp; h.mp = (h.mp ?? 0) + mp; this.stoneMpReady = this.time + K.cd;
+      mp = Math.min(c.mp, addMp, h.maxMp - (h.mp ?? 0)); c.mp -= mp; h.mp = (h.mp ?? 0) + mp; this.stoneMpReady = this.time + K.cd;
     }
     if (hp || mp) {
       this.events.push({ type: 'stone', hp, mp });
@@ -852,7 +859,7 @@ export class World {
   equipItem(bagIdx: number, target?: EquipSlot): string | null {
     const it = this.bag[bagIdx]; if (!it) return '没有物品';
     if (!it.slot) return '该物品无法装备';
-    if (this.level < it.req) return `需要等级 ${it.req}`;
+    if (this.level < this.reqOf(it)) return `需要等级 ${this.reqOf(it)}`;
     const cl = ITEMS[it.item]?.cls; if (cl?.length && !cl.includes(this.cls)) return '职业不符';
     const sl = this.targetSlot(it, target); if (!sl) return '部位不符';
     this.bag.splice(bagIdx, 1);

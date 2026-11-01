@@ -13,21 +13,25 @@ const evs = (w: World) => w.drainEvents().filter((e: any) => e.type === 'stone')
 
 // ── 血石
 {
-  const w = mk(); const h = w.hero!; const st = makeShopItem(w, 'stone_s'); w.equip.stone = st;
+  const w = mk(); const h = w.hero!; const st = makeShopItem(w, 'stone_m'); w.equip.stone = st;
   h.hp = Math.floor(h.maxHp * 0.5); h.mp = h.maxMp; w.step(0.05); let e = evs(w);
   const add = Math.ceil(h.maxHp * World.STONE.pct);
-  ok(e.length === 1 && e[0].hp === add && e[0].mp === 0 && st.charge!.hp === 20000 - add && st.charge!.mp === 20000, `HP<60% 触发：+${add}（15% 上限），储量扣减`);
+  ok(e.length === 1 && e[0].hp === add && e[0].mp === 0 && st.charge!.hp === 50000 - add && st.charge!.mp === 50000, `中血石 HP<60% 触发：+${add}（15% 上限），储量扣减`);
   w.step(0.05); ok(evs(w).length === 0, '2 秒冷却内不再触发');
   h.hp = Math.floor(h.maxHp * 0.5); for (let i = 0; i < 45; i++) w.step(0.05); ok(evs(w).length === 1, '冷却结束再次触发');
   h.hp = Math.floor(h.maxHp * 0.7); for (let i = 0; i < 50; i++) w.step(0.05); ok(evs(w).length === 0, 'HP≥60% 不触发');
-  h.mp = Math.floor(h.maxMp * 0.3); h.hp = h.maxHp; w.step(0.05); e = evs(w); ok(e.length === 1 && e[0].mp > 0 && e[0].hp === 0 && st.charge!.mp < 20000, 'MP<40% 触发补蓝');
+  h.mp = Math.floor(h.maxMp * 0.3); h.hp = h.maxHp; w.step(0.05); e = evs(w); ok(e.length === 1 && e[0].mp > 0 && e[0].hp === 0 && st.charge!.mp < 50000, 'MP<40% 触发补蓝');
   // 手动药水优先：喝药后（缓回中/药水冷却中）不触发
   const w2 = mk(); const h2 = w2.hero!; w2.equip.stone = makeShopItem(w2, 'stone_s'); w2.pots[0] = 5; h2.hp = Math.floor(h2.maxHp * 0.3);
   ok(w2.usePotion(0), '喝红药'); w2.step(0.05); ok(evs(w2).length === 0, '药水缓回中血石不触发（手动药水优先）');
   // 城内不生效
   const w3 = mk(); w3.equip.stone = makeShopItem(w3, 'stone_s'); w3.enterTown('xinshou', true); w3.hero!.hp = 1; w3.step(0.05); ok(evs(w3).length === 0 && w3.equip.stone!.charge!.hp === 20000, '城内不生效、不扣储量');
   // 等级不足不生效
-  const w4 = mk('warrior', 20); w4.equip.stone = makeShopItem(w4, 'stone_s'); w4.hero!.hp = 1; w4.step(0.05); ok(evs(w4).length === 0, 'Lv<30 不生效');
+  const w4 = mk('warrior', 20); w4.equip.stone = makeShopItem(w4, 'stone_m'); w4.hero!.hp = 1; w4.step(0.05); ok(evs(w4).length === 0, '中血石 Lv<35 不生效');
+  // 小血石：无等级限制（Lv1 可装备、生效），官方节奏 HP+10 / MP+15 每秒
+  const w7 = mk('warrior', 1); w7.bag.push(makeShopItem(w7, 'stone_s')); ok(w7.equipItem(w7.bag.length - 1) === null && w7.equip.stone?.item === 'stone_s', 'Lv1 可佩戴小血石');
+  const h7 = w7.hero!; h7.hp = Math.floor(h7.maxHp * 0.3); h7.mp = 0; w7.step(0.05); let e7 = evs(w7); ok(e7.length === 1 && e7[0].hp === 10 && e7[0].mp === Math.min(15, h7.maxMp), `Lv1 小血石生效 +${e7[0]?.hp}/+${e7[0]?.mp}`);
+  w7.step(0.05); ok(evs(w7).length === 0, '小血石 1 秒冷却'); for (let i = 0; i < 20; i++) w7.step(0.05); ok(evs(w7).length >= 1, '1 秒后再触发');
   // 储量不足：只补剩余，耗尽保留空石
   const w5 = mk(); const h5 = w5.hero!; const s5 = makeShopItem(w5, 'stone_s'); s5.charge = { hp: 7, mp: 0 }; w5.equip.stone = s5; h5.hp = 10; w5.step(0.05);
   const ev5 = w5.drainEvents(); ok(ev5.some((x: any) => x.type === 'stone' && x.hp === 7) && s5.charge.hp === 0 && w5.equip.stone === s5 && ev5.some((x: any) => x.type === 'log' && /耗尽/.test(x.text)), '储量只补剩余；耗尽保留空石并提示');
