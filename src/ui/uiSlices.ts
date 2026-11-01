@@ -41,3 +41,30 @@ export function nsFrame(o: Phaser.GameObjects.NineSlice, frame: string) {
 
 /** 手机 DOM 2x 图路径（B6 使用；构建版经 assetUrl 映射为无损 webp） */
 export const domUrl = (name: string) => `assets/ui/dom/${name}@2x.png`;
+
+/** B2 面板/弹窗/提示框底：有图集用九宫格 frame（只 setSize），否则（或尺寸小于边距和）退回原矩形 fb。
+ *  ox/oy 为原点（与原 rectangle 的 setOrigin 一致）。返回的对象可照常 setInteractive / setName / setDepth */
+export interface RectFallback { fill: number; alpha?: number; stroke?: number; sw?: number; strokeAlpha?: number }
+export function frameBg(s: Phaser.Scene, frame: string, x: number, y: number, w: number, h: number, fb: RectFallback, ox = 0.5, oy = 0.5): Phaser.GameObjects.NineSlice | Phaser.GameObjects.Rectangle {
+  const d = UI_SLICES[frame];
+  const o = d && w >= d.left + d.right && h >= d.top + d.bottom ? ns(s, frame, x, y, w, h) : null;
+  if (o) return o.setOrigin(ox, oy);
+  const r = s.add.rectangle(x, y, w, h, fb.fill, fb.alpha ?? 1).setOrigin(ox, oy);
+  if (fb.stroke !== undefined) r.setStrokeStyle(fb.sw ?? 1, fb.stroke, fb.strokeAlpha ?? 1);
+  return r;
+}
+
+/** 手机列表行：行高不低于 44 CSS px；行内按钮点击区 ≥36 CSS px 且不超过行距（相邻行不重叠）。
+ *  cssPerUnit = 每个面板坐标单位对应的 CSS 像素（视口缩放 × 面板容器缩放） */
+export const MOBILE_ROW_CSS = 44;
+export function listRowPitch(mobile: boolean, base: number, cssPerUnit: number): number {
+  return mobile ? Math.max(base, Math.ceil(MOBILE_ROW_CSS / Math.max(cssPerUnit, 0.01))) : base;
+}
+export function rowHitHeight(mobile: boolean, btnH: number, pitch: number, cssPerUnit: number): number {
+  const want = mobile ? Math.max(btnH, MIN_TAP_MOBILE_PHYS / Math.max(cssPerUnit, 0.01)) : Math.max(btnH, MIN_TAP);
+  return Math.min(want, pitch);
+}
+/** 视口 CSS px / 逻辑 px（手机 FIT：逻辑 lw×720） */
+export function viewCss(lw: number): number {
+  return typeof window !== 'undefined' ? Math.min(window.innerHeight / 720, window.innerWidth / (lw || 1280)) || 1 : 1;
+}

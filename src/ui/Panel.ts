@@ -4,7 +4,8 @@ import { COMPANION_MODE_NAME } from '../data/companion';
 import { fmtInt, fmtText, bookEntry } from './fmt';
 import { SKILL_BOOK_DROPS } from '../data/skillBookDrops';
 import { COMPANION_UNLOCK_LEVEL, comboFor, BOOK_PAGE, BRM_BOOK, GOLD_BAR, PAGES_PER_BOOK, COMBO_LEVEL, heartFeedValue, RAGE_MAX, HEART_STORE_MAX, RECRUIT_DIALOG } from '../data/companion';
-import { toLogic, toLogicX, MAX_LW } from '../render';
+import { toLogic, toLogicX, MAX_LW, Render } from '../render';
+import { frameBg, atlasReady, listRowPitch, rowHitHeight, viewCss } from './uiSlices';
 import { compareRows, diffText, CmpData } from './equipCompare';
 import { shouldTapClose } from './tapClose';
 import { RING_MIN_LEVEL, IDENT_PRICE, IDENT_MIN_LEVEL } from '../data/r14b';
@@ -92,8 +93,9 @@ export class Panel {
     R.add(s.add.rectangle(640, 360, MAX_LW, 720, 0x000000, 0.45).setInteractive());
     const W = this.mode === 'settings' ? 640 : 1000, H = this.mode === 'settings' ? 580 : 500, top = Math.max(40, 360 - H / 2);
     // 边框与内容对齐：非设置面板内容从 top 起排到 top+478，边框覆盖 top-20 ~ top+480
-    R.add(s.add.rectangle(640, this.mode === 'settings' ? 300 : top + H / 2 - 20, W, H, 0x15100b, 0.97).setStrokeStyle(3, 0xd4a64a));
+    R.add(frameBg(s, 'panel_frame', 640, this.mode === 'settings' ? 300 : top + H / 2 - 20, W, H, { fill: 0x15100b, alpha: 0.97, stroke: 0xd4a64a, sw: 3 }).setName('panelBg'));
     const titles = { bag: '角色 / 背包', shop: '商人 · 杂货铺', skills: '技能', settings: '设置', map: this.wm.area ? '' : '世界地图', quests: '悬赏 / 成就', town: `${TOWNS[this.world().town ?? 'bichi']?.name ?? '城镇'} · 安全区` };
+    if (titles[this.mode] && atlasReady(s, 'title_plate')) R.add(frameBg(s, 'title_plate', 640, top + 22, Math.max(200, titles[this.mode].length * 26 + 80), 40, { fill: 0 }).setName('titlePlate')); // B2 标题底牌（无图集不画，保持原样）
     R.add(txt(s, 640, top + 22, titles[this.mode], 24, '#ffd24a', { fontStyle: 'bold' }).setOrigin(0.5));
     // 手机：面板整体放大到接近全屏（地图面板自带拖动/缩放坐标换算，不放大）；关闭键加大到 ≥44px
     if (IS_MOBILE && this.mode !== 'map') { const k = Math.min(1280 / W, 700 / H); this.mscale = k; const cy = this.mode === 'settings' ? 300 : top + H / 2 - 20; R.setScale(k).setPosition(640 * (1 - k), cy * (1 - k) + (360 - cy)); } else this.mscale = 1;
@@ -134,7 +136,7 @@ export class Panel {
   private renderEquip(R: Phaser.GameObjects.Container, top: number) {
     const s = this.s, w = this.world(), c = CLASSES[w.cls], cx = 330, size = 60;
     // 中间立绘，左右两列装备栏
-    R.add(s.add.rectangle(cx, top + 210, 170, 260, c.bg).setStrokeStyle(2, 0xb8a070));
+    R.add(s.add.rectangle(cx, top + 210, 170, 260, c.bg)); R.add(frameBg(s, 'inset_frame', cx, top + 210, 170, 260, { fill: 0, alpha: 0, stroke: 0xb8a070, sw: 2 })); // 职业底色保留，内框叠上
     // 装备上身预览：衣服/武器分层合成；缺素材回退原立绘，层图就绪后重绘面板
     const look = equipLook(s, w.cls, c.art, w.equip, () => { if (this.mode === 'bag' && this.root === R) this.render(); });
     if (s.textures.exists(look.key)) { const im = s.add.image(cx, top + 330, look.key).setOrigin(0.5, 1).setName('equipPreview'); im.setScale(Math.min(250 / im.height, 200 / im.width)); R.add(im); }
@@ -302,7 +304,7 @@ export class Panel {
     R.add(txt(s, 160, top + 14, `金币 ${w.gold}   安全区`, 14, '#ffd24a'));
     const cur = this.npcDef(), art = cur && npcArtOf(this.world().town, cur.id, cur.kind);
     if (art && s.textures.exists(art)) R.add(s.add.image(240, top + 400, art).setOrigin(0.5, 1).setDisplaySize(200, 250));
-    else if (cur) { R.add(s.add.rectangle(240, top + 275, 200, 250, 0x2a2018).setStrokeStyle(2, 0x6a5a28)); R.add(txt(s, 240, top + 275, cur.name.replace(/（.*）/, ''), 16, '#ffe8a0').setOrigin(0.5)); }
+    else if (cur) { R.add(frameBg(s, 'inset_frame', 240, top + 275, 200, 250, { fill: 0x2a2018, stroke: 0x6a5a28, sw: 2 })); R.add(txt(s, 240, top + 275, cur.name.replace(/（.*）/, ''), 16, '#ffe8a0').setOrigin(0.5)); }
     R.add([...button(s, 240, top + 448, 170, 36, '回到街上', () => this.close(), 16)]);
     const n = this.npcDef(), X = 340, n0 = n!;
     if (!n) { R.add(txt(s, X, top + 90, `${t.name}\n选择左侧 NPC。\n来源：${t.src}`, 14, '#ddd', { wordWrap: { width: 600 } })); return; }
@@ -311,34 +313,38 @@ export class Panel {
     const cols = new Map<number, { i: number; a: [string, string, string, () => void, boolean, string | undefined, number?] }[]>();
     const row = (i: number, name: string, sub: string, label: string, fn: () => void, ok: boolean, icon?: string, X = 340, nfs = 14) => {
       if (!cols.has(X)) cols.set(X, []); cols.get(X)!.push({ i, a: [name, sub, label, fn, ok, icon, nfs] }); };
+    // B2：手机行距 ≥44 CSS px，行内按钮点击区 ≥36 CSS px 且不超过行距（相邻行不重叠）；可视行数随之减少
+    const cssU = viewCss(Render.lw) * this.mscale, RP = listRowPitch(IS_MOBILE, 50, cssU), ROFF = (RP - 50) * 1.5, VIS = Math.max(4, Math.floor(NPC_VIS * 50 / RP));
     const drawRow = (slot: number, X: number, [name, sub, label, fn, ok, icon, nfs = 14]: [string, string, string, () => void, boolean, string | undefined, number?], scroll: boolean) => {
-      const y = top + 100 + slot * 50;
-      R.add(s.add.rectangle(X + 110, y, 230, 44, 0x0a0806).setStrokeStyle(1, 0x4a3a28));
+      const y = top + 100 + ROFF + slot * RP; // 手机加高行时整体下移 ROFF，首行顶边 ≥ 提示文字底（top+92）
+      R.add(s.add.rectangle(X + 110, y, 230, RP - 6, 0x0a0806).setStrokeStyle(1, 0x4a3a28).setName('listRow'));
       if (icon && s.textures.exists('item_' + icon)) R.add(s.add.image(X + 16, y, 'item_' + icon).setDisplaySize(36, 36));
       R.add(txt(s, X + 40, y - 17, name, nfs, '#fff')); R.add(txt(s, X + 40, y + 2, sub, 11, '#ccc', { strokeThickness: 2 }));
       const b = button(s, X + 196, y, 50, 30, label, fn, 13, ok); R.add([...b]);
+      if (b[0].input) { const hh = rowHitHeight(IS_MOBILE, 30, RP, cssU); (b[0].input.hitArea as Phaser.Geom.Rectangle).setTo(0, (30 - hh) / 2, 50, hh); b[0].setData('rowHit', hh); }
+      b[0].setData('rowPitch', RP).setData('rowHit', b[0].getData('rowHit') ?? Math.min(30, RP));
       // 可滚动列：按下不立即触发，抬起且拖动 ≤ 阈值才算点击（防滚动误触）
       if (scroll && ok) { b[0].removeAllListeners('pointerdown').on('pointerdown', () => { this.tapArm = b[0]; }).on('pointerup', () => { if (this.tapArm === b[0] && isTap(this.drag?.moved ?? 0)) { sfx(s, 'click'); fn(); } this.tapArm = null; }); b[0].setData('scrollBtn', label); }
     };
     const flushCols = () => { for (const [X, list] of cols) {
       const n = list.reduce((m, r) => Math.max(m, r.i + 1), 0), byI = new Map(list.map(r => [r.i, r.a]));
-      if (n <= NPC_VIS) { for (const r of list) drawRow(r.i, X, r.a, false); continue; }
-      const key = `${n0.id}@${X}`, off = this.npcScroll[key] = clampOff(this.npcScroll[key] ?? 0, n, NPC_VIS), [a, b2] = visibleRange(off, n, NPC_VIS);
+      if (n <= VIS) { for (const r of list) drawRow(r.i, X, r.a, false); continue; }
+      const key = `${n0.id}@${X}`, off = this.npcScroll[key] = clampOff(this.npcScroll[key] ?? 0, n, VIS), [a, b2] = visibleRange(off, n, VIS);
       for (let i = a; i < b2; i++) { const r = byI.get(i); if (r) drawRow(i - a, X, r, true); }
-      const trackY = top + 78, trackH = NPC_VIS * 50, th = thumb(off, n, NPC_VIS, trackH);
+      const trackY = top + 78 + ROFF, trackH = VIS * RP, th = thumb(off, n, VIS, trackH);
       R.add(s.add.rectangle(X + 232, trackY + trackH / 2, 6, trackH, 0x332a1c).setName('scrollTrack'));
       R.add(s.add.rectangle(X + 232, trackY + th.y + th.h / 2, 6, th.h, 0xd4a64a).setName('scrollThumb'));
       if (a > 0) R.add(txt(s, X + 110, top + 70, `▲ 上面还有 ${a} 项`, 11, '#ffd060').setOrigin(0.5));
-      if (b2 < n) R.add(txt(s, X + 110, top + 100 + NPC_VIS * 50 - 22, `▼ 下面还有 ${n - b2} 项（滑动/滚轮）`, 11, '#ffd060').setOrigin(0.5));
+      if (b2 < n) R.add(txt(s, X + 110, top + 100 + ROFF + VIS * RP - 22, `▼ 下面还有 ${n - b2} 项（滑动/滚轮）`, 11, '#ffd060').setOrigin(0.5));
       const inCol = (p: Phaser.Input.Pointer) => { const l = this.toPanel(p); return l.x >= X && l.x <= X + 240 && l.y >= trackY && l.y <= trackY + trackH; };
-      const set = (o: number) => { const v = clampOff(o, n, NPC_VIS); if (v !== this.npcScroll[key]) { this.npcScroll[key] = v; this.render(); } };
+      const set = (o: number) => { const v = clampOff(o, n, VIS); if (v !== this.npcScroll[key]) { this.npcScroll[key] = v; this.render(); } };
       const onDown = (p: Phaser.Input.Pointer) => { if (inCol(p)) this.drag = { key, y0: this.toPanel(p).y, off0: off, moved: 0 }; };
-      const onMove = (p: Phaser.Input.Pointer) => { const d = this.drag; if (!d || d.key !== key || !p.isDown) return; const dy = this.toPanel(p).y - d.y0; d.moved = Math.max(d.moved, Math.abs(dy)); if (!isTap(d.moved)) set(dragOff(d.off0, dy, 50, n, NPC_VIS)); };
+      const onMove = (p: Phaser.Input.Pointer) => { const d = this.drag; if (!d || d.key !== key || !p.isDown) return; const dy = this.toPanel(p).y - d.y0; d.moved = Math.max(d.moved, Math.abs(dy)); if (!isTap(d.moved)) set(dragOff(d.off0, dy, RP, n, VIS)); };
       const onUp = () => { s.time.delayedCall(0, () => { this.drag = null; }); };
-      const onWheel = (p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => { if (inCol(p)) set(wheelOff(this.npcScroll[key], dy, n, NPC_VIS)); };
+      const onWheel = (p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => { if (inCol(p)) set(wheelOff(this.npcScroll[key], dy, n, VIS)); };
       s.input.on('pointerdown', onDown); s.input.on('pointermove', onMove); s.input.on('pointerup', onUp); s.input.on('wheel', onWheel);
       this.mapOff.push(() => { s.input.off('pointerdown', onDown); s.input.off('pointermove', onMove); s.input.off('pointerup', onUp); s.input.off('wheel', onWheel); });
-      this.scrollInfo[X] = { key, n, vis: NPC_VIS, off };
+      this.scrollInfo[X] = { key, n, vis: VIS, off };
     } };
     const buy = (e: string | null, nm: string) => { if (!e) sfx(s, 'coin'); this.onChange(e ?? `购买 ${nm}`, !e); this.render(); };
     if (n.kind === 'potion') POTIONS.forEach((p, i) => row(i, ITEMS[p.item].name, `${p.price} 金 · 原版 ${i % 2 ? 242 : 88}（S14）持有 ${w.pots[i]}`, '购买', () => buy(w.buyPotion(i), ITEMS[p.item].name), w.gold >= p.price, p.item));
@@ -463,14 +469,14 @@ export class Panel {
     if (touch) lines.push([this.mode === 'shop' ? '再点一次：出售' : it.slot && this.sel?.startsWith('eq_') ? '再点一次：卸下' : it.slot ? '再点一次：装备' : '不可装备', '#9fd']);
     { const cd = it.slot ? compareRows(it, w.equip) : null; if (cd) { this.showCompare(it, cd, lines.slice(2).filter(([t]) => !/^需要等级|^(生命|魔法值|攻击|魔法|道术|防御|魔御) \+/.test(t)), x, y, touch); return; } }
     const c = this.tip = s.add.container(Math.min(x, 1280 - 230), Math.max(10, Math.min(y, 720 - lines.length * 20 - 20))).setDepth(300);
-    const bg = s.add.rectangle(0, 0, 220, lines.length * 20 + 16, 0x05060c, 0.95).setOrigin(0).setStrokeStyle(2, 0x9a9aa8);
+    const bg = frameBg(s, 'tooltip_frame', 0, 0, 220, lines.length * 20 + 16, { fill: 0x05060c, alpha: 0.95, stroke: 0x9a9aa8, sw: 2 }, 0, 0).setName('tipBg');
     // 背包预览：悬停/选中背包里的衣服或武器时，在提示框旁显示「试穿」效果（不改真实装备）
     if (it.slot === 'armor' || it.slot === 'weapon') {
       const cls = w.cls, art = CLASSES[cls].art, eq = { ...w.equip, [it.slot]: it };
       const look = equipLook(s, cls, art, eq, () => { if (this.tip === c) this.showTip(it, x, y, touch); });
       if (look.state === 'composed') {
         const px = c.x + 220 + 110 > 1280 ? -116 : 226;
-        c.add(s.add.rectangle(px, 0, 110, 150, 0x05060c, 0.95).setOrigin(0).setStrokeStyle(2, 0x9a9aa8));
+        c.add(frameBg(s, 'tooltip_frame', px, 0, 110, 150, { fill: 0x05060c, alpha: 0.95, stroke: 0x9a9aa8, sw: 2 }, 0, 0));
         const im = s.add.image(px + 55, 146, look.key).setOrigin(0.5, 1).setName('bagPreview'); im.setScale(Math.min(140 / im.height, 104 / im.width)); c.add(im);
         c.add(txt(s, px + 55, 4, '试穿', 12, '#9fd', { strokeThickness: 2 }).setOrigin(0.5, 0));
       }
@@ -483,7 +489,7 @@ export class Panel {
     const head = lh + icon + 10, H = pad * 2 + head + cd.rows.length * lh + 8 + extra.length * lh + (cd.other ? lh : 0);
     const px = M ? 640 - W / 2 : Math.max(10, Math.min(x, 1280 - W - 10)), py = M ? Math.max(4, 360 - H / 2) : Math.max(10, Math.min(y, 720 - H - 10));
     const c = this.tip = s.add.container(px, py).setDepth(300).setName('equipCompare');
-    c.add(s.add.rectangle(0, 0, W, H, 0x05060c, 0.96).setOrigin(0).setStrokeStyle(2, 0x9a9aa8));
+    c.add(frameBg(s, 'tooltip_frame', 0, 0, W, H, { fill: 0x05060c, alpha: 0.96, stroke: 0x9a9aa8, sw: 2 }, 0, 0).setName('cmpBg'));
     const col = (cx: number, item: InvItem | null, title: string) => {
       c.add(txt(s, cx, pad, title, fs - 2, '#9fd', { strokeThickness: 2 }));
       const iy = pad + lh; c.add(s.add.rectangle(cx + icon / 2, iy + icon / 2, icon, icon, 0x0a0806).setStrokeStyle(2, item ? RARITY_NUM[item.rarity] : 0x4a3a28));
@@ -493,7 +499,7 @@ export class Panel {
       c.add(txt(s, cx + icon + 8, iy + lh, item ? `${RARITY_CN[item.rarity]} · ${SLOT_NAMES[item.slot!]}` : '未穿戴', fs - 2, '#aaa', { strokeThickness: 2 }));
     };
     col(pad, cd.left, '身上'); col(pad + cw + gap, it, '查看中');
-    c.add(s.add.rectangle(pad + cw + gap / 2, pad, 1, H - pad * 2 - extra.length * lh, 0x555566).setOrigin(0.5, 0));
+    { const dh = H - pad * 2 - extra.length * lh; c.add(atlasReady(s, 'divider_v') && dh >= 80 ? frameBg(s, 'divider_v', pad + cw + gap / 2, pad, 8, dh, { fill: 0x555566 }, 0.5, 0) : s.add.rectangle(pad + cw + gap / 2, pad, 1, dh, 0x555566).setOrigin(0.5, 0)); }
     let yy = pad + head;
     cd.rows.forEach((r, i) => {
       if (i % 2 === 0) c.add(s.add.rectangle(pad, yy - 2, W - pad * 2, lh, 0xffffff, 0.04).setOrigin(0));

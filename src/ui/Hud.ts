@@ -1,3 +1,4 @@
+import { frameBg } from './uiSlices';
 import { fmtExp } from '../data/expCurve';
 import Phaser from 'phaser';
 import { POTIONS, SkillDef } from '../data/skills';
@@ -73,7 +74,7 @@ export class Hud {
     const s = this.s, rows: [string, string][] = [[o.main, '#fff'], [o.layer, '#fff'], [`推荐等级：Lv${o.recLevel}`, '#ffd24a'],
       [`BOSS：${o.bosses.join('、') || '无'}`, '#ff8a8a'], [`精英：${o.elites.join('、') || '无'}`, '#ffb040'], [`怪物：${o.monsters.join('、') || '无'}`, '#ccc'], [o.left, '#9fd'], [o.right, '#9fd']];
     const W = 600, lh = 30, H = 70 + rows.length * lh + 16, c = this.ovw = s.add.container(640 - W / 2, 120).setDepth(250).setName('mapOverview');
-    c.add(s.add.rectangle(0, 0, W, H, 0x05060c, 0.96).setOrigin(0).setStrokeStyle(2, 0xd4a64a).setInteractive());
+    c.add(frameBg(s, 'dialog_frame', 0, 0, W, H, { fill: 0x05060c, alpha: 0.96, stroke: 0xd4a64a, sw: 2 }, 0, 0).setInteractive().setName('ovwBg'));
     c.add(txt(s, W / 2, 16, `当前地图：${o.name}`, 22, '#ffe8a0', { fontStyle: 'bold' }).setOrigin(0.5, 0));
     const close = s.add.rectangle(W - 30, 28, 48, 48, 0x2a1d10).setStrokeStyle(2, 0xb8893a).setInteractive({ useHandCursor: true }).setName('ovwClose');
     close.on('pointerdown', (_p: any, _x: any, _y: any, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); this.toggleOverview(null); });
@@ -81,7 +82,7 @@ export class Hud {
     rows.forEach(([t, col], k) => c.add(txt(s, 20, 66 + k * lh, t, 16, col, { strokeThickness: 2, wordWrap: { width: W - 40 } } as any)));
     if (this.onWorldMap) { const b = s.add.rectangle(W / 2, H + 26, 240, 44, 0x2a1d10).setStrokeStyle(2, 0xb8893a).setInteractive({ useHandCursor: true }).setName('ovwWorld');
       b.on('pointerdown', (_p: any, _x: any, _y: any, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); this.onWorldMap?.(); });
-      c.add([s.add.rectangle(W / 2, H + 26, 600, 60, 0x05060c, 0.96).setStrokeStyle(2, 0xd4a64a), b, txt(s, W / 2, H + 26, '在世界地图中查看', 18, '#ffe8a0').setOrigin(0.5)]); }
+      c.add([frameBg(s, 'panel_frame_s', W / 2, H + 26, 600, 60, { fill: 0x05060c, alpha: 0.96, stroke: 0xd4a64a, sw: 2 }), b, txt(s, W / 2, H + 26, '在世界地图中查看', 18, '#ffe8a0').setOrigin(0.5)]); }
   }
   /** 总览面板「在世界地图中查看」 */
   onWorldMap?: () => void;

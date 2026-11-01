@@ -12,7 +12,7 @@ import { FLOORS, floorNo } from '../data/world';
 import type { SaveData } from '../combat/World';
 import { MUSIC, playMusic } from '../music';
 import { IS_MOBILE } from '../mobile';
-import { ns, nsFrame, minTapHeight, UI_ATLAS, UI_ATLAS_PNG, UI_ATLAS_JSON } from '../ui/uiSlices';
+import { frameBg, ns, nsFrame, minTapHeight, UI_ATLAS, UI_ATLAS_PNG, UI_ATLAS_JSON } from '../ui/uiSlices';
 import { assetUrl } from '../loader';
 
 export const txt = (s: Phaser.Scene, x: number, y: number, t: string, size: number, color = '#fff', extra: Phaser.Types.GameObjects.Text.TextStyle = {}) =>
@@ -107,7 +107,7 @@ export class TitleScene extends Phaser.Scene {
   settings() {
     const L = this.clear();
     const H = 580, top = Math.max(40, 360 - H / 2);
-    L.add(this.add.rectangle(640, 300, 640, H, 0x15100b, 0.97).setStrokeStyle(3, 0xd4a64a));
+    L.add(frameBg(this, 'panel_frame', 640, 300, 640, H, { fill: 0x15100b, alpha: 0.97, stroke: 0xd4a64a, sw: 3 }).setName('panelBg'));
     L.add(txt(this, 640, top + 10, '设置', 24, '#ffd24a', { fontStyle: 'bold' }).setOrigin(0.5).setY(top + 22));
     renderSettingsView(this, L, top, {
       cls: this.setCls, learned: (() => { const sv = SaveStore.load(); if (sv?.cls === this.setCls) return sv.learned ? new Set([...sv.learned, STARTER[this.setCls]]) : undefined; return new Set([STARTER[this.setCls]]); })(), rerender: () => this.settings(), onPickClass: c => { this.setCls = c; this.settings(); },
@@ -117,7 +117,7 @@ export class TitleScene extends Phaser.Scene {
   /** 多存档位：选择/新建/删除（二次确认）/改名；每格显示职业、等级、层数、最后游玩、游玩时长 */
   slotsScreen(note = '', armDel = 0) {
     const L = this.clear(), list = Slots.list(), rowH = Math.min(84, 520 / list.length), top = 110;
-    L.add(this.add.rectangle(640, 395, 1000, 640, 0x15100b, 0.96).setStrokeStyle(3, 0xd4a64a));
+    L.add(frameBg(this, 'panel_frame', 640, 395, 1000, 640, { fill: 0x15100b, alpha: 0.96, stroke: 0xd4a64a, sw: 3 }).setName('panelBg'));
     L.add(txt(this, 640, 98, '存 档 位', 26, '#ffd24a', { fontStyle: 'bold' }).setOrigin(0.5).setName('slots-title'));
     list.forEach((sl, k) => {
       const y = top + 40 + k * rowH + rowH / 2, d = sl.data;

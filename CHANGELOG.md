@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## UI 美术 B2 面板与对话框 feat/ui-art-b02（基于 feat/ui-art-b01 9e8f363；docs/ui-art-integration.md §1 B2）
+- `src/ui/uiSlices.ts`：新增 `frameBg()`。有图集且帧存在时画九宫格（只 setSize，边距从切片表读）；图集被拦、缺帧或尺寸小于边距和时退回原矩形（含描边）。另加 `listRowPitch()` / `rowHitHeight()` / `viewCss()`。
+- Panel.ts：面板底改用 panel_frame，标题用 title_plate（仅有图集时画），角色卡与 NPC 立绘占位用 inset_frame，提示框与装备对比框用 tooltip_frame，对比框分隔线用 divider_v（高度不足时仍用 1px 线）。
+- TitleScene：设置面板和多存档面板改用 panel_frame。Hud：地图总览改用 dialog_frame，底栏改用 panel_frame_s。WorldMapView：确认卡回退时用 dialog_frame（wm_frame 仍优先）。
+- 手机城镇 NPC 列表：行距不低于 44 CSS px，行内按钮点击区不低于 36 CSS px 且不超过行距，相邻行不重叠。可视行数按行距自动减少，整列下移，避免盖住列表提示。滚动条和拖动换算改用新行距。桌面仍是 50 行距、44 点击区。
+- 测试：新增 tests/ui-panels.test.ts（58 项，已加入 npm test）；新增 e2e tests/e2e/ui-panels-verify.mjs（1280×720 和 844×390 触屏，各跑有图集/图集被拦两遍），截图在 docs/shots/ui-art/b02/。
+- 9-seed：sim-band 的 esbuild metafile 共 31 个输入，没有一个是本批改动的文件，战斗结果不受影响。
+
 ## UI 美术 B0 资源管线 + B1 按钮 feat/ui-art-b01（docs/ui-art-integration.md）
 - 合并 origin/art/ui-plan 62d266c（美术2 最终图集）。`scripts/sync-ui-atlas.py`：把 docs/ui-preview/atlas/ui_atlas.{png,json}（512×512，46 帧 = 44 切片 + orb_fill_red/blue）拷到 public/assets/ui/，17 张手机 DOM 2x 图拷到 public/assets/ui/dom/，并从 slices.json（含 fixed/dom、最终边距）生成 src/data/ui-slices.ts。换图集只需重跑脚本，代码不改。
 - `src/ui/uiSlices.ts`：边距只从表里读；`ns()` 九宫格工厂只用 setSize（禁 setScale）；`atlasReady()` 是唯一回退判断点；`minTapHeight()`：桌面 44 逻辑 px，手机 ≥36 CSS px；`domUrl()` 供 B6 用。
