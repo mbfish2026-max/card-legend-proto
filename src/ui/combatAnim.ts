@@ -6,7 +6,7 @@ export const LUNGE_DIST = 18;
 /** 纯表现：只调用视图动画，不读写战斗数值。技能攻击（e.skill）/治疗不在此处理 */
 export function playCombatAnim(e: BattleEvent, get: (uid: number) => AnimView | undefined): AnimResult {
   if (e.type === 'attack') {
-    if (e.skill) return null;
+    if (e.skill && e.skill !== 'foe_thunder') return null; // 怪物远程雷击（maps-3050 闪电魔）走普攻动画 + 雷击特效；其余带 skill 的由技能分支处理
     const sv = get(e.source), tv = get(e.target); if (!sv || !tv) return null;
     const dir = tv.x >= sv.x ? 1 : -1; sv.swing(dir); sv.lunge(dir, LUNGE_DIST);
     return { kind: 'attack', sv, tv, dir };

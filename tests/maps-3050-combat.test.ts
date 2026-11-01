@@ -1,6 +1,7 @@
 /** maps-3050 战斗字段：onHit.stun / immobile / ranged / magic / 按 id BOSS 冷却（docs/maps-3050-combat.md） */
 import { World, BOSS_RESPAWN } from '../src/combat/World';
 import { ENEMIES } from '../src/data/units';
+import { playCombatAnim } from '../src/ui/combatAnim';
 let pass = 0; const ok = (c: boolean, m: string) => { if (!c) { console.error('FAIL', m); throw new Error(m); } pass++; console.log('ok', m); };
 const seeded = (s: number) => () => ((s = (s * 1103515245 + 12345) >>> 0) / 4294967296);
 const mk = (spawns: { id: string; x: number }[], extra: any[] = []) => { const w = new World(seeded(7), 30, [{ name: 'T', bg: 'bg_floor1', spawns } as any, ...extra], 'warrior'); if (!w.units.some(u => u.team === 'enemy')) w.loadFloor(0); return w; };
@@ -48,7 +49,7 @@ ok(BOSS_RESPAWN === 600, 'BOSS_RESPAWN 600');
 // ranged + magic：闪电魔站在利爪魔后面也能打，事件带 thunder
 { const w = mk([{ id: 'boss_sq_lizhua', x: 400 }, { id: 'boss_sq_shandian', x: 520 }]); const h = w.hero!; h.hp = h.maxHp = 1e8; h.mdef = 0; h.def = 1e6;
   const [lz, sd] = foes(w); let thunder = 0, melee = 0;
-  for (let t = 0; t < 15; t += 0.05) { w.step(0.05); for (const e of w.events.splice(0)) if (e.type === 'attack' && e.target === h.uid) { if (e.source === sd.uid) thunder += +(e.skill === 'thunder'); if (e.source === lz.uid) melee++; } }
+  for (let t = 0; t < 15; t += 0.05) { w.step(0.05); for (const e of w.events.splice(0)) if (e.type === 'attack' && e.target === h.uid) { if (e.source === sd.uid) thunder += +(e.skill === 'foe_thunder'); if (e.source === lz.uid) melee++; } }
   ok(thunder > 0, `闪电魔隔排雷击（${thunder} 次）`); ok(melee > 0, `利爪魔近战（${melee} 次）`);
   const hp0 = h.hp; w.foeHit(sd, h); ok(hp0 - h.hp > 0, '闪电魔魔法伤害无视物防高值（走魔御）');
   ok(Math.abs(sd.x - h.x) > (h.width + sd.width) / 2 + 20, '闪电魔保持远距'); }
@@ -72,4 +73,10 @@ ok(BOSS_RESPAWN === 600, 'BOSS_RESPAWN 600');
   const old = { ...sv }; delete old.bossCdId; const w5 = new World(seeded(1), 30, [{ name: 'T', bg: 'bg_floor1', spawns: [] } as any], 'warrior', old);
   ok(w5.bossOnCd(0, 'boss_sq_lizhua') && w5.bossOnCd(0, 'boss_sq_shandian'), '旧档：整层冷却兼容');
 }
+// 表现层：怪物雷击事件 foe_thunder 必须走普攻动画分发（否则 BattleScene 雷击特效分支永不执行）；与主角雷电术 'thunder' 不撞名
+{ const v = (x: number): any => ({ unit: {}, x, swing() {}, lunge() {}, hit() {} }); const g = (u: number) => v(u * 100);
+  ok(playCombatAnim({ type: 'attack', source: 2, target: 1, skill: 'foe_thunder' }, g)?.kind === 'attack', 'foe_thunder 走 attack 动画（播雷击特效）');
+  ok(playCombatAnim({ type: 'attack', source: 2, target: 1, skill: 'thunder' }, g) === null, '主角技能 thunder 仍由技能分支处理');
+  const w = mk([{ id: 'boss_sq_shandian', x: 300 }]); w.hero!.hp = w.hero!.maxHp = 1e8; let sk = new Set<string>(); for (let t = 0; t < 8; t += 0.05) { w.step(0.05); for (const e of w.events.splice(0)) if (e.type === 'attack' && e.source === foes(w)[0]?.uid) sk.add(e.skill ?? ''); }
+  ok(sk.size === 1 && sk.has('foe_thunder'), `闪电魔攻击事件 skill=foe_thunder（${[...sk]}）`); }
 console.log(`maps-3050-combat: ${pass} passed`);

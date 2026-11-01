@@ -20,6 +20,14 @@ try {
     return us.map(u => ({ uid: u.uid, id: u.id, x: u.x })); }, ids);
   const state = () => page.evaluate(() => { const W = window.__game.scene.getScene('Battle').world, h = W.hero;
     return { hx: h.x, stunned: (h.stunUntil ?? 0) > W.time, foes: W.units.filter(u => u.team === 'enemy' && u.alive).map(u => ({ uid: u.uid, id: u.id, x: Math.round(u.x) })), ev: window.__ev }; });
+  // 新怪尚未放进任何楼层（地图侧 C6 未入库），floorKeys 不会预载其立绘；后台队列也排在全部楼层之后 → 测试里先插队加载，等纹理就绪再刷怪
+  const NEED = ['sq_youying', 'sq_lieyan_shi', 'boss_sq_jindi', 'boss_sq_shandian', 'boss_sq_lizhua'];
+  await page.evaluate(ks => window.__game.scene.getScene('Preload')?.prioritize?.(ks), NEED);
+  await page.waitForFunction(ks => ks.every(k => window.__game.textures.exists(k)), { timeout: 90000 }, NEED).catch(() => {});
+  out.texReady = await page.evaluate(ks => Object.fromEntries(ks.map(k => [k, window.__game.textures.exists(k)])), NEED);
+  // 雷击特效图集在后台队列最末（图片之后），等它就绪（最多 180s）
+  await page.waitForFunction(() => window.__game.textures.exists('fx_thunder_strike'), { timeout: 180000 }).catch(() => {});
+  out.fxReady = await page.evaluate(() => window.__game.textures.exists('fx_thunder_strike'));
   // A 幽影武士：lootRng=0 必晕
   const a = await setup([['sq_youying', 60]]); await page.evaluate(() => { window.__game.scene.getScene('Battle').world.lootRng = () => 0; });
   let sA; for (let k = 0; k < 40; k++) { await sleep(100); sA = await state(); if (sA.stunned) break; }
@@ -31,10 +39,11 @@ try {
   await page.screenshot({ path: `${dir}/${PFX}-2-immobile.png` });
   out.immobile = bU.map(u => ({ id: u.id, x0: Math.round(u.x), x1: sB.foes.find(f => f.uid === u.uid)?.x }));
   // C 双 BOSS：利爪魔在前、闪电魔在后
+  await page.evaluate(() => { const B = window.__game.scene.getScene('Battle'), f = B.add.sprite.bind(B.add); window.__fxN = 0; window.__fxLast = null; B.add.sprite = (x, y, k, ...r) => { const sp = f(x, y, k, ...r); if (k === 'fx_thunder_strike') { window.__fxN++; window.__fxLast = { x: Math.round(x), y: Math.round(y), depth: sp.depth, vis: sp.visible }; } return sp; }; });
   const cU = await setup([['boss_sq_lizhua', 120], ['boss_sq_shandian', 360]]); let shot = false;
-  let nT = 0; for (let k = 0; k < 150; k++) { await sleep(40); const n = await page.evaluate(() => window.__ev.filter(e => e.type === 'attack' && e.skill === 'thunder').length); if (n > nT) { nT = n; if (n >= 2 && !shot) { await sleep(60); await page.screenshot({ path: `${dir}/${PFX}-3-thunder.png` }); shot = true; } } }
-  const sC = await state(), sd = cU.find(u => u.id === 'boss_sq_shandian'), lz = cU.find(u => u.id === 'boss_sq_lizhua');
-  out.twinBoss = { thunder: sC.ev.filter(e => e.type === 'attack' && e.source === sd.uid && e.skill === 'thunder').length, lizhuaMelee: sC.ev.filter(e => e.type === 'attack' && e.source === lz.uid).length, gapShandian: Math.round(Math.abs(sC.foes.find(f => f.uid === sd.uid).x - sC.hx)), shot };
+  let nT = 0; for (let k = 0; k < 150; k++) { await sleep(40); const n = await page.evaluate(() => window.__ev.filter(e => e.type === 'attack' && e.skill === 'foe_thunder').length); if (n > nT) { nT = n; if (n >= 2 && !shot) { out.fxSprites = []; for (let j = 0; j < 4; j++) { await sleep(j ? 70 : 30); out.fxSprites.push(await page.evaluate(() => window.__game.scene.getScene('Battle').children.list.filter(o => o.texture?.key === 'fx_thunder_strike' && o.active).length)); await page.screenshot({ path: `${dir}/${PFX}-3-thunder${j ? '-' + j : ''}.png` }); } shot = true; } } }
+  out.fxPlayed = await page.evaluate(() => ({ n: window.__fxN, last: window.__fxLast })); const sC = await state(), sd = cU.find(u => u.id === 'boss_sq_shandian'), lz = cU.find(u => u.id === 'boss_sq_lizhua');
+  out.twinBoss = { thunder: sC.ev.filter(e => e.type === 'attack' && e.source === sd.uid && e.skill === 'foe_thunder').length, lizhuaMelee: sC.ev.filter(e => e.type === 'attack' && e.source === lz.uid).length, gapShandian: Math.round(Math.abs(sC.foes.find(f => f.uid === sd.uid).x - sC.hx)), shot };
   await page.screenshot({ path: `${dir}/${PFX}-4-twinboss.png` });
   out.errs = w.errs.filter(e => !/404|Failed to load/.test(e));
-} finally { console.log(JSON.stringify(out, null, 1)); await b.close(); sv.close?.(); sv.kill?.(); process.exit(out.errs?.length ? 1 : 0); }
+} finally { console.log(JSON.stringify(out, null, 1)); await b.close(); sv.close?.(); sv.kill?.(); process.exit(out.errs?.length || !(out.fxPlayed?.n > 0) ? 1 : 0); }

@@ -1036,7 +1036,7 @@ export class World {
   stunned(u: Unit) { return (u.stunUntil ?? 0) > this.time; }
   /** maps-3050：怪物普攻一次（伤害 + magic 魔法占比 + onHit.stun 命中眩晕） */
   foeHit(f: Unit, tgt: Unit) {
-    this.events.push({ type: 'attack', source: f.uid, target: tgt.uid, ...(f.ranged && f.magic ? { skill: 'thunder' } : {}) });
+    this.events.push({ type: 'attack', source: f.uid, target: tgt.uid, ...(f.ranged && f.magic ? { skill: 'foe_thunder' } : {}) });
     this.damage(tgt, f.atk * (0.9 + this.rng() * 0.2), f, true, false, false, f.magic ?? 0);
     const st = f.onHit?.stun; if (!st || !tgt.alive || tgt.tier === 'boss' || this.stunned(tgt)) return; // BOSS 免疫；眩晕中不叠加不刷新
     if (this.lootRng() >= st.chance) return; // 用 lootRng：不扰动主随机序列
