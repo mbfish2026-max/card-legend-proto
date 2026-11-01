@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 三圣 4 件套装特效（feat/set-fx）
+- 圣战 4 件：主角暴击率 +5%；暴击伤害 ×1.5，按额外部分算，倍率 1.8→2.2 [适配]。
+- 法神 4 件：主角技能耗魔 ×0.9，向上取整，最低 1，0 耗魔不变；校验和扣除用同一个值 [适配]。
+- 天尊 4 件：召唤物伤害 +10%（按继承后的伤害算，在减防前乘）；友方经 heal() 的治疗 +10%（治愈术、群疗、英雄治愈术、吸血、召唤重施回满），药水不算 [适配]。
+- 官方数值未查到。setSpecials 去重，按当前装备实时计算，脱件、换装或读档后立即刷新。
+- UI：面板显示暴击率和套装特效行；tooltip 的特效单独成行；技能耗魔显示折后值。
+- 测试：tests/set-fx.test.ts 22 项；e2e set-fx-verify.mjs。9 种子不穿套时与 main 一致；SIM_SET4 下死亡中位数：战 20→9，法 11→8，道 17→13（道士最多 33→40）。
+
 ## 网络可达性测试页 feat/net-test
 - 新增 public/net-test.html（部署后 /card-legend-proto/net-test.html）：串行测本站、Supabase REST、Supabase Auth，每项 8 秒超时，有状态码即可达；复制结果、重新测试；验证 tests/e2e/net-test-verify.mjs。
 
