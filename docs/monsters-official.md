@@ -147,6 +147,10 @@
 | boss_sq_nimo | 逆魔 | boss | 73.异界裂隙·逆魔大殿 | 未查到 | 未查到 |
 | boss_sq_jindi | 禁地魔王 | boss | 79.异界裂隙·禁地·魔穴 | 未查到 | 未查到 |
 | boss_m3_panye_bull | 潘夜牛魔王 | boss | 80.异界裂隙·潘夜神殿 | 未查到 | 未查到 |
+| sq_youying | 幽影武士 | normal | — | 未查到 | 未查到 |
+| sq_lieyan_shi | 烈焰使 | normal | — | 未查到 | 未查到 |
+| boss_sq_shandian | 闪电魔 | boss | — | 未查到 | 未查到 |
+| boss_sq_lizhua | 利爪魔 | boss | — | 未查到 | 未查到 |
 
 ## M4 新怪（feat/m4-monsters）
 
