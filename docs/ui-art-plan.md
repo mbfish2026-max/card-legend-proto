@@ -350,7 +350,7 @@ slice 顺序是 上 右 下 左（T R B L），值取自 slices.json。也可以
 
 
 ## 灵符商城图标（第六轮，art/lingfu-icons，基于 feat/lingfu-shop）
-按 docs/art-requests.md「灵符商城缺图」清单交付（共 8 项）。源图为 GenerateImage 原创黑底图（docs/ui-preview/src/lf_*_src.jpg），build_lingfu.py 抠成透明底、缩放、锐化、加 1px 投影；无魔兽系列素材。
+按 docs/art-requests.md「灵符商城缺图」清单交付（共 8 项）。源图为 AI 生成黑底图（GenerateImage）（docs/ui-preview/src/lf_*_src.jpg），build_lingfu.py 抠成透明底、缩放、锐化、加 1px 投影；无魔兽系列素材。
 
 | key / 帧名 | 文件 | 尺寸 | 用法 | 体积 |
 |---|---|---|---|---|

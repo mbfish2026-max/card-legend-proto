@@ -114,7 +114,7 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 
 
 ## J. 比奇城城镇（art/town）——✅ 已交付（2026-10-31）
-对应 gap-vs-official §3.1 / §6.1 / §6.7。全部为原创卡通美术，未使用原版素材；NPC 名称沿用原版常见称呼（来源：传奇正传比奇省 NPC 坐标表、5PK 比奇地图指南、他也玩传奇比奇城攻略），查不到的标“待确认”。（注：本文件已有 H 节为悬赏/成就，故本章编号为 J。）
+对应 gap-vs-official §3.1 / §6.1 / §6.7。全部为AI 生成卡通美术，未使用原版素材；NPC 名称沿用原版常见称呼（来源：传奇正传比奇省 NPC 坐标表、5PK 比奇地图指南、他也玩传奇比奇城攻略），查不到的标“待确认”。（注：本文件已有 H 节为悬赏/成就，故本章编号为 J。）
 
 | 文件 | 尺寸 | 用途 | 状态 |
 |---|---|---|---|
@@ -139,7 +139,7 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 > J 节补充（2026-10-31）：npc_pharmacist、npc_weapon 已重画并覆盖原文件（768×960，透明底，256 色量化），对照图 `docs/town-preview/npcs_redraw.jpg`。
 
 ## K. 比奇城横版街道（art/town）——✅ 已交付（2026-10-31）
-需求：“城镇的贴图要做成横版的，走到不同店铺下不同的npc”。全部为原创卡通美术，白天明亮色调。街道总长 5760×1080，分三层：
+需求：“城镇的贴图要做成横版的，走到不同店铺下不同的npc”。全部为AI 生成卡通美术，白天明亮色调。街道总长 5760×1080，分三层：
 
 | 文件 | 尺寸 | 用途 | 层/视差 |
 |---|---|---|---|
@@ -458,7 +458,7 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 - 卡面：文档未要求另一尺寸/文件名，故未单独出卡面，卡面沿用本立绘。
 - 外观依据（热血传奇官方背景，百度百科）：原为人们祭奠的神将，与龙共同守护人类，龙堕落后随之化为妖魔；「神所赐的双翅」「由天地灵气化成的短枪」；作为龙命令的执行者带来血与火。据此绘制：龙角头盔的堕落神将、暗红金边重甲、一对龙翼、紫红灵气短枪、血火缭绕。
 - 未查到：原作具体配色与头部造型的官方立绘描述（配色暗红/黑红为玩家资料推测）；短枪画成两端带刃，属自由发挥。
-- 原创绘制，未描摹原作素材。
+- AI 生成，未描摹原作素材。
 
 ## feat/maps-batch3（plan-60h B3）
 
@@ -477,7 +477,7 @@ map_node_dushe 毒蛇山谷、map_node_cangyue 苍月岛、map_node_fengmo 封�
 背景 4 套（1920×1080 起，jpg）：蜈蚣洞地牢（bg_floor35–39，下标 34–38）、蜈蚣洞深层（bg_floor40–46，下标 39–45）、石墓（bg_floor47–53，下标 46–52）、香石墓穴（bg_floor54–56，下标 53–55）；现占位 bg_floor3 / bg_floor4 / bg_floor5。外观均「未查到」官方原图，按地名推测。
 ## maps-batch2 交付（art/maps-batch2）
 
-预览：`docs/art-gap-preview/maps_batch2.jpg`。原创绘制，外观参照原版传奇设定（名称/地图），未描摹原作贴图。
+预览：`docs/art-gap-preview/maps_batch2.jpg`。AI 生成，外观参照原版传奇设定（名称/地图），未描摹原作贴图。
 
 | 文件 | 尺寸 | id | 名称 | 外观依据 |
 |---|---|---|---|---|
@@ -554,7 +554,7 @@ thunder_sword 雷霆剑、break_strike 破击剑法、shield_break 破盾斩、v
 
 ## art/maps-batch3 交付（对应 feat/maps-batch3 章）
 
-原创绘制，未描摹原作/WoW 素材；立绘透明底 PNG 最长边 960，背景 1920×1080 JPG（下 40% 空地面）。预览：docs/art-gap-preview/maps_batch3.jpg
+AI 生成，未描摹原作/WoW 素材；立绘透明底 PNG 最长边 960，背景 1920×1080 JPG（下 40% 空地面）。预览：docs/art-gap-preview/maps_batch3.jpg
 
 | 文件 | 尺寸 | 外观依据 |
 |---|---|---|
@@ -574,7 +574,7 @@ thunder_sword 雷霆剑、break_strike 破击剑法、shield_break 破盾斩、v
 
 ## art/maps-sq-mir3 交付·第 1 批（9 BOSS）
 
-原创绘制，透明底 PNG 最长边 960。预览：docs/art-gap-preview/sq_mir3_batch1.jpg。外观依据：传奇3 资料取自中华网《传奇3》怪物介绍（game.china.com/zh_cn/hotspot/mir3/monster/10.html、11.html），传奇世界 BOSS 外观官方描述未查到。
+AI 生成，透明底 PNG 最长边 960。预览：docs/art-gap-preview/sq_mir3_batch1.jpg。外观依据：传奇3 资料取自中华网《传奇3》怪物介绍（game.china.com/zh_cn/hotspot/mir3/monster/10.html、11.html），传奇世界 BOSS 外观官方描述未查到。
 
 | 文件 | 尺寸 | 外观依据 |
 |---|---|---|
@@ -702,7 +702,7 @@ thunder_sword 雷霆剑、break_strike 破击剑法、shield_break 破盾斩、v
 | sq_shiwei_yong_full.png | 706x960 | 尸卫勇士 | 复用 art/sq-mir3 的 shiwei_brave_full.png |
 | sq_shiwei_qiang_full.png | 759x960 | 枪尸卫 | 复用 art/sq-mir3 的 shiwei_spear_full.png |
 | sq_shiwei_zhan_full.png | 739x960 | 尸卫战将 | 复用 art/sq-mir3 的 shiwei_general_full.png |
-| sq_bat_full.png | 960x707 | 蝙蝠 | 新画（原创，据常见蝙蝠外形，具体外观未查到/推测） |
+| sq_bat_full.png | 960x707 | 蝙蝠 | 新画（AI 生成，据常见蝙蝠外形，具体外观未查到/推测） |
 | m3_ant_warrior_full.png | 882x960 | 蚂蚁战士 | 复用 art/sq-mir3 的 ant_warrior_full.png |
 | m3_ant_armor_full.png | 960x673 | 盔甲蚂蚁 | 复用 art/sq-mir3 的 ant_armored_full.png |
 | m3_ant_bomb_full.png | 960x490 | 爆毒蚂蚁 | 复用 art/sq-mir3 的 ant_poison_full.png |
@@ -959,7 +959,7 @@ thunder_sword 雷霆剑、break_strike 破击剑法、shield_break 破盾斩、v
 - 需求：矿点图 256×192 PNG 透明底（可挖 / 枯竭 两态），参考传奇比奇矿区矿壁；交付后挂 ASSETS key `mine_node` / `mine_node_empty` 替换代码绘制。
 ## 替换魔兽头像图标（art/replace-wow-heads，2026-10-31）
 
-原创重画 public/assets/portraits/ 下全部 13 个魔兽来源图标，卡通粗描边，同名覆盖，尺寸与原图一致：64x64 RGBA PNG，代码零改动。对比图：docs/wow-heads-preview/wow_heads_old_vs_new.jpg
+用 AI 生成重画 public/assets/portraits/ 下全部 13 个魔兽来源图标，卡通粗描边，同名覆盖，尺寸与原图一致：64x64 RGBA PNG，代码零改动。对比图：docs/wow-heads-preview/wow_heads_old_vs_new.jpg
 
 | 文件（旧→新同名） | 尺寸 | 新内容 | 用途 |
 |---|---|---|---|
@@ -1093,7 +1093,7 @@ public/assets/ui/UI-Tooltip-Border.png
 
 ## 传送门（替换地图「回城小房子」入口，art/portal，2026-10-31）
 
-原创 Legend of Mir 风格的蓝紫发光椭圆光圈漩涡，没有用 WoW 素材。先在纯黑底上生成一张基础图，再按亮度换算透明度（发光边缘自然淡出，不会留下抠底色边），漩涡内部保留约 85% 不透明。4 帧由脚本 docs/art-gap-preview/portal_gen.py 生成：内部漩涡转 0°/+6°/0°/-6°，整体缩放 0.97→1.0、亮度 1.0→1.13 脉动，首尾衔接可循环，外圈位置不动、不抖。
+AI 生成的 Legend of Mir 风格的蓝紫发光椭圆光圈漩涡，没有用 WoW 素材。先在纯黑底上生成一张基础图，再按亮度换算透明度（发光边缘自然淡出，不会留下抠底色边），漩涡内部保留约 85% 不透明。4 帧由脚本 docs/art-gap-preview/portal_gen.py 生成：内部漩涡转 0°/+6°/0°/-6°，整体缩放 0.97→1.0、亮度 1.0→1.13 脉动，首尾衔接可循环，外圈位置不动、不抖。
 
 | 文件 | 尺寸 | 帧数 | 说明 |
 |---|---|---|---|
@@ -1136,7 +1136,7 @@ public/assets/ui/UI-Tooltip-Border.png
 大陆相对位置（适配）：比奇西南、沃玛其北、毒蛇其东、盟重最东荒漠、白日门西北雪山、封魔东北峡谷、苍月东海外岛、合击/魔龙盟重以北。
 ## L-P1. 盟重土城街景（art/towns 分支交付）
 
-规格来源：feat/balance-sys 分支 docs/art-requests.md 第 L 章，以及 docs/towns-plan.md 的盟重排序。所有素材都是原创生成，没有用、也没有描摹任何 WoW 或传奇原作素材。画风对齐 art/town 分支的比奇街道。
+规格来源：feat/balance-sys 分支 docs/art-requests.md 第 L 章，以及 docs/towns-plan.md 的盟重排序。所有素材都是AI 生成，没有用、也没有描摹任何 WoW 或传奇原作素材。画风对齐 art/town 分支的比奇街道。
 
 ### 文件
 
@@ -1190,7 +1190,7 @@ public/assets/ui/UI-Tooltip-Border.png
 
 ## L-P2. 白日门街景（art/towns 分支交付）
 
-规格来源：feat/balance-sys 分支 docs/art-requests.md 第 L 章（P2 行），排序依据 towns-plan（标了 [适配]）。素材全部原创生成，没有用、也没有描摹任何 WoW 或传奇原作素材，图里也没有文字。白日门的建筑外观在资料里未查到，做成了山谷边寨风格（灰石墙、深色木构、坡顶瓦），属于推测。门面画风和盟重、比奇一致，只是建筑形制不同。
+规格来源：feat/balance-sys 分支 docs/art-requests.md 第 L 章（P2 行），排序依据 towns-plan（标了 [适配]）。素材全部AI 生成，没有用、也没有描摹任何 WoW 或传奇原作素材，图里也没有文字。白日门的建筑外观在资料里未查到，做成了山谷边寨风格（灰石墙、深色木构、坡顶瓦），属于推测。门面画风和盟重、比奇一致，只是建筑形制不同。
 
 ### 文件
 
@@ -1304,7 +1304,7 @@ public/assets/ui/UI-Tooltip-Border.png
 - 两城的官方外观和坐标都**未查到**。配色（封魔谷冷蓝紫、苍月岛海青）是**推测**。商店顺序按 docs/towns-plan.md 排（苍月岛的顺序标的是 [适配]）。
 - 苍月岛只有 basic 店铺（药/杂/仓）有数据。武器、服装、首饰、书店是按 towns-plan 预先出的，代码里没有的话可以不用。
 - 苍月岛没有 NPC。封魔谷的老兵是比奇老兵换色，其余 NPC 未查到。
-- 全部是原创绘制，没有文字；招牌板是空白的。
+- 全部是AI 生成，没有文字；招牌板是空白的。
 ## L. 大城街景（docs/towns-plan.md，2026-10-31，待美术）
 
 规格同 K 章：横版长街 5760×1080 每 3 屏，游戏内按 2/3 缩到 720 高；门面可单独出图，3:4 透明 PNG。NPC 立绘同现有 npc_* 规格。
@@ -1336,7 +1336,7 @@ public/assets/ui/UI-Tooltip-Border.png
 
 ## W-1. 世界大地图：大陆底图 4×2 分块（art/world-map 分支交付，第一批）
 
-先生成一张完整总图，再切成 8 块，所以接缝处的像素完全连续（预览里的白线只是分块示意）。风格是手绘羊皮纸奇幻大陆，原创绘制，不用 WoW 素材，图上没有任何文字，区域名称由游戏叠加。
+先生成一张完整总图，再切成 8 块，所以接缝处的像素完全连续（预览里的白线只是分块示意）。风格是手绘羊皮纸奇幻大陆，AI 生成，不用 WoW 素材，图上没有任何文字，区域名称由游戏叠加。
 
 | 文件 | 尺寸 | 用途 |
 |---|---|---|
@@ -1344,7 +1344,7 @@ public/assets/ui/UI-Tooltip-Border.png
 | docs/world-map-preview/world_map_full_preview.jpg | 2048×1152 | 把 8 块拼回去的半尺寸预览 |
 | docs/world-map-preview/world_map_tiles_preview.jpg | 2048×1152 | 同上，白线标出分块边界 |
 
-- 分辨率：交付的是 1x 逻辑尺寸。母图是 1280×720 的原创生成图，放大 3.2 倍后做了锐化，再加一层轻微的纸纹颗粒，所以近看偏软。如果需要 2x（每块 2048×2304），需要另外重绘细节。我试过逐块 AI 重绘，但地形会漂移，接缝对不上，所以这一批没有采用。
+- 分辨率：交付的是 1x 逻辑尺寸。母图是 1280×720 的AI 生成图，放大 3.2 倍后做了锐化，再加一层轻微的纸纹颗粒，所以近看偏软。如果需要 2x（每块 2048×2304），需要另外重绘细节。我试过逐块 AI 重绘，但地形会漂移，接缝对不上，所以这一批没有采用。
 - 地貌和区域对应关系是**推测/[适配]**（官方大陆地貌未查到），按 world-map-plan.md 的相对位置排布。
 
 ### 区域位置表（底图像素，4096×2304，多边形顺时针）
@@ -1366,7 +1366,7 @@ public/assets/ui/UI-Tooltip-Border.png
 
 ## W-2. 世界大地图：8 张区域插画（art/world-map 分支交付，第二批）
 
-区域 id 以 W 章为准。风格与大陆底图一致（同一张总图作参考生成：羊皮纸、手绘、俯视略带斜角），地貌和主色与 W-1 位置表对应。原创绘制，图上没有文字。
+区域 id 以 W 章为准。风格与大陆底图一致（同一张总图作参考生成：羊皮纸、手绘、俯视略带斜角），地貌和主色与 W-1 位置表对应。AI 生成，图上没有文字。
 
 | 文件 | 尺寸 | 内容（地貌和建筑都是**推测**，官方区域外观未查到） |
 |---|---|---|
@@ -1443,7 +1443,7 @@ public/assets/ui/UI-Tooltip-Border.png
 - 图标 128×128 是文档规定的尺寸，同时可以当作 64×64 的 @2x 使用（缩小后的效果见预览第二行）。文档没有单独的「出口」图标，用 portal 代替。
 - 迷雾用周期噪声程序化生成，平铺时没有接缝。Phaser 里可以用 TileSprite 铺满再用区域多边形做遮罩，也可以整张铺满后在已探索区域挖洞。要更透的话调 alpha 就行。
 - 边框是从一张 1024 的生成图缩到 96 的，角花缩小后细节较少。原图两侧边中点的菱形装饰已经抹掉，避免九宫格拉伸后变形。
-- 全部原创，没有文字。传送点图标特意用了素面金环，没有符文。
+- 全部 AI 生成，没有文字。传送点图标特意用了素面金环，没有符文。
 
 ## W 状态（feat/world-map 接入，2026-11-01）
 - 三批真图已接入游戏（assets-manifest WM_ASSETS，按需加载）；节点坐标按 W-1/W-2/W-3 锚点回填。
@@ -1628,7 +1628,7 @@ public/assets/ui/UI-Tooltip-Border.png
 
 以仓库实际核对（git ls-files + rg）：public/assets/{items,potions,skills,ui} 下 INV_/Ability_/Spell_/UI- 前缀文件实际为 80 个（转述为 81 个），其中 src 仍引用 10 个、未引用 70 个。另有 portraits/ 下 13 个同前缀 WoW 头像不在本次范围（其中 INV_Misc_Head_Human_01/02 仍被 assets-manifest 的 menu_0、merchant 引用），未处理。
 
-### 重画的 10 个（同名同路径覆盖，64×64 RGBA PNG，原创/AI 生成，未描摹任何 WoW 原图）
+### 重画的 10 个（同名同路径覆盖，64×64 RGBA PNG，AI 生成，未描摹任何 WoW 原图）
 | 文件 | 引用处 | 新图内容 |
 |---|---|---|
 | items/INV_Misc_Bag_08.png | assets-manifest menu_1（背包） | 棕皮背包，金边、红色皮扣，透明底 |

@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## 灵符商城第一版（feat/lingfu-shop，未合 main）
+- 2026-11-02：文档措辞修正，把美术素材来源统一写成「AI 生成」，不再写「原创」（ui-art-plan、art-requests、equip-layers、chuanshi-skills、README、build_lingfu.py docstring、assets-manifest 注释）。音频来源描述未改，代码逻辑未改。
 - 2026-11-01：合入美术2 origin/art/lingfu-icons（75559c6）。商品图标改用 assets/icons/shop_*.png、bloodstone_s/m/l/xl.png（特级 stone_x → bloodstone_xl）。桌面入口用 nineslice lingfu_entry，setSize 88×44，缺帧回退 btn_normal 或纯色。手机 #mh-shop 52×44 用 border-image lingfu_entry@2x（slice 28/36），图加载成功才启用，按下时提亮。图集 47 帧，DOM @2x 18 张，已重跑 sync-ui-atlas。小血石取消等级限制（req 30→1），中/大/特 35/40/45 不变，前期难度评估见 docs/lingfu-shop.md。
 - 灵符：1 元 = 10 灵符（仅显示）；访客本机钱包 `fcl_lingfu_v1`（不进 SaveData、不按存档槽，首次发 5000，删槽/新槽不再发，导入存档不带余额，扣费幂等、发货失败退款）；RemoteWallet 空实现（对齐 wallet Edge Function 形状，返回 not_configured）。充值页置灰「未接入支付」。
 - 入口：桌面右下「灵符」按钮（菜单圆钮上方）、手机 #mh-shop（自动开关上方 52×44 CSS px）、L 键。界面用 ui_atlas（panel_frame_s/list_row/tab_on/off/btn_normal），缺图集回退矩形；页签 推荐/召唤/成长/补给/便利/充值，列表拖动/滚轮，确认框、灵符不足提示，点面板外关闭。
