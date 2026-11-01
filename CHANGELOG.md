@@ -16,6 +16,16 @@
 - r4 FOE_BAND.atk 41–50 0.97→1.01：41–50 段中位 战2/法3/道1，整体中位 14/14/13
 - m1（合并 main 后）FOE_BAND.atk 41–50 1.03→1.05：41–50 段中位 4/6/5，整体中位 16/15/17（放宽 18），采用为终版
 - r5 FOE_BAND.atk 41–50 1.01→1.03：41–50 段中位 3/3/3，整体中位 17/14/13（战士按放宽 18），采用为终版
+## P3 eg-dungeon（feat/eg-dungeon）
+- 6 个 Lv45–49 副本（赤月魔穴/恶魔祭坛[E7 双头]/卧龙/雷炎/魔龙血域/火龙神殿）：每日 3 次，用尽可进（600 s、掉率 ×0.25），首通必掉 1 件本职业套装件，之后 1/10 + D7 补正。
+- D7 调率（只在副本击杀生效）：赤月恶魔 setChance 1→0.15，魔龙战神系 1/30→1/60；World.dungeons 开关，sim 关闭，9 seed 不变；凑齐一套中位 22–29 次。存档 dungeonRuns/dungeonFirst，旧档兼容。
+- 命运之刃复核：官方为任务奖励，暂留祖玛 1/60 [适配]。docs/eg-dungeon.md；tests/eg-dungeon.test.ts。
+
+- 验收：npm test 全量 EXIT 0（eg-dungeon 全过，D7 中位 22–29 次）；tsc/build 通过；Chromium 1280×720/844×390 进入赤月魔穴提示「今日剩余 2/3 次｜首通…」无报错，截图 docs/shots/eg-dungeon/。
+## P2 eg-sets（feat/eg-sets）
+- 新增 40–50 级 40 件装备（eg-equip.ts，图标用美术 E4 eq_<id> 64/128，id 恒等）；雷霆/烈焰/光芒、战神/圣魔/真魂 6 套；三圣 4 件档 + 职业特效接口 setSpecials()。
+- 掉落 EG_DROPS（E1 ÷40，≤1/8，全部 ≥40 级层）；天尊进合击 BOSS；set_zuma/set_chiyue 停掉落、旧档保留。
+- 修 equip-3050-plan 三行错表；docs/eg-sets.md；tests/eg-sets.test.ts（17 项）。
 ## 手机版：装备对比面板点外部关闭 feat/mobile-tapclose
 - 手机（IS_MOBILE）角色/背包界面：点装备弹出「身上/查看中」对比面板后，点面板外空白处即关闭并取消选中。
 - 点面板内部不关；点其他装备格切换为对比该装备；按下到抬起移动 >8px（拖动/滚动）不算点击。
