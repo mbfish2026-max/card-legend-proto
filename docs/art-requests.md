@@ -1449,3 +1449,27 @@ public/assets/ui/UI-Tooltip-Border.png
 - 三批真图已接入游戏（assets-manifest WM_ASSETS，按需加载）；节点坐标按 W-1/W-2/W-3 锚点回填。
 - 无锚点、手工放置 [适配] 的节点：bichi_xinshou、bichi_newbie、rift_58、sq_jiguan 群、bichi_to_woma、bichi_to_dushe、sq_snake 群、rift_66、rift_67、hj_town；其余未列锚点的节点按旧 0–1 比例换算（[适配]）。
 - 东北角紫雾浮岛仅装饰；出口用 icon_wm_portal；无需新增美术。
+
+## E4. 40–50 级装备图标（art/equip-40-50 分支交付）
+
+清单依据 origin/feat/equip-3050 的 docs/art-requests.md 第 E3 章和 equip-3050-plan.md §3（共 40 个 id）。规格跟现有物品图标一致：public/assets/items/eq_<id>.png 64×64 透明，另有 eq_<id>@2x.png 128×128 透明。
+
+| id | 中文名 | 部位 | 文件 | 尺寸 | 对应原作装备 | 外观 | 是否推测 |
+|---|---|---|---|---|---|---|---|
+| nuzhan | 怒斩 | 武器 | eq_nuzhan.png / eq_nuzhan@2x.png | 64×64 / 128×128 透明 | 热血传奇「怒斩」 | 血红锯齿宽刃大剑，金龙护手 | 推测 |
+| longya | 龙牙 | 武器 | eq_longya.png / eq_longya@2x.png | 64×64 / 128×128 透明 | 热血传奇「龙牙」 | 象牙色弯月龙牙刃，翡翠金柄，蓝色灵光 | 推测 |
+| xiaoyao_fan | 逍遥扇 | 武器 | eq_xiaoyao_fan.png / eq_xiaoyao_fan@2x.png | 64×64 / 128×128 透明 | 热血传奇「逍遥扇」 | 金骨白蓝绢折扇，翡翠坠白穗 | 推测 |
+| shihun_staff | 嗜魂法杖 | 武器 | eq_shihun_staff.png / eq_shihun_staff@2x.png | 64×64 / 128×128 透明 | 热血传奇「嗜魂法杖」 | 黑木扭杖，骨爪托紫色魂晶 | 推测 |
+| mingyun_blade | 命运之刃 | 武器 | eq_mingyun_blade.png / eq_mingyun_blade@2x.png | 64×64 / 128×128 透明 | 热血传奇「命运之刃」 | 银白直长剑，星蓝宝石剑首 | 推测 |
+| bazhe_blade | 霸者之刃 | 武器 | eq_bazhe_blade.png / eq_bazhe_blade@2x.png | 64×64 / 128×128 透明 | 热血传奇「霸者之刃」 | 黑金宽弯刀，金虎头护手，红柄 | 推测 |
+| kaitian | 开天 | 武器 | eq_kaitian.png / eq_kaitian@2x.png | 64×64 / 128×128 透明 | 热血传奇「开天」 | 巨型双手大刀，熔金裂纹橙光 | 推测 |
+| zhentian | 镇天 | 武器 | eq_zhentian.png / eq_zhentian@2x.png | 64×64 / 128×128 透明 | 热血传奇「镇天」 | 银杖顶新月环托蓝色法球 | 推测 |
+| xuantian | 玄天 | 武器 | eq_xuantian.png / eq_xuantian@2x.png | 64×64 / 128×128 透明 | 热血传奇「玄天」 | 青色云纹剑身，白玉云形护手，黑白穗 | 推测 |
+| tianmo_armor | 天魔神甲 | 衣服 | eq_tianmo_armor.png / eq_tianmo_armor@2x.png | 64×64 / 128×128 透明 | 热血传奇「天魔神甲」 | 黑钢金边重甲，骷髅角肩，胸嵌红宝石 | 推测 |
+| fashen_cape | 法神披风 | 衣服 | eq_fashen_cape.png / eq_fashen_cape@2x.png | 64×64 / 128×128 透明 | 热血传奇「法神披风」 | 深蓝丝绒金绣披风，绿宝石扣 | 推测 |
+| tianzun_robe | 天尊道袍 | 衣服 | eq_tianzun_robe.png / eq_tianzun_robe@2x.png | 64×64 / 128×128 透明 | 热血传奇「天尊道袍」 | 白金宽袖道袍，绿腰带，金鹤纹 | 推测 |
+
+- 「是否推测」：原作图标的具体外观没有逐件查证（未查到），所以这里的造型、配色都是按名称和职业原创推测的，没有描摹原作或其他游戏素材，图里没有文字和符号。
+- 比 35 级以下的图标更华丽：金属雕花、宝石和光效更多。每件的造型和配色都不一样，同一套的首饰共用一个主色调。
+- 男女款衣服按 plan 合并成一件，只做一个图标。
+- 预览：docs/art-gap-preview/equip_40_50.jpg（每格是放大的 128 版本，右下角是 64 原尺寸）。副本：/workspace/shared-gap/equip-40-50/。
