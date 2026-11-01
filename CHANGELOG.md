@@ -1,5 +1,7 @@
 # CHANGELOG
 
+- 最终复核 m2：与 m1 一致；tsc/npm test/build/4 个 e2e 全过。
+
 ## balance-4050（feat/balance-4050，未合 main）[适配]
 - r1 40–49 级升级经验 ×2（EXP_LATE_MUL），怪物经验仍按官方表定标 → 40–49 级用时 ×2.0，1–39 级 0 差异。详见 docs/balance-4050.md
 - r2 FOE_BAND.atk 41–50 0.9→1.05：41–50 段中位 战3/法6/道5，整体中位 18/15/17（过头）
