@@ -1,0 +1,14 @@
+// 阶段2 腰带（7 条）。来源/掉落：未查到，暂不挂任何掉落、不上商店（待启用）；不计套装件（无 set 字段，id 不用套装前缀）。
+// 等级按需求单：兽皮15、铁22、青铜30（保守）、钢铁35、雷霆/烈焰/光芒45；数值全部[暂定]，烈焰/光芒腰带另标[待核]。图标暂用 gen_bracelet 占位，正式图见 art-requests。
+import type { ItemDef } from '../combat/types';
+const PH = 'assets/items/gen_bracelet.png';
+const B = (id: string, name: string, req: number, equip: ItemDef['equip'], price: number, cls?: ItemDef['cls']): ItemDef => ({ id, name, icon: PH, slot: 'belt', equip, req, price, ...(cls ? { cls } : {}) });
+export const BELT_ITEMS: Record<string, ItemDef> = {
+  belt_hide: B('belt_hide', '兽皮腰带', 15, { def: 4, hp: 70 }, 30), // [暂定]
+  belt_iron: B('belt_iron', '铁腰带', 22, { def: 6, hp: 110 }, 60), // [暂定]
+  belt_bronze: B('belt_bronze', '青铜腰带', 30, { def: 9, hp: 160 }, 120), // [暂定] 等级取保守值
+  belt_steel: B('belt_steel', '钢铁腰带', 35, { def: 11, hp: 200 }, 180), // [暂定]
+  belt_leiting: B('belt_leiting', '雷霆腰带', 45, { atk: 3, def: 13, hp: 240 }, 700, ['warrior']), // [暂定]
+  belt_lieyan: B('belt_lieyan', '烈焰腰带', 45, { mag: 4, def: 12, hp: 220 }, 700, ['mage']), // [暂定][待核]
+  belt_guangmang: B('belt_guangmang', '光芒腰带', 45, { tao: 4, def: 13, hp: 240 }, 700, ['taoist']), // [暂定][待核]
+};

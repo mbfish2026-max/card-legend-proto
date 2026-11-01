@@ -1884,5 +1884,7 @@ export function migrateEquip(save: Pick<SaveData, 'equip' | 'eqV'>): Partial<Rec
     if (e.ring && !e.ring1) e.ring1 = e.ring; if (e.bracelet && !e.bracelet1) e.bracelet1 = e.bracelet;
     delete e.ring; delete e.bracelet;
   }
+  // 阶段2：靴子独立栏。任何版本里误放在「衣服」位的靴子（slot==='boots'）迁到 boots；boots 已占用则原样保留在衣服位，装备不丢
+  if (e.armor?.slot === 'boots' && !e.boots) { e.boots = e.armor; delete e.armor; }
   return e;
 }

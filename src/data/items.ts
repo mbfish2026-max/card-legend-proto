@@ -5,13 +5,14 @@ import { TOWN_ITEMS } from './items-town';
 import { NEW_EQUIP, EQUIP_META, adaptMdef } from './equip-official';
 import { EG_EQUIP } from './eg-equip';
 import { H_ITEMS } from './h-chain';
+import { BELT_ITEMS } from './belts';
 // 物品表：中文名 + 图标。equip=基础属性；req=需求等级；price=出售价（商人收购价）
 const I = 'assets/items/';
-export const SLOTS: Slot[] = ['weapon', 'helmet', 'armor', 'necklace', 'ring', 'bracelet', 'boots'];
-export const SLOT_NAMES: Record<Slot, string> = { weapon: '武器', helmet: '头盔', armor: '衣服', necklace: '项链', ring: '戒指', bracelet: '手镯', boots: '靴子' };
+export const SLOTS: Slot[] = ['weapon', 'helmet', 'armor', 'necklace', 'ring', 'bracelet', 'boots', 'belt'];
+export const SLOT_NAMES: Record<Slot, string> = { weapon: '武器', helmet: '头盔', armor: '衣服', necklace: '项链', ring: '戒指', bracelet: '手镯', boots: '靴子', belt: '腰带' };
 /** 穿戴位：戒指×2、手镯×2（热血传奇官方穿戴位） */
-export const EQUIP_SLOTS: EquipSlot[] = ['weapon', 'helmet', 'armor', 'necklace', 'ring1', 'ring2', 'bracelet1', 'bracelet2', 'boots'];
-export const EQUIP_SLOT_NAMES: Record<EquipSlot, string> = { weapon: '武器', helmet: '头盔', armor: '衣服', necklace: '项链', ring1: '左戒指', ring2: '右戒指', bracelet1: '左手镯', bracelet2: '右手镯', boots: '靴子' };
+export const EQUIP_SLOTS: EquipSlot[] = ['weapon', 'helmet', 'armor', 'necklace', 'ring1', 'ring2', 'bracelet1', 'bracelet2', 'boots', 'belt'];
+export const EQUIP_SLOT_NAMES: Record<EquipSlot, string> = { weapon: '武器', helmet: '头盔', armor: '衣服', necklace: '项链', ring1: '左戒指', ring2: '右戒指', bracelet1: '左手镯', bracelet2: '右手镯', boots: '靴子', belt: '腰带' };
 /** 物品部位 → 可放入的穿戴位（按优先顺序） */
 export function equipSlotsFor(k: Slot): EquipSlot[] { return k === 'ring' ? ['ring1', 'ring2'] : k === 'bracelet' ? ['bracelet1', 'bracelet2'] : [k]; }
 /** 存档装备结构版本：2 = 双戒双镯 */
@@ -98,6 +99,8 @@ export const ITEMS: Record<string, ItemDef> = {
   ...EG_EQUIP,
   // drop-realign H 章过渡链：25 件首饰 + 4 双靴子（src/data/h-chain.ts）
   ...H_ITEMS,
+  // 阶段2 腰带 7 条（src/data/belts.ts，待启用：无掉落、不上商店）
+  ...BELT_ITEMS,
 };
 // 存量装备挂官方职业限制（按官方需求类型推导）
 for (const [id, m] of Object.entries(EQUIP_META)) if (m.cls && ITEMS[id] && !ITEMS[id].cls) ITEMS[id].cls = m.cls;
