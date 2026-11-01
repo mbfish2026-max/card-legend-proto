@@ -49,7 +49,6 @@ export const WORLD = {
   affix: { magic: 0.5, rare: 1.2 },
   goldAmount: [5, 40] as [number, number],
   bagSize: 200, // feat/bag-200：用户要求扩到 200 格（[适配]；原版格数此处未查证）；面板分页 30 格/页
-  deathGoldLoss: 0.1,          // 死亡损失金币比例
   summonLane: -36,             // 召唤物站位（纵深偏后）
 };
 export interface Spawn { id: string; x: number; y?: number; /** 层尾守关怪：缩放时不循环复制，固定放在 BOSS 前（9:27 森林雪人） */ tail?: boolean }
