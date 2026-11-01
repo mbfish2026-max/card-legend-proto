@@ -26,11 +26,11 @@ try {
     await p.keyboard.press('1'); await sleep(100);
     const p1 = await p.evaluate(() => { const W = window.__game.scene.getScene('Battle').world; return { hp: W.hero.hp, n: W.pots[0], cd: W.hero.potReady - W.time }; });
     await p.keyboard.press('1'); await sleep(50); const p2 = await p.evaluate(() => window.__game.scene.getScene('Battle').world.pots[0]);
-    await p.keyboard.press('3'); await sleep(50); const p3 = await p.evaluate(() => window.__game.scene.getScene('Battle').world.pots[2]);
+    await p.keyboard.press('2'); /* feat/potion-combat：键盘 2 = 蓝格（默认选中小蓝 pots[2]），3 改为太阳水格 */ await sleep(50); const p3 = await p.evaluate(() => window.__game.scene.getScene('Battle').world.pots[2]);
     await p.screenshot({ path: `${dir}/bb-3-potion-cd.png` });
     await sleep(700); const p4 = await p.evaluate(() => { const h = window.__game.scene.getScene('Battle').world.hero; return { hp: h.hp, mp: h.mp }; });
     chk(p1.n === 4 && p1.cd > 0.7 && p1.cd <= 1.0, `按 1 喝红药，冷却 ${p1.cd.toFixed(2)}s`);
-    chk(p2 === 4, `冷却内再按 1 不消耗（余 ${p2}）`); chk(p3 === 4, `红药冷却中按 3 蓝药可喝（余 ${p3}）`);
+    chk(p2 === 4, `冷却内再按 1 不消耗（余 ${p2}）`); chk(p3 === 4, `红药冷却中按 2（蓝格）蓝药可喝（余 ${p3}）`);
     chk(p4.hp >= 100 + 120 - 2 && p4.mp >= 90, `0.8s 后 HoT 回完：hp ${p1.hp.toFixed(0)}→${p4.hp.toFixed(0)}，mp→${p4.mp.toFixed(0)}`);
     await sleep(500); await p.keyboard.press('1'); await sleep(50); chk(await p.evaluate(() => window.__game.scene.getScene('Battle').world.pots[0]) === 3, '1s 后可再喝红药');
     errs.push(...w.errs); await p.close();

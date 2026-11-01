@@ -5,6 +5,8 @@
 - 太阳水/强效太阳水立刻回复（HP180+MP240 / HP300+MP480），独立冷却 hero.sunReady 1s，不占红蓝冷却、不产生 HoT；强效红蓝沿用 HoT。与血石 tickStone 独立叠加（只写文档，未合 lingfu-combat）。
 - sim：tests/sim-lib.ts 加 SIM_POT=1 开关（默认关，轨迹不变），9 种子对比见 docs/potion-expand.md §9.3；1–39 偏差 ≤2%，40–50 未达标（战士过易、法师变难），建议见文档。
 - e2e：hotbar-click「点击药水格 = 按 1」在 main/potion-expand 上失败的根因是 fix/town-hot 后城内 HoT 0.5s 即结算清空，断言「HoT 入队数不减」过时；改为「HoT 入队或 HP 回升」。
+- 太阳水瞬回走 heal 事件，显示「+N」回血飘字。
+- e2e：balance-battle 蓝药改按 2（3 = 太阳水格）；新增 tests/e2e/potion-combat-verify.mjs（键盘/点格用选中药、太阳水瞬回飘字，截图 docs/shots/potion-combat/）。
 - 测试：tests/potion-combat.test.ts（24 项）。
 
 ## 药水扩展（feat/potion-expand，未合 main）
