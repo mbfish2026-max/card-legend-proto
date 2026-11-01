@@ -1,3 +1,4 @@
+import { frameBg } from './uiSlices';
 // 世界大地图两级界面（docs/world-map-plan.md）：世界总图（4×2 底图分块 + 区域多边形 + 迷雾 + 等级段）→ 区域插画（节点/群节点/当前/BOSS）→ 传送确认卡。
 // 桌面：滚轮缩放、拖拽、悬停提示；手机：单指拖、双指缩放、双击/再点区域进入，按钮/节点 ≥44px 实尺寸、文字 ≥12px。所有输入走全局 pointer 事件做命中测试。
 import Phaser from 'phaser';
@@ -227,7 +228,7 @@ function confirmCard(h: WMHost, n: WM.NodeGeo, L: ReturnType<typeof wmLayout>) {
   const { s, R, w, st } = h, M = IS_MOBILE, FS = L.FS, cx = 640, cy = L.VY + L.VH / 2, CW = M ? 640 : 460, CH = M ? 300 : 210;
   R.add(s.add.rectangle(cx, cy, 2000, 2000, 0x000000, 0.35).setInteractive());
   if (s.textures.exists('wm_frame')) R.add(s.add.nineslice(cx, cy, 'wm_frame', undefined, CW, CH, 24, 24, 24, 24));
-  else R.add(s.add.rectangle(cx, cy, CW, CH, 0x1c140c, 0.97).setStrokeStyle(3, 0xd4a64a));
+  else R.add(frameBg(s, 'dialog_frame', cx, cy, CW, CH, { fill: 0x1c140c, alpha: 0.97, stroke: 0xd4a64a, sw: 3 }));
   const t = WM.nodeTeleport(w, n), f = n.floor;
   const lines = n.town
     ? [`回城：${TOWNS[n.town]?.name ?? n.name}`, '安全区（免费）', t.why ?? '']

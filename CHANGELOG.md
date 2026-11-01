@@ -8,6 +8,63 @@
 ## 召唤物：脱战回血 / 不叛变 / 继承英雄属性 / 移速=英雄 / 存读档保留（feat/summon-regen，未合 main）
 - 详见 docs/CHANGELOG.md 对应条目；消融表与 9 种子前后对比见 docs/summon-regen-ablation.md。
 - 存档新增可选字段 summons?（旧档无字段 = 无召唤物，兼容）；诱惑宠物同样存档。
+## UI 美术 B6 手机 DOM HUD 换皮（border-image + @2x 图）feat/ui-art-b06（基于 feat/ui-art-b05 eb8ed3b；docs/ui-art-integration.md §1 B6、docs/ui-art-plan.md §3.5）
+- 新增 `src/ui/domSkin.ts`：用 public/assets/ui/dom/<名>@2x 图，地址经 `domUrl()` 和 `mapAssetUrl()` 生成，生产环境为 webp。border-image-slice 取 slices.json 边距 ×2（图片像素，T R B L），border-image-width 取 1x 边距（CSS px），四角不拉伸。只用 dom:true 的 10 张图：btn_normal/pressed、bar_frame、bar_fill_hp/mp/exp、touch_round、btn_close、tooltip_frame、panel_frame_s。
+- 回退开关：每张图先用 `new Image()` 预载，onload 成功后才给 #mhud 加 `sk-<名>` class。所有皮肤规则都挂在这个 class 下，图 404 或断网时不加 class，沿用原纯 CSS。按钮的 border-width 保持原来的 2px，border-image 画在 padding 区，所以布局、点击区和文字区与回退时一致。
+- 映射：顶栏、自动、翻页、合击、总览「在世界地图中查看」用 btn_normal，按下或开启（:active / .on）用 btn_pressed。药水格用 btn_normal 但中心不填充，保留药水图标。互动键和摇杆提示用 touch_round（fixed，铺背景）。HP/MP/EXP 条框用 bar_frame（::after 叠层），填充用 bar_fill_*。日志用 tooltip_frame，总览框用 panel_frame_s，✕ 用 btn_close。技能圆钮保持技能图标不变。手机不出血球。
+- MobileHud.ts 只加一行调用（`window.__mhudSkin`，供测试等待）。桌面不建 MobileHud，所以不受影响。
+- 已知未改：顶栏设置图标缺失（mobile-ui-verify 的 2 个旧 FAIL），本批只记录。「自动/开」两行文字在 44px 高的按钮里下半截被裁，换皮前就是这样。
+- 测试：新增 tests/ui-dom.test.ts（73 项，已加入 npm test）；新增 e2e tests/e2e/ui-dom-verify.mjs。截图在 docs/shots/ui-art/b06/。
+- 9-seed：sim-band 的 esbuild metafile 共 31 个输入，没有一个是本批改动的文件。
+
+## UI 美术 B5 桌面 HUD + 血球叠层 feat/ui-art-b05（基于 feat/ui-art-b04 44d8d2d；docs/ui-art-integration.md §1 B5、docs/ui-art-plan.md §3.1）
+- `src/ui/uiSlices.ts`：新增 `orbLayers()`，按四层叠放：黑底圆（半径 D×52/128）→ orb_fill_red/blue（显示 D×104/128，setCrop 从上裁出水位）→ orb_glass → orb_frame。另加 `orbGeom()`、`orbCrop()`、`orbReady()`、`barFillW()`，只用 setDisplaySize / setSize。图集缺失或缺任一帧时返回 null，回退原来的代码 Orb（波浪液面）。
+- 桌面血球直径 ORB_D=136：底栏 760×112（y 608–720），球心保持 (330/950, 652)，到屏幕底只剩 68，所以选 136（在 128–160 范围内），不越出屏幕底。水位仍按 hp/maxHp、mp/maxMp 和原来的 orbLerp 平滑，只改显示。
+- Hud.ts（仅桌面）：层名牌匾改用 title_plate，底栏用 dialog_frame，经验条用 bar_frame + bar_fill_exp（宽度按比例 setSize），战斗日志底用 tooltip_frame，地图总览的 ✕ 用 btn_close（点击区仍是 48 矩形）。缺图时全部回退原绘制。位置条和小图标保留代码绘制。
+- 手机（IS_MOBILE）：不建血球，也不用九宫格，沿用现状（Phaser HUD 隐藏，DOM HUD 不变）。
+- tests/e2e/hotbar-click-verify.mjs：「点药水格 = 按 1」失败是脚本问题。脚本写在药水 1s 冷却（878a73f）之前，点击后 0.5s 就按 1，被冷却拦住。现在改为按游戏时间等过 1.1s 再按，断言改为瓶数和 HoT 入队。另外发现城内喝药 HP 不回升：World.step 城内分支提前 return，HoT 不结算。这属于战斗逻辑，没有改，脚本里输出 KNOWN 提示。
+- 测试：新增 tests/ui-hud.test.ts（40 项，已加入 npm test）；新增 e2e tests/e2e/ui-hud-verify.mjs（27 项）。截图在 docs/shots/ui-art/b05/。
+- 9-seed：sim-band 的 esbuild metafile 共 31 个输入，没有一个是本批改动的文件。
+
+## UI 美术 B4 装备槽、品质框、血石空槽 feat/ui-art-b04（基于 feat/ui-art-b03 1a53fc2；docs/ui-art-integration.md §1 B4）
+- `src/ui/uiSlices.ts`：新增 `slotBg()`（slot / slot_sel 九宫格）、`qualityFrame()`（qframe_common/magic/rare）、`bloodstoneSlot()`、`slotHitSize()`、`rowTint()` 和 `SKILL_ROW_TINT`。只用 setSize，边距从切片表读；图集被拦或缺帧时退回代码绘制。
+- Panel.ts：背包、装备槽、仓库槽和装备对比图标改用切片槽底和品质框；有图集时用 slot_sel 表示选中，没有图集时仍用描边。手机上槽位点击区不低于 36 CSS px，但不超过槽距。技能行在有图集时恢复按状态着色的半透明叠层（已学、未解锁、可学），没有图集时不变。
+- Hud.ts：桌面热键栏的技能格和药水格改用 slotBg，没有图集时退回原样。
+- 血石空槽：游戏里还没有血石功能。为了不误导玩家，只接好帧和单元测试，`BLOODSTONE_SLOT_VISIBLE=false`，不显示。存档结构不变。
+- 测试：新增 tests/ui-slots.test.ts（39 项，已加入 npm test）；新增 e2e tests/e2e/ui-slots-verify.mjs（33 项）。截图在 docs/shots/ui-art/b04/。
+- 9-seed：sim-band 的 esbuild metafile 共 31 个输入，没有一个是本批改动的文件。
+
+## UI 美术 B3 列表、页签与滚动条 feat/ui-art-b03（基于 feat/ui-art-b02 e948742；docs/ui-art-integration.md §1 B3）
+- `src/ui/uiSlices.ts`：新增 `rowBg()`（list_row / list_row_sel 九宫格）和 `scrollBar()`（scroll_track + scroll_thumb，宽 8）。只用 setSize，边距从切片表读；图集被拦、缺帧或高度小于边距和时退回原矩形。
+- `tabButton()`（TitleScene，mtext 带手机最小字号）：页签用 tab_on / tab_off，只有未选中的页签可点，点击区不低于最小点击高度；没有图集时退回 button()，当前页签前加 ▶。
+- Panel.ts：商店页签改用 tabButton；杂货、书店、技能、城镇 NPC、任务、成就各行改用 rowBg，NPC 长列表滚动条改用 scrollBar。新增 `fitRow()`：把行内按钮点击区限制在行距内（手机 ≥36 CSS px），相邻行不重叠。手机上杂货和任务行距不低于 44 CSS px；书店在手机上按行高分页（◀ ▶）。技能行有图集时不再显示按状态着色的底色，改用 list_row / list_row_sel 区分。
+- 多存档界面（844×390）：「返回」贴到屏幕底边、副标题太小，这两个问题在 B1 截图里已经有，不是 B2 引入的（B1→B2 的 TitleScene 改动只换了两处背景）。这次把面板上移到 60~700，「返回」放进面板内（底边约 369/390 CSS px）；手机上存档名改为 24、副标题改为 22 逻辑 px（约 12 CSS px），颜色调亮，最后游玩时间挪到第一行。
+- tests/e2e/tapclose-verify.mjs：修正第 22 行 `sl` 未定义，加断言和失败退出码，12 项全过。
+- 测试：新增 tests/ui-lists.test.ts（28 项，已加入 npm test）；新增 e2e tests/e2e/ui-lists-verify.mjs（1280×720 和 844×390 触屏，各跑有图集/图集被拦两遍，84 项）。覆盖页签切换、行点击区、背包 200 件翻到末页再翻回、传送员长列表真实拖动滚动且拖动不触发按钮或提示。截图在 docs/shots/ui-art/b03/。
+- 9-seed：sim-band 的 esbuild metafile 共 31 个输入，没有一个是本批改动的文件，战斗结果不受影响。
+
+## UI 美术 B2 面板与对话框 feat/ui-art-b02（基于 feat/ui-art-b01 9e8f363；docs/ui-art-integration.md §1 B2）
+- `src/ui/uiSlices.ts`：新增 `frameBg()`。有图集且帧存在时画九宫格（只 setSize，边距从切片表读）；图集被拦、缺帧或尺寸小于边距和时退回原矩形（含描边）。另加 `listRowPitch()` / `rowHitHeight()` / `viewCss()`。
+- Panel.ts：面板底改用 panel_frame，标题用 title_plate（仅有图集时画），角色卡与 NPC 立绘占位用 inset_frame，提示框与装备对比框用 tooltip_frame，对比框分隔线用 divider_v（高度不足时仍用 1px 线）。
+- TitleScene：设置面板和多存档面板改用 panel_frame。Hud：地图总览改用 dialog_frame，底栏改用 panel_frame_s。WorldMapView：确认卡回退时用 dialog_frame（wm_frame 仍优先）。
+- 手机城镇 NPC 列表：行距不低于 44 CSS px，行内按钮点击区不低于 36 CSS px 且不超过行距，相邻行不重叠。可视行数按行距自动减少，整列下移，避免盖住列表提示。滚动条和拖动换算改用新行距。桌面仍是 50 行距、44 点击区。
+- 测试：新增 tests/ui-panels.test.ts（58 项，已加入 npm test）；新增 e2e tests/e2e/ui-panels-verify.mjs（1280×720 和 844×390 触屏，各跑有图集/图集被拦两遍），截图在 docs/shots/ui-art/b02/。
+- 9-seed：sim-band 的 esbuild metafile 共 31 个输入，没有一个是本批改动的文件，战斗结果不受影响。
+
+## UI 美术 B0 资源管线 + B1 按钮 feat/ui-art-b01（docs/ui-art-integration.md）
+- 合并 origin/art/ui-plan 62d266c（美术2 最终图集）。`scripts/sync-ui-atlas.py`：把 docs/ui-preview/atlas/ui_atlas.{png,json}（512×512，46 帧 = 44 切片 + orb_fill_red/blue）拷到 public/assets/ui/，17 张手机 DOM 2x 图拷到 public/assets/ui/dom/，并从 slices.json（含 fixed/dom、最终边距）生成 src/data/ui-slices.ts。换图集只需重跑脚本，代码不改。
+- `src/ui/uiSlices.ts`：边距只从表里读；`ns()` 九宫格工厂只用 setSize（禁 setScale）；`atlasReady()` 是唯一回退判断点；`minTapHeight()`：桌面 44 逻辑 px，手机 ≥36 CSS px；`domUrl()` 供 B6 用。
+- 构建：vite compressAssets 加入 ui_atlas.png 与 ui/dom/*（无损 webp）；`assetUrl` 抽成纯函数 `mapAssetUrl`（src/assetUrlMap.ts）并映射这两类；json 帧表不改名。TitleScene preload 加载图集。
+- B1：`button()` 签名不变，有图集时用 btn_normal/hover/pressed/disabled 九宫格，没有图集时退回原矩形绘制。点击区高度不低于最小点击高度，宽度等于按钮宽。
+- 测试：tests/ui-atlas.test.ts（285 项：46 帧与表/slices.json 一致、边距合法、DOM 图与 dom 标记一致、src 无九宫格 setScale、assetUrl 映射、compressAssets 无损、缺图集/缺帧回退）已加入 npm test；e2e tests/e2e/ui-atlas-verify.mjs 截 1280×720、844×390 触屏的四态和图集 404 回退，截图在 docs/shots/ui-art/b01/。
+- 9 seed：sim-band 的依赖图（esbuild metafile，31 个输入）不含本批改动的任何文件，结果不变。
+## 三圣 4 件套装特效（feat/set-fx）
+- 圣战 4 件：主角暴击率 +5%；暴击伤害 ×1.5，按额外部分算，倍率 1.8→2.2 [适配]。
+- 法神 4 件：主角技能耗魔 ×0.9，向上取整，最低 1，0 耗魔不变；校验和扣除用同一个值 [适配]。
+- 天尊 4 件：召唤物伤害 +10%（按继承后的伤害算，在减防前乘）；友方经 heal() 的治疗 +10%（治愈术、群疗、英雄治愈术、吸血、召唤重施回满），药水不算 [适配]。
+- 官方数值未查到。setSpecials 去重，按当前装备实时计算，脱件、换装或读档后立即刷新。
+- UI：面板显示暴击率和套装特效行；tooltip 的特效单独成行；技能耗魔显示折后值。
+- 测试：tests/set-fx.test.ts 22 项；e2e set-fx-verify.mjs。9 种子不穿套时与 main 一致；SIM_SET4 下死亡中位数：战 20→9，法 11→8，道 17→13（道士最多 33→40）。
 
 ## 网络可达性测试页 feat/net-test
 - 新增 public/net-test.html（部署后 /card-legend-proto/net-test.html）：串行测本站、Supabase REST、Supabase Auth，每项 8 秒超时，有状态码即可达；复制结果、重新测试；验证 tests/e2e/net-test-verify.mjs。
