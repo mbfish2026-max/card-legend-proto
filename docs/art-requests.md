@@ -1845,3 +1845,12 @@ public/assets/ui/UI-Tooltip-Border.png
 | 鹿皮靴 | 22 | 靴子/通用 | gen_boots.png | items/h_deer_boots.png |
 | 紫绸靴 | 30 | 靴子/通用 | gen_boots.png | items/h_silk_boots.png |
 | 避魂靴 | 35 | 靴子/通用 | gen_boots.png | items/h_soul_boots.png |
+
+**状态：已出图（art/h-chain-icons）** 29 张 64×64 RGBA + 同名 @2x 128×128，位于 `public/assets/items/`：
+- 项链：h_gold_necklace 金项链 / h_black_crystal_necklace 黑色水晶项链 / h_ebony_necklace 黑檀项链 / h_yellow_crystal_necklace 黄色水晶项链 / h_devil_necklace 魔鬼项链 / h_amber_necklace 琥珀项链 / h_phoenix_pearl 凤凰明珠 / h_blue_jade_necklace 蓝翡翠项链
+- 手镯：h_leather_glove 皮制手套 / h_steel_bracelet 钢手镯 / h_big_bracelet 大手镯 / h_magic_bracelet 魔法手镯 / h_sturdy_glove 坚固手套 / h_ebony_bracelet 黑檀手镯 / h_tao_bracelet 道士手镯 / h_power_bracelet 魔力手镯 / h_death_glove 死神手套 / h_gold_bracelet 金手镯
+- 戒指：h_hex_ring 六角戒指 / h_glass_ring 玻璃戒指 / h_horn_ring 牛角戒指 / h_blue_crystal_ring 蓝色水晶戒指 / h_black_crystal_ring 黑色水晶戒指 / h_snake_eye_ring 蛇眼戒指 / h_pearl_ring 珍珠戒指
+- 靴子：h_cloth_shoes 布鞋 / h_deer_boots 鹿皮靴 / h_silk_boots 紫绸靴 / h_soul_boots 避魂靴
+
+脚本 `docs/ui-preview/build_h_chain.py`、`compose_h_chain.py`；源图 `docs/ui-preview/src/h_*_src.jpg`；预览 `docs/ui-preview/preview_h_chain_icons.jpg`。**v2（主Bot 审后修正）**：①暗色提亮+左上轮廓高光：h_black_crystal_necklace/h_black_crystal_ring（紫青）、h_ebony_necklace/h_ebony_bracelet（暖棕）、h_death_glove（紫）；②8 条项链裁短链条放大吊坠，占比对齐 eq_* 项链；③h_steel_bracelet 改为带铰链锁扣铆钉的扁平宽钢箍，h_ebony_bracelet 改为雕纹粗圆木镯（源图 src/h_br_v2_src.jpg）。64 与 @2x 同步重出，预览底部加修正前后对比。
+待系统开发把对应物品 icon 从 gen_necklace/gen_bracelet/eq_iron_ring/gen_boots 换为上述文件。
