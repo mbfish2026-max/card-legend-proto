@@ -36,7 +36,7 @@ for (const vh of [320, 360, 390, 430]) for (const k of [1, 1.28]) {
 }
 // 源码用 frameBg
 const rd = (p: string) => readFileSync(join(R, p), 'utf8');
-ok(/frameBg\(s, 'panel_frame'/.test(rd('src/ui/Panel.ts')) && /'tooltip_frame'/.test(rd('src/ui/Panel.ts')) && /'inset_frame'/.test(rd('src/ui/Panel.ts')), 'Panel.ts 面板底/提示框/嵌框走 frameBg');
+ok(/frameBg\(s, (?:'panel_frame'|panelFrameName\()/.test(rd('src/ui/Panel.ts')) && /'tooltip_frame'/.test(rd('src/ui/Panel.ts')) && /'inset_frame'/.test(rd('src/ui/Panel.ts')), 'Panel.ts 面板底/提示框/嵌框走 frameBg');
 ok((rd('src/scenes/TitleScene.ts').match(/frameBg\([^)]*'panel_frame'/g) ?? []).length >= 2, 'TitleScene 设置 + 多存档弹窗走 frameBg');
 ok(/'dialog_frame'/.test(rd('src/ui/Hud.ts')) && /'dialog_frame'/.test(rd('src/ui/WorldMapView.ts')), 'Hud 地图总览 / 世界地图确认卡走 dialog_frame');
 ok(!/nineslice[^\n]*setScale|frameBg\([^\n]*\)\.setScale/.test(rd('src/ui/Panel.ts') + rd('src/ui/Hud.ts') + rd('src/scenes/TitleScene.ts')), '九宫格不 setScale');
