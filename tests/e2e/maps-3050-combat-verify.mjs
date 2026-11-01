@@ -37,4 +37,4 @@ try {
   out.twinBoss = { thunder: sC.ev.filter(e => e.type === 'attack' && e.source === sd.uid && e.skill === 'thunder').length, lizhuaMelee: sC.ev.filter(e => e.type === 'attack' && e.source === lz.uid).length, gapShandian: Math.round(Math.abs(sC.foes.find(f => f.uid === sd.uid).x - sC.hx)), shot };
   await page.screenshot({ path: `${dir}/${PFX}-4-twinboss.png` });
   out.errs = w.errs.filter(e => !/404|Failed to load/.test(e));
-} finally { console.log(JSON.stringify(out, null, 1)); await b.close(); sv.close?.(); sv.kill?.(); }
+} finally { console.log(JSON.stringify(out, null, 1)); await b.close(); sv.close?.(); sv.kill?.(); process.exit(out.errs?.length ? 1 : 0); }
