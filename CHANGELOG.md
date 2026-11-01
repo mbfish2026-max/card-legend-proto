@@ -12,6 +12,11 @@
 ## fix/e2e-teleport（测试脚本更新，无游戏代码改动）
 - tests/e2e/mobile-entrance-verify.mjs：第 8 步按 W2 两级世界地图改写（点区域两次进入插画 → 点非当前层节点 → 确认卡「传送」）；「侧线层」FAIL 系第 8 步失败后地图面板未关、游戏暂停的连带失败。第 2 步点传送门前等待 `!fading && state==='play'`，消除偶发 FAIL。
 - tests/e2e/scroll-panels.py：W4 起传送列表按区域排序，最后一行不再是第 n 层；改为读屏上最底行「区域·层名」并断言传送到该层。
+## sim 死亡口径与通过基线（fix/sim-baseline）
+- 口径：选择「无损失死亡」单独计数，不设金币下限。理由是它只读、零扰动：1–39 指纹 27/27 不变。金币下限会从第一次死亡起改变买药和买书的时间点。sim-lib 用 respawn 前后金币、经验、等级、背包、装备是否变化来判定是否有损失。
+- PASS_MAX_DEATHS=14 不变，卡每种子的有损失死亡（硬断言）。无损失死亡的新基线为 战 20/29、法 7/16、道 11/22（a6a9afa，9 种子），超出列 GAP。
+- SIM_SET4 只在 Lv≥40 生效。开启时 41–50 段死亡 战 5→1、道 2→1，1–39 与关相同。
+- 不动 FOE_BAND，也不动任何游戏数值；战士专属压难度不做。详见 docs/sim-baseline.md。
 
 ## 召唤物：脱战回血 / 不叛变 / 继承英雄属性 / 移速=英雄 / 存读档保留（feat/summon-regen，未合 main）
 - 详见 docs/CHANGELOG.md 对应条目；消融表与 9 种子前后对比见 docs/summon-regen-ablation.md。
