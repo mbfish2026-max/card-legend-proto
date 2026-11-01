@@ -33,8 +33,8 @@ ok(wantAura({ ...u, mdefUpUntil: 0 }, 1) === 'holy_armor', '幽灵盾到期 → 
 ok(wantAura({ ...u, defUp: -3, mdefUp: -3 }, 1) === null, '被驱散（破击写负值）→ 无光环');
 ok(wantAura({ ...u, alive: false }, 1) === null, '死亡 → 无光环');
 ok(wantAura({ uid: 2, defUp: 5, defUpUntil: 10 }, 1) === null, '非光环来源的加成不触发');
-// World：施放写 auraSkill
-const w = new World(() => 0.5, 41, [{ name: 't', spawns: [] }], 'warrior' as any); w.step(0.05); w.drainEvents();
-const i = w.skills.findIndex(s => s.id === 'vajra_body');
-if (i >= 0) { w.learned.add('vajra_body'); w.hero!.mp = 9999; const r = w.cast(i, w.skills.map(() => 0)); ok(r.ok && w.hero!.auraSkill === 'vajra_body' && wantAura(w.hero as any, w.time) === 'vajra_body', '金刚护体施放 → 英雄 auraSkill'); }
+// World：施放写 auraSkill（道士神甲/幽灵盾）
+const w = new World(() => 0.5, 41, [{ name: 't', spawns: [] }], 'taoist' as any); w.step(0.05); w.drainEvents();
+for (const s of w.skillPool) { w.learned.add(s.id); w.skillTrain[s.id] = 99999; }
+for (const id of ['holy_armor', 'ghost_shield']) { const i = w.skills.findIndex(s => s.id === id); w.hero!.mp = 99999; const r = w.cast(i, w.skills.map(() => 0)); ok(i >= 0 && r.ok && w.hero!.auraSkill === id && wantAura(w.hero as any, w.time) === id, `${id} 施放 → 英雄显示 ${id} 光环`); }
 console.log(`ground-aura: ${pass} 项通过`);
