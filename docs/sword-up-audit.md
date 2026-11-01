@@ -48,3 +48,9 @@
 - 法师批 3 张、道士批 4 张已完成。fx/summon_skeleton_atk.png 按用户要求不改；战士 body 不重画（等用户决定）。
 - 旧图备份：docs/sword-up-preview/old/equip_{warrior,mage,taoist}/（战士为最初原图，旋转版不再保留）；对比图（上旧下新）：docs/sword-up-preview/{warrior,mage,taoist}_equip_compare.png。
 - 注意：各剑倾角略有差异（约 10–25°）；法师木剑首版拳边有杂线，已重新生成。
+
+### 分层重画样张（战士木剑，待确认）
+- 用户反馈 171f568 手部糊成一团、护手像贴上去、剑柄未穿过手心，改为分层合成，仅出样张，正式武器层未改。
+- 部件：单独生成「握竖直圆棍的拳头」（四指自上而下包握、拇指压在食指/中指上）和「不带手的竖直木剑」；剑拆为剑身+护手、剑柄（按拳高平铺加长）、剑首。
+- 合成（自下而上）：整把剑 → 拳头（去掉棍的像素，让剑柄从指缝透出）→ 拳头上沿以上的剑柄+护手+剑身。剑柄从拳头上下两端穿出，护手在拳头上方不压手；按棍的倾角（约 9°外倾）旋转。缩放 0.48 贴到 body.png 原拳位置，body 未改，1024×1024。
+- 样张：docs/sword-up-preview/sample_warrior_wood.png、sample_warrior_wood_3x.png；部件与脚本：docs/sword-up-preview/sample_src/。
