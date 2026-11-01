@@ -43,7 +43,7 @@ for (const [name, mk] of cases) {
 }
 // 诱惑宠物不叛变；成功率 / 上限 / 等级名字逻辑不变
 { const [, mk] = cases[cases.length - 1]; const { w, u } = mk(); const lv = u.sLv, nm = u.name, col = u.nameColor, hp = u.maxHp, atk = u.atk;
-  ok(lv === Math.min(3, w.skillLevel(w.skills.find(s => s.id === 'charm')!)) && /·\d级/.test(nm), `宠物等级/名字：${nm}`);
+  ok(lv === Math.min(3, w.skillLevel(w.skills.find(s => s.id === 'charm')!)) && /·\d级 \S+的宠物$/.test(nm) && !/[（）()]/.test(nm), `宠物等级/名字（无括号新格式）：${nm}`);
   w.drainEvents(); w.time += 1e6; run(w, 3); const evs = w.drainEvents();
   ok(u.alive && u.team === 'ally' && u.pet && u.summon && u.name === nm && u.nameColor === col && u.maxHp === hp && u.atk === atk && w.pets.includes(u) && !evs.some((e: any) => e.type === 'charm'), '快进 100 万秒：仍跟随英雄、阵营/名字/颜色/属性不变');
   ok(!('duration' in CHARM) && CHARM.maxPets.join() === '2,3,4,5' && CHARM.levelGap === 2 && Math.abs(CHARM.chance(3, 40, { level: 30, maxHp: 400 }) - 0.85) < 1e-9 && Math.abs(CHARM.chance(0, 20, { level: 20, maxHp: 800 }) - 0.1) < 1e-9, '无叛变时长；上限/等级差/成功率公式不变');
