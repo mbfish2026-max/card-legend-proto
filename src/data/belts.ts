@@ -12,5 +12,5 @@ export const BELT_ITEMS: Record<string, ItemDef> = {
   belt_lieyan: B('belt_lieyan', '烈焰腰带', 45, { mag: 4, def: 12, hp: 220 }, 700, ['mage']), // [暂定][待核]
   belt_guangmang: B('belt_guangmang', '光芒腰带', 45, { tao: 4, def: 13, hp: 240 }, 700, ['taoist']), // [暂定][待核]
 };
-/** 官方盘点：官方名/21cq id 未查到；数值[暂定] */
-export const BELT_META = Object.fromEntries(Object.values(BELT_ITEMS).map(b => [b.id, { official: '未查到', cq: 0, ...(b.cls ? { cls: b.cls } : {}), origin: 'realign' as const, note: `阶段2 腰带；需求 ${b.req}；数值[暂定]${/lieyan|guangmang/.test(b.id) ? '，[待核]' : ''}；未挂掉落（待启用）` }]));
+/** 官方盘点：官方名/21cq id 未查到，official 先填「本作名（待核）」以保持名称映射唯一；数值[暂定] */
+export const BELT_META = Object.fromEntries(Object.values(BELT_ITEMS).map(b => [b.id, { official: b.name + '（待核）', cq: 0, ...(b.cls ? { cls: b.cls } : {}), origin: 'realign' as const, note: `阶段2 腰带；需求 ${b.req}；数值[暂定]${/lieyan|guangmang/.test(b.id) ? '，[待核]' : ''}；未挂掉落（待启用）` }]));
