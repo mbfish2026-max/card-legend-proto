@@ -45,7 +45,7 @@ const CSS = `
 #mh-ovw .box{background:#05060c;border:2px solid #d4a64a;border-radius:8px;padding:8px 12px;max-width:min(92vw,640px);max-height:88vh;overflow:auto;box-sizing:border-box;color:#ddd;font-size:13px;line-height:1.45;position:relative}
 #mh-ovw h3{margin:0 52px 4px 0;font-size:15px;color:#ffe8a0}#mh-ovw .x{position:absolute;right:4px;top:4px;width:44px;height:44px;font-size:20px;background:#2a1d10;color:#ffe8a0;border:1px solid #b8893a;border-radius:6px}
 #mh-ovw .wm{display:block;margin:8px auto 2px;min-width:200px;min-height:44px;font-size:15px;background:#2a1d10;color:#ffe8a0;border:2px solid #b8893a;border-radius:6px}#mh-ovw p{margin:2px 0;white-space:normal;word-break:break-all}
-#mh-joy{position:absolute;left:0;bottom:0;width:34vw;height:60vh;pointer-events:auto;touch-action:none}
+#mh-joy{position:absolute;left:0;bottom:0;width:calc(var(--sl) + 84px);height:calc(var(--sb) + 78px);pointer-events:auto;touch-action:none}
 #mh-joy .base{position:absolute;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;display:none;
  background:rgba(0,0,0,.18);border:2px solid rgba(255,232,160,.35)}
 #mh-joy.act .base{display:block}#mh-joy.act .hint{opacity:.15}
@@ -94,7 +94,7 @@ export class MobileHud {
     icon('🎒', '角色', 'B', 'bag'); icon('📜', '技能', 'K', 'skills'); icon('🎯', '悬赏', 'Q', 'quests'); icon('🗺', '传送', 'M', 'map'); // 地图面板即传送界面（点已到达入口传送）
     // 商人/传送合并为右下「对话/进入」键（城里 T 与 W 同为 townUse；战斗地图没有商人），不再单列商店图标
     { const e = this.btn(top, '<span class="ic">🏯</span>回城', () => { const en = b.entranceHere(); if (en === 'town' || en === 'prev' || b.world.town) b.mobileAct(); else b.onKey('H'); }); e.dataset.id = 'town'; } // 任务C：在起点入口=回城/上一层，野外其余位置=用回城卷 icon('⚙', '设置', 'ESCAPE', 'settings');
-    // 左下：浮动摇杆（左下区域任意处按下即在指下出现，不常驻遮挡主角；角落只留一个小提示），多点触控按 pointerId 区分
+    // 左下：摇杆（fix/portal-same：触发区只覆盖「移动」圆钮及周边约 20px，不再盖住左端「上一层」传送门；按下后 pointer capture，手指拖出区域仍能控制），多点触控按 pointerId 区分
     const joy = this.el('div', r, 'ctl'); joy.id = 'mh-joy'; this.el('div', joy, 'hint').innerHTML = '◀ ▶<br>移动';
     const base = this.el('div', joy, 'base'); const knob = this.el('div', base, 'knob');
     let pid = -1; const R = 44;
@@ -106,7 +106,7 @@ export class MobileHud {
     };
     const end = (e: PointerEvent) => { if (e.pointerId !== pid) return; pid = -1; this.dx = this.dy = 0; knob.style.transform = ''; joy.classList.remove('act'); };
     joy.addEventListener('pointerdown', e => { if (pid >= 0) return; pid = e.pointerId; joy.setPointerCapture?.(pid); e.preventDefault();
-      const jb = joy.getBoundingClientRect(); base.style.left = Math.max(62, e.clientX - jb.left) + 'px'; base.style.top = Math.min(jb.height - 62, e.clientY - jb.top) + 'px'; joy.classList.add('act'); mv(e); });
+      const jb = joy.getBoundingClientRect(); base.style.left = (e.clientX - jb.left) + 'px'; base.style.top = (e.clientY - jb.top) + 'px'; joy.classList.add('act'); mv(e); });
     joy.addEventListener('pointermove', e => { if (e.pointerId === pid) mv(e); });
     joy.addEventListener('pointerup', end); joy.addEventListener('pointercancel', end);
     // 右下：互动（传送/对话）+ 技能弧 + 自动 + 药水 + 合击

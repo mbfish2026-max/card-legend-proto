@@ -19,4 +19,10 @@ ok(/PORTAL_TEXT\.next/.test(body), '下一层文字来自 PORTAL_TEXT');
 const hz = /zone\(0, PORTAL_FOOT - 110, (\d+), (\d+)\)/.exec(body); ok(hz && +hz[1] >= 150 && +hz[2] >= 220, '下一层点击区 150×220（与上一层同尺寸）');
 // 手机最小缩放 390/720：150×220 世界 px → 81×119 CSS，均 ≥44
 ok(150 * 390 / 720 >= 44 && 220 * 390 / 720 >= 44, '点击区在 390 高手机上 ≥44 CSS');
+// 追加：下一层色调加深（各通道 ≤0xd0 至少一项、与上一层不同），摇杆区缩小
+{ const t = PORTAL_LOOK.next.tint, ch = [t >> 16 & 255, t >> 8 & 255, t & 255];
+  ok(t !== PORTAL_LOOK.back.tint && Math.min(...ch) <= 0x80, `下一层色调加深 0x${t.toString(16)}`); }
+{ const hud = readFileSync('src/ui/MobileHud.ts', 'utf8'), m = /#mh-joy\{[^}]*width:calc\(var\(--sl\) \+ (\d+)px\);height:calc\(var\(--sb\) \+ (\d+)px\)/.exec(hud);
+  ok(m && +m[1] <= 100 && +m[2] <= 80 && !/#mh-joy\{[^}]*vh/.test(hud), '摇杆区只覆盖移动圆钮附近（≤100×80，不再按视口比例）');
+  ok(/setPointerCapture/.test(hud), '摇杆用 pointer capture，拖出区域仍可控'); }
 console.log(`portal-same: ${pass} ok`);

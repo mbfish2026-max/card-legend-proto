@@ -66,9 +66,20 @@ try {
     for (const [nm, q] of [['下一层', nx], ['上一层', bk]]) chk(q.r && q.r.r - q.r.l >= 44 && q.r.b - q.r.t >= 44, `${tag} ${nm} 点击区 ≥44 CSS ${q.r ? `${(q.r.r - q.r.l).toFixed(0)}×${(q.r.b - q.r.t).toFixed(0)}` : '无'}`);
     // 上一层点击 → 换层
     { const sp = bk.r && await p.evaluate(spot, bk.r); chk(sp && sp.vis.w >= 44 && sp.vis.h >= 44, `${tag} 上一层 屏内（含 HUD 下）区域 ${sp ? `${sp.vis.w.toFixed(0)}×${sp.vis.h.toFixed(0)} 未被 HUD 盖 ${(sp.free * 100).toFixed(0)}%` : '无'}`);
-      // 手机左下角摇杆区（#mh-joy）整块盖住左端传送门（main 上即如此）：门本体点不到时走「进入」大键（显示「上一层」），并如实记录
-      const f0 = await floor(); let via = 'portal';
-      if (sp?.p) await tap(sp.p); else if (mob) { via = '进入键'; const a = await p.evaluate(() => { const e = document.getElementById('mh-act'), r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, t: e.textContent }; }); console.log(`  ${tag} 上一层门被 HUD 盖住，改点「${a.t}」`); await tap(a); }
+      // 手机：摇杆区（#mh-joy）包围盒不得与上一层门本体点击区重叠，且门本体可直接点到（不再借「进入」键）
+      if (mob) { const j = await p.evaluate(() => { const r = document.getElementById('mh-joy').getBoundingClientRect(); return { l: r.left, r: r.right, t: r.top, b: r.bottom }; });
+        const ov = bk.r && !(j.r <= bk.r.l || j.l >= bk.r.r || j.b <= bk.r.t || j.t >= bk.r.b);
+        console.log(`  ${tag} joy=${JSON.stringify(j)} back=${JSON.stringify(bk.r)}`);
+        chk(bk.r && !ov, `${tag} 摇杆区与上一层门本体包围盒不重叠`); }
+      if (mob) { // 摇杆：按「移动」圆钮，手指拖出触发区 120px 仍右推（pointer capture），松手归零
+        const h = await p.evaluate(() => { const r = document.querySelector('#mh-joy .hint').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+        const cdp = await p.target().createCDPSession(), T = (type, pts) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: pts });
+        await T('touchStart', [{ x: h.x, y: h.y, id: 1 }]); await T('touchMove', [{ x: h.x + 60, y: h.y, id: 1 }]); await T('touchMove', [{ x: h.x + 120, y: h.y - 30, id: 1 }]); await sleep(150);
+        const d1 = await p.evaluate(() => window.__mhud.dx); await T('touchEnd', []); await sleep(150); const d2 = await p.evaluate(() => window.__mhud.dx);
+        chk(d1 === 1 && d2 === 0, `${tag} 摇杆拖出触发区仍控制（dx=${d1}），松手归零（dx=${d2}）`);
+        await p.evaluate(() => { const s = window.__game.scene.getScene('Battle'), W = s.world; W.hero.x = 220; const v = s.views.get(W.hero.uid); if (v) v.x = 220; s.cameras.main.setScroll(0, s.cameras.main.scrollY); }); await sleep(600); }
+      const f0 = await floor(); const via = 'portal';
+      chk(!!sp?.p, `${tag} 上一层门本体可直接点${sp?.p ? ` (${sp.p.x},${sp.p.y})` : '（被 HUD 盖住）'}`); if (sp?.p) await tap(sp.p);
       const ok = await p.waitForFunction(f => window.__game.scene.getScene('Battle').world.floorIndex !== f && !window.__game.scene.getScene('Battle').fading, { timeout: 8000 }, f0).then(() => true, () => false);
       chk(ok, `${tag} 点上一层（${via}）→ 换层 ${f0}→${await floor()}`); }
     // 下一层点击 → 换层

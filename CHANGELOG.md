@@ -4,7 +4,10 @@
 - 新增 src/ui/portalArt.ts（PORTAL_TEX/PORTAL_LOOK/PORTAL_TEXT）；BattleScene.syncPortalArt() 为两入口唯一创建函数：portal_exit_sheet 动画 → portal_exit 静图 → 程序椭圆占位（缺图兜底保留）。
 - 方向区分：下一层水平镜像 + 淡紫色调，上一层原样；文字标签保留（「下一层」/「传送门：返回 XXX」）。删除旧的程序绘制石拱门。
 - 下一层点击区 150×220（桌面+手机均可点，手机最小约 81×119 CSS px）。无新增美术需求。
-- 测试：tests/portal-same.test.ts（12 项）、tests/e2e/portal-same-verify.mjs（4 视口 + NOART）；截图 docs/shots/portal-same/。
+- 追加：手机摇杆触发区 #mh-joy 由 34vw×60vh 缩为「移动」圆钮周边（约 90×84 CSS，含安全区），不再盖住左端「上一层」传送门，门本体在手机上可直接点；按下后 pointer capture，手指拖出触发区仍能控制；摇杆底盘改为在按下点出现。mobile-ui-verify 的按下点随之改为圆钮中心。
+- 追加：「下一层」色调由 0xe8b8ff 加深为 0xc070ff。
+- 测试：tests/portal-same.test.ts（15 项，含色调/摇杆区/pointer capture）；e2e 新增「摇杆区与门本体不重叠」「手机直接点门本体回上一层」「摇杆拖出区域仍控制」；debug 叠加图 docs/shots/portal-same/debug-*-m844x390-joy-vs-back.png。
+- 初版测试：tests/portal-same.test.ts（12 项）、tests/e2e/portal-same-verify.mjs（4 视口 + NOART）；截图 docs/shots/portal-same/。
 
 ## 修复：换图后召唤物留在旧坐标/从远处走过来（fix/summon-mapchange，未合 main）
 - 根因：World.prevFloor（S 返回上一层）先 loadFloor 把召唤物放到本层起点附近，再把英雄挪到上一层终点（出口前），召唤物不跟着挪 → 相距约 8000px，要很久才走过来；enterTown（回城）完全不重置召唤物坐标；loadFloor 本身按 110+60k 排队，第 2/3 只已超 100px。另：读档恢复的召唤物（restoreSummons）不发 summon 事件，BattleScene 不建卡牌，直到换图前都看不见。

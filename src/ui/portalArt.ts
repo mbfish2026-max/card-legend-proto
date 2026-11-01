@@ -8,7 +8,7 @@ export const portalArtKind = (sheet: boolean, still: boolean): PortalKind => she
 /** 方向区分：下一层水平镜像 + 偏紫着色；上一层原图。gfx 为缺图占位的填充/外圈/内圈色 */
 export const PORTAL_LOOK: Record<PortalDir, { flip: boolean; tint: number; gfx: [number, number, number] }> = {
   back: { flip: false, tint: 0xffffff, gfx: [0x3a6cff, 0x9fc0ff, 0xd0e0ff] },
-  next: { flip: true, tint: 0xe8b8ff, gfx: [0x8a2cff, 0xd090ff, 0xf0d0ff] },
+  next: { flip: true, tint: 0xc070ff, gfx: [0x8a2cff, 0xd090ff, 0xf0d0ff] },
 };
 /** 方向文字 */
 export const PORTAL_TEXT: Record<PortalDir, string> = { next: '下一层', back: '上一层' };
