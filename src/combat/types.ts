@@ -25,14 +25,16 @@ export interface Unit extends UnitDef {
   alive: boolean; isHero?: boolean; summon?: boolean;
   /** 合击版阶段 A：英雄（伙伴）战斗单位，id = COMPANION_UNIT_ID；不是 summon（不走召唤物逻辑），仇恨/挨打规则同召唤物 */
   companion?: boolean;
-  /** 诱惑之光宠物（summon=true 且 pet=true）；petUntil = 叛变时间。不存档 */
-  pet?: boolean; petUntil?: number;
+  /** 诱惑之光宠物（summon=true 且 pet=true）；不叛变（用户要求）。不存档 */
+  pet?: boolean;
+  /** 召唤物最近一次攻击/被攻击的 World.time（脱战回血判定，不存档） */
+  combatT?: number;
   /** 召唤物仇恨：被召唤物打过一次后记录其 uid；主角离怪 > WORLD.summonAggroNear 时只追打该召唤物（召唤物死亡自动失效） */
   aggroUid?: number;
   /** 传世替身法符：替身单位（不攻击、不移动，到时消散；不存档） */
   decoy?: boolean; decoyUntil?: number;
   /** 召唤物等级 0–7（[适配] 官方 宝宝 7 级）、本只召唤物期间主角+召唤物总击杀、成长基准（初始属性与初始等级）、名字颜色；均不存档 */
-  sLv?: number; sKills?: number; sBase?: { hp: number; atk: number; start: number; name: string }; nameColor?: string;
+  sLv?: number; sKills?: number; sBase?: { hp: number; atk: number; def?: number; start: number; name: string }; inhKey?: string; /** 英雄移动速度倍率（加速/减速效果挂这里，默认 1） */ spdMul?: number; nameColor?: string;
   armorUntil?: number; armorReduce?: number;
   /** #12 幽灵盾（魔御）/神圣战甲术（防御）增益，不存档 */
   mdefUpUntil?: number; mdefUp?: number; defUpUntil?: number; defUp?: number;
@@ -77,7 +79,7 @@ export type BattleEvent =
   | { type: 'levelup'; level: number }
   | { type: 'summon'; uid: number }
   | { type: 'combo'; id: string; name: string; source: number; partner: number; target: number; amount: number; hits?: number; /** 表现层：被施加毒/麻痹的目标 uid */ affected?: number[]; /** 表现层：该合击持续状态结束的 world.time */ statusUntil?: number }
-  | { type: 'charm'; uid: number; result: 'ok' | 'fail' | 'immune' | 'high' | 'betray' }
+  | { type: 'charm'; uid: number; result: 'ok' | 'fail' | 'immune' | 'high' }
   | { type: 'respawn' }
   | { type: 'inventory' }
   | { type: 'bossfx'; uid: number; kind: 'spark' | 'fireball' | 'spike_warn' | 'spike' | 'daze' | 'crazy' | 'fly' | 'call' | 'enrage' | 'aoe_warn' | 'aoe'; x: number; target?: number }

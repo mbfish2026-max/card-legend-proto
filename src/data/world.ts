@@ -27,6 +27,13 @@ export const WORLD = {
   exitRadius: 90,
   exitMargin: 160,
   mpRegen: 4,                  // 每秒回蓝
+  summonRegen: 0.005,         // [适配] 召唤物/宠物基础回血：每秒最大血量 0.5%（原无回血；官方未查到）
+  summonOocSec: 4,             // [适配] 召唤物 4 秒内未攻击、未被攻击 = 脱战
+  summonOocMul: 5,             // [适配] 脱战后回血 ×5（每秒 2.5%，约 40 秒回满）
+  /** [适配] 道士召唤物继承英雄属性（官方未查到）：最终 = 原公式 + 比例×英雄当前属性；攻击继承 max(攻击, 道术)。
+   *  召唤物攻击 += round(summonInhAtk × max(英雄攻击, 英雄道术))；防御 += round(summonInhDef × 英雄防御)；生命上限 += round(summonInhHp × 英雄生命上限)。
+   *  实时：英雄属性（升级/换装）变化时刷新，生命上限变化按当前血量比例保持。诱惑宠物不继承。 */
+  summonInhAtk: 0.2, summonInhDef: 0.2, summonInhHp: 0.15,
   hpRegen: 1,                  // 每秒回血（脱战时 ×5）
   defFactor: 0.6,              // 伤害 = 原始 − 防御×该值（最低保留 dmgFloor）。feat/balance-battle：方案 B 的 0.5 在 merge balance-sys 后回退为 0.6（balance-sys 怪物攻击公式按 0.6×防御校准，0.5 会让战士死亡 ×10+）[适配]
   dmgFloor: 0.3,               // 保底伤害比例。feat/balance-battle：20%→30% [适配]（balance-plan B）

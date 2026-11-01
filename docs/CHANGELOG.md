@@ -7,6 +7,26 @@
 - 光环：受益单位各显示一个脚下光环；换图不再抑制，未过期 buff 在新图重新显示。
 - 测试：ground-aura.test.ts 新增 14 项；e2e tests/e2e/ground-aura-ally-verify.mjs；9 种子道士死亡中位 12→11、最多 26→23、单层最多 6→5（战/法不变）。
 
+## 召唤物存读档保留（feat/summon-regen）
+- 存档新增可选字段 `summons?: SummonSave[]`（不改版本号/既有字段）：`{ id: UnitDef id, pet?: true, sLv, sKills, base: {hp, atk, def?, start, name}（sBase 原公式属性）, hpR: 当前血/最大血, level, def?/mdef?（仅宠物） }`；诱惑之光替身（decoy）不存。
+- 读档（关闭重开/手动读档/切换槽）在英雄身后恢复，脱战状态，名字/颜色按等级重算，属性按 sBase+当前英雄继承重算，血量按 hpR 恢复；已在场则不叠加；宠物计数/上限照旧。
+- 旧档无该字段 = 无召唤物（原行为）；坏条目跳过不报错。测试：tests/summon-save.test.ts、e2e tests/e2e/summon-save-verify.mjs。
+
+## 召唤物移动速度 = 英雄速度（feat/summon-regen）
+- 所有召唤物/诱惑宠物的跟随与追击速度改为实时读取 World.heroMoveSpeed()（= WORLD.heroSpeed × 英雄 spdMul，加速/减速挂 spdMul），原为 WORLD.baseSpeed×1.1。跟随距离逻辑不变。
+- 测试：tests/summon-speed.test.ts。
+
+## 道士召唤物继承英雄属性（feat/summon-regen）
+- [适配]（官方未查到）道士召唤物（骷髅/神兽/赶尸/金甲骷髅）在原公式之外叠加：攻击 += round(0.2 × max(英雄攻击, 英雄道术))，防御 += round(0.2 × 英雄防御)，生命上限 += round(0.15 × 英雄生命上限)（WORLD.summonInhAtk/Def/Hp）。
+- 实时：每帧比对英雄属性签名，升级/换装后刷新；生命上限变化按当前血量比例保持。诱惑宠物不继承。名字/颜色/回血不变。
+- 测试：tests/summon-inherit.test.ts。
+
+## 召唤物脱战回血 + 雷电术冷却 = 火球术 + 诱惑宠物不叛变 + 修复召唤物攻击放大（feat/summon-regen）
+- 召唤物（骷髅/金甲骷髅/神兽/赶尸/诱惑宠物）统一在 World.summonRegen 回血：常态 0.5% 最大血/秒，4 秒无攻击且未被攻击 → ×5（2.5%/秒）；挨打或出手立即回常速；中毒不回。数值 [适配]（WORLD.summonRegen/summonOocSec/summonOocMul，官方未查到）。死亡/召回逻辑不变。
+- 雷电术冷却引用火球术（SKILL_CD.thunder = SKILL_CD.fireball，2.5→1.5s），单测断言相等。
+- 诱惑之光宠物不再叛变（适配：按用户要求取消叛变）：去掉 CHARM.duration / petUntil / 叛变恢复逻辑与「叛变」飘字；成功率、上限、等级差、宠物等级/名字不变。
+- 修复：召唤物攻击/受伤时立绘放大。根因：构建把 portraits/*_full 转成 640px webp，而姿态帧 fx/summon_*_atk|hurt.png 是原图（836×1096 / 960×747），showPose 换纹理不重算缩放 → 线上骷髅 ×1.71、神兽 ×1.5（开发环境用原图，所以看不出）。改为换帧/还原后按固定显示高度 fitArt 归一化，并在 swing/hit 前换帧；怪物狂暴不再放大卡牌（改为上下跳动）。
+- 测试：tests/summon-regen.test.ts、tests/card-scale.test.ts；e2e tests/e2e/summon-regen-verify.mjs、tests/e2e/card-scale-verify.mjs（逐帧采样容器/立绘 scale 与显示尺寸）。
 ## 增益改为脚下地面光环（feat/ground-aura-hook）
 - 神圣战甲术 / 幽灵盾 / 金刚护体不再播套在身上的罩，改播 fx_aura_<id>_start(5 帧) → _loop(10 帧循环) → _end(4 帧)：12fps、ADD、depth 9（卡牌之下），pivot=脚底中心，跟随人物 (cx, 脚底 y)；不旋转，等比缩放夹在 0.8–1.2。
 - 状态驱动（src/ui/groundAura.ts + groundAuraPlan.ts，BattleScene.update 每帧 sync）：buff 到期 / 被驱散（破击写负值）/ 单位死亡或视图移除 / 换图 → 播 end 后销毁；场景关闭直接销毁；每个单位至多 1 个光环（重复施放/刷新不叠加，后施放的优先）。覆盖所有有视图的单位（英雄、合击英雄、召唤物，以 Unit.auraSkill + def/mdef 增益字段判定）。换图后同一次增益不再重新出现。

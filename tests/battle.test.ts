@@ -318,7 +318,7 @@ const free = (w: World) => w.skills.map(() => 0);
 { // 治愈术：主角未满血治主角；满血治 170px 内最残召唤物；都满不施放（不耗蓝、不占公共间隔）
   const w = mk([{ id: 'orc', x: 3000 }], [], 'taoist', 30); const h = w.hero!; w.cast(idx(w, 'summon_skeleton'), free(w)); const sm = w.summon!; sm.x = h.x + 100;
   const hi = idx(w, 'heal'); h.mp = h.maxMp = 9999;
-  h.hp = h.maxHp - 50; sm.hp = 10; let cds = free(w); ok(w.cast(hi, cds).ok, '主角未满血：治愈术可施放'); run(w, 3); ok(h.hp === h.maxHp && sm.hp === 10, '主角未满血优先治主角（召唤物不回血）');
+  h.hp = h.maxHp - 50; sm.hp = 10; let cds = free(w); ok(w.cast(hi, cds).ok, '主角未满血：治愈术可施放'); run(w, 3); ok(h.hp === h.maxHp && sm.hp <= 10 + sm.maxHp * WORLD.summonRegen * WORLD.summonOocMul * 3 + 1, '主角未满血优先治主角（召唤物未被治疗，只有自身脱战回血）');
   h.hp = h.maxHp; sm.hp = 10; cds = free(w); const mp0 = h.mp; ok(w.cast(hi, cds).ok, '主角满血：治愈术施放到召唤物'); run(w, 3); ok(sm.hp > 10 && h.mp < mp0, `召唤物回血 10→${Math.round(sm.hp)}`);
   h.hp = h.maxHp; sm.hp = 10; sm.x = h.x + 400; cds = free(w); const r0 = w.cast(hi, cds) as any; ok(!r0.ok, '召唤物超出 170px：不施放');
   sm.x = h.x + 100; sm.hp = sm.maxHp; h.hp = h.maxHp; cds = free(w); const mp1 = h.mp; const r = w.cast(hi, cds) as any;
@@ -328,10 +328,10 @@ const free = (w: World) => w.skills.map(() => 0);
   const w = mk([{ id: 'orc', x: 3000 }], [], 'taoist', 30); const h = w.hero!; h.mp = h.maxMp = 9999;
   const k = idx(w, 'summon_skeleton'); w.cast(k, free(w)); const sm = w.summon!; const L0 = sm.sLv!;
   ok(L0 === Math.min(3, w.skillLevel(w.skills[k])) && sm.name === `骷髅·${L0}级 道士的宠物` && sm.nameColor === SUMMON_NAME_COLORS[L0], `初始等级=技能等级（${L0}），名字「${sm.name}」颜色 ${sm.nameColor}`);
-  const hp0 = sm.maxHp, atk0 = sm.atk; const colors = [sm.nameColor];
+  const hp0 = sm.maxHp, atk0 = sm.atk, ih0 = w.summonInherit(sm).hp; const colors = [sm.nameColor];
   for (let i = 0; i < 300; i++) { const e = w.spawn({ ...w.alive('enemy')[0] } as any, 'enemy', 2000, 0); w.kill(e); if (colors[colors.length - 1] !== sm.nameColor) colors.push(sm.nameColor); }
   ok(sm.sLv === SUMMON_MAX_LV && sm.name === '骷髅·7级 道士的宠物', `击杀 300 → 7 级封顶（${sm.name}）`);
-  ok(sm.maxHp === Math.round(hp0 * 480 / SKELETON_OFFICIAL.hp[L0]) && sm.atk > atk0, `7 级属性按官方比例：HP ${hp0}→${sm.maxHp}，攻击 ${atk0}→${sm.atk}`);
+  const ih = w.summonInherit(sm).hp; ok(Math.abs(sm.maxHp - (Math.round((hp0 - ih0) * 480 / SKELETON_OFFICIAL.hp[L0]) + ih)) <= 1 && sm.atk > atk0, `7 级属性按官方比例（+继承英雄 ${ih}）：HP ${hp0}→${sm.maxHp}，攻击 ${atk0}→${sm.atk}`);
   ok(colors.length === 8 - L0 && new Set(colors).size === colors.length, `每升一级换色：${colors.join(' ')}`);
   w.kill(sm); w.cast(k, free(w)); const s2 = w.summon!; ok(s2.sLv === L0 && s2.sKills === 0, '重新召唤从技能等级对应初始等级重启（不继承 7 级）');
   const w0 = mk([{ id: 'orc', x: 3000 }], [], 'taoist', 30); w0.skillTrain.summon_skeleton = 0; w0.cast(idx(w0, 'summon_skeleton'), free(w0)); const z = w0.summon!;
@@ -341,7 +341,7 @@ const free = (w: World) => w.skills.map(() => 0);
     wn.cast(kk, free(wn)); const x = wn.summon!; ok(x.sLv === n && x.name === `骷髅·${n}级 道士的宠物`, `技能 ${n} 级 → 召出 ${n} 级`);
     for (let i = 0; i < 300; i++) wn.kill(wn.spawn({ ...wn.alive('enemy')[0] } as any, 'enemy', 2000, 0)); ok(x.sLv === 7, `技能 ${n} 级召出后按总击杀成长到 7 级`);
     wn.kill(x); wn.cast(kk, free(wn)); ok(wn.summon!.sLv === n && wn.summon!.sKills === 0, `重新召唤重置为技能等级 ${n}（不继承 7 级）`); }
-  ok(!('sLv' in (w.toSave() as any)) && !JSON.stringify(w.toSave()).includes('sKills'), '召唤物等级/击杀不存档');
+  { const sv = w.toSave() as any; ok(!('sLv' in sv) && Array.isArray(sv.summons) && sv.summons.some((x: any) => x.sLv === w.summon!.sLv && x.sKills === w.summon!.sKills), '召唤物等级/击杀只存在可选字段 summons（feat/summon-regen 存读档保留）'); }
 }
 { // 自动施毒：跳过已中毒的怪；全部中毒则不施放（不耗蓝、不占公共间隔）；手动不受限
   const w = mk([{ id: 'orc', x: 1300 }, { id: 'orc', x: 1500 }], [], 'taoist', 30); tough(w); const h = w.hero!; h.x = 1000; h.mp = h.maxMp = 9999;
@@ -398,7 +398,7 @@ const free = (w: World) => w.skills.map(() => 0);
   const runAnim = (kind: 'summon_skeleton' | 'summon_beast' | 'pet') => {
     const w = mk([{ id: 'zombie', x: 900 }, { id: 'deer', x: 3000 }], [], 'taoist', 45); const h = w.hero!; h.hp = h.maxHp = 1e9; h.mp = h.maxMp = 1e9;
     let sm: any;
-    if (kind === 'pet') { sm = w.alive('enemy').find(e => e.id === 'deer')!; Object.assign(sm, { team: 'ally', summon: true, pet: true, petUntil: 1e9, ai: 'chase', y: WORLD.summonLane, x: 700, facing: 1 }); }
+    if (kind === 'pet') { sm = w.alive('enemy').find(e => e.id === 'deer')!; Object.assign(sm, { team: 'ally', summon: true, pet: true, ai: 'chase', y: WORLD.summonLane, x: 700, facing: 1 }); }
     else { ok(w.cast(idx(w, kind), free(w)).ok, `${kind} 召唤`); sm = w.units.find(u => u.summon && u.alive); }
     const z = w.alive('enemy').find(e => e.id === 'zombie')!; z.hp = z.maxHp = 1e9; z.ai = 'chase'; sm.hp = sm.maxHp = 1e9;
     const calls: Record<string, string[]> = {}; const views = new Map<number, AnimView>();
@@ -562,7 +562,8 @@ const free = (w: World) => w.skills.map(() => 0);
   { // 加强骷髅：官方成长比例（HP 60/84/120/168，攻击上限 25/26/28/30.4）
     const hpAt = (L: number) => { const x = new World(seeded(1), 30, FLOORS, 'taoist'); learnAll(x); const sk = pool(x, 'summon_skeleton'); x.skillLevel = (s: any) => s.id === sk.id ? L : World.prototype.skillLevel.call(x, s); x.cast(idx(x, 'summon_skeleton'), free(x)); return x.summon!; };
     const s0 = hpAt(0), s3 = hpAt(3), tao = new World(seeded(1), 30, FLOORS, 'taoist').hero!.tao ?? 0;
-    ok(Math.abs(s3.maxHp / s0.maxHp - 168 / 60) < 0.01 && Math.abs(s3.atk - WORLD.summonAtkMul * (10 + tao) * 30.4 / 25) <= 1, `骷髅 3 级 HP=0 级×2.8（${s0.maxHp}→${s3.maxHp}），攻击按官方上限比例（${s0.atk}→${s3.atk}）`);
+    const iw = new World(seeded(1), 30, FLOORS, 'taoist'), ih = iw.summonInherit({} as any); // 扣除继承英雄部分（feat/summon-regen）
+    ok(Math.abs((s3.maxHp - ih.hp) / (s0.maxHp - ih.hp) - 168 / 60) < 0.01 && Math.abs(s3.atk - ih.atk - WORLD.summonAtkMul * (10 + tao) * 30.4 / 25) <= 1, `骷髅 3 级 HP=0 级×2.8（继承 ${ih.hp}/${ih.atk}；${s0.maxHp}→${s3.maxHp}），攻击按官方上限比例（${s0.atk}→${s3.atk}）`);
     ok(s3.maxHp > Math.round(WORLD.summonHpMul * (140 + tao * 5) * 1.3) && s3.atk > Math.round(WORLD.summonAtkMul * (8 + tao * 0.9) * 1.3), '3 级骷髅比改前（×1.3）更强（同乘 feat/balance-battle 召唤倍率后比较）');
   }
 }
@@ -1107,8 +1108,8 @@ console.log('# 诱惑之光');
   { const { w, e, i } = setup('deer'); w.rng = () => 0; const mp = w.hero!.mp!; const r = w.cast(i, cds());
     ok(r.ok && e.team === 'ally' && !!e.pet && !!e.summon && w.pets.length === 1 && w.summon === undefined, '成功：转为宠物，不占骷髅位');
     ok(e.hp === 100 && w.hero!.mp! < mp, '无伤害，扣魔');
-    ok(!JSON.stringify(w.toSave()).includes('petUntil'), '宠物不存档');
-    w.time = (e.petUntil ?? 0) + 1; run(w, 0.1); ok(e.team === 'enemy' && !e.pet && e.ai === 'chase', '超时叛变为敌人'); }
+    ok(!!(w.toSave() as any).summons?.some((x: any) => x.pet && x.id === 'deer'), '宠物存档（summons 字段，读档保留）');
+    w.drainEvents(); const nm = e.name, col = e.nameColor, hp = e.maxHp, atk = e.atk; w.time += 1e5; run(w, 2); ok(e.alive && e.team === 'ally' && !!e.pet && !!e.summon && e.name === nm && e.nameColor === col && e.maxHp === hp && e.atk === atk && !w.drainEvents().some((v: any) => v.type === 'charm'), '不叛变：快进 10 万秒后仍为宠物，名字/颜色/属性不变'); }
   { const { w, e, i } = setup('deer'); w.rng = () => 0.99; const r = w.cast(i, cds()); const evs = w.drainEvents();
     ok(r.ok && e.team === 'enemy' && evs.some(v => v.type === 'charm' && v.result === 'fail'), '失败：诱惑失败事件，仍为敌'); }
   { const { w, e, i } = setup('skeleton'); w.rng = () => 0; w.cast(i, cds()); const evs = w.drainEvents();

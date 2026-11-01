@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 召唤物：脱战回血 / 不叛变 / 继承英雄属性 / 移速=英雄 / 存读档保留（feat/summon-regen，未合 main）
+- 详见 docs/CHANGELOG.md 对应条目；消融表与 9 种子前后对比见 docs/summon-regen-ablation.md。
+- 存档新增可选字段 summons?（旧档无字段 = 无召唤物，兼容）；诱惑宠物同样存档。
+
 ## 网络可达性测试页 feat/net-test
 - 新增 public/net-test.html（部署后 /card-legend-proto/net-test.html）：串行测本站、Supabase REST、Supabase Auth，每项 8 秒超时，有状态码即可达；复制结果、重新测试；验证 tests/e2e/net-test-verify.mjs。
 

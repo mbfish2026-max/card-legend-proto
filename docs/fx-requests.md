@@ -96,7 +96,7 @@
 ## #诱惑之光（feat/charm，2026-10-31）
 - 施放：`fx_charm_light`（目标身上粉紫色光环/心形光点，约 0.6s，单体）。未注册/缺失 → `playFx` 返回 null，回落 `fx.holyLight`（Graphics 圣光占位），不崩溃。
 - 宠物标识：当前用卡面粉色着色 + 粉色等级字占位；需要 `ui_pet_badge`（卡面角标）时在 CardView 接入。
-- 飘字：诱惑成功（粉）/诱惑失败（灰）/免疫（灰）/叛变（红），用现有 floatNumber，无需素材。
+- 飘字：诱惑成功（粉）/诱惑失败（灰）/免疫（灰）（叛变已取消），用现有 floatNumber，无需素材。
 - 音效：复用 `shockwave`。
 
 ## 召唤物动作（feat/summon-anim）

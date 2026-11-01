@@ -94,7 +94,7 @@ export const CLASSES: Record<ClassId, ClassDef> = {
       { key: 'F9', id: 'lightning_flash', name: '疾光电影', kind: 'line', stat: 'mag', mana: 75, cooldown: 5, mult: 2.4, range: 680, learn: [26, 26, 29, 32], train: [3000, 6000, 12000], icon: S + 'skill_thunder.png', sfx: 'shockwave', desc: '直线穿透光电（官方）；[适配] 前方 4 卡内全部敌人' },
       { key: 'F10', id: 'hell_thunder', name: '地狱雷光', kind: 'aoe', stat: 'mag', mana: 105, cooldown: 6, mult: 2.2, range: 425, learn: [30, 30, 32, 34], train: [4000, 8000, 12000], icon: S + 'skill_thunder.png', sfx: 'shockwave2', desc: '以自身为中心 5×5 雷暴（官方）；[适配] 左右各 2.5 卡' },
       // 诱惑之光：学习等级/修炼点/延迟 60 = 官方 C（21cq）；耗魔 = D Spell 3 ×3 [适配]；无伤害（倍率无）；规则见 World.charm*（docs/skills-official.md「诱惑之光」）
-      { key: 'F11', id: 'charm', name: '诱惑之光', kind: 'charm', stat: 'mag', mana: 9, cooldown: 0, range: 520, learn: [13, 13, 18, 24], train: [1000, 2000, 4000], icon: S + 'skill_thunder.png', sfx: 'shockwave', desc: '驯服不高于自身等级+2 的生物系怪物成为宠物（官方 C）；宠物上限 2/3/4/5（资料站）；BOSS/不死系/高智商免疫；[适配] 成功率与叛变时间' },
+      { key: 'F11', id: 'charm', name: '诱惑之光', kind: 'charm', stat: 'mag', mana: 9, cooldown: 0, range: 520, learn: [13, 13, 18, 24], train: [1000, 2000, 4000], icon: S + 'skill_thunder.png', sfx: 'shockwave', desc: '驯服不高于自身等级+2 的生物系怪物成为宠物（官方 C）；宠物上限 2/3/4/5（资料站）；BOSS/不死系/高智商免疫；[适配] 成功率；宠物不叛变（用户要求）' },
       // 传世法师 5 技能：学习等级 = 传世 DB；耗魔 = DB ×3 [适配]（再经 REBALANCE）；倍率 [适配]
       { key: 'F12', id: 'ice_arrow', name: '冰箭术', kind: 'ranged', stat: 'mag', mana: 36, cooldown: 2, cs: true, mult: 3.96, range: 560, slow: 0.5, duration: 1.5, learn: [17, 17, 20, 23], train: [3000, 6000, 12000], icon: S + 'skill_ice_arrow.png', sfx: 'thunder', desc: '冰箭（雷电术的二选一替代）对所有怪 +10%（官方）；[适配] 减速 1.5s' },
       { key: 'F13', id: 'ice_dragon', name: '冰龙破', kind: 'line', stat: 'mag', mana: 90, cooldown: 3, cs: true, mult: 2.4, range: 595, learn: [26, 26, 29, 32], train: [3000, 6000, 12000], icon: S + 'skill_ice_dragon.png', sfx: 'shockwave2', desc: '前方 7 格直线冰龙（官方）；[适配] 7×85px' },
@@ -146,9 +146,10 @@ export const SKILL_CD: Record<string, number> = {
   thunder_sword: 3, break_strike: 2, shield_break: 3, vajra_body: 6, dash_slash: 4, ice_arrow: 2, ice_dragon: 3, frost_blade: 3, five_thunder: 3, ice_whirl: 4,
   drive_corpse: 6, decoy_talisman: 6, soul_wall: 6, holy_light: 3, cleanse: 4, summon_golden_skeleton: 6,
   thrust: 1.5, half_moon: 2, rush: 4, fire_sword: 4,
-  fireball: 1.5, thunder: 2.5, fire_wall: 5, magic_shield: 6, ice_roar: 4, big_fireball: 2, burst_fire: 3, hell_fire: 2, lightning_flash: 3, hell_thunder: 4, charm: 2,
+  fireball: 1.5, fire_wall: 5, magic_shield: 6, ice_roar: 4, big_fireball: 2, burst_fire: 3, hell_fire: 2, lightning_flash: 3, hell_thunder: 4, charm: 2,
   heal: 2, poison: 2, soul_fire: 1.5, summon_skeleton: 6, summon_beast: 6, ghost_shield: 6, holy_armor: 6, mass_heal: 3,
 };
+SKILL_CD.thunder = SKILL_CD.fireball; // 用户要求：雷电术冷却与火球术一致（引用火球术，原 2.5s）
 export const CD_BEFORE_LIGHT: Record<string, number> = {};
 for (const c of Object.values(CLASSES)) for (const s of c.skills) { COOLDOWN_BEFORE[s.id] = s.cooldown; if (!s.passive) { CD_BEFORE_LIGHT[s.id] = CAST_GAP; s.cooldown = SKILL_CD[s.id] ?? 2; } }
 /** 取消冷却后的再平衡 [适配]：法/道 主动技能 耗魔×mana、倍率×mult（9 种子模拟调参；战士不动）。改前值见 MANA_BEFORE/MULT_BEFORE */

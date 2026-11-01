@@ -23,7 +23,7 @@ try {
     const id0 = e1.id; e1.id = 'skeleton'; await shoot(e1, 0); res.immune = e1.team; e1.id = id0;
     await shoot(e1, 0.999); res.fail = e1.team;
     await shoot(e1, 0); res.ok = e1.team; res.pet = !!e1.pet; res.pets = W.pets.length;
-    res.saveHasPet = JSON.stringify(W.toSave()).includes('petUntil');
+    res.saveHasPet = JSON.stringify(W.toSave()).includes('"pet"'); W.time += 1e5; await new Promise(r => setTimeout(r, 800)); res.afterLong = { team: e1.team, pet: !!e1.pet, alive: e1.alive, name: e1.name };
     return res; });
   await sleep(500); await page.screenshot({ path: `${dir}/charm-2-pet.png` });
   out = { panelHas, ...r, errs: w.errs.filter(e => !/404|Failed to load/.test(e)).slice(0, 8) };

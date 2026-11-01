@@ -30,6 +30,8 @@ import { summonDisplayName, summonNameColor, summonOwnerLabel } from './summonLa
 
 export const CRIT_CHANCE = 0.15, CRIT_MULT = 1.8;
 export interface Input { dx: number; dy: number; use?: boolean; step?: number; /** false 时关闭自动普攻；缺省/true 保持原行为 */ autoAttack?: boolean }
+/** 召唤物存档：id = 召唤物/原怪 UnitDef id；pet = 诱惑宠物；base = sBase（未继承的原公式属性）；hpR = 当前血量比例 */
+export interface SummonSave { id: string; pet?: boolean; sLv: number; sKills: number; base: { hp: number; atk: number; def?: number; start: number; name: string }; hpR: number; level?: number; def?: number; mdef?: number }
 export interface SaveData {
   v: 1; cls: ClassId; level: number; exp: number; gold: number; pots: number[];
   equip: Partial<Record<EquipSlot, InvItem>>; bag: InvItem[]; floorIndex: number; kills: number; nextUid: number;
@@ -49,6 +51,8 @@ export interface SaveData {
   storage?: InvItem[]; skillOrder?: string[]; ringQ?: RingQuest | null; ringDone?: number;
   /** 合击版 #1 英雄（伙伴）；缺省 = 旧档/未领取 */
   companion?: CompanionState | null;
+  /** feat/summon-regen：在场召唤物/诱惑宠物（可选；旧档缺省 = 无，按现状）。不改其它字段含义 */
+  summons?: SummonSave[];
   /** 装备结构版本：缺省/1 = 单戒单镯旧档，2 = 双戒双镯 */
   eqV?: number;
   /** R22 经验曲线版本：缺省=1（旧线性），2=官方形状 */
@@ -120,14 +124,13 @@ export const MECH_MINIONS: Record<string, string[]> = { boss_zuma: ['zuma_statue
 /**
  * 诱惑之光（docs/skills-official.md「诱惑之光」）
  * 官方 C：可驯服等级 ≤ 法师等级+2 的生物系怪物；A：对高智商对手无效。资料站（17173）：宠物上限 Lv0..3 = 2/3/4/5。
- * [适配]：免疫名单（BOSS + 不死系/石像 + 沃玛/祖玛/赤月/虹魔系 + 人形法师）、成功率公式、叛变时间（资料站 6 小时 → 卡牌节奏 90+30×技能等级 秒）。
+ * [适配]：免疫名单（BOSS + 不死系/石像 + 沃玛/祖玛/赤月/虹魔系 + 人形法师）、成功率公式；不叛变（用户要求取消叛变；资料站约 6 小时随机叛变）。
  */
 export const CHARM = {
   levelGap: 2, maxPets: [2, 3, 4, 5],
   immune: new Set(['skeleton', 'zombie', 'blood_zombie', 'zuma_statue', 'zuma_guard', 'woma_warrior', 'woma_guard', 'darkmage', 'bull_mage', 'redmoon_spider', 'hongmo_pig', 'hongmo_scorpion']),
   /** [适配] 成功率：技能等级、人物与怪物等级差、怪物最大血量（因素来自资料站 21cq 文章，公式本作自拟） */
   chance: (slv: number, heroLv: number, mon: { level: number; maxHp: number }) => Math.max(0.05, Math.min(0.85, 0.3 + 0.1 * slv + 0.05 * (heroLv - mon.level) - Math.min(0.3, mon.maxHp / 4000))),
-  duration: (slv: number) => 90 + 30 * slv,
 };
 /** R13 官方参数 */
 export const OFFICIAL = {
@@ -238,6 +241,21 @@ export class World {
     this.spawnHero();
     this.loadFloor(save ? Math.min(save.floorIndex, this.floors.length - 1) : 0);
     if (save?.town && TOWNS[save.town]) this.enterTown(save.town, true);
+    if (save) this.restoreSummons(save.summons);
+  }
+  /** 读档恢复召唤物：英雄身后、脱战、名字/颜色按等级重算；非法/未知条目跳过；已在场的不叠加 */
+  restoreSummons(list: unknown) {
+    const h = this.hero; if (!h || !Array.isArray(list) || this.units.some(u => u.summon && u.alive && !u.decoy)) return;
+    for (const [k, r] of (list as SummonSave[]).entries()) try {
+      if (!r || typeof r.id !== 'string' || !r.base || !(r.base.hp > 0)) continue;
+      const d = r.pet ? ENEMIES[r.id] : this.summonDefs.find(x => x.id === r.id); if (!d) continue;
+      const u = this.spawn({ ...d, level: r.level ?? d.level }, 'ally', h.x - h.facing * (110 + k * 60), WORLD.summonLane);
+      Object.assign(u, { summon: true, ai: 'chase', facing: h.facing, combatT: -1e9 });
+      if (r.pet) Object.assign(u, { pet: true, boss: undefined });
+      if (r.def !== undefined) u.def = r.def; if (r.mdef !== undefined) u.mdef = r.mdef;
+      u.sLv = Math.max(0, Math.min(SUMMON_MAX_LV, r.sLv | 0)); u.sKills = r.sKills | 0; u.sBase = { ...r.base };
+      u.hp = u.maxHp = 1; this.applySummonLv(u); u.hp = Math.max(1, Math.round(u.maxHp * Math.min(1, Math.max(0, r.hpR ?? 1))));
+    } catch { /* 坏条目忽略，不影响其它存档数据 */ }
   }
   /** 新档：出生在新手村（银杏村） */
   startInVillage() { this.enterTown('xinshou', true); }
@@ -291,7 +309,7 @@ export class World {
     const def: UnitDef = { ...base, level: this.level + (beast ? slv : 0), hp: Math.round(hp0 * hpF * k.hp), atk: Math.round(atk0 * atkF * k.atk), def: Math.round(def0 * k.def) };
     const u = this.spawn(def, 'ally', h.x - h.facing * (110 + off), WORLD.summonLane); u.summon = true; u.facing = h.facing; u.ai = 'chase';
     // 召唤物等级：初始 = 技能等级（最高 3）；「重启」= 重新召唤从技能等级对应初始等级开始，不继承上一只已升等级
-    u.sLv = L; u.sKills = 0; u.sBase = { hp: def.hp, atk: def.atk, start: L, name: base.name }; this.applySummonLv(u);
+    u.sLv = L; u.sKills = 0; u.sBase = { hp: def.hp, atk: def.atk, def: def.def, start: L, name: base.name }; this.applySummonLv(u);
     this.events.push({ type: 'summon', uid: u.uid });
   }
   /** [适配] 召唤物仇恨：怪被召唤物打过（aggroUid）且主角离怪 > summonAggroNear 时，返回该召唤物；否则 undefined（走原主角/50% 规则） */
@@ -574,6 +592,12 @@ export class World {
    * magic = 魔法伤害占比（0 物理 / 1 魔法 / 0.5 沃玛教主混合）。官方：物理只算防御，魔法只算魔御（MAC）。
    * 物理部分 − 防御×defFactor，魔法部分 − 魔御×defFactor，各自保底 20%。ignoreDef（绿毒）两者都无视。
    */
+  /** 召唤物统一回血（骷髅/金甲骷髅/神兽/赶尸/诱惑宠物等所有 summon）：基础 summonRegen；summonOocSec 秒内未攻击也未被攻击 → ×summonOocMul [适配] */
+  summonOocNow(u: Unit) { return this.time - (u.combatT ?? -1e9) >= WORLD.summonOocSec; }
+  summonRegen(u: Unit, dt: number) {
+    if (!u.alive || u.hp >= u.maxHp || (u.poisonUntil && u.poisonUntil > this.time)) return;
+    u.hp = Math.min(u.maxHp, u.hp + u.maxHp * WORLD.summonRegen * (this.summonOocNow(u) ? WORLD.summonOocMul : 1) * dt);
+  }
   damage(target: Unit, amount: number, source?: Unit, canCrit = true, dot = false, ignoreDef = false, magic = 0) {
     if (!target.alive) return 0;
     const crit = canCrit && this.rng() < (source?.isHero ? this.critChance() : CRIT_CHANCE);
@@ -593,6 +617,7 @@ export class World {
     if (target.armorUntil && target.armorUntil > this.time) amount *= 1 - (target.armorReduce ?? 0.5);
     amount = Math.max(1, Math.round(amount));
     target.hp -= amount;
+    if (target.summon) target.combatT = this.time; if (source?.summon) source.combatT = this.time; // 召唤物脱战判定
     if (target.team === 'enemy' && (source?.summon || source?.companion) && source.alive) target.aggroUid = source.uid; // 召唤物/英雄打一下即记仇
     if (target.team === 'enemy' && source?.isHero) this.heroTargetUid = target.uid; // 合击「同一目标」判定用（不耗随机数）
     if (target.team === 'enemy' && target.ai !== 'chase') { target.ai = 'chase'; this.events.push({ type: 'aggro', uid: target.uid }); }
@@ -645,10 +670,20 @@ export class World {
     return { gid: this.nextGid++, item, name, rarity, x, y, landAt: this.time + WORLD.dropLandSec, atk: inv?.stats.atk ?? 0, hp: inv?.stats.hp ?? 0, amount, inv };
   }
   /** 召唤物等级 → 属性（相对初始等级按官方 HP/攻击上限比例放大）、名字「骷髅·3级」、名字颜色 */
+  /** [适配] 道士召唤物继承英雄属性（WORLD.summonInh*，见 world.ts 注释）；诱惑宠物/无英雄 → 0 */
+  summonInherit(u: Unit): { hp: number; atk: number; def: number; key: string } {
+    const h = this.hero; if (!h || u.pet) return { hp: 0, atk: 0, def: 0, key: '' };
+    return { hp: Math.round(WORLD.summonInhHp * h.maxHp), atk: Math.round(WORLD.summonInhAtk * Math.max(h.atk ?? 0, h.tao ?? 0)), def: Math.round(WORLD.summonInhDef * (h.def ?? 0)), key: `${h.maxHp}|${h.atk}|${h.tao}|${h.def}` };
+  }
+  /** 英雄当前移动速度（按住移动速度 × 加速/减速倍率）；召唤物/宠物跟随、追击都用它 */
+  heroMoveSpeed(): number { return WORLD.heroSpeed * (this.hero?.spdMul ?? 1); }
   applySummonLv(u: Unit) {
     // 诱惑之光宠物：不吃骷髅的召唤物整体倍率（只按等级比例成长）
     const b = u.sBase!, L = u.sLv ?? 0, O = SKELETON_OFFICIAL, hm = u.pet ? 1 : summonMulAt(this.level, WORLD.summonHpMul), am = u.pet ? 1 : summonMulAt(this.level, WORLD.summonAtkMul), r = u.maxHp > 0 ? u.hp / u.maxHp : 1;
-    u.maxHp = u.hp = Math.round(hm * b.hp * O.hp[L] / O.hp[b.start]); u.hp = Math.round(u.maxHp * r); u.atk = Math.round(am * b.atk * O.atkMax[L] / O.atkMax[b.start]);
+    const hi = this.summonInherit(u);
+    u.maxHp = u.hp = Math.round(hm * b.hp * O.hp[L] / O.hp[b.start]) + hi.hp; u.hp = Math.round(u.maxHp * r); u.atk = Math.round(am * b.atk * O.atkMax[L] / O.atkMax[b.start]) + hi.atk;
+    if (b.def !== undefined) u.def = b.def + hi.def;
+    u.inhKey = hi.key;
     u.name = summonDisplayName(b.name, L, this.ownerLabel); u.nameColor = summonNameColor(L);
   }
   private summonKill() {
@@ -1105,10 +1140,10 @@ export class World {
       if (c.res === 'immune') { this.events.push({ type: 'charm', uid: t.uid, result: 'immune' }, { type: 'log', text: `${t.name}免疫诱惑之光` }); }
       else if (c.res === 'high') { this.events.push({ type: 'charm', uid: t.uid, result: 'high' }, { type: 'log', text: `诱惑失败：${t.name}等级高于自身 ${CHARM.levelGap} 级以上` }); }
       else if (this.rng() < c.p) {
-        Object.assign(t, { team: 'ally', summon: true, pet: true, petUntil: this.time + CHARM.duration(slv), ai: 'chase', y: WORLD.summonLane, boss: undefined, poisonUntil: 0, redUntil: 0, slowUntil: 0, facing: h.facing });
+        Object.assign(t, { team: 'ally', summon: true, pet: true, ai: 'chase', y: WORLD.summonLane, boss: undefined, poisonUntil: 0, redUntil: 0, slowUntil: 0, facing: h.facing });
         // 法师宠物升级同道士召唤物：初始 = 技能等级（最高 3），杀怪升级、名字带等级与蓝色
         const L = Math.min(3, slv); t.sLv = L; t.sKills = 0; t.sBase = { hp: t.maxHp, atk: t.atk, start: L, name: t.name }; this.applySummonLv(t);
-        this.events.push({ type: 'charm', uid: t.uid, result: 'ok' }, { type: 'log', text: `诱惑成功：${t.name}成为宠物（${CHARM.duration(slv)} 秒后叛变）`, color: 'green' });
+        this.events.push({ type: 'charm', uid: t.uid, result: 'ok' }, { type: 'log', text: `诱惑成功：${t.name}成为宠物`, color: 'green' });
       } else {
         if (t.ai !== 'chase') { t.ai = 'chase'; this.events.push({ type: 'aggro', uid: t.uid }); }
         this.events.push({ type: 'charm', uid: t.uid, result: 'fail' }, { type: 'log', text: `诱惑失败（成功率 ${Math.round(c.p * 100)}%）` });
@@ -1399,7 +1434,7 @@ export class World {
     this.ground.push(it); this.events.push({ type: 'drop', uid: 0, x, y: it.y, items: [it] }, { type: 'log', text: `${d.name} 奖励：${ITEMS[id].name}`, color: 'green' });
   }
   toSave(): SaveData {
-    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, town: this.town, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, townsSeen: [...this.townsSeen], reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], ringQ: this.ringQ, ringDone: this.ringDone, eqV: EQUIP_VERSION, expV: EXP_VERSION, bossCd: Object.fromEntries(Object.keys(this.bossCdUntil).map(k => [k, this.bossCdLeft(+k)]).filter(e => (e[1] as number) > 0)), mineCd: Object.fromEntries(Object.keys(this.mineCdUntil).map(k => [k, this.mineCdLeft(+k)]).filter(e => (e[1] as number) > 0)), companion: this.companion ? JSON.parse(JSON.stringify(this.companion)) : null, dungeonRuns: JSON.parse(JSON.stringify(this.dungeonRuns)), dungeonFirst: [...this.dungeonFirst]  };
+    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, town: this.town, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, townsSeen: [...this.townsSeen], reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], ringQ: this.ringQ, ringDone: this.ringDone, eqV: EQUIP_VERSION, expV: EXP_VERSION, bossCd: Object.fromEntries(Object.keys(this.bossCdUntil).map(k => [k, this.bossCdLeft(+k)]).filter(e => (e[1] as number) > 0)), mineCd: Object.fromEntries(Object.keys(this.mineCdUntil).map(k => [k, this.mineCdLeft(+k)]).filter(e => (e[1] as number) > 0)), companion: this.companion ? JSON.parse(JSON.stringify(this.companion)) : null, summons: this.units.filter(u => u.summon && u.alive && !u.decoy && u.sBase).map(u => ({ id: u.id, ...(u.pet ? { pet: true } : {}), sLv: u.sLv ?? 0, sKills: u.sKills ?? 0, base: { ...u.sBase! }, hpR: u.maxHp > 0 ? u.hp / u.maxHp : 1, level: u.level, ...(u.pet ? { def: u.def, mdef: u.mdef } : {}) })), dungeonRuns: JSON.parse(JSON.stringify(this.dungeonRuns)), dungeonFirst: [...this.dungeonFirst]  };
   }
 
   /** 点按一格：滑行中的按键全部排队（同向最多 10 格，反向则替换队列），每次按键都会走一格 */
@@ -1407,7 +1442,7 @@ export class World {
   queueStep(d: number) { const h = this.hero; if (!h || !d) return; if (this.stepTarget === null) { this.stepAge = 0; this.stepTarget = h.x + Math.sign(d) * WORLD.stepPx; } else { const sd = Math.sign(d); this.stepQueued = Math.sign(this.stepQueued) === sd ? Math.min(10, Math.abs(this.stepQueued) + 1) * sd : (Math.sign(this.stepTarget - h.x) === sd ? sd : sd); } }
   private moveHero(h: Unit, inp: Input, dt: number) {
     if (inp.step) this.queueStep(inp.step);
-    let speed = WORLD.heroSpeed, sdx = 0;
+    let speed = this.heroMoveSpeed(), sdx = 0;
     if (!inp.dx && this.stepTarget !== null) { sdx = Math.sign(this.stepTarget - h.x); speed = WORLD.stepPx / WORLD.stepSec; speed = Math.min(speed, Math.abs(this.stepTarget - h.x) / dt); }
     const dx = Math.sign(inp.dx) || sdx, dy = Math.sign(inp.dy); const x0 = h.x;
     h.moving = !!(dx || dy);
@@ -1579,23 +1614,19 @@ export class World {
 
     for (const u of this.units) if (u.alive) u.cd = Math.max(0, u.cd - dt);
     // 召唤骷髅/神兽 + 诱惑之光宠物：跟随主角；有交战中的敌人则冲上去近战
-    for (const p of this.pets) if ((p.petUntil ?? 0) <= this.time) {
-      // 叛变（资料站：到时变回敌人）[适配] 城镇内直接离开
-      if (this.town) { p.alive = false; this.events.push({ type: 'death', uid: p.uid }, { type: 'log', text: `${p.name}离开了` }); continue; }
-      if (p.sBase) { const r = p.hp / p.maxHp; Object.assign(p, { name: p.sBase.name, maxHp: p.sBase.hp, atk: p.sBase.atk, nameColor: undefined, sBase: undefined, sLv: undefined, sKills: undefined }); p.hp = Math.max(1, Math.round(p.maxHp * r)); }
-      Object.assign(p, { team: 'enemy', summon: false, pet: false, petUntil: undefined, ai: 'chase', y: 0, homeX: p.x });
-      this.events.push({ type: 'charm', uid: p.uid, result: 'betray' }, { type: 'aggro', uid: p.uid }, { type: 'log', text: `${p.name}叛变了！` });
-    }
+    // 诱惑宠物不叛变（用户要求取消叛变 [适配]）：一直跟随，直到死亡或按原规则被移除
     const allies = this.units.filter(u => u.summon && u.alive);
+    for (const sm of allies) { if (sm.sBase && !sm.pet && sm.inhKey !== this.summonInherit(sm).key) this.applySummonLv(sm); this.summonRegen(sm, dt); }
+    const smSpd = this.heroMoveSpeed(); // 召唤物移动速度 = 英雄当前速度（实时）
     for (const [k, sm] of allies.entries()) if (h) {
       const tg = this.alive('enemy').filter(e => e.ai === 'chase' && Math.abs(e.x - h.x) < (e.aggroUid === sm.uid ? WORLD.leashRange : 700)).sort((a, b) => Math.abs(a.x - sm.x) - Math.abs(b.x - sm.x))[0];
       if (tg) {
         const side = Math.sign(tg.x - sm.x) || 1; sm.facing = side as 1 | -1;
-        if (!this.inMelee(sm, tg)) this.toward(sm, tg.x - side * ((sm.width + tg.width) / 2), WORLD.summonLane, WORLD.baseSpeed * 1.1, dt);
+        if (!this.inMelee(sm, tg)) this.toward(sm, tg.x - side * ((sm.width + tg.width) / 2), WORLD.summonLane, smSpd, dt);
         else { sm.moving = false; if (sm.cd <= 0) { sm.cd = sm.atkInterval; this.events.push({ type: 'attack', source: sm.uid, target: tg.uid }); this.damage(tg, sm.atk * (0.9 + this.rng() * 0.2), sm); } }
       } else {
         const tx = h.x - h.facing * (110 + k * 60);
-        if (Math.abs(tx - sm.x) > 30) { sm.facing = Math.sign(tx - sm.x) as 1 | -1; this.toward(sm, tx, WORLD.summonLane, WORLD.baseSpeed * 1.1, dt); } else sm.moving = false;
+        if (Math.abs(tx - sm.x) > 30) { sm.facing = Math.sign(tx - sm.x) as 1 | -1; this.toward(sm, tx, WORLD.summonLane, smSpd, dt); } else sm.moving = false;
       }
     }
     if (h && h.alive && this.companion?.out) this.companionStep(dt, h);

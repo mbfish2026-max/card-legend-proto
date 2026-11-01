@@ -122,12 +122,14 @@ export class CardView extends Phaser.GameObjects.Container {
     const ang = this.art.angle; this.art.setTexture(look.key); this.fitArt(); this.art.setAngle(ang);
   }
   private poseBase?: string; private poseTimer?: Phaser.Time.TimerEvent;
-  /** 召唤物姿态单帧（art-requests L.2）：临时换纹理，ms 后切回原立绘；帧与原立绘同尺寸同锚点，故不重算缩放。缺帧 → 不做任何事（保留原动画） */
+  /** 召唤物姿态单帧（art-requests L.2）：临时换纹理，ms 后切回原立绘；缺帧 → 不做任何事（保留原动画）。
+   * 修复：姿态帧与立绘的贴图像素尺寸可能不同（如 summon_beast 立绘与 fx/summon_beast_atk），旧实现换纹理不重算缩放 → 攻击时显示 ×1.5。
+   * 现换帧后按固定显示高度 figH0 / maxW 重新归一化（fitArt），须在 swing/hit 前调用，动作 tween 取到的是归一化后的基准 */
   showPose(key: string, ms = 260) {
     const a = this.art; if (!(a instanceof Phaser.GameObjects.Image) || this.dying || !this.active || !this.scene.textures.exists(key)) return false;
     if (!this.poseBase) this.poseBase = a.texture.key;
-    a.setTexture(key); this.poseTimer?.remove();
-    this.poseTimer = this.scene.time.delayedCall(ms, () => { const b = this.poseBase; this.poseBase = undefined; if (b && a.active && this.scene.textures.exists(b)) a.setTexture(b); });
+    a.setTexture(key); this.fitArt(); this.poseTimer?.remove();
+    this.poseTimer = this.scene.time.delayedCall(ms, () => { const b = this.poseBase; this.poseBase = undefined; if (b && a.active && this.scene.textures.exists(b)) { a.setTexture(b); this.fitArt(); if (!this.dying) this.reset(); } });
     return true;
   }
   /** 按卡面高度/最大宽度缩放立绘，返回实际图高 */

@@ -496,6 +496,7 @@ export class BattleScene extends Phaser.Scene {
   handle(evs: BattleEvent[]) {
     for (const e of evs) {
       if (e.type === 'attack') {
+        { const sv0 = this.views.get(e.source) as CardView | undefined; if (sv0?.unit.summon) sv0.showPose?.(sv0.unit.id + '_atk'); } // 姿态帧先换（按固定显示高度归一化），再做攻击动作
         const r = playCombatAnim(e, uid => this.views.get(uid)); if (r?.kind !== 'attack') continue;
         const sv = r.sv as CardView, tv = r.tv as CardView, dir = r.dir;
         if (sv.unit.isHero) playFx(this, 'fx_common_slash', sv.cx + dir * sv.w * 0.25, sv.cy - 10, { tint: SLASH_TINT[this.world.cls], flip: dir < 0, decorative: this.world.cls !== 'warrior' });
@@ -504,7 +505,6 @@ export class BattleScene extends Phaser.Scene {
         else {
           // 召唤物专属攻击特效（docs/fx-requests.md 召唤物动作 / v5）；缺图退回原 Graphics 挥砍
           const u = sv.unit, fx0 = sv.x + dir * (sv.w / 2 + 6);
-          if (u.summon) sv.showPose(u.id + '_atk'); // 姿态帧（art-requests L.2），缺帧保留原动画
           const ok = u.pet ? !!playFx(this, 'fx_pet_hit_pink', tv.cx, tv.cy)
             : u.summon && (u.id === 'summon_skeleton' || u.id === 'summon_corpse' || u.id === 'summon_golden_skeleton') ? !!playFx(this, 'fx_skeleton_claw', fx0, sv.cy - 10, { flip: dir < 0 })
             : u.summon && u.id === 'summon_beast' ? !!playFx(this, 'fx_beast_bite', tv.cx, tv.cy) : false;
@@ -514,8 +514,8 @@ export class BattleScene extends Phaser.Scene {
         const v = this.views.get(e.target); if (!v) continue;
         const y = v.cy - v.h * 0.15;
         if (e.heal) { fx.floatNumber(this, v.cx, y, v.h, '+' + e.amount, FX.healColor, 0.8); continue; }
+        if (v.unit.summon) (v as CardView).showPose?.(v.unit.id + '_hurt', 220); // 先换姿态帧（归一化），再做受击动作
         playCombatAnim(e, uid => this.views.get(uid)); // 受击动作（主角/怪物/召唤物同一套）
-        if (v.unit.summon) (v as CardView).showPose?.(v.unit.id + '_hurt', 220);
         if (e.dot) { fx.floatNumber(this, v.cx + 20, y, v.h, '-' + e.amount, '#5aff3a', 0.7); continue; }
         if (!playFx(this, 'fx_common_hitspark', v.cx, v.cy)) fx.hitSpark(this, v.cx, v.cy);
         fx.floatNumber(this, v.cx, y, v.h, '-' + e.amount + (e.crit ? '!' : ''), e.crit ? '#ff5a1a' : FX.dmgColor, e.crit ? FX.critScale : 1);
@@ -523,7 +523,7 @@ export class BattleScene extends Phaser.Scene {
         if (e.source !== undefined) this.sfx(v.unit.isHero ? 'hit_hero' : e.crit ? 'swing_crit' : 'hit', 0.35);
       } else if (e.type === 'charm') {
         const v = this.views.get(e.uid); if (!v) continue;
-        const t = { ok: ['诱惑成功', '#ff9ad5'], fail: ['诱惑失败', '#cccccc'], immune: ['免疫', '#cccccc'], high: ['诱惑失败', '#cccccc'], betray: ['叛变', '#ff5a5a'] }[e.result];
+        const t = { ok: ['诱惑成功', '#ff9ad5'], fail: ['诱惑失败', '#cccccc'], immune: ['免疫', '#cccccc'], high: ['诱惑失败', '#cccccc']}[e.result];
         fx.floatNumber(this, v.cx, v.cy - v.h * 0.3, v.h, t[0], t[1], 0.7); v.sync();
       } else if (e.type === 'death') {
         const v = this.views.get(e.uid); if (!v) continue;
@@ -656,7 +656,7 @@ export class BattleScene extends Phaser.Scene {
       case 'fly': tip('飞！', '#ffd080'); break;
       case 'call': tip('召唤', '#ffd080'); break;
       // feat/balance-battle 通用 BOSS 机制表现 [适配]
-      case 'enrage': tip('狂暴！攻击+30%', '#ff4040'); if (v) this.tweens.add({ targets: v, scale: 1.08, duration: 160, yoyo: true, repeat: 2 }); break;
+      case 'enrage': tip('狂暴！攻击+30%', '#ff4040'); if (v) { const inn = (v as CardView).inner; this.tweens.add({ targets: inn, y: -10, duration: 120, yoyo: true, repeat: 2, onComplete: () => { inn.y = 0; } }); } break; // 卡牌本体不放大：原 scale×1.08 → 上下跳动
       case 'aoe_warn': {
         const r = WORLD.bossAoeRadius, g = this.add.ellipse(e.x, gy, r * 2, r * 0.45, 0xff6020, 0.25).setStrokeStyle(3, 0xffa040).setDepth(8);
         this.tweens.add({ targets: g, alpha: 0.85, duration: WORLD.bossAoeWarn * 250, yoyo: true, repeat: 1, onComplete: () => g.destroy() }); break;

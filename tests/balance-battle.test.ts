@@ -74,7 +74,7 @@ console.log(`战斗平衡测试全部通过 ${pass} 项`);
   const fb = CLASSES.mage.skills.find(s => s.id === 'fireball')!;
   ok(fb.mult === +(PLAN_G_BEFORE.mult.fireball * PLAN_G.mageMult * PLAN_G.fireMult).toFixed(2) && fb.mana === Math.round(PLAN_G_BEFORE.mana.fireball * PLAN_G.mageMana), `火球 倍率 ${PLAN_G_BEFORE.mult.fireball}→${fb.mult} 耗魔 ${PLAN_G_BEFORE.mana.fireball}→${fb.mana}`);
   ok(CLASSES.mage.base.hp === PLAN_G.mageHp && CLASSES.mage.grow.hp === PLAN_G.mageHpGrow && CLASSES.mage.grow.def === PLAN_G.mageDefGrow, `法师 HP ${PLAN_G_BEFORE.mageHp}+${PLAN_G_BEFORE.mageHpGrow}/级 → ${PLAN_G.mageHp}+${PLAN_G.mageHpGrow}/级`);
-  const sk = (lv: number) => { const w = mk([{ id: 'wolf', x: 3000 }], 'taoist', lv); w.learned = new Set(CLASSES.taoist.skills.map(s => s.id)); const h = w.hero!; h.mp = h.maxMp = 1e4; const i = w.skills.findIndex(s => s.id === 'summon_skeleton'); w.cast(i, w.skills.map(() => 0)); return w.units.find(u => u.summon)!; };
+  const sk = (lv: number) => { const w = mk([{ id: 'wolf', x: 3000 }], 'taoist', lv); w.learned = new Set(CLASSES.taoist.skills.map(s => s.id)); const h = w.hero!; h.mp = h.maxMp = 1e4; const i = w.skills.findIndex(s => s.id === 'summon_skeleton'); w.cast(i, w.skills.map(() => 0)); const u = w.units.find(u => u.summon)!; return { atk: u.atk - w.summonInherit(u).atk }; }; // 只看原公式部分（扣除英雄属性继承）
   const a = sk(14), m = sk(20), b = sk(25); ok(b.atk / a.atk < 0.6 && m.atk < a.atk && m.atk > b.atk, `召唤骷髅 15→25 级线性降到 ×${WORLD.summonAtkMul}（攻 14级 ${a.atk} / 20级 ${m.atk} / 25级 ${b.atk}）`);
 }
 console.log(`战斗平衡测试(药水)全部通过 ${pass} 项`);

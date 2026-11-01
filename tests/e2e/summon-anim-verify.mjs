@@ -19,7 +19,7 @@ try {
       let sm;
       if (kind === 'pet') {
         W.units.filter(u => u.summon && !u.pet && u.alive).forEach(u => { u.alive = false; W.events.push({ type: 'death', uid: u.uid }); });
-        sm = ene[1]; Object.assign(sm, { team: 'ally', summon: true, pet: true, petUntil: W.time + 9999, ai: 'chase', y: 30, boss: undefined, facing: 1 });
+        sm = ene[1]; Object.assign(sm, { team: 'ally', summon: true, pet: true, ai: 'chase', y: 30, boss: undefined, facing: 1 });
         W.events.push({ type: 'charm', uid: sm.uid, result: 'ok' });
       } else { B.cds = B.cds.map(() => 0); const r = W.cast(W.skills.findIndex(s => s.id === kind), B.cds); if (!r.ok) return { err: r.reason }; B.cds = B.cds.map(() => 0); sm = W.units.find(u => u.summon && !u.pet && u.alive); }
       const z = W.units.find(u => u.team === 'enemy' && u.alive && u !== sm);
