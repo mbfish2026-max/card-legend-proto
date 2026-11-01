@@ -8,7 +8,7 @@ export const S9_SRC = 'https://www.thelegendofmir2.com/ (沃玛教主 Woma Tauru
 export const WOMA_K = 4;
 /** [物品 id, S9 原始几率] */
 export const WOMA_S9_RAW: [string, number][] = [
-  ['hp_strong', 1], ['mp_strong', 1], ['sun_water', 1], ['woma_horn', 0.25],
+  ['hp_big', 1], ['mp_big', 1], ['sun', 1], ['woma_horn', 0.25],
   ['pohun', 0.5], ['zhanma', 0.5], ['yanyue', 0.5], ['xiangmo', 0.5],
   ['xiuluo', 0.0833], ['ningshuang', 0.0125], ['lianyu', 0.0006], ['magic_staff', 0.0006], ['tao_sword', 0.0006],
   ['armor', 0.05], ['soul_robe', 0.05], ['magic_robe', 0.05], ['bone_helm', 0.0833],

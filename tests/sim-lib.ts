@@ -58,7 +58,7 @@ export const simRun = (c: ClassId, seed: number, maxT = SIM_MAX_T) => {
       for (let i = w.bag.length - 1; i >= 0; i--) if (w.bag[i]?.item === 'black_iron') w.sellItem(i);
       // 合击版阶段 A 专项（HJ=1）：40 级领英雄并召唤（攻击状态），补英雄药/火龙之心，怒满即爆发；默认不开 → 与 main 完全一致
       if (process.env.HJ && w.level >= 40 && !w.town) { if (!w.companion) { w.recruitCompanion(process.env.HJ_CLS as ClassId || c, '英雄'); const cp = w.companion!; cp.combo = [comboFor(c, cp.cls)!.id]; cp.equip.heart = { uid: 0, item: 'fire_heart', name: '火龙之心', rarity: 'common', stats: {}, req: 0, price: 0 } as any; cp.heartStore = 30000; }
-        const cp = w.companion!; if (cp.bag.length < 4) { const pot = (item: string, name: string) => ({ uid: 0, item, name, rarity: 'common', stats: {}, req: 0, price: 0, qty: 5 }) as any; cp.bag.push(pot('hp_strong', '强效金创药'), pot('mp_strong', '强效魔法药')); }
+        const cp = w.companion!; if (cp.bag.length < 4) { const pot = (item: string, name: string) => ({ uid: 0, item, name, rarity: 'common', stats: {}, req: 0, price: 0, qty: 5 }) as any; cp.bag.push(pot('hp_big', '强效金创药'), pot('mp_big', '强效魔法药')); }
         if (!cp.out && w.companionCooldown() <= 0) w.toggleCompanion(); w.unleashCombo(); }
       if (process.env.SIM && Math.round(t * 20) % 2000 === 0) console.log("   t", Math.round(t), "lv", w.level, "gold", w.gold, "floor", w.floorIndex + 1, "deaths", w.deaths);
       // R11 技能书：达到等级且金币有余就买，背包里的书能学就学（学会后快捷栏重排，冷却重置）

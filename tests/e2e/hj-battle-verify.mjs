@@ -44,8 +44,8 @@ try {
   chk(out.fight.dmg > 0, `英雄攻击指定目标（伤害 ${Math.round(out.fight.dmg)}）`);
   await page.screenshot({ path: `${dir}/hj-3-target.png` });
   // 5 自动喝药
-  out.pot = await ev(async () => { const W = window.__game.scene.getScene('Battle').world, u = W.companionUnit; W.companion.bag.push({ uid: 9001, item: 'hp_strong', name: '强效金创药', rarity: 'common', stats: {}, req: 0, price: 0, qty: 3 });
-    u.hp = Math.round(u.maxHp * 0.3); const h0 = u.hp; await new Promise(r => setTimeout(r, 600)); return { h0, h1: u.hp, left: W.companion.bag.find(b => b.item === 'hp_strong')?.qty ?? 0 }; });
+  out.pot = await ev(async () => { const W = window.__game.scene.getScene('Battle').world, u = W.companionUnit; W.companion.bag.push({ uid: 9001, item: 'hp_big', name: '强效金创药', rarity: 'common', stats: {}, req: 0, price: 0, qty: 3 });
+    u.hp = Math.round(u.maxHp * 0.3); const h0 = u.hp; await new Promise(r => setTimeout(r, 600)); return { h0, h1: u.hp, left: W.companion.bag.find(b => b.item === 'hp_big')?.qty ?? 0 }; });
   chk(out.pot.h1 > out.pot.h0 && out.pot.left < 3, `英雄低血自动喝药（${out.pot.h0}→${Math.round(out.pot.h1)}，余 ${out.pot.left}）`);
   // 6 怒气补满：装火龙之心 + 学合击，靠 rageTick 从储量补
   await ev(() => { const W = window.__game.scene.getScene('Battle').world, c = W.companion; c.equip.heart = { uid: 9002, item: 'fire_heart', name: '火龙之心', rarity: 'common', stats: {}, req: 0, price: 0 }; c.heartStore = 30000; c.combo = ['leiting']; c.rage = 90; });

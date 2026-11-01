@@ -2,6 +2,7 @@ import { EquipSlot, ItemDef, Slot } from '../combat/types';
 import { CLASSES } from './classes';
 import { BOOKS, bookItemId } from './books';
 import { TOWN_ITEMS } from './items-town';
+import { BUNDLES, BUNDLE_N, bundlePrice } from './potions';
 import { NEW_EQUIP, EQUIP_META, adaptMdef } from './equip-official';
 import { EG_EQUIP } from './eg-equip';
 // 物品表：中文名 + 图标。equip=基础属性；req=需求等级；price=出售价（商人收购价）
@@ -21,6 +22,11 @@ export const ITEMS: Record<string, ItemDef> = {
   hp_mid: { id: 'hp_mid', name: '金创药(中量)', icon: 'assets/items/hp_mid.png', potion: 1 },
   mp_small: { id: 'mp_small', name: '魔法药(小量)', icon: 'assets/items/mp_small.png', potion: 2 },
   mp_mid: { id: 'mp_mid', name: '魔法药(中量)', icon: 'assets/items/mp_mid.png', potion: 3 },
+  // feat/potion-expand：强效药/太阳水（POTIONS 下标 4–7）。旧 items-town 的 hp_strong/mp_strong/sun_water 已合并到这里（读档迁移见 data/potions.ts）
+  hp_big: { id: 'hp_big', name: '强效金创药', icon: 'assets/items/pot_hp_big.png', potion: 4, price: 90 },
+  mp_big: { id: 'mp_big', name: '强效魔法药', icon: 'assets/items/pot_mp_big.png', potion: 5, price: 90 },
+  sun: { id: 'sun', name: '太阳水', icon: 'assets/items/pot_sun.png', potion: 6, price: 150 },
+  sun_big: { id: 'sun_big', name: '强效太阳水', icon: 'assets/items/pot_sun_big.png', potion: 7, price: 300 },
   // 祝福油：武器幸运 +1（上限 7），有几率诅咒（参考传奇规则，重新实现）
   bless_oil: { id: 'bless_oil', name: '祝福油', icon: 'assets/items/bless_oil.png', price: 50 },
   // 黑铁矿石：强化武器/头盔/衣服/靴子（手机版规则简化，见 World.enhanceWithIron）
@@ -136,3 +142,5 @@ for (const b of Object.values(BOOKS)) {
 
 // R14 城镇/消耗品新物品
 Object.assign(ITEMS, TOWN_ITEMS);
+// feat/potion-expand：药水捆（背包物品，占 1 格，qty 叠加；price = 回收价 = 捆价/2）
+for (const [id, b] of Object.entries(BUNDLES)) ITEMS[id] = { id, name: b.name, icon: `assets/items/${id}.png`, price: bundlePrice(id) / 2, bundle: { pot: b.pot, n: BUNDLE_N } };

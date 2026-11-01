@@ -8,6 +8,7 @@ import { sortBag } from './bagSort';
 // 自动战斗与技能、召唤物、掉落/背包/装备/商店、死亡复活、存档序列化。
 import { BattleEvent, EquipSlot, GroundItem, InvItem, Rarity, Slot, Stats, Team, Unit, UnitDef } from './types';
 import { POTIONS } from '../data/skills';
+import { BUNDLES, BUNDLE_N, BUNDLE_STACK_MAX, POT_MAX, POT_SLOTS, bundlePrice, migratePots, normSel, potIndex, potLevel } from '../data/potions';
 import { CLASSES, ClassId, SkillDef, castGapOf } from '../data/classes';
 import { ITEMS, SLOTS, SETS, equipSlotsFor, EQUIP_VERSION, ENHANCE_SLOTS, ENHANCE_MAX, ENHANCE_STAT, IRON_PRICE, IRON_MAX_PURITY, enhanceChance, shatterChance } from '../data/items';
 import { HERO, ENEMIES, SUMMON, SUMMON_BEAST, SUMMON_CORPSE, SUMMON_GOLDEN, DECOY } from '../data/units';
@@ -35,7 +36,7 @@ export interface Input { dx: number; dy: number; use?: boolean; step?: number; /
 /** 召唤物存档：id = 召唤物/原怪 UnitDef id；pet = 诱惑宠物；base = sBase（未继承的原公式属性）；hpR = 当前血量比例 */
 export interface SummonSave { id: string; pet?: boolean; sLv: number; sKills: number; base: { hp: number; atk: number; def?: number; start: number; name: string }; hpR: number; level?: number; def?: number; mdef?: number }
 export interface SaveData {
-  v: 1; cls: ClassId; level: number; exp: number; gold: number; pots: number[];
+  v: 1; cls: ClassId; level: number; exp: number; gold: number; pots: number[]; /** feat/potion-expand：3 格药水栏各格当前选中药 key（缺省 = 旧档，按 defaultSel） */ potSel?: string[];
   equip: Partial<Record<EquipSlot, InvItem>>; bag: InvItem[]; floorIndex: number; kills: number; nextUid: number;
   /** 技能修炼点（熟练度），按技能 id */
   skillTrain?: Record<string, number>;
@@ -173,6 +174,8 @@ export class World {
   zones: { x: number; until: number; dps: number; radius: number; tick: number; skill: string }[] = [];
   exp = 0; expNext: number; nextUid = 1; nextGid = 1; nextItem = 1; time = 0;
   pots = POTIONS.map(p => p.count); gold = 0;
+  /** feat/potion-expand：3 格药水栏（红/蓝/太阳水）当前选中药 key，见 getSelectedPotion */
+  potSel: string[] = normSel(null, this.pots);
   /** 背包（最多 WORLD.bagSize 格）与装备栏 */
   bag: InvItem[] = []; equip: Partial<Record<EquipSlot, InvItem>> = {};
   /** true：到达传送点后需按空格（Input.use）才切层；模拟/测试默认自动 */
@@ -225,7 +228,8 @@ export class World {
   }
   constructor(public rng: () => number = Math.random, public level = 1, public floors: Floor[] = FLOORS, public cls: ClassId = 'warrior', save?: SaveData) {
     if (save) {
-      this.cls = save.cls; this.level = save.level; this.exp = migrateExp(save.level, save.exp, save.expV); this.gold = save.gold; this.pots = [...save.pots];
+      save = { ...save, ...migratePots(save, Object.fromEntries(Object.entries(ITEMS).map(([k, d]) => [k, d.name]))) }; // feat/potion-expand：pots 补 0 + 旧 key 迁移
+      this.cls = save.cls; this.level = save.level; this.exp = migrateExp(save.level, save.exp, save.expV); this.gold = save.gold; this.pots = [...save.pots]; this.potSel = normSel(save.potSel, this.pots);
       this.equip = migrateEquip(save); this.bag = [...save.bag]; this.kills = save.kills; this.nextItem = save.nextUid;
       this.skillTrain = { ...(save.skillTrain ?? {}) }; this.reached = new Set(save.reached ?? []); this.bossKilled = new Set(save.bossKilled ?? []); this.townsSeen = new Set(Array.isArray(save.townsSeen) ? save.townsSeen.filter(x => typeof x === 'string') : []);
       for (const [k, v] of Object.entries(save.bossCd ?? {})) if (v > 0) this.bossCdUntil[+k] = Math.min(BOSS_RESPAWN, v);
@@ -837,11 +841,45 @@ export class World {
     return null;
   }
   dropItem(bagIdx: number): InvItem | null { const [it] = this.bag.splice(bagIdx, 1); if (it) this.events.push({ type: 'inventory' }); return it ?? null; }
-  sellItem(bagIdx: number): number { const it = this.bag[bagIdx]; if (!it) return 0; this.bag.splice(bagIdx, 1); this.gold += it.price; this.events.push({ type: 'inventory' }); return it.price; }
+  sellItem(bagIdx: number): number { const it = this.bag[bagIdx]; if (!it) return 0; if (BUNDLES[it.item] && (it.qty ?? 1) > 1) { it.qty!--; this.gold += it.price; this.events.push({ type: 'inventory' }); return it.price; } this.bag.splice(bagIdx, 1); this.gold += it.price; this.events.push({ type: 'inventory' }); return it.price; }
   buyPotion(i: number): string | null {
     const p = POTIONS[i]; if (!p) return '无效商品';
     if (this.gold < p.price) return '金币不足';
+    if (p.bundleOnly) return '药店只卖捆'; if (this.level < (p.lv ?? 1)) return `需要等级 ${p.lv}`;
+    if (this.pots[i] >= POT_MAX) return '药水已满';
     this.gold -= p.price; this.pots[i]++; return null;
+  }
+  // ===== feat/potion-expand：药水捆 / 3 格药水栏 =====
+  /** 买捆：捆价 = 单价×6；进背包，同种叠加（单格 ≤999），没有可叠的格要占 1 格 */
+  buyBundle(id: string): string | null {
+    const b = BUNDLES[id]; if (!b) return '无效商品'; const price = bundlePrice(id), lv = potLevel(b.pot);
+    if (this.level < lv) return `需要等级 ${lv}`; if (this.gold < price) return '金币不足';
+    const st = this.bag.find(x => x.item === id && (x.qty ?? 1) < BUNDLE_STACK_MAX);
+    if (st) st.qty = (st.qty ?? 1) + 1; else { if (this.bag.length >= WORLD.bagSize) return '背包已满'; const it = this.makeItem(id); it.qty = 1; this.bag.push(it); }
+    this.gold -= price; this.events.push({ type: 'inventory' }); return null;
+  }
+  /** 双击解开 1 捆：散装 +6；超过 POT_MAX 拒绝（不扣捆）。返回提示文本，ok 表示成功 */
+  unbundle(bagIdx: number): { ok: boolean; msg: string } {
+    const it = this.bag[bagIdx], b = it && BUNDLES[it.item]; if (!b) return { ok: false, msg: '不是药水捆' };
+    const i = potIndex(b.pot); if (this.pots[i] + BUNDLE_N > POT_MAX) return { ok: false, msg: `药水已满（${ITEMS[b.pot].name} 上限 ${POT_MAX}）` };
+    if ((it.qty ?? 1) > 1) it.qty!--; else this.bag.splice(bagIdx, 1);
+    this.pots[i] += BUNDLE_N; const msg = `解开 ${b.name}，获得 ${BUNDLE_N} 瓶${ITEMS[b.pot].name}`;
+    this.events.push({ type: 'log', text: msg, color: 'green' }, { type: 'inventory' }); return { ok: true, msg };
+  }
+  /** 背包里的散装药（旧档超上限余量 / 英雄包裹拿回来的）→ 并入药水栏计数 */
+  absorbPotionItem(bagIdx: number): string {
+    const it = this.bag[bagIdx], i = it ? potIndex(it.item) : -1; if (i < 0) return '无法使用';
+    const q = it.qty ?? 1, take = Math.min(q, POT_MAX - this.pots[i]); if (take <= 0) return '药水已满';
+    this.pots[i] += take; if (q - take > 0) it.qty = q - take; else this.bag.splice(bagIdx, 1);
+    this.events.push({ type: 'inventory' }); return `${it.name} ×${take} 放入药水栏`;
+  }
+  /** 药水栏第 slot 格（0 红 / 1 蓝 / 2 太阳水）当前选中的药 key —— 战斗侧（P4）按这个用药：usePotion(potIndex(getSelectedPotion(slot))) */
+  getSelectedPotion(slot: number): string { return this.potSel[slot] ?? POT_SLOTS[slot]?.items[0] ?? ''; }
+  /** 选中的药在 POTIONS 的下标（-1 = 无效格） */
+  selectedPotionIndex(slot: number): number { return potIndex(this.getSelectedPotion(slot)); }
+  /** 长按弹层换药种；只能换成同类（红只能换红） */
+  setSelectedPotion(slot: number, item: string): boolean {
+    const s = POT_SLOTS[slot]; if (!s || !(s.items as readonly string[]).includes(item)) return false; this.potSel[slot] = item; return true;
   }
   /** R11 书店：本职业 shop 书 */
   /** R54 书店：本职业 shop 书 + 所有学习等级 ≤ SHOP_BOOK_MAX_LV 的书（含原掉落/传世），按学习等级升序；掉落池不变 */
@@ -1478,7 +1516,7 @@ export class World {
     this.ground.push(it); this.events.push({ type: 'drop', uid: 0, x, y: it.y, items: [it] }, { type: 'log', text: `${d.name} 奖励：${ITEMS[id].name}`, color: 'green' });
   }
   toSave(): SaveData {
-    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, town: this.town, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, townsSeen: [...this.townsSeen], reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], ringQ: this.ringQ, ringDone: this.ringDone, eqV: EQUIP_VERSION, expV: EXP_VERSION, bossCd: Object.fromEntries(Object.keys(this.bossCdUntil).map(k => [k, this.bossCdLeft(+k)]).filter(e => (e[1] as number) > 0)), bossCdId: Object.fromEntries(Object.entries(this.bossCdId).map(([k, v]) => [k, Math.ceil(v - this.time)]).filter(e => (e[1] as number) > 0)), mineCd: Object.fromEntries(Object.keys(this.mineCdUntil).map(k => [k, this.mineCdLeft(+k)]).filter(e => (e[1] as number) > 0)), companion: this.companion ? JSON.parse(JSON.stringify(this.companion)) : null, summons: this.units.filter(u => u.summon && u.alive && !u.decoy && u.sBase).map(u => ({ id: u.id, ...(u.pet ? { pet: true } : {}), sLv: u.sLv ?? 0, sKills: u.sKills ?? 0, base: { ...u.sBase! }, hpR: u.maxHp > 0 ? u.hp / u.maxHp : 1, level: u.level, ...(u.pet ? { def: u.def, mdef: u.mdef } : {}) })), dungeonRuns: JSON.parse(JSON.stringify(this.dungeonRuns)), dungeonFirst: [...this.dungeonFirst]  };
+    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], potSel: [...this.potSel], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, town: this.town, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, townsSeen: [...this.townsSeen], reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], ringQ: this.ringQ, ringDone: this.ringDone, eqV: EQUIP_VERSION, expV: EXP_VERSION, bossCd: Object.fromEntries(Object.keys(this.bossCdUntil).map(k => [k, this.bossCdLeft(+k)]).filter(e => (e[1] as number) > 0)), bossCdId: Object.fromEntries(Object.entries(this.bossCdId).map(([k, v]) => [k, Math.ceil(v - this.time)]).filter(e => (e[1] as number) > 0)), mineCd: Object.fromEntries(Object.keys(this.mineCdUntil).map(k => [k, this.mineCdLeft(+k)]).filter(e => (e[1] as number) > 0)), companion: this.companion ? JSON.parse(JSON.stringify(this.companion)) : null, summons: this.units.filter(u => u.summon && u.alive && !u.decoy && u.sBase).map(u => ({ id: u.id, ...(u.pet ? { pet: true } : {}), sLv: u.sLv ?? 0, sKills: u.sKills ?? 0, base: { ...u.sBase! }, hpR: u.maxHp > 0 ? u.hp / u.maxHp : 1, level: u.level, ...(u.pet ? { def: u.def, mdef: u.mdef } : {}) })), dungeonRuns: JSON.parse(JSON.stringify(this.dungeonRuns)), dungeonFirst: [...this.dungeonFirst]  };
   }
 
   /** 点按一格：滑行中的按键全部排队（同向最多 10 格，反向则替换队列），每次按键都会走一格 */
