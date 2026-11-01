@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 药水扩展方案文档（feat/potion-doc，只出文档）
+- docs/potion-expand.md：强效药、太阳水/强效太阳水、6 瓶捆与双击解包、商店掉落、平衡评估方案、存档兼容、实现拆分；art-requests 追加 P1 药水图标。
+
 ## 修复：换图后召唤物留在旧坐标/从远处走过来（fix/summon-mapchange，未合 main）
 - 根因：World.prevFloor（S 返回上一层）先 loadFloor 把召唤物放到本层起点附近，再把英雄挪到上一层终点（出口前），召唤物不跟着挪 → 相距约 8000px，要很久才走过来；enterTown（回城）完全不重置召唤物坐标；loadFloor 本身按 110+60k 排队，第 2/3 只已超 100px。另：读档恢复的召唤物（restoreSummons）不发 summon 事件，BattleScene 不建卡牌，直到换图前都看不见。
 - 修复：新增 World.placeSummonsNearHero()（召唤物含诱惑宠物交替落在英雄身后/身前 50/50/75/75/100px，夹在地图/长街内），在 loadFloor（下一层/传送/副本/出城/上一层按钮）、prevFloor 英雄落位之后、enterTown 调用；BattleScene.snapSummonViews() 换图/进城时卡牌直接跳到新坐标，缺卡牌的召唤物补建（读档后立即可见）。不改任何战斗/平衡数值。

@@ -1764,3 +1764,9 @@ public/assets/ui/UI-Tooltip-Border.png
 | music/title.ogg | a2d1dc6 | title=magic01-zone1，album=World of Warcraft mp3s，Jason Hayes | WoW 来源 |
 
 结论：没有任何音频能确认是原创或 AI 生成。27 个音效与 4 首音乐为 WoW 来源，另 3 首来源不明（推测 WoW），公开前需要全部替换。标题页新署名「素材：原创与 AI 生成」在音频替换前并不准确。
+
+## P1. 药水扩展图标（docs/potion-expand.md，方案阶段，未接入）
+- 尺寸：64×64 PNG 透明底（游戏内缩到 36px 显示：手机药水格 56px，扣掉框后净空 36px；桌面热键同样缩放）。风格和现有 hp_small/mp_small 药瓶一致：写实手绘、1.76 传奇药瓶轮廓，缩到 36px 仍能分辨。
+- 散装：强效金创药（大红瓶）、强效魔法药（大蓝瓶）、太阳水（金黄小瓶）、强效太阳水（金黄大瓶，带光晕）。
+- 捆（6 瓶捆在一起，用麻绳或布包，颜色和单瓶对应）：金创药(小)包、魔法药(小)包、金创药(中)包、魔法药(中)包、超级金创药、超级魔法药、太阳水包、强效太阳水包。
+- 共 12 张；文件名建议 `assets/items/pot_<key>.png`、`assets/items/bundle_<key>.png`。
