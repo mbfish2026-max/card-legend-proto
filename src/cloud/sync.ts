@@ -100,7 +100,7 @@ export class CloudSync {
   markDirty(slot: number) {
     if (!this.st || !this.session) return;
     if (!this.st.dirty.includes(slot)) this.st.dirty.push(slot); this.save();
-    if (!this.timer) this.timer = this.schedule(() => { this.timer = null; void this.flush(); }, FLUSH_DELAY);
+    if (this.timer === null) this.timer = this.schedule(() => { this.timer = null; void this.flush(); }, FLUSH_DELAY);
   }
   async flush() {
     const st = this.st; if (!st || !this.session || !this.api || !st.migrated) return;
