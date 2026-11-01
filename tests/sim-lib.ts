@@ -1,5 +1,7 @@
 // 难度模拟（从 battle.test.ts 抽出，供测试与 scripts/sim-bands.ts 共用；逻辑不变，另记每次死亡的层/等级与每层进入等级）
 declare const process: { env: Record<string, string | undefined> };
+// @ts-ignore tsconfig 无 node 类型（运行于 tsx）
+import { appendFileSync } from 'node:fs';
 import { World } from '../src/combat/World';
 import { FLOORS } from '../src/data/world';
 import { CLASSES, ClassId } from '../src/data/classes';
@@ -27,6 +29,9 @@ function potBuy(w: any, cap: number) {
   if (w.level >= L(7) && n(6, 7) < SUN_CAP && w.gold >= 6 * POTIONS[7].price + 1000 && !w.buyBundle('bundle_sun_big')) { const bi = w.bag.findIndex((x: any) => x.item === 'bundle_sun_big'); if (bi >= 0) w.unbundle(bi); }
   while (w.level >= L(6) && w.gold >= POTIONS[6].price && n(6, 7) < SUN_CAP && !w.buyPotion(6)) { /* buy */ }
 }
+// SIM_POT_LOG=路径（默认关）：逐场记录指定层（SIM_POT_LOG_FLOOR，默认 封魔殿）的喝药/死亡，JSONL 写入该路径。纯只读观测，不调用任何改状态/耗随机数的方法
+const PLOG = process.env.SIM_POT_LOG, PLOG_FLOOR = process.env.SIM_POT_LOG_FLOOR ?? '封魔殿';
+const plogW = (o: any) => { if (PLOG) appendFileSync(PLOG, JSON.stringify(o) + '\n'); };
 export function seeded(s: number) { return () => (s = (s * 16807) % 2147483647) / 2147483647; }
 const learnAll = (w: World) => { w.learned = new Set(CLASSES[w.cls].skills.map(s => s.id)); return w; };
 export const SEEDS = [3, 7, 11, 19, 23, 42, 57, 88, 101];
@@ -49,14 +54,14 @@ const band = (lv: number) => Math.min(5, Math.floor((lv - 1) / 10));
 export const simRun = (c: ClassId, seed: number, maxT = SIM_MAX_T) => {
     const w = (process.env.ALL ? learnAll : (x: World) => x)(Object.assign(new World(seeded(seed), 1, FLOORS, c), { dungeons: false })); let cds = w.skills.map(() => 0); let t = 0, potUsed = 0, goldAt40 = -1; const potGold = [0, 0]; let freeDeaths = 0, costDeaths = 0; const learnLog: string[] = []; let hjCombo = 0, hjHeroDmg = 0, hjAllDmg = 0, hjT = 0, hjOut = 0;
     const dg = { heroDmg: 0, sumDmg: 0, sumDeaths: 0, t: 0, sumT: 0, sumN: 0, foeOnSum: 0, foeOnHero: 0, sumLv: 0, sumHp: 0, heroHp: 0, samples: 0, sumKillDmg: 0, allKillDmg: 0 };
-    const deathAt: { floor: number; lv: number }[] = []; const floorLv: Record<number, number> = {};
+    const deathAt: { floor: number; lv: number }[] = []; const plog: { buf: any[]; last: number } = { buf: [], last: -1 }; const floorLv: Record<number, number> = {};
     const gearAt: Record<number, any> = {}; const lvK: number[] = [], lvT: number[] = [], lvVK: number[] = [], lvVT: number[] = []; const kills = [0, 0, 0, 0, 0, 0], killT = [0, 0, 0, 0, 0, 0], virtKills = [0, 0, 0, 0, 0, 0], virtT = [0, 0, 0, 0, 0, 0], replays: Record<number, number> = {}; let floorKills = 0, floorT = 0, lastF = -1;
     /** 首清经验：每层第一次进入到清完（离开）所得经验 ÷ 进入时等级所需 */
     const firstClear: Record<number, { lv: number; exp: number }> = {}; let curFirst: number | null = null;
     while (!w.done && t < maxT) {
       if (floorLv[w.floorIndex] === undefined && !w.town) { floorLv[w.floorIndex] = w.level; gearAt[w.floorIndex] = { lv: w.level, ...w.equipStats() }; }
       const h = w.hero;
-      if (!h) { if (process.env.SIMDBG && deathAt.length % (+process.env.SIMDBG > 1 ? +process.env.SIMDBG : 25) === 0) console.log('died', w.floorIndex, 'Lv', w.level, (globalThis as any)._near); deathAt.push({ floor: w.floorIndex, lv: w.level }); learnLog.push(`死@${w.floorIndex + 1}层Lv${w.level}`);
+      if (!h) { if (process.env.SIMDBG && deathAt.length % (+process.env.SIMDBG > 1 ? +process.env.SIMDBG : 25) === 0) console.log('died', w.floorIndex, 'Lv', w.level, (globalThis as any)._near); deathAt.push({ floor: w.floorIndex, lv: w.level }); if (PLOG && plog.buf.length && FLOORS[w.floorIndex]?.name === PLOG_FLOOR) { plogW({ ev: 'death', cls: c, seed, lv: w.level, pots: [...w.pots], last5s: plog.buf }); plog.buf = []; } learnLog.push(`死@${w.floorIndex + 1}层Lv${w.level}`);
         // fix/sim-baseline：死亡分「无损失 / 有损失」计数（实测复活前后金币、经验、等级、背包、装备，不写死）；只读，不改轨迹
         const lossKey = () => JSON.stringify([w.gold, w.exp, w.level, w.bag.length, Object.values(w.equip).filter(Boolean).length]); const lk0 = lossKey(); w.respawn(); if (lossKey() === lk0) freeDeaths++; else costDeaths++;
         // 任务 A 后层更长、怪更多，死亡即整层重刷：同层连死 SIM_STUCK 次 → 模拟玩家「回上一层练 1 级再来」（虚拟刷怪，只加经验与估算用时，死亡照常计数）
@@ -65,6 +70,7 @@ export const simRun = (c: ClassId, seed: number, maxT = SIM_MAX_T) => {
           let i = 0; while (w.level === lv0 && i < 5000) { const id = ids[i++ % ids.length]; const b = band(w.level); lvVK[w.level] = (lvVK[w.level] ?? 0) + 1; lvVT[w.level] = (lvVT[w.level] ?? 0) + spk; w.gainExp(killExp(id, pf, w.level, monsterLevelAt(id, pf))); w.gold += virtGold(id, pf); virtKills[b]++; virtT[b] += spk; t += spk; }
           w.drainEvents(); w.recompute(true); learnLog.push(`卡关练级@${pf + 1}层→Lv${w.level}`); }
         continue; }
+      const plOn = !!PLOG && FLOORS[w.floorIndex]?.name === PLOG_FLOOR && !w.town, plPots = plOn ? [...w.pots] : null, plHp = h.hp, plMp = h.mp ?? 0;
       if (POTC) { // feat/potion-combat（SIM_POT=1）：同阈值，按药水栏当前选中药用；太阳水 HP<30% 才喝（瞬回，独立冷却）
         potSelBest(w);
         if (h.hp < h.maxHp * 0.4 && w.usePotionSlot(0)) potUsed++;
@@ -113,7 +119,12 @@ export const simRun = (c: ClassId, seed: number, maxT = SIM_MAX_T) => {
         w.drainEvents(); w.recompute(true);
       }
       const _d0 = w.deaths, _near = process.env.SIMDBG ? w.units.filter(u => u.alive && u.team !== 'ally' && Math.abs(u.x - w.hero!.x) < 300).map(u => `${u.id}:${u.hp}/${u.maxHp}a${u.atk}`).join(',') : '';
-      w.step(0.05, { dx: (() => { const f = w.queue(1)[0]; return f && w.inMelee(h, f) ? 0 : 1; })(), dy: 0 }); (globalThis as any)._near = _near; { const evs = w.drainEvents(); for (const e of evs) if (e.type === 'exp') { if (curFirst !== null) firstClear[curFirst].exp += (e as any).amount; } else if (e.type === 'death' && !w.town) { kills[band(w.level)]++; lvK[w.level] = (lvK[w.level] ?? 0) + 1; floorKills++; }
+      if (plOn) { const used = plPots!.map((n, k) => n - w.pots[k]).map((d, k) => d > 0 ? POTIONS[k].item : '').filter(Boolean);
+        const slotSt = [0, 2].map(sl => { const k = w.selectedPotionIndex(sl); return k < 0 ? { n: 0, cd: 0 } : { n: w.pots[k], cd: +w.potionCooldown(k).toFixed(2) }; });
+        plog.buf.push({ t: +w.time.toFixed(2), hp: plHp, mp: plMp, max: h.maxHp, used, hpS: slotSt[0], sunS: slotSt[1] }); if (plog.buf.length > 100) plog.buf.shift();
+        if (used.length) plogW({ ev: 'use', cls: c, seed, lv: w.level, t: +w.time.toFixed(2), used, hp: plHp, mp: plMp, max: h.maxHp, pots: [...w.pots] });
+        plog.last = w.floorIndex; }
+      w.step(0.05, { dx: (() => { const f = w.queue(1)[0]; return f && w.inMelee(h, f) ? 0 : 1; })(), dy: 0 }); if (plOn) { const b = plog.buf[plog.buf.length - 1]; if (b) b.hp1 = h.hp; } (globalThis as any)._near = _near; { const evs = w.drainEvents(); for (const e of evs) if (e.type === 'exp') { if (curFirst !== null) firstClear[curFirst].exp += (e as any).amount; } else if (e.type === 'death' && !w.town) { kills[band(w.level)]++; lvK[w.level] = (lvK[w.level] ?? 0) + 1; floorKills++; }
       if (process.env.DIAG && w.level >= 11 && w.level <= 20 && !w.town && w.hero) { const ids = new Map(w.units.map(u => [u.uid, u])); dg.t += 0.05; const ss = w.units.filter(u => u.alive && u.summon); if (ss.length) dg.sumT += 0.05; dg.sumN += ss.length * 0.05;
         if (Math.round(t * 20) % 20 === 0) { dg.samples++; dg.heroHp += w.hero.maxHp; for (const sm of ss) { dg.sumLv += sm.level ?? 0; dg.sumHp += sm.maxHp; } for (const f of w.units) if (f.alive && f.team === 'enemy' && Math.abs(f.x - w.hero.x) < 400) { const tg = (w as any).summonAggro?.(f); if (tg) dg.foeOnSum++; else dg.foeOnHero++; } }
         for (const e of evs as any[]) { const tu = ids.get(e.target), su = ids.get(e.source); if (e.type === 'damage' && !e.heal && tu) { if (tu.isHero) dg.heroDmg += e.amount; else if (tu.summon) dg.sumDmg += e.amount; else if (tu.team === 'enemy') { dg.allKillDmg += e.amount; if (su?.summon) dg.sumKillDmg += e.amount; } } if (e.type === 'death' && tu?.summon) dg.sumDeaths++; } }
