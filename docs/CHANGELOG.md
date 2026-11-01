@@ -4,6 +4,11 @@
 - 根因：World.prevFloor（S 返回上一层）先 loadFloor 把召唤物放到本层起点附近，再把英雄挪到上一层终点（出口前），召唤物不跟着挪 → 相距约 8000px，要很久才走过来；enterTown（回城）完全不重置召唤物坐标；loadFloor 本身按 110+60k 排队，第 2/3 只已超 100px。另：读档恢复的召唤物（restoreSummons）不发 summon 事件，BattleScene 不建卡牌，直到换图前都看不见。
 - 修复：新增 World.placeSummonsNearHero()（召唤物含诱惑宠物交替落在英雄身后/身前 50/50/75/75/100px，夹在地图/长街内），在 loadFloor（下一层/传送/副本/出城/上一层按钮）、prevFloor 英雄落位之后、enterTown 调用；BattleScene.snapSummonViews() 换图/进城时卡牌直接跳到新坐标，缺卡牌的召唤物补建（读档后立即可见）。不改任何战斗/平衡数值。
 - 测试：tests/summon-mapchange.test.ts（法师 3 只 / 道士 2 只，下一层、S 返回上一层、上一层按钮、传送、进/出副本、回城、出城，断言距英雄 ≤100px、等级不丢；修复前挂）；e2e tests/e2e/summon-mapchange-verify.mjs（真实 S 键路径等，World 与卡牌显示坐标都 ≤100px，0 控制台错误；修复前 S 返回后召唤物距英雄 8500px 且无卡牌）。
+## 城内喝药水回血（fix/town-hot）
+- 根因：World.step 的城内分支只处理移动就 return，药水 HoT（tickHots）在城内不结算；HoT 用绝对时间 next，出城第一帧 while 一次补齐（单测实测 +120.25 一帧补上）。
+- 修：城内分支末尾对主角调用 tickHots（只此一行）。其它计时（技能 buff/冷却/药水冷却/复活无敌）本来就用绝对 this.time，城内照常倒计时，不变；中毒伤害、自然回血、召唤物回血城内仍不结算（安全区原设计，未扩大范围）。
+- HoT 不入存档（原设计），0.5 s 内结算完；读档兼容无变化。sim 不进城（sim-lib 无 enterTown），1–39 指纹不受影响。
+- 测试：tests/town-hot.test.ts 8 项（城内 HP 涨、城内到期清空、出城不重复补、存读档）。
 
 ## 三圣 4 件套装特效（feat/set-fx）
 - 圣战 4 件：主角暴击率 +5%；暴击伤害 ×1.5，按额外部分算，倍率 1.8→2.2 [适配]。
