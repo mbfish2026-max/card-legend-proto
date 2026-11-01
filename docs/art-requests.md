@@ -1486,3 +1486,24 @@ public/assets/ui/UI-Tooltip-Border.png
 | m3_ape_warrior | 猿猴战士 | 失乐园 | 皮甲巨猿，持铁棍 | 推测 |
 
 预览：docs/art-gap-preview/maps3050_mon1.jpg
+| m3_ape_general | 猿猴战将 | 失乐园 | 银毛巨猿将，重甲红披风，持长戟 | 推测 |
+| boss_m3_mad_moshen_thief | 疯狂魔神盗（BOSS） | 失乐园 | 兜帽角魔，双匕首、金币袋 | 推测；去绿溢色后肤色偏紫红 |
+| boss_sq_shandian | 闪电魔（BOSS） | 黑暗轮回 | 雷电元素魔，持闪电 | 推测 |
+| sq_moyan | 魔眼 | 黑暗轮回 | 紫色独眼触手球 | 推测 |
+| sq_youying | 幽影武士 | 叹息回廊 | 黑甲幽灵武士，持长刀 | 推测；脚下保留少量烟影 |
+| sq_yanmo | 炎魔 | 叹息回廊 | 熔岩有翼炎魔，持火鞭 | 推测 |
+| sq_dihuo_rider | 地火兽骑将 | 铁血魔宫 | 熔岩犀兽坐骑＋火枪骑将 | 推测 |
+| boss_sq_tiexue | 铁血魔王（BOSS） | 铁血魔宫 | 血染铁甲魔王，持锯齿巨剑 | 推测 |
+
+预览：docs/art-gap-preview/maps3050_mon2.jpg
+
+### 因同 id 已有立绘而跳过（不重画）
+
+| 怪物 | 已有文件 |
+|---|---|
+| 月魔蜘蛛 | redmoon_spider_full.png |
+| 三头蛇王 | boss_sq_snake_king_full.png |
+| 白蛇妖 / 红蛇妖 / 黑蛇妖 | sq_*_snake_yao_full.png |
+| 利爪魔 | sq_lizhua_full.png |
+
+通天塔低层小怪、逆魔系列：官方怪物名单未查到，规划中沿用已有 id，故未新画（未查到/推测）。
