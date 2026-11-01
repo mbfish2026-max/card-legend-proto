@@ -7,6 +7,7 @@ import { REGIONS } from '../src/data/map';
 import { ASSETS } from '../src/assets-manifest';
 import { M4_OFFICIAL } from '../src/data/m4-official';
 const { existsSync } = await import('node:' + 'fs') as any;
+import { DUNGEON_BY_FLOOR } from '../src/data/dungeons';
 let pass = 0; const ok = (c: boolean, m: string) => { if (!c) { console.error('FAIL', m); throw new Error(m); } pass++; console.log('ok', m); };
 const seeded = (s: number) => () => (s = (s * 16807) % 2147483647) / 2147483647;
 const M4: Record<string, [string, string, 'boss' | 'normal', number]> = {
@@ -32,6 +33,8 @@ for (const fl of [80, 81, 82]) {
   for (const u of w.alive('enemy')) w.kill(u);
   ok(w.alive('enemy').length === 0, `${FLOORS[fl].name} 全部可击杀`);
   // BOSS 刷新冷却（bossCdUntil）期间首领不在，其余怪全刷；冷却过后整层全刷
+  // P3：副本层（82 恶魔祭坛）每日次数内首领不冷却（D2），次数用尽后才 600s 冷却
+  if (DUNGEON_BY_FLOOR[fl]) { w.loadFloor(fl); ok(w.alive('enemy').length === FLOORS[fl].spawns.length, `${FLOORS[fl].name} 副本次数内再次进入：首领立即刷新`); for (const u of w.alive('enemy')) w.kill(u); w.loadFloor(fl); for (const u of w.alive("enemy")) w.kill(u); w.loadFloor(fl); for (const u of w.alive("enemy")) w.kill(u); } // 第 4 次＝次数用尽后击杀，才进入冷却
   w.loadFloor(fl); const nb = FLOORS[fl].spawns.filter(s => ENEMIES[s.id]?.tier !== 'boss').length;
   ok(w.alive('enemy').length === nb, `${FLOORS[fl].name} 再次进入：小怪重新刷新（首领冷却中）`);
   w.bossCdUntil = {}; w.loadFloor(fl); ok(w.alive('enemy').length === FLOORS[fl].spawns.length, `${FLOORS[fl].name} 再次进入重新刷新`);

@@ -23,6 +23,7 @@ import { TOWNS, townFloors, townOfFloor, returnTownOf, STORAGE_SIZE, townWidth, 
 import { CONSUMABLE } from '../data/items-town';
 import { WOMA_FLOOR_NAME, WOMA_SECTIONS, WOMA_DOOR_X, HORN_MOB_CHANCE, HORN_MOBS, RING_MIN_LEVEL, RingQuest, ringReward, IDENT_MIN_LEVEL, IDENT_PRICE, IDENT_POOL, identValue } from '../data/r14b';
 import '../data/eg-sets';
+import { DUNGEON_BY_FLOOR, DUNGEON_DAILY, DUNGEON_PENALTY, DUNGEON_FIRST_GUARANTEE, DUNGEON_BASE_CHANCE, bonusChance, localDay, DUNGEON_SET_CHANCE, DUNGEON_ITEM_SCALE, type DungeonDef } from '../data/dungeons';
 import { QUESTS, ACHIEVES, QuestDef, AchieveDef } from '../data/quests';
 import { summonDisplayName, summonNameColor, summonOwnerLabel } from './summonLabel';
 
@@ -55,6 +56,8 @@ export interface SaveData {
   bossCd?: Record<string, number>;
   /** 阶段4 挖矿：各矿层距下次刷新的剩余秒数 */
   mineCd?: Record<string, number>;
+  /** P3 副本：每日次数（副本 id → 本地日 + 已用次数）、已首通副本 */
+  dungeonRuns?: Record<string, { day: string; n: number }>; dungeonFirst?: string[];
 }
 /** balance-sys 任务B：BOSS 击杀后 600 秒刷新 [适配]（官方各服不一，未查到统一值）；按游戏时间计（离线不走） */
 export const BOSS_RESPAWN = 600;
@@ -178,6 +181,12 @@ export class World {
   reached = new Set<number>(); bossKilled = new Set<number>(); townsSeen = new Set<string>();
   /** 任务B：层 index → BOSS 可再刷新的游戏时间（this.time） */
   bossCdUntil: Record<number, number> = {};
+  /** P3 副本 */
+  dungeonRuns: Record<string, { day: string; n: number }> = {}; dungeonFirst = new Set<string>(); dungeonCur: { id: string; floor: number; tired: boolean; left: string[] } | null = null;
+  today: () => string = () => localDay();
+  /** P3：副本机制开关。难度回归 sim（tests/sim-lib）关闭，保证 9 seed 与改动前一致（sim 不刷副本，endgame-plan §5.2） */
+  dungeons = true;
+  dungeonLeft(id: string) { const r = this.dungeonRuns[id]; return DUNGEON_DAILY - (r && r.day === this.today() ? r.n : 0); }
   bossCdLeft(i = this.floorIndex) { return Math.max(0, Math.ceil((this.bossCdUntil[i] ?? 0) - this.time)); }
   questProg: Record<string, number> = {}; questDone = new Set<string>(); achieves = new Set<string>();
   /** R11 已学技能（新角色只有初始技能，其余用技能书学习） */
@@ -204,6 +213,8 @@ export class World {
       this.equip = migrateEquip(save); this.bag = [...save.bag]; this.kills = save.kills; this.nextItem = save.nextUid;
       this.skillTrain = { ...(save.skillTrain ?? {}) }; this.reached = new Set(save.reached ?? []); this.bossKilled = new Set(save.bossKilled ?? []); this.townsSeen = new Set(Array.isArray(save.townsSeen) ? save.townsSeen.filter(x => typeof x === 'string') : []);
       for (const [k, v] of Object.entries(save.bossCd ?? {})) if (v > 0) this.bossCdUntil[+k] = Math.min(BOSS_RESPAWN, v);
+      for (const [k, v] of Object.entries(save.dungeonRuns ?? {})) if (v && typeof v.n === 'number') this.dungeonRuns[k] = { day: String(v.day), n: v.n };
+      this.dungeonFirst = new Set(save.dungeonFirst ?? []);
       for (const [k, v] of Object.entries(save.mineCd ?? {})) if (v > 0) this.mineCdUntil[+k] = Math.min(MINE_RESPAWN, v);
       this.questProg = { ...(save.questProg ?? {}) }; this.questDone = new Set(save.questDone ?? []); this.achieves = new Set(save.achieves ?? []);
       if (save.mapV !== 2 && save.mapV !== 3 && this.floors === FLOORS) {
@@ -497,6 +508,9 @@ export class World {
     }
     this.events.push({ type: 'floor', index: i, name: this.floor.name });
     if (cd > 0) this.events.push({ type: 'log', text: `本层首领已被击败，${Math.ceil(cd / 60)} 分钟内不会刷新（出口已开启）` });
+    const dg = this.dungeons && this.floors === FLOORS ? DUNGEON_BY_FLOOR[i] : undefined; this.dungeonCur = null;
+    if (dg) { const left = this.dungeonLeft(dg.id), st = SETS[dg.sets[this.cls]], have = st.pieces.filter(p => [...Object.values(this.equip), ...this.bag].some(x => x?.item === p)).length;
+      this.events.push({ type: 'log', text: `【${dg.name}】今日剩余 ${Math.max(0, left)}/${DUNGEON_DAILY} 次${left > 0 ? '' : '（用尽：BOSS 冷却 600 秒、掉率 ×0.25）'}｜${this.dungeonFirst.has(dg.id) ? '已首通' : '首通必掉 1 件'}｜${st.name} ${have}/${st.pieces.length}`, color: 'green' }); }
   }
   /** feat/maps-more：刷怪并按子层深度加成（官方第 d 层 攻/血 ×(1+DEPTH_STEP×(d−1))，原有层 depth 缺省=1 不变） */
   spawnFoe(id: string, x: number, y: number) { const u = this.spawn(ENEMIES[id], 'enemy', x, y), d = this.floor.depth ?? 1;
@@ -644,7 +658,8 @@ export class World {
     this.kills++; this.summonKill();
     this.onKillQuest(u.id);
     this.checkAchieves();
-    const entries = (u.drops ?? []).filter(d => this.rng() < d.chance);
+    const dg = u.tier === 'boss' ? this.dungeonOnBossKill(u.id) : null, pen = dg?.tired ? DUNGEON_PENALTY : 1;
+    const entries = (u.drops ?? []).filter(d => this.rng() < (d.chance < 1 ? d.chance * pen * (dg ? DUNGEON_ITEM_SCALE[u.id]?.[d.item] ?? 1 : 1) : d.chance));
     if (entries.length) {
       const items = entries.map(d => {
         const x = Math.max(40, Math.min(this.mapW - 40, u.x + (this.rng() - 0.5) * WORLD.dropSpread));
@@ -655,7 +670,7 @@ export class World {
       this.events.push({ type: 'drop', uid: u.uid, x: u.x, y: u.y, items });
     }
     // 额外掉落：独立随机流 lootRng（不消耗主 rng，保持平衡模拟稳定）。Boss 必掉 1 瓶祝福油；setDrop 随机 1 件套装
-    if (u.tier === 'boss') { this.bossKilled.add(this.floorIndex); this.bossCdUntil[this.floorIndex] = this.time + BOSS_RESPAWN; }
+    if (u.tier === 'boss') { this.bossKilled.add(this.floorIndex); this.bossCdUntil[this.floorIndex] = this.time + (dg && !dg.tired ? 0 : BOSS_RESPAWN); } // P3：副本次数内 BOSS 不冷却（每次进入必刷），用尽后 600 s
     else if (this.floor?.farm && !u.summon) this.farmQueue.push({ id: u.id, x: u.homeX, y: u.homeY, at: this.time + FARM_RESPAWN });
     const extra: { id: string; purity?: number }[] = [];
     // 阶段4：祝福油只由高级 BOSS（OIL_BOSSES）掉，[适配] 1/8；普通怪/精英不掉（oilChance 已停用）
@@ -668,7 +683,7 @@ export class World {
       else if (pool.length && this.lootRng() < (u.tier === 'boss' ? BOOK_DROP.boss : BOOK_DROP.normal)) extra.push({ id: bookItemId(pool[Math.floor(this.lootRng() * pool.length)].skill) }); }
     // R54：>25 级技能书只按 BOSS 掉落表（skillBookDrops.ts）掉；仅当 BOSS 在表内才消耗 lootRng，表外怪物的随机序列不变
     if (BOOK_DROPS_BY_BOSS[u.id]) for (const d of BOOK_DROPS_BY_BOSS[u.id]) if (d.cls === this.cls && !this.learned.has(d.skill) && !this.bag.some(x => x.item === bookItemId(d.skill)) && !extra.some(x => x.id === bookItemId(d.skill)) && this.lootRng() < d.rate) extra.push({ id: bookItemId(d.skill) });
-    if (u.setDrop?.length && this.lootRng() < (u.setChance ?? 1)) { const own = u.setDrop.filter(id => ITEMS[id]?.cls?.includes(this.cls)), pool = own.length ? own : u.setDrop; extra.push({ id: pool[Math.floor(this.lootRng() * pool.length)] }); } // R14 #13：职业套优先掉本职业
+    if (u.setDrop?.length && this.lootRng() < (dg ? DUNGEON_SET_CHANCE[u.id] ?? u.setChance ?? 1 : u.setChance ?? 1) * pen) { const own = u.setDrop.filter(id => ITEMS[id]?.cls?.includes(this.cls)), pool = own.length ? own : u.setDrop; extra.push({ id: pool[Math.floor(this.lootRng() * pool.length)] }); } // R14 #13：职业套优先掉本职业
     if (this.womaPending) { const has = this.bag.some(x => x.item === 'woma_horn') || this.ground.some(g => g.item === 'woma_horn');
       if (!has && HORN_MOBS.includes(u.id) && this.lootRng() < HORN_MOB_CHANCE) extra.push({ id: 'woma_horn' });
     } // R14 #14：号角 [适配] 8%；清怪保底见 womaTick
@@ -1341,8 +1356,33 @@ export class World {
     if (fx.lifesteal && h.alive) this.heal(h, Math.round(dealt * fx.lifesteal));
     this.events.push({ type: 'combo', id: cb?.id ?? 'placeholder', name: cb?.name ?? '合击', source: h.uid, partner: u.uid, target: t.uid, amount: dealt, hits: targets.length, affected, statusUntil }, { type: 'log', text: `合击「${cb?.name ?? '合击'}」造成 ${dealt} 伤害`, color: 'green' });
   }
+  /** P3：副本 BOSS 被杀。首只开启一次副本（消耗次数或进入「疲劳」）；全部 BOSS 击杀后结算套装件 */
+  dungeonOnBossKill(bossId: string): { tired: boolean } | null {
+    const d = this.dungeons && this.floors === FLOORS ? DUNGEON_BY_FLOOR[this.floorIndex] : undefined; if (!d || !d.bosses.includes(bossId)) return null;
+    let cur = this.dungeonCur;
+    if (!cur || cur.id !== d.id || cur.floor !== this.floorIndex || !cur.left.includes(bossId)) {
+      const tired = this.dungeonLeft(d.id) <= 0, day = this.today();
+      if (!tired) { const r = this.dungeonRuns[d.id]; this.dungeonRuns[d.id] = { day, n: (r && r.day === day ? r.n : 0) + 1 }; }
+      cur = this.dungeonCur = { id: d.id, floor: this.floorIndex, tired, left: [...d.bosses] };
+      this.events.push({ type: 'log', text: tired ? `${d.name}：今日次数已用完（BOSS 冷却 600 秒、掉率 ×0.25）` : `${d.name}：今日剩余 ${this.dungeonLeft(d.id)}/${DUNGEON_DAILY} 次`, color: tired ? 'white' : 'green' });
+    }
+    cur.left = cur.left.filter(b => b !== bossId); const tired = cur.tired;
+    if (!cur.left.length) { this.dungeonCur = null; this.dungeonReward(d, tired); }
+    return { tired };
+  }
+  /** D3/D7：首通必掉 1 件本职业套装件；之后 1/10 + D7 补正；疲劳 ×0.25（lootRng，不扰动主序列） */
+  dungeonReward(d: DungeonDef, tired: boolean) {
+    const pieces = SETS[d.sets[this.cls]].pieces; let n = 0;
+    if (!this.dungeonFirst.has(d.id)) { this.dungeonFirst.add(d.id); n = DUNGEON_FIRST_GUARANTEE; }
+    else { const m = tired ? DUNGEON_PENALTY : 1; if (this.lootRng() < DUNGEON_BASE_CHANCE * m || this.lootRng() < bonusChance(d, this.cls) * m) n = 1; }
+    if (!n) return;
+    const id = pieces[Math.floor(this.lootRng() * pieces.length)], x = this.hero ? this.hero.x : this.mapW / 2;
+    const inv = this.makeItem(id, 'common'); // 不用 rollDrop：不消耗主 rng
+    const it: GroundItem = { gid: this.nextGid++, item: id, name: inv.name, rarity: 'common', x: Math.max(40, Math.min(this.mapW - 40, x + 60)), y: 0, landAt: this.time + WORLD.dropLandSec, atk: inv.stats.atk ?? 0, hp: inv.stats.hp ?? 0, amount: 1, inv };
+    this.ground.push(it); this.events.push({ type: 'drop', uid: 0, x, y: it.y, items: [it] }, { type: 'log', text: `${d.name} 奖励：${ITEMS[id].name}`, color: 'green' });
+  }
   toSave(): SaveData {
-    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, town: this.town, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, townsSeen: [...this.townsSeen], reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], ringQ: this.ringQ, ringDone: this.ringDone, eqV: EQUIP_VERSION, expV: EXP_VERSION, bossCd: Object.fromEntries(Object.keys(this.bossCdUntil).map(k => [k, this.bossCdLeft(+k)]).filter(e => (e[1] as number) > 0)), mineCd: Object.fromEntries(Object.keys(this.mineCdUntil).map(k => [k, this.mineCdLeft(+k)]).filter(e => (e[1] as number) > 0)), companion: this.companion ? JSON.parse(JSON.stringify(this.companion)) : null  };
+    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, town: this.town, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, townsSeen: [...this.townsSeen], reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], ringQ: this.ringQ, ringDone: this.ringDone, eqV: EQUIP_VERSION, expV: EXP_VERSION, bossCd: Object.fromEntries(Object.keys(this.bossCdUntil).map(k => [k, this.bossCdLeft(+k)]).filter(e => (e[1] as number) > 0)), mineCd: Object.fromEntries(Object.keys(this.mineCdUntil).map(k => [k, this.mineCdLeft(+k)]).filter(e => (e[1] as number) > 0)), companion: this.companion ? JSON.parse(JSON.stringify(this.companion)) : null, dungeonRuns: JSON.parse(JSON.stringify(this.dungeonRuns)), dungeonFirst: [...this.dungeonFirst]  };
   }
 
   /** 点按一格：滑行中的按键全部排队（同向最多 10 格，反向则替换队列），每次按键都会走一格 */

@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## P3 eg-dungeon（feat/eg-dungeon）
+- 6 个 Lv45–49 副本（赤月魔穴/恶魔祭坛[E7 双头]/卧龙/雷炎/魔龙血域/火龙神殿）：每日 3 次，用尽可进（600 s、掉率 ×0.25），首通必掉 1 件本职业套装件，之后 1/10 + D7 补正。
+- D7 调率（只在副本击杀生效）：赤月恶魔 setChance 1→0.15，魔龙战神系 1/30→1/60；World.dungeons 开关，sim 关闭，9 seed 不变；凑齐一套中位 22–29 次。存档 dungeonRuns/dungeonFirst，旧档兼容。
+- 命运之刃复核：官方为任务奖励，暂留祖玛 1/60 [适配]。docs/eg-dungeon.md；tests/eg-dungeon.test.ts。
+
 ## P2 eg-sets（feat/eg-sets）
 - 新增 40–50 级 40 件装备（eg-equip.ts，图标用美术 E4 eq_<id> 64/128，id 恒等）；雷霆/烈焰/光芒、战神/圣魔/真魂 6 套；三圣 4 件档 + 职业特效接口 setSpecials()。
 - 掉落 EG_DROPS（E1 ÷40，≤1/8，全部 ≥40 级层）；天尊进合击 BOSS；set_zuma/set_chiyue 停掉落、旧档保留。

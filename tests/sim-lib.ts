@@ -23,7 +23,7 @@ export const SIM_STUCK = 5;
 const virtGold = (id: string, pf: number) => { const g = ENEMIES[id]?.drops?.find(d => d.item === 'gold'); const [g0, g1] = WORLD.goldAmount; return g ? g.chance * (g0 + g1) / 2 * (1 + pf * 0.6) : 0; };
 const band = (lv: number) => Math.min(5, Math.floor((lv - 1) / 10));
 export const simRun = (c: ClassId, seed: number, maxT = SIM_MAX_T) => {
-    const w = (process.env.ALL ? learnAll : (x: World) => x)(new World(seeded(seed), 1, FLOORS, c)); let cds = w.skills.map(() => 0); let t = 0, potUsed = 0; const learnLog: string[] = []; let hjCombo = 0, hjHeroDmg = 0, hjAllDmg = 0, hjT = 0, hjOut = 0;
+    const w = (process.env.ALL ? learnAll : (x: World) => x)(Object.assign(new World(seeded(seed), 1, FLOORS, c), { dungeons: false })); let cds = w.skills.map(() => 0); let t = 0, potUsed = 0; const learnLog: string[] = []; let hjCombo = 0, hjHeroDmg = 0, hjAllDmg = 0, hjT = 0, hjOut = 0;
     const dg = { heroDmg: 0, sumDmg: 0, sumDeaths: 0, t: 0, sumT: 0, sumN: 0, foeOnSum: 0, foeOnHero: 0, sumLv: 0, sumHp: 0, heroHp: 0, samples: 0, sumKillDmg: 0, allKillDmg: 0 };
     const deathAt: { floor: number; lv: number }[] = []; const floorLv: Record<number, number> = {};
     const kills = [0, 0, 0, 0, 0, 0], killT = [0, 0, 0, 0, 0, 0], virtKills = [0, 0, 0, 0, 0, 0], virtT = [0, 0, 0, 0, 0, 0], replays: Record<number, number> = {}; let floorKills = 0, floorT = 0, lastF = -1;
