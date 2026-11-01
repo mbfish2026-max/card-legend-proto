@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## 药水扩展（feat/potion-expand，未合 main）
+- 修：手机双击解包/短按药水偶发失败。根因①Phaser 3.90 新 setInteractive 对象要到下一帧 preUpdate 才进命中表，而 DOM 触摸即时处理——面板重绘后一帧内（卡顿时更长）的点击落空；`Panel.render` 后立即 `flushInput` 并入。②战斗中经验变化使背包每 800ms 自动重绘，正好落在「点一下选中、再点执行」之间；已选中或刚按下时不自动重绘。③手机药水格长按用 setTimeout 判定，卡顿时计时器先于已发生的 pointerup 触发，短按被误判成长按、弹层背景吞掉后续点击；改按事件时间戳判定。新增 tests/tap-timing.test.ts。
 - 数据（P1）：POTIONS 只在末尾追加 hp_big 强效金创药（HP560，180 金，Lv22）、mp_big 强效魔法药（MP900，180 金，Lv22）、sun 太阳水（HP180+MP240，300 金，Lv22）、sun_big 强效太阳水（HP300+MP480，600 金，Lv35，只卖捆）。旧 4 种的 index 和 key 不变。旧 key hp_strong/mp_strong/sun_water 合并到 hp_big/mp_big/sun，读档时迁移，瓶数不丢。
 - 药水捆（P2）：8 种捆，每捆 6 瓶，占背包 1 格，最多叠 999。双击解开，散装每种上限 999，放满时拒绝解开，捆也不扣。「超级」只出现在捆名里。
 - 商店（P3）：城内药店散装在上、捆在下，捆价 = 单价×6，等级不够的行灰显「需LvX」。灵符商城不卖药。
