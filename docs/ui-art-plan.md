@@ -2,7 +2,7 @@
 
 负责人：卡牌传奇·美术2。本轮只出方案和样张，**未改 src 代码**。风格目标：热血传奇 1.76 的金属暗金红质感。1.76 官方 UI 原图没有找到可核实的来源，下文色板和结构是参照现有图标/人物采样定的，标「推测」。
 
-第二轮（补齐）新增 15 个切片，共 40 个；新增预览 `docs/ui-preview/preview_extra.jpg`，生成脚本 `build_extra.py`（会先重建前 25 个，结果逐字节不变）、`compose_extra.py`、`pack_atlas.py`。
+第二轮（补齐）新增 15 个切片，共 40 个；新增预览 `docs/ui-preview/preview_extra.jpg`，生成脚本 `build_extra.py`（会先重建前 25 个，结果逐字节不变）、`compose_extra.py`。（旧的 pack_atlas.py 预览打包已于第五轮删除，由 pack_ui_atlas.py 取代）
 
 样张：`docs/ui-preview/preview_all.jpg`（汇总图）、`preview_1280x720.jpg`、`preview_844x390.jpg`；切片在 `docs/ui-preview/slices/`（25 个）；参数在 `slices.json`；生成脚本 `build_slices.py`；预览合成 `compose_preview.py`（只用来出预览，不是游戏代码）。
 
@@ -68,52 +68,54 @@
 
 ## 3. 切片规格表（边距单位 px，left/right/top/bottom）
 
-| 文件 | 原尺寸 | 边距 L/R/T/B | 使用场景 |
+| 文件 | 原尺寸（=图集帧尺寸） | 边距 L/R/T/B（fixed=固定图，不走九宫格） | 使用场景 |
 |---|---|---|---|
-| panel_frame.png | 192×192 | 52/52/52/52 | 全屏大面板底+框（Panel 1000×500、存档 1000×640、设置 640×580） |
-| dialog_frame.png | 128×128 | 34/34/34/34 | 小窗弹框/确认框/传送员面板 |
+| panel_frame.png | 144×144 | 52/52/52/52 | 全屏大面板底+框（Panel 1000×500、存档 1000×640、设置 640×580） |
+| dialog_frame.png | 92×92 | 34/34/34/34 | 小窗弹框/确认框/传送员面板（DOM @2x） |
 | title_plate.png | 160×40 | 24/24/12/12 | 面板标题底牌、HUD 地图名牌（Hud.ts 1130,36 270×46） |
 | inset_frame.png | 64×64 | 12/12/12/12 | 子区域内框：人物展示框、列表容器、对比面板列 |
-| tooltip_frame.png | 48×48 | 10/10/10/10 | 物品提示框/装备对比框（原 0x05060c + 灰边） |
-| btn_normal.png | 96×40 | 16/16/14/14 | 通用按钮（normal）；button() / 手机触控按钮 |
-| btn_hover.png | 96×40 | 16/16/14/14 | 通用按钮（hover）；button() / 手机触控按钮 |
-| btn_pressed.png | 96×40 | 16/16/14/14 | 通用按钮（pressed）；button() / 手机触控按钮 |
-| btn_disabled.png | 96×40 | 16/16/14/14 | 通用按钮（disabled）；button() / 手机触控按钮 |
-| btn_close.png | 40×40 | 0/0/0/0 | 面板关闭 ✕（固定尺寸，可 setDisplaySize 等比放大到 48/84） |
-| list_row.png | 128×40 | 10/10/10/10 | 商店/技能/任务/传送/存档 列表行 |
-| list_row_sel.png | 128×40 | 10/10/10/10 | 列表行选中/当前存档/已完成高亮 |
-| tab_on.png | 96×36 | 16/16/12/4 | 标签页选中（商店 杂货/书店、背包页码、地图分区） |
-| tab_off.png | 96×36 | 16/16/12/4 | 标签页未选中 |
-| bar_frame.png | 128×20 | 10/10/6/6 | 血/蓝/经验/读条/训练进度条框 |
-| bar_fill_hp.png | 8×14 | 2/2/0/0 | HP 填充（横向拉伸，宽=当前比例） |
-| bar_fill_mp.png | 8×14 | 2/2/0/0 | MP 填充 |
-| bar_fill_exp.png | 8×14 | 2/2/0/0 | 经验/读条/进度 填充 |
+| tooltip_frame.png | 48×48 | 10/10/10/10 | 物品提示框/装备对比框（原 0x05060c + 灰边）（DOM @2x） |
+| btn_normal.png | 96×40 | 16/16/14/14 | 通用按钮（normal）；button() / 手机触控按钮（DOM @2x） |
+| btn_hover.png | 96×40 | 16/16/14/14 | 通用按钮（hover）；button() / 手机触控按钮（DOM @2x） |
+| btn_pressed.png | 96×40 | 16/16/14/14 | 通用按钮（pressed）；button() / 手机触控按钮（DOM @2x） |
+| btn_disabled.png | 96×40 | 16/16/14/14 | 通用按钮（disabled）；button() / 手机触控按钮（DOM @2x） |
+| btn_close.png | 40×40 | fixed | 面板关闭 ✕（固定尺寸，可 setDisplaySize 等比放大到 48/84）（DOM @2x） |
+| list_row.png | 128×40 | 10/10/10/10 | 商店/技能/任务/传送/存档 列表行（DOM @2x） |
+| list_row_sel.png | 128×40 | 10/10/10/10 | 列表行选中/当前存档/已完成高亮（DOM @2x） |
+| tab_on.png | 96×36 | 16/16/12/4 | 标签页选中（商店 杂货/书店、背包页码、地图分区）（DOM @2x） |
+| tab_off.png | 96×36 | 16/16/12/4 | 标签页未选中（DOM @2x） |
+| bar_frame.png | 128×20 | 10/10/6/6 | 血/蓝/经验/读条/训练进度条框（DOM @2x） |
+| bar_fill_hp.png | 8×14 | 2/2/0/0 | HP 填充（横向拉伸，宽=当前比例）（DOM @2x） |
+| bar_fill_mp.png | 8×14 | 2/2/0/0 | MP 填充（DOM @2x） |
+| bar_fill_exp.png | 8×14 | 2/2/0/0 | 经验/读条/进度 填充（DOM @2x） |
 | slot.png | 64×64 | 14/14/14/14 | 技能快捷栏格/药品格/背包格/装备格（品质色由代码叠一层细框或 tint） |
 | slot_sel.png | 64×64 | 14/14/14/14 | 格子选中/可用高亮 |
-| divider_gem.png | 12×12 | 0/0/0/0 | 分隔线中央宝石（固定尺寸，代码叠在 divider 中点） |
+| divider_gem.png | 12×12 | fixed | 分隔线中央宝石（固定尺寸，代码叠在 divider 中点） |
 | divider.png | 128×8 | 40/40/0/0 | 分隔线（横向拉伸，两端渐隐 40px 不拉伸） |
 | scroll_track.png | 12×48 | 0/0/8/8 | 滚动条轨道（纵向拉伸） |
 | scroll_thumb.png | 12×32 | 0/0/8/8 | 滚动条滑块 |
-| touch_round.png | 112×112 | 0/0/0/0 | 手机虚拟摇杆/技能圆钮底（固定比例缩放，图标由代码叠加） |
-| orb_frame.png | 128×128 | 0/0/0/0 | HUD 血球/蓝球外框（固定比例；内圆可用区 圆心(64,64) 半径 52） |
-| orb_glass.png | 128×128 | 0/0/0/0 | 血/蓝球玻璃高光层（叠在填充之上、orb_frame 之下或之上均可） |
+| touch_round.png | 112×112 | fixed | 手机虚拟摇杆/技能圆钮底（固定比例缩放，图标由代码叠加）（DOM @2x） |
+| orb_frame.png | 128×128 | fixed | HUD 血球/蓝球外框（固定比例；内圆可用区 圆心(64,64) 半径 52） |
+| orb_glass.png | 128×128 | fixed | 血/蓝球玻璃高光层（叠在填充之上、orb_frame 之下或之上均可） |
 | divider_v.png | 8×128 | 0/0/40/40 | 竖分隔线（对比面板两列之间；纵向拉伸，两端 40px 渐隐不拉伸；中点可叠 divider_gem） |
-| panel_frame_s.png | 96×96 | 20/20/20/20 | 手机小屏面板/小弹窗：角饰 24px，边距 20，适合 ≤ 390 高的屏幕和半屏面板 |
-| lingfu_icon_s.png | 32×32 | 0/0/0/0 | 灵符货币小图标 32×32（价格旁、顶栏余额） |
-| lingfu_icon_l.png | 96×96 | 0/0/0/0 | 灵符货币大图标 96×96（充值档位卡、获得弹窗） |
+| panel_frame_s.png | 96×96 | 20/20/20/20 | 手机小屏面板/小弹窗：角饰 24px，边距 20，适合 ≤ 390 高的屏幕和半屏面板（DOM @2x） |
+| lingfu_icon_s.png | 32×32 | fixed | 灵符货币小图标 32×32（价格旁、顶栏余额） |
+| lingfu_icon_l.png | 96×96 | fixed | 灵符货币大图标 96×96（充值档位卡、获得弹窗） |
 | ribbon_limited.png | 112×28 | 24/24/0/0 | 限时/热卖丝带（横向拉伸，燕尾两端 24px 不拉伸；文字代码渲染） |
-| badge_corner.png | 40×40 | 0/0/0/0 | 商品格右上红色斜角丝带（不含文字），按 80 格原尺寸设计；setOrigin(1,0) 贴格子右上角，随格子等比 setDisplaySize(size/2) |
-| recharge_card_normal.png | 128×160 | 30/30/30/30 | 充值档位卡底（常态）；图标/价格/赠送文字由代码叠加 |
-| recharge_card_sel.png | 128×160 | 30/30/30/30 | 充值档位卡底（选中）；图标/价格/赠送文字由代码叠加 |
-| recharge_card_rec.png | 128×160 | 30/30/30/30 | 充值档位卡底（推荐）；图标/价格/赠送文字由代码叠加 |
+| badge_corner.png | 40×40 | fixed | 商品格右上红色斜角丝带（不含文字），按 80 格原尺寸设计；setOrigin(1,0) 贴格子右上角，随格子等比 setDisplaySize(size/2) |
+| recharge_card_normal.png | 80×100 | 30/30/30/30 | 充值档位卡底（常态）；图标/价格/赠送文字由代码叠加 |
+| recharge_card_sel.png | 80×100 | 30/30/30/30 | 充值档位卡底（选中）；图标/价格/赠送文字由代码叠加 |
+| recharge_card_rec.png | 80×100 | 30/30/30/30 | 充值档位卡底（推荐）；图标/价格/赠送文字由代码叠加 |
 | goods_slot_normal.png | 80×80 | 20/20/20/20 | 灵符商城/商店商品格（常态）：7px 铜金粗边+四角金三角角饰（10px）+不透明深色内底；对齐用户参考图；图标居中叠加 |
 | goods_slot_sel.png | 80×80 | 20/20/20/20 | 灵符商城/商店商品格（选中）：7px 铜金粗边+四角金三角角饰（10px）+不透明深色内底；对齐用户参考图；图标居中叠加 |
 | goods_slot_soldout.png | 80×80 | 20/20/20/20 | 灵符商城/商店商品格（售罄）：7px 铜金粗边+四角金三角角饰（10px）+不透明深色内底；对齐用户参考图；图标居中叠加 |
-| slot_bloodstone.png | 64×64 | 0/0/0/0 | 装备栏血石位空槽（与 slot 同 64 体系；中央暗纹宝石，等比缩放，不走九宫格） |
+| slot_bloodstone.png | 64×64 | fixed | 装备栏血石位空槽（与 slot 同 64 体系；中央暗纹宝石，等比缩放，不走九宫格） |
 | qframe_common.png | 32×32 | 5/5/5/5 | 品质框·普通（rarity=common）；细边 3px+内光，中心透明，叠在 slot/goods_slot 或图标之上，任意尺寸 nineslice |
 | qframe_magic.png | 32×32 | 5/5/5/5 | 品质框·精良（rarity=magic）；细边 3px+内光，中心透明，叠在 slot/goods_slot 或图标之上，任意尺寸 nineslice |
 | qframe_rare.png | 32×32 | 5/5/5/5 | 品质框·极品（rarity=rare）；细边 3px+内光，中心透明，叠在 slot/goods_slot 或图标之上，任意尺寸 nineslice |
-| lingfu_icon_xs.png | 16×16 | 0/0/0/0 | 价格前小灵符（显示 16~20px，与 12~16px 价格字等高） |
+| lingfu_icon_xs.png | 16×16 | fixed | 价格前小灵符（显示 16~20px，与 12~16px 价格字等高） |
+| orb_fill_red.png | 64×64 | fixed | 血球液面（红/血）圆盘，半径 32；显示直径=球显示直径×104/128，按水位 setCrop 从上裁；层序 2 |
+| orb_fill_blue.png | 64×64 | fixed | 血球液面（蓝/魔）圆盘，半径 32；显示直径=球显示直径×104/128，按水位 setCrop 从上裁；层序 2 |
 
 说明：
 - 边距 0/0/0/0 的是固定比例图，用 Image + setDisplaySize 等比缩放，不走九宫格。
@@ -188,7 +190,7 @@
 4. 名字文字色继续用 RARITY_HEX；售罄格同样叠 qframe，统一 alpha 0.5。
 5. 商城价格标签旁的品质文字也用 RARITY_HEX。
 
-预览图：`docs/ui-preview/preview_quality.jpg`，生成脚本 `build_quality.py`（追加到 slices.json）和 `compose_quality.py`。重建顺序：build_extra.py → build_quality.py → pack_atlas.py。
+预览图：`docs/ui-preview/preview_quality.jpg`，生成脚本 `build_quality.py`（追加到 slices.json）和 `compose_quality.py`。重建顺序：build_extra.py → build_quality.py → pack_ui_atlas.py（第五轮）。
 
 ### 3.4 第四轮：对齐用户灵符商城参考图 + 品质框微调
 
@@ -235,11 +237,83 @@
 - `preview_extra.jpg`：商城示意已更新。
 - `preview_quality.jpg`：已更新。
 
-脚本 `build_shop.py`、`compose_shop_ref.py`。重建顺序：build_extra → build_quality → build_shop → pack_atlas → compose_*。
+脚本 `build_shop.py`、`compose_shop_ref.py`。重建顺序：build_extra → build_quality → build_shop → build_final → pack_ui_atlas → build_dom2x → compose_*。
+
+### 3.5 第五轮：最终图集 ui_atlas + 手机 DOM @2x + 血球红蓝液面
+
+按系统开发的 `docs/ui-art-integration.md`（origin/feat/ui-art-plan）§0/§5 交付：
+
+- 纹理 key 是 `ui_atlas`，帧名 = 切片文件名去掉 .png；
+- padding 2、extrude 1，尺寸 ≤512×512；
+- 九宫格边距从 slices.json 读；
+- 手机 DOM 用单图，不走图集。
+
+**图集文件**（`docs/ui-preview/atlas/`）：
+
+| 文件 | 说明 | 实测 |
+|---|---|---|
+| ui_atlas.png | 512×512 RGBA，无损 | 265,073 B |
+| ui_atlas.webp | WebP **无损**（exact，alpha 与透明区 RGB 都保真，和 PNG 逐像素一致） | 175,936 B |
+| ui_atlas_q90.webp | WebP q90 / alpha95（备选） | 73,874 B |
+| ui_atlas.json | Phaser JSON Hash，共 **46 帧**（44 切片 + orb_fill_red/blue） | 12,595 B |
+
+- 显存：512×512×4 = 1,048,576 B（1.0 MB）。
+- 建议拷到 `public/assets/ui/ui_atlas.png` 和 `ui_atlas.json`。.webp 由系统开发决定：构建时由 compressAssets 用 `{lossless:true}` 生成，或直接用本目录的成品。
+- 加载：`this.load.atlas('ui_atlas', 'assets/ui/ui_atlas.png', 'assets/ui/ui_atlas.json')`。
+
+**为塞进 512×512 做的处理**（build_final.py）：44 切片加间距后的面积约 297k px²，超过 262k。处理方法是只裁短 5 个大九宫格的**中段**，角和边的宽度不变，九宫格边距不变：
+
+| 切片 | 原尺寸 | 新尺寸 |
+|---|---|---|
+| panel_frame | 192 | 144 |
+| dialog_frame | 128 | 92 |
+| recharge_card_normal / sel / rec | 128×160 | 80×100 |
+
+中段本来就要拉伸，显示效果基本不变，preview_1280x720 已复核。打包改用 MaxRects，这样能放下。
+
+**自检**（compose_atlas.py）：
+
+- 按 json 裁出全部 46 帧，和 slices/ 源图逐像素一致；
+- ui_atlas.webp 解码后和 PNG 逐像素一致；
+- 每帧从图集用双线性采样做九宫格拉伸（2.3×/1.7×），和源图边缘 clamp 后同样拉伸对比，最大差 2/255（舍入误差），无渗色。
+
+**手机 DOM @2x**（`docs/ui-preview/dom/2x/<名>@2x.png`，17 张，合计 307,779 B）：
+
+- 1x 单图直接用 `slices/<名>.png`。
+- @2x 是 **LANCZOS 2× 放大加轻锐化**（UnsharpMask 1.2/60），不是重绘。细节不会增加，但比浏览器实时放大锐利，不糊。如果要真高清，需要重绘源图。
+- 覆盖：btn_normal/hover/pressed/disabled、btn_close、bar_frame、bar_fill_hp/mp/exp、touch_round、panel_frame_s、tooltip_frame、dialog_frame、list_row(_sel)、tab_on/off。
+- `border-image-slice` 用**图片像素**，所以 @2x 取 slices.json 边距 ×2；`border-image-width` 用 CSS 像素，取 1x 边距：
+
+```css
+.m-btn { border-style: solid; border-image: url(ui/btn_normal.png) 14 16 14 16 fill / 14px 16px 14px 16px stretch; }
+@media (min-resolution: 2dppx) {
+  .m-btn { border-image-source: url(ui/btn_normal@2x.png); border-image-slice: 28 32 28 32 fill; } /* width 仍为 14px 16px */
+}
+.m-bar { border-image: url(ui/bar_frame.png) 6 10 6 10 fill / 6px 10px; }       /* @2x: slice 12 20 12 20 */
+.m-panel { border-image: url(ui/panel_frame_s.png) 20 fill / 20px; }            /* @2x: slice 40 */
+.m-bar > i { background: url(ui/bar_fill_hp.png) 0 0 / 100% 100%; }             /* 填充条，@2x 换 bar_fill_hp@2x.png */
+.m-touch { background: url(ui/touch_round.png) 0 0 / 100% 100%; }               /* fixed，不用 border-image */
+```
+
+slice 顺序是 上 右 下 左（T R B L），值取自 slices.json。也可以用 `image-set()` 写在 border-image-source 里。
+
+**血球红蓝叠层**（桌面 Hud；全部在图集内）：
+
+| 层（从下到上） | 帧 | 尺寸 | 说明 |
+|---|---|---|---|
+| 1 | （代码）黑底圆 | — | 半径 = D×52/128 |
+| 2 | orb_fill_red / orb_fill_blue | 64×64，圆盘半径 32（4,638 / 4,927 B） | 纵向渐变加左上柔光，显示尺寸 `setDisplaySize(D×104/128)`，圆心和球心对齐 |
+| 3 | orb_glass | 128×128 | 玻璃高光，红蓝共用 |
+| 4 | orb_frame | 128×128 | 外框，红蓝共用，内圆可用区圆心 (64,64)、半径 52 |
+
+- 水位：液面本身就是圆盘，所以**不需要 GeometryMask**，用 `img.setCrop(0, (1-ratio)×64, 64, ratio×64)` 从上往下裁（crop 用帧内像素坐标，不受显示尺寸影响）。
+- 如果仍沿用 Hud.ts 现有的多边形水位，就把液面图当填充色贴图，遮罩半径 = D×52/128。
+- 推荐显示 D = 128~160。外框用 128 源图放大到 160 以内可以接受，不另出 256 版，以免图集超限。
+- 手机端仍用横条（bar_frame + bar_fill_*），不出手机血球。
 
 ## 4. 接入建议（给系统开发）
 
-1. **加载**：在 assets-manifest 里加 atlas `ui_atlas`（png/webp + json），帧名就是切片文件名去掉 .png。样例见 `docs/ui-preview/atlas_ui_preview.png/.json`，这是 512×356 的简易 shelf 打包，正式打包建议用 TexturePacker 或 free-tex-packer，padding 2、extrude 1，防止 NineSlice 采样渗色。
+1. **加载**：在 assets-manifest 里加 atlas `ui_atlas`（png/webp + json），帧名就是切片文件名去掉 .png。最终图集见 §3.5：`docs/ui-preview/atlas/ui_atlas.{png,webp,json}`，512×512，padding 2、extrude 1。
 2. **九宫格**：Phaser 3.60+ 有 `scene.add.nineslice(x, y, 'ui_atlas', 'panel_frame', w, h, L, R, T, B)`，项目用的 ^3.80.1 支持。改尺寸用 `setSize(w, h)`，不要用 setScale（setScale 会把角也一起放大）。血蓝条这类只横向拉伸的，用 nineslice 并把 T/B 设为 0（三宫格）。
 3. **替换点**：`button()`（TitleScene.ts:18）是唯一的按钮工厂，改成 nineslice + 4 态切换帧，pointerover 换 hover，pointerdown 换 pressed，enabled=false 用 disabled。这一处改完，全游戏的按钮就都换了。Panel.ts:95 的面板底，以及 slotBox()、各列表行 rectangle，按 §1 表逐项换。
 4. **品质色**：slot 保持中性金。品质用代码在格内叠一个 1~2px 的 rectangle 描边，或者 `setTint` 一层 slot_sel，不需要为每种品质单独出图。
@@ -255,23 +329,21 @@
 - MobileHud 是 DOM/CSS 写的，可以直接用同一批 PNG 做 `border-image`，例如 `border-image: url(btn_normal.png) 14 16 fill / 14px 16px`，这里的数字就是 §3 的边距。血条用 bar_frame 做 border-image，内层 div 用 bar_fill_* 作背景，并设 background-size: 100% 100%。
 - 预览 `preview_844x390.jpg` 是把 1280 的布局等比缩到 0.54 后合成的，用来看拉伸效果，不代表最终的手机排版。
 
-## 6. 包体积与加载评估（实测，第四轮更新）
+## 6. 包体积与加载评估（实测，第五轮最终图集）
 
 | 项 | 实测 |
 |---|---|
-| 44 个切片 PNG 合计 | **308,291 B**（第四轮重做 goods_slot×3（共 8,927 B，原约 20.9 KB）、badge_corner 531 B；新增 lingfu_icon_xs 497 B；品质框 3 个 698 B） |
-| 其中最大 | panel_frame 62,460 B；recharge_card_* 三张约 28.7~29.1 KB；dialog_frame 28,301 B；panel_frame_s 15,031 B |
-| 合并 atlas（512×718 PNG，PIL optimize） | **295,031 B**（docs/ui-preview/atlas_ui_preview.png，帧表 .json） |
-| 同 atlas WebP 无损 | **202,136 B**（atlas_ui_preview_lossless.webp） |
-| 同 atlas WebP q90 / alpha95 | **74,338 B**（atlas_ui_preview_q90.webp） |
-| atlas 显存（RGBA） | 512×718×4 = **1,470,464 B（约 1.40 MB）** |
-| 对比：现有 public/assets/ui | 564,581 B；整个 public/assets 约 314 MB（第一轮 du -sh） |
-| 生成源材质 docs/ui-preview/src | 461,604 B（只在 docs，不进 public/dist） |
-
-compress-assets（vite.config.ts 里的 `compressAssets`）现在只处理 portraits/bg/map 和 ui/bg_dungeon.jpg，**ui 目录不在范围内**。
+| 46 个切片 PNG 合计（slices/） | **253,019 B** |
+| **ui_atlas.png**（512×512，padding 2，extrude 1） | **265,073 B** |
+| **ui_atlas.webp**（无损 exact，与 PNG 逐像素一致） | **175,936 B** |
+| ui_atlas_q90.webp（q90 / alpha95） | **73,874 B** |
+| ui_atlas.json | 12,595 B |
+| atlas 显存（RGBA） | 512×512×4 = **1,048,576 B（1.0 MB）** |
+| 手机 DOM @2x 单图（17 张） | 307,779 B（1x 直接用 slices/，17 张 85,762 B） |
+| 对比：现有 public/assets/ui | 564,581 B；整个 public/assets 约 314 MB |
 
 建议（需要系统开发改代码，本分支不改）：
-1. 正式打包成 `assets/ui/ui_atlas.png` + json，44 个文件变成 1 次请求。预览 atlas 用的是简易 shelf 打包，有空隙；正式打包建议用 TexturePacker 或 free-tex-packer，padding 2、extrude 1，可以压到 512×512 左右。
-2. **只用无损或 q≥90**：在 compressAssets 的 targets 里加 ui_atlas，用 `{ lossless: true }`（实测 202 KB）或 `{ quality: 90, alphaQuality: 95 }`（实测 74 KB）。不要套用立绘的 80/85 或背景的 72，金边细线会出现色带。同时要改 loader.ts `assetUrl()` 的正则，让 `assets/ui/ui_atlas.png` 映射到 .webp。
-3. **加载时机**：ui_atlas 放在 Boot/Title 预加载，一次加载，开始界面就要用。商城切片已经并进同一张 atlas，额外只有约 +160 KB PNG，不单独懒加载。以后商城如果有大 banner 或活动图，再单独打 atlas，打开商城时懒加载。
-4. 增量：WebP 无损约 +202 KB，q90 约 +74 KB，相对 314 MB 的资源可以忽略。显存 1.40 MB，手机端也可以接受。
+1. 用 `ui_atlas.webp`（无损，176 KB）或 q90（74 KB）。不要用 72/80/85 的质量参数。
+2. 改 loader.ts `assetUrl()` 的正则映射 .webp；json 不压缩。
+3. 在 TitleScene preload 一次加载。
+4. DOM 单图和 @2x 由构建一起压成 webp，参数同上。
