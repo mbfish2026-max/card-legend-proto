@@ -502,6 +502,7 @@ export class BattleScene extends Phaser.Scene {
         if (sv.unit.isHero) playFx(this, 'fx_common_slash', sv.cx + dir * sv.w * 0.25, sv.cy - 10, { tint: SLASH_TINT[this.world.cls], flip: dir < 0, decorative: this.world.cls !== 'warrior' });
         if (sv.unit.isHero && this.world.cls !== 'warrior') fx.projectile(this, sv.cx + dir * 30, sv.cy - 20, tv.cx, tv.cy, this.world.cls === 'mage' ? 'fire' : 'talisman', () => { if (this.world.cls !== 'mage' || !playFx(this, 'fx_common_explosion', tv.cx, tv.cy, { scale: 0.7, decorative: true })) fx.hitSpark(this, tv.cx, tv.cy); });
         else if (sv.unit.isHero && this.textures.exists('fx_common_slash')) { /* 已播放图集挥砍 */ }
+        else if (e.skill === 'thunder') { if (!playFx(this, 'fx_thunder_strike', tv.cx, tv.y)) fx.lightning(this, tv.cx, tv.y - 600, tv.cy); } // maps-3050 闪电魔远程雷击：复用雷电术特效
         else {
           // 召唤物专属攻击特效（docs/fx-requests.md 召唤物动作 / v5）；缺图退回原 Graphics 挥砍
           const u = sv.unit, fx0 = sv.x + dir * (sv.w / 2 + 6);

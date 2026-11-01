@@ -44,3 +44,26 @@
 | 存档 `bossCdId` | **新增**（可选） | `Record<"层:id", 剩余秒>` | 按 BOSS 记冷却；旧档无此字段时沿用整层冷却 |
 
 （实现与规则见 §5，第 2 步补充。）
+
+## 5. 实现规则（第 2 步）
+- **onHit.stun**（`World.foeHit`）：怪普攻命中（打主角/召唤物/英雄均走同一函数）后，用 `lootRng`（不扰动主随机序列）判 `< chance`；命中则 `stunUntil = now + dur`，并 `cd = max(cd, dur)`。
+  - BOSS 免疫：目标 `tier === 'boss'` 不判定。
+  - 不叠加不刷新：目标眩晕中再次命中**不判定**，到期后才可再被晕（避免连锁永控）[适配]。
+  - 主角眩晕中：不能移动（moveHero 跳过）、不自动普攻、`cast` 返回 `{ ok:false, reason:'眩晕中' }`（含自动施法）；吃药/回城不受限。召唤物眩晕中原地不动不攻击；英雄靠 `cd` 顺延。净化（cleanse）已有逻辑会清除友方 `stunUntil`。
+  - 提示：日志「X被幽影武士击晕 2 秒」。
+- **immobile**：`World.isImmobile(u) = u.immobile || id==='boss_redmoon'`（原赤月硬编码收编）。追击态不移动、不跳扑、仇恨在召唤物时也不走；仍按 `range` 打射程内目标。脱战（leash）规则不变：主角离开 `leashRange` → return → 已在原点立即 idle，idle/return 时按 `leashRegen` 回血。
+- **禁地魔王**：`boss_sq_jindi.immobile = true`；重生沿用 `BOSS_RESPAWN = 600`。不在 BOSS_MECH，通用 BOSS 机制照旧。远程/AOE 补偿：**未做**，待评估（主角远程可无伤风筝它）。
+- **ranged**：除常规「队首贴身」攻击外，追击态、非队首、主角在 `range` 内（`inMelee`）也能攻击，打主角。眩晕/BOSS_MECH/仇恨召唤物时不走这条。
+- **magic**：普攻 `damage(..., magic)`，1 = 全额走魔御。`ranged && magic` 的攻击事件带 `skill:'thunder'`，BattleScene 播 `fx_thunder_strike`（缺图退回 Graphics 闪电）——复用雷电术，**无专属资源（缺口）**。
+- **双 BOSS 冷却**：新增 `bossCdId["层:id"]`，`bossOnCd(i,id)` 判定；击杀同时写整层 `bossCdUntil`（UI/副本逻辑不变）。旧档只有整层冷却时整层跳过（兼容）。同层两只**同 id** BOSS 仍共用冷却（现无此情况）。
+- **新怪定义**（只定义，不放刷怪点，主线 sim 不受影响；`boss_sq_jindi` 例外，它在禁地·魔穴）：
+
+| id | 名 | Lv | 模板 | 字段 |
+|---|---|---|---|---|
+| sq_youying | 幽影武士 | 45 | sq_lizhua | onHit.stun {0.1, 2} |
+| sq_lieyan_shi | 烈焰使 | 44 | sq_shanling | immobile |
+| boss_sq_shandian | 闪电魔 | 34 | boss_sq_jindi | boss, ranged, magic 1, range 320, speed 90 |
+| boss_sq_lizhua | 利爪魔 | 33 | boss_sq_jindi | boss, 近战 range 8, speed 100（立绘借 sq_lizhua，缺图） |
+| boss_sq_jindi | 禁地魔王 | 32 | (原) | + immobile |
+
+等级/模板/射程均 [适配]；官方仅有「麻痹」「极品不移动」「4h 刷新、爆圣战级」，技能数值**未查到**。
