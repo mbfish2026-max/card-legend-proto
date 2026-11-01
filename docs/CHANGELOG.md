@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 灵符商城·战斗侧接入（feat/lingfu-combat，未合 main）
+- 血石 `World.tickStone`：**小血石无等级限制**（Lv1 起生效）；HP<40% 每 2s +3HP、不回 MP [适配]（官方 2023 魔血石每秒 +10HP/+15MP，为保持 1–39 级难度削弱，9 seed 1–39 级死亡合计 战−10%/法−11%/道−18%，道士偏差来自 Lv35 中血石）。中/大/特 35/40/45：HP<60%/MP<40% 补 15%，2s 冷却 [适配]。手动药水优先，城内不生效，储量随存档，耗尽保留空石，头顶飘字「血石 +N」。
+- 技巧项链：熟练度 ×5。召唤直升 `boostSummon(7)`：在场与之后召唤均为 7 级，新增可选存档字段 `summonBoostLv`。回城石：战斗中/BOSS 房可用，瞬发，30s 冷却 [适配]，召唤物跟随。
+- 测试：tests/lingfu-combat.test.ts 29 项进 npm test；e2e tests/e2e/lingfu-combat-verify.mjs。详见 docs/lingfu-shop.md §10.6。
 ## 灵符商城第一版（feat/lingfu-shop，未合 main）
 - 2026-11-02：fx-manifest、fx-requests 中描述特效来源的「原创」改为「程序化生成」（特效由 Python 脚本渲染），只改文字。
 - 2026-11-02：文档措辞修正，把美术素材来源统一写成「AI 生成」，不再写「原创」（ui-art-plan、art-requests、equip-layers、chuanshi-skills、README、build_lingfu.py docstring、assets-manifest 注释）。音频来源描述未改，代码逻辑未改。

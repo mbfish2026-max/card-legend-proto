@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 灵符商城·战斗侧接入（feat/lingfu-combat，未合 main）
+- 血石 `World.tickStone`：**小血石无等级限制**（Lv1 起生效）；HP<40% 每 2s +3HP、不回 MP [适配]（官方 2023 魔血石每秒 +10HP/+15MP，为保持 1–39 级难度削弱，9 seed 1–39 级死亡合计 战−10%/法−11%/道−18%，道士偏差来自 Lv35 中血石）。中/大/特 35/40/45：HP<60%/MP<40% 补 15%，2s 冷却 [适配]。手动药水优先，城内不生效，储量随存档，耗尽保留空石，头顶飘字「血石 +N」。
+- 技巧项链：熟练度 ×5。召唤直升 `boostSummon(7)`：在场与之后召唤均为 7 级，新增可选存档字段 `summonBoostLv`。回城石：战斗中/BOSS 房可用，瞬发，30s 冷却 [适配]，召唤物跟随。
+- 测试：tests/lingfu-combat.test.ts 29 项进 npm test；e2e tests/e2e/lingfu-combat-verify.mjs。详见 docs/lingfu-shop.md §10.6。
 ## 修复：换图后召唤物留在旧坐标/从远处走过来（fix/summon-mapchange，未合 main）
 - 根因：World.prevFloor（S 返回上一层）先 loadFloor 把召唤物放到本层起点附近，再把英雄挪到上一层终点（出口前），召唤物不跟着挪 → 相距约 8000px，要很久才走过来；enterTown（回城）完全不重置召唤物坐标；loadFloor 本身按 110+60k 排队，第 2/3 只已超 100px。另：读档恢复的召唤物（restoreSummons）不发 summon 事件，BattleScene 不建卡牌，直到换图前都看不见。
 - 修复：新增 World.placeSummonsNearHero()（召唤物含诱惑宠物交替落在英雄身后/身前 50/50/75/75/100px，夹在地图/长街内），在 loadFloor（下一层/传送/副本/出城/上一层按钮）、prevFloor 英雄落位之后、enterTown 调用；BattleScene.snapSummonViews() 换图/进城时卡牌直接跳到新坐标，缺卡牌的召唤物补建（读档后立即可见）。不改任何战斗/平衡数值。
