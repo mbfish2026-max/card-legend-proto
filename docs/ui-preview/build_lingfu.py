@@ -1,4 +1,4 @@
-"""灵符商城图标：64×64 单图（public/assets/icons/）+ ui_atlas 帧 lingfu_entry（九宫格 56×44，拉伸到 88×44/52×44）。源图 src/lf_*_src.jpg（GenerateImage 原创，黑底）。"""
+"""灵符商城图标：64×64 单图（public/assets/icons/）+ ui_atlas 帧 lingfu_entry（九宫格 56×44，拉伸到 88×44/52×44）。源图 src/lf_*_src.jpg（GenerateImage AI 生成，黑底）。"""
 from PIL import Image,ImageDraw,ImageFilter,ImageEnhance;import numpy as np,json,os
 H=os.path.dirname(os.path.abspath(__file__));os.chdir(H);OUT='../../public/assets/icons';os.makedirs(OUT,exist_ok=True)
 def key(im,t0=18,t1=70):
