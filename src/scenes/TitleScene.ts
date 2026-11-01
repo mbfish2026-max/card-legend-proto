@@ -12,6 +12,8 @@ import { FLOORS, floorNo } from '../data/world';
 import type { SaveData } from '../combat/World';
 import { MUSIC, playMusic } from '../music';
 import { IS_MOBILE } from '../mobile';
+import { initCloud } from '../cloud';
+import { accountPanel, chipLabel, conflictScreen, loginForm, type AccountHost } from '../ui/AccountView';
 
 export const txt = (s: Phaser.Scene, x: number, y: number, t: string, size: number, color = '#fff', extra: Phaser.Types.GameObjects.Text.TextStyle = {}) =>
   s.add.text(x, y, t, { fontFamily: FONT, fontSize: size + 'px', color, stroke: '#000', strokeThickness: 3, ...extra });
@@ -30,7 +32,7 @@ export function sfx(s: Phaser.Scene, id: string, volume = 0.6) { try { if (s.cac
 
 /** 标题：新游戏 / 继续 / 设置；新游戏后进入职业选择 */
 export class TitleScene extends Phaser.Scene {
-  layer?: Phaser.GameObjects.Container;
+  layer?: Phaser.GameObjects.Container; form: HTMLElement | null = null; screen = '';
   constructor() { super('Title'); }
   preload() {
     const bar = this.add.rectangle(340, 360, 0, 16, 0xd4a64a).setOrigin(0, 0.5);
@@ -42,6 +44,8 @@ export class TitleScene extends Phaser.Scene {
   }
   create() {
     Settings.load(); Settings.apply(this.sound);
+    const cloud = initCloud(); cloud.onChange = () => { if (!this.scene.isActive()) return; if (cloud.status === 'conflict' && this.screen === 'main') this.accountScreen(); else if (this.screen === 'main') this.mainMenu(); };
+    this.events.once('shutdown', () => { cloud.onChange = () => {}; this.setForm(null); });
     if (!this.scene.isActive('Preload')) this.scene.launch('Preload');
     this.game.events.off('music-ready'); this.game.events.once('music-ready', () => { if (this.scene.isActive()) playMusic(this, 'title'); });
     const qs = new URLSearchParams(location.search);
@@ -56,9 +60,17 @@ export class TitleScene extends Phaser.Scene {
     if (this.game.registry.get('openSlots')) { this.game.registry.set('openSlots', false); this.slotsScreen(); }
     else if (qs.get('title') === 'class') this.classSelect(); else this.mainMenu();
   }
-  clear() { this.layer?.destroy(true); this.layer = this.add.container(0, 0); return this.layer; }
+  clear(screen = '') { this.setForm(null); this.screen = screen; this.layer?.destroy(true); this.layer = this.add.container(0, 0); return this.layer; }
+  setForm(el: HTMLElement | null) { if (this.form && this.form !== el) this.form.remove(); this.form = el; }
+  /** 账号：未登录→登录表单；有冲突→冲突选择；已登录→账号状态 */
+  accountScreen() {
+    const c = initCloud(), L = this.clear('account');
+    const h: AccountHost = { scene: this, L, button, txt, back: () => this.mainMenu(), rerender: () => this.accountScreen(), setForm: el => this.setForm(el) };
+    if (c.status === 'guest') loginForm(h, c); else if (c.status === 'conflict') conflictScreen(h, c); else if (c.status === 'off') this.mainMenu(); else accountPanel(h, c);
+  }
   mainMenu() {
-    const L = this.clear(), has = SaveStore.has(), save = SaveStore.load();
+    const L = this.clear('main'), has = SaveStore.has(), save = SaveStore.load();
+    { const c = initCloud(), ch = chipLabel(c); L.add([...button(this, 1110, 44, 250, 40, ch.label, () => this.accountScreen(), 16, ch.enabled)]); }
     // 新游戏不覆盖当前槽：当前槽有存档时换到第一个空槽；全满则去存档位界面选择
     L.add([...button(this, 640, 320, 280, 56, '新 游 戏', () => { if (has) { const e = Slots.firstEmpty(); if (!e) { this.slotsScreen('存档位已满：请先删除一个存档'); return; } Slots.select(e); } this.classSelect(); })]);
     L.add([...button(this, 640, 395, 280, 56, '继 续', () => save && this.startBattle({ save }), 22, has && !!save)]);

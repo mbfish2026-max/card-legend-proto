@@ -76,4 +76,4 @@ const api = new MockCloud();
   // 退出
   await c2.logout(); ok(c2.status === 'guest' && !mem.has(STATE_KEY) && Slots.read(1)?.level === 16, '退出登录：回游客，本地存档保留');
 }
-console.log(`cloud-sync: ${n - fail}/${n}`); if (fail) { console.log('cloud-sync: FAILED'); process.exit(1); } else console.log('cloud-sync: all passed');
+console.log(`cloud-sync: ${n - fail}/${n}`); if (fail) { console.log("cloud-sync: FAILED"); (globalThis as any).process.exit(1); } else console.log('cloud-sync: all passed');
