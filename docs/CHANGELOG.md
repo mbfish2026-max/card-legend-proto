@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 召唤物移动速度 = 英雄速度（feat/summon-regen）
+- 所有召唤物/诱惑宠物的跟随与追击速度改为实时读取 World.heroMoveSpeed()（= WORLD.heroSpeed × 英雄 spdMul，加速/减速挂 spdMul），原为 WORLD.baseSpeed×1.1。跟随距离逻辑不变。
+- 测试：tests/summon-speed.test.ts。
+
 ## 道士召唤物继承英雄属性（feat/summon-regen）
 - [适配]（官方未查到）道士召唤物（骷髅/神兽/赶尸/金甲骷髅）在原公式之外叠加：攻击 += round(0.2 × max(英雄攻击, 英雄道术))，防御 += round(0.2 × 英雄防御)，生命上限 += round(0.15 × 英雄生命上限)（WORLD.summonInhAtk/Def/Hp）。
 - 实时：每帧比对英雄属性签名，升级/换装后刷新；生命上限变化按当前血量比例保持。诱惑宠物不继承。名字/颜色/回血不变。

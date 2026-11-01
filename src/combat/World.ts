@@ -1363,7 +1363,7 @@ export class World {
   queueStep(d: number) { const h = this.hero; if (!h || !d) return; if (this.stepTarget === null) { this.stepAge = 0; this.stepTarget = h.x + Math.sign(d) * WORLD.stepPx; } else { const sd = Math.sign(d); this.stepQueued = Math.sign(this.stepQueued) === sd ? Math.min(10, Math.abs(this.stepQueued) + 1) * sd : (Math.sign(this.stepTarget - h.x) === sd ? sd : sd); } }
   private moveHero(h: Unit, inp: Input, dt: number) {
     if (inp.step) this.queueStep(inp.step);
-    let speed = WORLD.heroSpeed, sdx = 0;
+    let speed = this.heroMoveSpeed(), sdx = 0;
     if (!inp.dx && this.stepTarget !== null) { sdx = Math.sign(this.stepTarget - h.x); speed = WORLD.stepPx / WORLD.stepSec; speed = Math.min(speed, Math.abs(this.stepTarget - h.x) / dt); }
     const dx = Math.sign(inp.dx) || sdx, dy = Math.sign(inp.dy); const x0 = h.x;
     h.moving = !!(dx || dy);
@@ -1543,11 +1543,11 @@ export class World {
       const tg = this.alive('enemy').filter(e => e.ai === 'chase' && Math.abs(e.x - h.x) < (e.aggroUid === sm.uid ? WORLD.leashRange : 700)).sort((a, b) => Math.abs(a.x - sm.x) - Math.abs(b.x - sm.x))[0];
       if (tg) {
         const side = Math.sign(tg.x - sm.x) || 1; sm.facing = side as 1 | -1;
-        if (!this.inMelee(sm, tg)) this.toward(sm, tg.x - side * ((sm.width + tg.width) / 2), WORLD.summonLane, WORLD.baseSpeed * 1.1, dt);
+        if (!this.inMelee(sm, tg)) this.toward(sm, tg.x - side * ((sm.width + tg.width) / 2), WORLD.summonLane, smSpd, dt);
         else { sm.moving = false; if (sm.cd <= 0) { sm.cd = sm.atkInterval; this.events.push({ type: 'attack', source: sm.uid, target: tg.uid }); this.damage(tg, sm.atk * (0.9 + this.rng() * 0.2), sm); } }
       } else {
         const tx = h.x - h.facing * (110 + k * 60);
-        if (Math.abs(tx - sm.x) > 30) { sm.facing = Math.sign(tx - sm.x) as 1 | -1; this.toward(sm, tx, WORLD.summonLane, WORLD.baseSpeed * 1.1, dt); } else sm.moving = false;
+        if (Math.abs(tx - sm.x) > 30) { sm.facing = Math.sign(tx - sm.x) as 1 | -1; this.toward(sm, tx, WORLD.summonLane, smSpd, dt); } else sm.moving = false;
       }
     }
     if (h && h.alive && this.companion?.out) this.companionStep(dt, h);
