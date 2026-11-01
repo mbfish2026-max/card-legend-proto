@@ -1470,3 +1470,19 @@ public/assets/ui/UI-Tooltip-Border.png
 | bg_floor93.jpg | 铁血魔宫 | 角状铁王座、熔岩 | 推测；两侧旗帜纹样已模糊处理 |
 
 预览：docs/art-gap-preview/maps3050_bg.jpg
+
+### 新怪立绘（RGBA png，最长边 960，public/assets/portraits/<id>_full.png）
+
+| id（拟） | 怪物 | 所在地图 | 画面要点 | 备注 |
+|---|---|---|---|---|
+| m3_flower_spider | 花色蜘蛛 | 灌木林 | 橙紫花斑巨蛛 | 推测 |
+| m3_blackhorn_spider | 黑角蜘蛛 | 灌木林 | 黑甲双角蜘蛛 | 推测 |
+| boss_m3_bajiao | 八脚首领（BOSS） | 灌木林 | 半人形四臂蛛魔 | 推测 |
+| boss_sq_snake_yao_king | 蛇妖王（BOSS） | 玄冰殿 | 三头冰蛇，持冰杖与冰球 | 推测 |
+| sq_lieyan_shi | 烈焰使 | 通天塔 | 熔岩火焰魔使，持火刃 | 推测 |
+| boss_sq_tongtian | 通天教主（BOSS） | 通天塔 | 白须道袍老者，持光剑、五色元素球 | 推测 |
+| m3_giant_elephant | 巨象兽 | 失乐园 | 披骨甲四牙巨象 | 推测 |
+| m3_moshen_guai | 魔神怪 | 失乐园 | 三眼羊角魔，持钉棒 | 推测 |
+| m3_ape_warrior | 猿猴战士 | 失乐园 | 皮甲巨猿，持铁棍 | 推测 |
+
+预览：docs/art-gap-preview/maps3050_mon1.jpg
