@@ -1501,3 +1501,60 @@ public/assets/ui/UI-Tooltip-Border.png
 - 比 35 级以下的图标更华丽：金属雕花、宝石和光效更多。每件的造型和配色都不一样，同一套的首饰共用一个主色调。
 - 男女款衣服按 plan 合并成一件，只做一个图标。
 - 预览：docs/art-gap-preview/equip_40_50.jpg（每格是放大的 128 版本，右下角是 64 原尺寸）。副本：/workspace/shared-gap/equip-40-50/。
+## M3-A. 30–50 级新地图首批：背景与新怪立绘（art/maps-3050 分支交付）
+
+范围：feat/maps-3050 规划的 C1–C8 共 8 张地图。所有 id 均为美术侧「拟」定，接入时以程序侧为准；场景细节以官方资料为准的部分未查到，均为**推测**。
+
+### 背景（1920×1080 jpg，下 40% 为空旷地面）
+
+| 文件 | 对应地图/区段 | 画面 | 备注 |
+|---|---|---|---|
+| bg_floor84.jpg | 灌木林 | 夜间灌木丛林、萤火 | 推测 |
+| bg_floor85.jpg | 环冰道 | 冰洞长廊 | 推测 |
+| bg_floor86.jpg | 玄冰殿 | 冰殿、冰王座、蛇形冰雕 | 推测 |
+| bg_floor87.jpg | 通天塔 1–3 层 | 砂岩走廊、灯笼 | 推测 |
+| bg_floor88.jpg | 通天塔 4–6 层 | 五行祭坛大厅 | 推测；中央帷幔纹样已模糊处理 |
+| bg_floor89.jpg | 通天塔 7–9 层 | 落日云台 | 推测 |
+| bg_floor90.jpg | 失乐园·北部丛林 | 巨树藤蔓、遗迹 | 推测 |
+| bg_floor91.jpg | 禁地·黑暗轮回 | 紫色漩涡深渊、游魂 | 推测 |
+| bg_floor92.jpg | 铁血魔城·叹息回廊 | 铁壁、吊笼、血色火把 | 推测 |
+| bg_floor93.jpg | 铁血魔宫 | 角状铁王座、熔岩 | 推测；两侧旗帜纹样已模糊处理 |
+
+预览：docs/art-gap-preview/maps3050_bg.jpg
+
+### 新怪立绘（RGBA png，最长边 960，public/assets/portraits/<id>_full.png）
+
+| id（拟） | 怪物 | 所在地图 | 画面要点 | 备注 |
+|---|---|---|---|---|
+| m3_flower_spider | 花色蜘蛛 | 灌木林 | 橙紫花斑巨蛛 | 推测 |
+| m3_blackhorn_spider | 黑角蜘蛛 | 灌木林 | 黑甲双角蜘蛛 | 推测 |
+| boss_m3_bajiao | 八脚首领（BOSS） | 灌木林 | 半人形四臂蛛魔 | 推测 |
+| boss_sq_snake_yao_king | 蛇妖王（BOSS） | 玄冰殿 | 三头冰蛇，持冰杖与冰球 | 推测 |
+| sq_lieyan_shi | 烈焰使 | 通天塔 | 熔岩火焰魔使，持火刃 | 推测 |
+| boss_sq_tongtian | 通天教主（BOSS） | 通天塔 | 白须道袍老者，持光剑、五色元素球 | 推测 |
+| m3_giant_elephant | 巨象兽 | 失乐园 | 披骨甲四牙巨象 | 推测 |
+| m3_moshen_guai | 魔神怪 | 失乐园 | 三眼羊角魔，持钉棒 | 推测 |
+| m3_ape_warrior | 猿猴战士 | 失乐园 | 皮甲巨猿，持铁棍 | 推测 |
+
+预览：docs/art-gap-preview/maps3050_mon1.jpg
+| m3_ape_general | 猿猴战将 | 失乐园 | 银毛巨猿将，重甲红披风，持长戟 | 推测 |
+| boss_m3_mad_moshen_thief | 疯狂魔神盗（BOSS） | 失乐园 | 兜帽角魔，双匕首、金币袋 | 推测；去绿溢色后肤色偏紫红 |
+| boss_sq_shandian | 闪电魔（BOSS） | 黑暗轮回 | 雷电元素魔，持闪电 | 推测 |
+| sq_moyan | 魔眼 | 黑暗轮回 | 紫色独眼触手球 | 推测 |
+| sq_youying | 幽影武士 | 叹息回廊 | 黑甲幽灵武士，持长刀 | 推测；脚下保留少量烟影 |
+| sq_yanmo | 炎魔 | 叹息回廊 | 熔岩有翼炎魔，持火鞭 | 推测 |
+| sq_dihuo_rider | 地火兽骑将 | 铁血魔宫 | 熔岩犀兽坐骑＋火枪骑将 | 推测 |
+| boss_sq_tiexue | 铁血魔王（BOSS） | 铁血魔宫 | 血染铁甲魔王，持锯齿巨剑 | 推测 |
+
+预览：docs/art-gap-preview/maps3050_mon2.jpg
+
+### 因同 id 已有立绘而跳过（不重画）
+
+| 怪物 | 已有文件 |
+|---|---|
+| 月魔蜘蛛 | redmoon_spider_full.png |
+| 三头蛇王 | boss_sq_snake_king_full.png |
+| 白蛇妖 / 红蛇妖 / 黑蛇妖 | sq_*_snake_yao_full.png |
+| 利爪魔 | sq_lizhua_full.png |
+
+通天塔低层小怪、逆魔系列：官方怪物名单未查到，规划中沿用已有 id，故未新画（未查到/推测）。
