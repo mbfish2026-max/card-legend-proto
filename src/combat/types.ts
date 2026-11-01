@@ -1,9 +1,9 @@
 export type Team = 'ally' | 'enemy';
 export type Tier = 'player' | 'normal' | 'boss';
 export interface DropEntry { item: string; chance: number; rarity?: Rarity }
-export type Slot = 'weapon' | 'helmet' | 'armor' | 'necklace' | 'ring' | 'bracelet' | 'boots';
+export type Slot = 'weapon' | 'helmet' | 'armor' | 'necklace' | 'ring' | 'bracelet' | 'boots' | 'stone';
 /** 穿戴位（官方：左右戒指、左右手镯各两位）；Slot 是物品部位类别 */
-export type EquipSlot = 'weapon' | 'helmet' | 'armor' | 'necklace' | 'ring1' | 'ring2' | 'bracelet1' | 'bracelet2' | 'boots';
+export type EquipSlot = 'weapon' | 'helmet' | 'armor' | 'necklace' | 'ring1' | 'ring2' | 'bracelet1' | 'bracelet2' | 'boots' | 'stone';
 export interface Stats { hp: number; mp: number; atk: number; mag: number; tao: number; def: number; /** 魔御（MAC）：只减魔法伤害 */ mdef: number }
 export interface UnitDef {
   id: string; name: string; level: number; hp: number; mp?: number; atk: number;
@@ -58,7 +58,7 @@ export interface BossState { stage: number; dazeUntil: number; crazyUntil: numbe
 export type Rarity = 'common' | 'magic' | 'rare';
 export interface ItemDef { id: string; name: string; icon: string; potion?: number; slot?: Slot; equip?: Partial<Stats>; req?: number; price?: number; set?: string; /** 技能书：对应技能 id */ book?: string; /** 职业限制（空 = 通用） */ cls?: ('warrior' | 'mage' | 'taoist')[]; /** 合击版：火龙之心（英雄栏专属） */ heart?: boolean; /** 合击版：补充怒槽/火龙之心的量 */ rage?: number }
 /** 背包/装备栏里的一件物品 */
-export interface InvItem { uid: number; item: string; name: string; rarity: Rarity; slot?: Slot; stats: Partial<Stats>; req: number; price: number; luck?: number; /** 强化等级 0..7 */ enhance?: number; /** R14 鉴定词条数 1–3 */ ided?: number; /** 黑铁矿石纯度 1..5 */ purity?: number; /** 堆叠数量（黑铁等） */ qty?: number }
+export interface InvItem { uid: number; item: string; name: string; rarity: Rarity; slot?: Slot; stats: Partial<Stats>; req: number; price: number; luck?: number; /** 强化等级 0..7 */ enhance?: number; /** R14 鉴定词条数 1–3 */ ided?: number; /** 黑铁矿石纯度 1..5 */ purity?: number; /** 堆叠数量（黑铁等） */ qty?: number; /** 灵符商城：剩余使用次数（回城石） */ uses?: number; /** 灵符商城：血石剩余储量 */ charge?: { hp: number; mp: number }; /** 灵符商城：绑定（不可出售/交易） */ bound?: boolean; /** 灵符商城：冷却结束时刻（Date.now 毫秒，回城石） */ cdAt?: number }
 export interface GroundItem { gid: number; item: string; name: string; rarity: Rarity; x: number; y: number; landAt: number; atk: number; hp: number; amount: number; inv?: InvItem }
 export type BattleEvent =
   | { type: 'attack'; source: number; target: number; skill?: string }

@@ -6,7 +6,8 @@ import { fmtInt, fmtText, bookEntry } from './fmt';
 import { SKILL_BOOK_DROPS } from '../data/skillBookDrops';
 import { COMPANION_UNLOCK_LEVEL, comboFor, BOOK_PAGE, BRM_BOOK, GOLD_BAR, PAGES_PER_BOOK, COMBO_LEVEL, heartFeedValue, RAGE_MAX, HEART_STORE_MAX, RECRUIT_DIALOG } from '../data/companion';
 import { toLogic, toLogicX, MAX_LW, Render } from '../render';
-import { frameBg, atlasReady, listRowPitch, rowHitHeight, viewCss, rowBg, scrollBar, slotBg, qualityFrame, slotHitSize, rowTint, SKILL_ROW_TINT, UI_SLICES , panelFrameName, MOBILE_TABS, MIN_TAP } from './uiSlices';
+import { isShopUsable, useShopItem } from '../shop/shop';
+import { frameBg, atlasReady, listRowPitch, rowHitHeight, viewCss, rowBg, scrollBar, slotBg, qualityFrame, slotHitSize, bloodstoneSlot, rowTint, SKILL_ROW_TINT, UI_SLICES , panelFrameName, MOBILE_TABS, MIN_TAP } from './uiSlices';
 import { compareRows, diffText, CmpData } from './equipCompare';
 import { shouldTapClose } from './tapClose';
 import { RING_MIN_LEVEL, IDENT_PRICE, IDENT_MIN_LEVEL } from '../data/r14b';
@@ -173,9 +174,10 @@ export class Panel {
     // 左列：头盔/项链/武器/左手镯/左戒指；右列：衣服/靴子/右手镯/右戒指（间距 58，末行底边 top+342 不压属性文字，竖屏同坐标系不越界）
     const L = cx - 130, Rx = cx + 130, y0 = top + 80, dy = 58;
     const pos: Record<EquipSlot, [number, number]> = { helmet: [L, y0], necklace: [L, y0 + dy], weapon: [L, y0 + dy * 2], bracelet1: [L, y0 + dy * 3], ring1: [L, y0 + dy * 4],
-      armor: [Rx, y0], boots: [Rx, y0 + dy], bracelet2: [Rx, y0 + dy * 3], ring2: [Rx, y0 + dy * 4] };
+      armor: [Rx, y0], boots: [Rx, y0 + dy], stone: [Rx, y0 + dy * 2], bracelet2: [Rx, y0 + dy * 3], ring2: [Rx, y0 + dy * 4] };
     for (const sl of EQUIP_SLOTS) {
       const [x, y] = pos[sl];
+      if (sl === 'stone' && !w.equip.stone) { const bs = bloodstoneSlot(s, x, y, size); if (bs) R.add(bs); } // 灵符商城：血石栏空槽底图
       this.slotBox(R, x, y, size, w.equip[sl], EQUIP_SLOT_NAMES[sl], () => {
         if (this.ironIdx != null) {
           const m = w.enhanceWithIron(this.ironIdx, sl); this.ironIdx = null;
@@ -268,8 +270,10 @@ export class Panel {
     for (let i = p0; i < Math.min(WORLD.bagSize, p0 + BAG_PAGE); i++) {
       const it = w.bag[i], k = i - p0, x = x0 + (k % cols) * (size + 6), y = y0 + Math.floor(k / cols) * (size + 6);
       this.slotBox(R, x, y, size, it, '', right => {
-        if (this.mode === 'shop' || this.npcKind() && this.npcKind() !== 'storage') { const g = w.sellItem(i); sfx(s, 'coin'); this.onChange(`出售 ${it!.name} 获得 ${g} 金币`, true); }
+        if ((this.mode === 'shop' || this.npcKind() && this.npcKind() !== 'storage') && it?.bound) this.onChange('灵符商城物品不可出售', false);
+        else if (this.mode === 'shop' || this.npcKind() && this.npcKind() !== 'storage') { const g = w.sellItem(i); sfx(s, 'coin'); this.onChange(`出售 ${it!.name} 获得 ${g} 金币`, true); }
         else if (this.npcKind() === 'storage') { const e = w.deposit(i); this.onChange(e ?? `存入 ${it!.name}`, !e); }
+        else if (isShopUsable(it!.item) && !right) { const r = useShopItem(w, i); sfx(s, 'loot', 0.5); this.onChange(r.msg, r.ok); if (r.ok && it!.item === 'return_stone') { this.mode = null; this.close(); } if (r.ok) this.onTeleport?.(); }
         else if (CONSUMABLE[it!.item]) { const m = w.useConsumable(i); sfx(s, 'loot', 0.5); if (w.town) { this.mode = 'town'; this.npc = null; } this.onChange(m, m.startsWith('使用')); }
         else if (right) { w.dropItem(i); this.onChange(`丢弃 ${it!.name}`); }
         else if (it!.slot) { const e = w.equipItem(i); if (!e) sfx(s, 'loot', 0.5); this.onChange(e ?? `装备 ${it!.name}`, !e); }

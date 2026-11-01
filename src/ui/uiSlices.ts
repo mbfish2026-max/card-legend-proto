@@ -93,7 +93,7 @@ export function qualityFrame(s: Phaser.Scene, x: number, y: number, size: number
   return ns(s, f, x, y, size, size)?.setName('qframe:' + rarity) ?? null;
 }
 /** B4 血石空槽：固定帧（不走九宫格），只按显示尺寸等比放；血石装备槽（stone）尚未实现，故 BLOODSTONE_SLOT_VISIBLE=false，界面不显示 */
-export const BLOODSTONE_SLOT_VISIBLE = false;
+export const BLOODSTONE_SLOT_VISIBLE = true; // 灵符商城：stone 栏已实现
 export function bloodstoneSlot(s: Phaser.Scene, x: number, y: number, size: number) {
   if (!atlasReady(s, 'slot_bloodstone')) return null;
   return s.add.image(x, y, UI_ATLAS, 'slot_bloodstone').setDisplaySize(size, size).setName('slotBloodstone');
