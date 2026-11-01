@@ -4,6 +4,7 @@ import { Settings } from '../settings';
 import { fmtExp } from '../data/expCurve';
 import type { BattleScene } from '../scenes/BattleScene';
 import type { Hud } from './Hud';
+import { applyDomSkin } from './domSkin';
 /**
  * 手机专用 HUD（DOM 层，CSS 像素 + safe-area）：只替换显示/输入层，所有动作都转发给 BattleScene.onKey / dx,dy，
  * 不复制任何游戏逻辑。电脑端不创建本类（见 UIScene）。docs/mobile-ui.md 有「桌面功能 → 手机入口」对照表。
@@ -72,6 +73,7 @@ export class MobileHud {
     if (!document.getElementById('mhud-css')) { const st = document.createElement('style'); st.id = 'mhud-css'; st.textContent = CSS; document.head.appendChild(st); }
     document.getElementById('mhud')?.remove();
     const r = this.root = document.createElement('div'); r.id = 'mhud'; document.body.appendChild(r);
+    (window as any).__mhudSkin = applyDomSkin(r); // B6：@2x 图逐张 onload 后才启用 border-image，失败回退纯 CSS
     // 左上：细条 HP/MP/EXP（带数字）+ 简要属性
     const bars = this.el('div', r, 'ctl'); bars.id = 'mh-bars';
     for (const [k, c] of [['hp', '#c0201a,#ff5a3a'], ['mp', '#1a3cc0,#4a8aff'], ['exp', '#b08a20,#ffd24a']]) {

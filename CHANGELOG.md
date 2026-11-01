@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## UI 美术 B6 手机 DOM HUD 换皮（border-image + @2x 图）feat/ui-art-b06（基于 feat/ui-art-b05 eb8ed3b；docs/ui-art-integration.md §1 B6、docs/ui-art-plan.md §3.5）
+- 新增 `src/ui/domSkin.ts`：用 public/assets/ui/dom/<名>@2x 图，地址经 `domUrl()` 和 `mapAssetUrl()` 生成，生产环境为 webp。border-image-slice 取 slices.json 边距 ×2（图片像素，T R B L），border-image-width 取 1x 边距（CSS px），四角不拉伸。只用 dom:true 的 10 张图：btn_normal/pressed、bar_frame、bar_fill_hp/mp/exp、touch_round、btn_close、tooltip_frame、panel_frame_s。
+- 回退开关：每张图先用 `new Image()` 预载，onload 成功后才给 #mhud 加 `sk-<名>` class。所有皮肤规则都挂在这个 class 下，图 404 或断网时不加 class，沿用原纯 CSS。按钮的 border-width 保持原来的 2px，border-image 画在 padding 区，所以布局、点击区和文字区与回退时一致。
+- 映射：顶栏、自动、翻页、合击、总览「在世界地图中查看」用 btn_normal，按下或开启（:active / .on）用 btn_pressed。药水格用 btn_normal 但中心不填充，保留药水图标。互动键和摇杆提示用 touch_round（fixed，铺背景）。HP/MP/EXP 条框用 bar_frame（::after 叠层），填充用 bar_fill_*。日志用 tooltip_frame，总览框用 panel_frame_s，✕ 用 btn_close。技能圆钮保持技能图标不变。手机不出血球。
+- MobileHud.ts 只加一行调用（`window.__mhudSkin`，供测试等待）。桌面不建 MobileHud，所以不受影响。
+- 已知未改：顶栏设置图标缺失（mobile-ui-verify 的 2 个旧 FAIL），本批只记录。「自动/开」两行文字在 44px 高的按钮里下半截被裁，换皮前就是这样。
+- 测试：新增 tests/ui-dom.test.ts（73 项，已加入 npm test）；新增 e2e tests/e2e/ui-dom-verify.mjs。截图在 docs/shots/ui-art/b06/。
+- 9-seed：sim-band 的 esbuild metafile 共 31 个输入，没有一个是本批改动的文件。
+
 ## UI 美术 B5 桌面 HUD + 血球叠层 feat/ui-art-b05（基于 feat/ui-art-b04 44d8d2d；docs/ui-art-integration.md §1 B5、docs/ui-art-plan.md §3.1）
 - `src/ui/uiSlices.ts`：新增 `orbLayers()`，按四层叠放：黑底圆（半径 D×52/128）→ orb_fill_red/blue（显示 D×104/128，setCrop 从上裁出水位）→ orb_glass → orb_frame。另加 `orbGeom()`、`orbCrop()`、`orbReady()`、`barFillW()`，只用 setDisplaySize / setSize。图集缺失或缺任一帧时返回 null，回退原来的代码 Orb（波浪液面）。
 - 桌面血球直径 ORB_D=136：底栏 760×112（y 608–720），球心保持 (330/950, 652)，到屏幕底只剩 68，所以选 136（在 128–160 范围内），不越出屏幕底。水位仍按 hp/maxHp、mp/maxMp 和原来的 orbLerp 平滑，只改显示。
