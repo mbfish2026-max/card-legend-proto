@@ -24,7 +24,7 @@ export function gearScore(w: any, it: any): number {
 }
 // 职业：ITEMS.cls 有值按 cls；无 cls 的件按「主属性归属」——别职业主属性之和 > 本职业主属性 即视为他职业件不穿（如战士不穿魔法长袍 mag6、法师不穿灵魂战衣 tao6）
 const MAIN: Record<string, string> = { warrior: 'atk', mage: 'mag', taoist: 'tao' }, OTHER: Record<string, string[]> = { warrior: ['mag', 'tao'], mage: ['tao'], taoist: ['mag'] };
-export const foreign = (cls: string, it: any) => { const cl = ITEMS[it.item]?.cls; if (cl?.length) return !cl.includes(cls); const s = it.stats ?? {}; return (OTHER[cls] ?? []).reduce((a, k) => a + (s[k] ?? 0), 0) > (s[MAIN[cls]] ?? 0); };
+export const foreign = (cls: string, it: any) => { const cl = ITEMS[it.item]?.cls; if (cl?.length) return !(cl as string[]).includes(cls); const s = it.stats ?? {}; return (OTHER[cls] ?? []).reduce((a, k) => a + (s[k] ?? 0), 0) > (s[MAIN[cls]] ?? 0); };
 const ok = (w: any, it: any) => !!it?.slot && it.req <= w.level && !foreign(w.cls, it);
 const st = new WeakMap<any, { sig: string; dumped: Set<number> }>();
 export function gearTick(w: any, cls: string, seed: number, swap = GEAR_SWAP) {
