@@ -101,14 +101,14 @@
 | zhanshen_necklace | 战神项链 | 项链 | 40–50 | 攻击力 54 | 48 | 战士 | 未查到 | 攻击+11 | 来源 T1(C) |
 | shengmo_necklace | 圣魔项链 | 项链 | 40–50 | 魔法力 32 | 48 | 法师 | 未查到 | 魔法+18 | 来源 T1(C) |
 | zhenhun_necklace | 真魂项链 | 项链 | 40–50 | 精神力 30 | 48 | 道士 | 未查到 | 道术+18 | 来源 T1(C) |
-| h_gold_necklace | 金项链 | 项链 | — | 未查到 | 2 | 通用 | 未查到 | 攻击+1 | https://www.21cq.com/mir/View.aspx?id=153 |
-| h_black_crystal_necklace | 黑色水晶项链 | 项链 | — | 未查到 | 13 | 战士 | 未查到 | 攻击+1 | https://www.21cq.com/mir/View.aspx?id=156 |
-| h_ebony_necklace | 黑檀项链 | 项链 | — | 未查到 | 13 | 法师 | 未查到 | 魔法+2 | https://www.21cq.com/mir/View.aspx?id=157 |
-| h_yellow_crystal_necklace | 黄色水晶项链 | 项链 | — | 未查到 | 13 | 道士 | 未查到 | 道术+2 | https://www.21cq.com/mir/View.aspx?id=158 |
-| h_devil_necklace | 魔鬼项链 | 项链 | — | 未查到 | 17 | 战士 | 未查到 | 攻击+3 | https://www.21cq.com/mir/View.aspx?id=161 |
-| h_amber_necklace | 琥珀项链 | 项链 | — | 未查到 | 17 | 法师 | 未查到 | 魔法+4 | https://www.21cq.com/mir/View.aspx?id=162 |
-| h_phoenix_pearl | 凤凰明珠 | 项链 | — | 未查到 | 17 | 道士 | 未查到 | 道术+5 | https://www.21cq.com/mir/View.aspx?id=163 |
-| h_blue_jade_necklace | 蓝翡翠项链 | 项链 | — | 未查到 | 23 | 战士 | 未查到 | 攻击+3 | https://www.21cq.com/mir/View.aspx?id=165 |
+| h_gold_necklace | 金项链 | 项链 | — | 未查到 | 2 | 通用 | 未查到 | 攻击+3 | https://www.21cq.com/mir/View.aspx?id=153 |
+| h_black_crystal_necklace | 黑色水晶项链 | 项链 | — | 未查到 | 13 | 战士 | 未查到 | 攻击+3 | https://www.21cq.com/mir/View.aspx?id=156 |
+| h_ebony_necklace | 黑檀项链 | 项链 | — | 未查到 | 13 | 法师 | 未查到 | 魔法+5 | https://www.21cq.com/mir/View.aspx?id=157 |
+| h_yellow_crystal_necklace | 黄色水晶项链 | 项链 | — | 未查到 | 13 | 道士 | 未查到 | 道术+5 | https://www.21cq.com/mir/View.aspx?id=158 |
+| h_devil_necklace | 魔鬼项链 | 项链 | — | 未查到 | 17 | 战士 | 未查到 | 攻击+8 | https://www.21cq.com/mir/View.aspx?id=161 |
+| h_amber_necklace | 琥珀项链 | 项链 | — | 未查到 | 17 | 法师 | 未查到 | 魔法+10 | https://www.21cq.com/mir/View.aspx?id=162 |
+| h_phoenix_pearl | 凤凰明珠 | 项链 | — | 未查到 | 17 | 道士 | 未查到 | 道术+13 | https://www.21cq.com/mir/View.aspx?id=163 |
+| h_blue_jade_necklace | 蓝翡翠项链 | 项链 | — | 未查到 | 23 | 战士 | 未查到 | 攻击+8 | https://www.21cq.com/mir/View.aspx?id=165 |
 | set_zuma_ring | 祖玛戒指 | 戒指 | 祖玛 | 自创 | 30 | 通用 | 自创 | 攻击+11 魔法+11 道术+11 | 自创 |
 | set_chiyue_ring | 赤月戒指 | 戒指 | 赤月 | 自创 | 35 | 通用 | 自创 | 攻击+14 魔法+14 道术+14 | 自创 |
 | iron_ring | 铁戒指 | 戒指 | — | 自创 | 2 | 通用 | 自创 | 攻击+3 生命+20 | 自创 |
@@ -128,13 +128,13 @@
 | zhanshen_ring | 战神戒指 | 戒指 | 40–50 | 攻击力 54 | 48 | 战士 | 未查到 | 攻击+9 魔御+2 | 来源 T1(C) |
 | shengmo_ring | 圣魔戒指 | 戒指 | 40–50 | 魔法力 32 | 48 | 法师 | 未查到 | 魔法+20 魔御+2 | 来源 T1(C) |
 | zhenhun_ring | 真魂戒指 | 戒指 | 40–50 | 精神力 30 | 48 | 道士 | 未查到 | 道术+22 魔御+2 | 来源 T1(C) |
-| h_hex_ring | 六角戒指 | 戒指 | — | 未查到 | 7 | 法师 | 未查到 | 魔法+2 | https://www.21cq.com/mir/View.aspx?id=198 |
-| h_glass_ring | 玻璃戒指 | 戒指 | — | 未查到 | 7 | 道士 | 未查到 | 道术+3 | https://www.21cq.com/mir/View.aspx?id=199 |
-| h_horn_ring | 牛角戒指 | 戒指 | — | 未查到 | 9 | 战士 | 未查到 | 攻击+1 魔御+2 | https://www.21cq.com/mir/View.aspx?id=200 |
-| h_blue_crystal_ring | 蓝色水晶戒指 | 戒指 | — | 未查到 | 16 | 战士 | 未查到 | 攻击+1 魔御+4 | https://www.21cq.com/mir/View.aspx?id=202 |
-| h_black_crystal_ring | 黑色水晶戒指 | 戒指 | — | 未查到 | 20 | 战士 | 未查到 | 攻击+2 | https://www.21cq.com/mir/View.aspx?id=203 |
-| h_snake_eye_ring | 蛇眼戒指 | 戒指 | — | 未查到 | 20 | 法师 | 未查到 | 魔法+4 | https://www.21cq.com/mir/View.aspx?id=204 |
-| h_pearl_ring | 珍珠戒指 | 戒指 | — | 未查到 | 20 | 道士 | 未查到 | 道术+5 | https://www.21cq.com/mir/View.aspx?id=205 |
+| h_hex_ring | 六角戒指 | 戒指 | — | 未查到 | 7 | 法师 | 未查到 | 魔法+5 | https://www.21cq.com/mir/View.aspx?id=198 |
+| h_glass_ring | 玻璃戒指 | 戒指 | — | 未查到 | 7 | 道士 | 未查到 | 道术+8 | https://www.21cq.com/mir/View.aspx?id=199 |
+| h_horn_ring | 牛角戒指 | 戒指 | — | 未查到 | 9 | 战士 | 未查到 | 攻击+3 魔御+5 | https://www.21cq.com/mir/View.aspx?id=200 |
+| h_blue_crystal_ring | 蓝色水晶戒指 | 戒指 | — | 未查到 | 16 | 战士 | 未查到 | 攻击+3 魔御+10 | https://www.21cq.com/mir/View.aspx?id=202 |
+| h_black_crystal_ring | 黑色水晶戒指 | 戒指 | — | 未查到 | 20 | 战士 | 未查到 | 攻击+5 | https://www.21cq.com/mir/View.aspx?id=203 |
+| h_snake_eye_ring | 蛇眼戒指 | 戒指 | — | 未查到 | 20 | 法师 | 未查到 | 魔法+10 | https://www.21cq.com/mir/View.aspx?id=204 |
+| h_pearl_ring | 珍珠戒指 | 戒指 | — | 未查到 | 20 | 道士 | 未查到 | 道术+13 | https://www.21cq.com/mir/View.aspx?id=205 |
 | set_woma_bracelet | 沃玛手镯 | 手镯 | 沃玛 | 自创 | 24 | 通用 | 自创 | 防御+5 生命+50 | 自创 |
 | set_chiyue_bracelet | 赤月手镯 | 手镯 | 赤月 | 自创 | 35 | 通用 | 自创 | 防御+8 生命+120 | 自创 |
 | bracelet | 翡翠手镯 | 手镯 | — | 自创 | 4 | 通用 | 自创 | 防御+3 生命+30 | 自创 |
@@ -153,25 +153,25 @@
 | zhanshen_bracelet | 战神手镯 | 手镯 | 40–50 | 攻击力 54 | 48 | 战士 | 未查到 | 攻击+6 防御+2 生命+16 | 来源 T1(C) |
 | shengmo_bracelet | 圣魔手镯 | 手镯 | 40–50 | 魔法力 32 | 48 | 法师 | 未查到 | 魔法+12 防御+3 魔御+3 生命+24 | 来源 T1(C) |
 | zhenhun_bracelet | 真魂手镯 | 手镯 | 40–50 | 精神力 30 | 48 | 道士 | 未查到 | 道术+12 | 来源 T1(C) |
-| h_leather_glove | 皮制手套 | 手镯 | — | 未查到 | 7 | 通用 | 未查到 | 防御+2 | https://www.21cq.com/mir/View.aspx?id=177 |
-| h_steel_bracelet | 钢手镯 | 手镯 | — | 未查到 | 8 | 通用 | 未查到 | 防御+2 魔御+2 | https://www.21cq.com/mir/View.aspx?id=178 |
-| h_big_bracelet | 大手镯 | 手镯 | — | 未查到 | 9 | 通用 | 未查到 | 防御+2 | https://www.21cq.com/mir/View.aspx?id=179 |
-| h_magic_bracelet | 魔法手镯 | 手镯 | — | 未查到 | 18 | 通用 | 未查到 | 防御+2 魔御+4 | https://www.21cq.com/mir/View.aspx?id=183 |
-| h_sturdy_glove | 坚固手套 | 手镯 | — | 未查到 | 18 | 通用 | 未查到 | 防御+4 | https://www.21cq.com/mir/View.aspx?id=182 |
-| h_ebony_bracelet | 黑檀手镯 | 手镯 | — | 未查到 | 19 | 法师 | 未查到 | 魔法+2 | https://www.21cq.com/mir/View.aspx?id=184 |
-| h_tao_bracelet | 道士手镯 | 手镯 | — | 未查到 | 19 | 道士 | 未查到 | 道术+3 | https://www.21cq.com/mir/View.aspx?id=185 |
-| h_power_bracelet | 魔力手镯 | 手镯 | — | 未查到 | 20 | 战士 | 未查到 | 攻击+2 | https://www.21cq.com/mir/View.aspx?id=186 |
-| h_death_glove | 死神手套 | 手镯 | — | 未查到 | 22 | 战士 | 未查到 | 攻击+4 | https://www.21cq.com/mir/View.aspx?id=187 |
-| h_gold_bracelet | 金手镯 | 手镯 | — | 未查到 | 23 | 通用 | 未查到 | 攻击+2 魔御+6 | https://www.21cq.com/mir/View.aspx?id=188 |
+| h_leather_glove | 皮制手套 | 手镯 | — | 未查到 | 7 | 通用 | 未查到 | 防御+5 生命+50 | https://www.21cq.com/mir/View.aspx?id=177 |
+| h_steel_bracelet | 钢手镯 | 手镯 | — | 未查到 | 8 | 通用 | 未查到 | 防御+5 魔御+5 生命+50 | https://www.21cq.com/mir/View.aspx?id=178 |
+| h_big_bracelet | 大手镯 | 手镯 | — | 未查到 | 9 | 通用 | 未查到 | 防御+5 生命+50 | https://www.21cq.com/mir/View.aspx?id=179 |
+| h_magic_bracelet | 魔法手镯 | 手镯 | — | 未查到 | 18 | 通用 | 未查到 | 防御+5 魔御+10 生命+50 | https://www.21cq.com/mir/View.aspx?id=183 |
+| h_sturdy_glove | 坚固手套 | 手镯 | — | 未查到 | 18 | 通用 | 未查到 | 防御+10 生命+100 | https://www.21cq.com/mir/View.aspx?id=182 |
+| h_ebony_bracelet | 黑檀手镯 | 手镯 | — | 未查到 | 19 | 法师 | 未查到 | 魔法+5 | https://www.21cq.com/mir/View.aspx?id=184 |
+| h_tao_bracelet | 道士手镯 | 手镯 | — | 未查到 | 19 | 道士 | 未查到 | 道术+8 | https://www.21cq.com/mir/View.aspx?id=185 |
+| h_power_bracelet | 魔力手镯 | 手镯 | — | 未查到 | 20 | 战士 | 未查到 | 攻击+5 | https://www.21cq.com/mir/View.aspx?id=186 |
+| h_death_glove | 死神手套 | 手镯 | — | 未查到 | 22 | 战士 | 未查到 | 攻击+10 | https://www.21cq.com/mir/View.aspx?id=187 |
+| h_gold_bracelet | 金手镯 | 手镯 | — | 未查到 | 23 | 通用 | 未查到 | 攻击+5 魔御+15 | https://www.21cq.com/mir/View.aspx?id=188 |
 | set_zuma_boots | 祖玛靴 | 靴子 | 祖玛 | 自创 | 30 | 通用 | 自创 | 防御+8 生命+70 | 自创 |
 | boots | 铁靴 | 靴子 | — | 自创 | 3 | 通用 | 自创 | 防御+1 生命+8 | 自创 |
 | leiting_boots | 雷霆战靴 | 靴子 | 40–50 | 攻击力 45 | 45 | 战士 | 未查到 | 攻击+2 防御+5 生命+40 | 来源 B4 |
 | lieyan_boots | 烈焰魔靴 | 靴子 | 40–50 | 魔法力 30 | 45 | 法师 | 未查到 | 魔法+4 防御+5 生命+40 | 来源 B4 |
 | guangmang_boots | 光芒道靴 | 靴子 | 40–50 | 精神力 28 | 45 | 道士 | 未查到 | 道术+4 防御+6 生命+48 | 来源 B4 |
-| h_cloth_shoes | 布鞋 | 靴子 | — | 未查到 | 15 | 通用 | 未查到 | 防御+2 生命+16 | 自创 |
-| h_deer_boots | 鹿皮靴 | 靴子 | — | 未查到 | 22 | 通用 | 未查到 | 防御+3 生命+24 | 自创 |
-| h_silk_boots | 紫绸靴 | 靴子 | — | 未查到 | 30 | 通用 | 未查到 | 防御+5 生命+40 | 自创 |
-| h_soul_boots | 避魂靴 | 靴子 | — | 未查到 | 35 | 通用 | 未查到 | 防御+5 生命+40 | 自创 |
+| h_cloth_shoes | 布鞋 | 靴子 | — | 未查到 | 15 | 通用 | 未查到 | 防御+5 生命+90 | 自创 |
+| h_deer_boots | 鹿皮靴 | 靴子 | — | 未查到 | 22 | 通用 | 未查到 | 防御+8 生命+140 | 自创 |
+| h_silk_boots | 紫绸靴 | 靴子 | — | 未查到 | 30 | 通用 | 未查到 | 防御+13 生命+230 | 自创 |
+| h_soul_boots | 避魂靴 | 靴子 | — | 未查到 | 35 | 通用 | 未查到 | 防御+13 生命+230 | 自创 |
 
 ## 去重盘点（存量 → 官方对应）
 
