@@ -155,7 +155,7 @@ export class Panel {
     }
     const st = w.stats(), h = w.hero;
     const title = w.title(); const lines = [`${c.name}  Lv${w.level}${title ? '  「' + title + '」' : ''}`, `经验 ${fmtExp(w.exp)}/${fmtExp(w.expNext)}   金币 ${w.gold}   击杀 ${w.kills}`, `生命 ${h ? Math.ceil(h.hp) : 0}/${st.hp}   魔法 ${h ? Math.floor(h.mp ?? 0) : 0}/${st.mp}`,
-      `攻击 ${st.atk}   魔法 ${st.mag}   道术 ${st.tao}   防御 ${Math.round(st.def)}   魔御 ${Math.round(st.mdef ?? 0)}   幸运 ${w.luck()}`];
+      `攻击 ${st.atk}   魔法 ${st.mag}   道术 ${st.tao}   防御 ${Math.round(st.def)}   魔御 ${Math.round(st.mdef ?? 0)}   幸运 ${w.luck()}   暴击 ${Math.round(w.critChance() * 100)}%`];
     const sc = w.setCounts(), setLine = Object.values(SETS).filter(st => sc[st.id]).map(st => `${st.name}${sc[st.id]}/${st.pieces.length}`).join('  ');
     const spx = w.setSpecials().map(id => SET_SPECIALS[id]?.text.replace(/ \[适配\]/, '')).filter(Boolean).join('；');
     if (setLine) lines.push(`套装 ${setLine}${spx ? '  特效：' + spx : ''}`);
@@ -455,7 +455,7 @@ export class Panel {
     if (it.slot && ENHANCE_SLOTS.includes(it.slot as any) && (it.enhance ?? 0) < ENHANCE_MAX) lines.push(['可用黑铁矿石强化（武器/头盔/衣服/靴）', '#9ab']);
     const sd = ITEMS[it.item]?.set ? SETS[ITEMS[it.item].set!] : undefined;
     if (sd) { const n = w.setCounts()[sd.id] ?? 0; lines.push([`【${sd.name}套装】已穿 ${n}/${sd.pieces.length}`, '#ffb040']);
-      for (const b of sd.bonus) lines.push([`  ${b.n}件：${b.text}`, n >= b.n ? '#7aff7a' : '#777']); }
+      for (const b of sd.bonus) { const [t0, sp] = b.text.split('；特效：'), cc = n >= b.n ? '#7aff7a' : '#777'; lines.push([`  ${b.n}件：${t0}`, cc]); if (sp) lines.push([`     特效：${sp}`, cc]); } }
     if (it.slot) {
       lines.push([`需要等级 ${it.req}`, w.level >= it.req ? '#fff' : '#ff4040']);
       const cl = ITEMS[it.item]?.cls;
