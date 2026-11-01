@@ -23,6 +23,7 @@ import { TOWNS, townFloors, townOfFloor, returnTownOf, STORAGE_SIZE, townWidth, 
 import { CONSUMABLE } from '../data/items-town';
 import { WOMA_FLOOR_NAME, WOMA_SECTIONS, WOMA_DOOR_X, HORN_MOB_CHANCE, HORN_MOBS, RING_MIN_LEVEL, RingQuest, ringReward, IDENT_MIN_LEVEL, IDENT_PRICE, IDENT_POOL, identValue } from '../data/r14b';
 import { QUESTS, ACHIEVES, QuestDef, AchieveDef } from '../data/quests';
+import { gateGap, BOSS_GEAR_GATE, GATE_K_TAKEN, GATE_K_DEALT } from '../data/bossGearGate';
 import { summonDisplayName, summonNameColor, summonOwnerLabel } from './summonLabel';
 
 export const CRIT_CHANCE = 0.15, CRIT_MULT = 1.8;
@@ -295,6 +296,9 @@ export class World {
     for (const k of Object.keys(ZERO) as (keyof Stats)[]) r[k] = Math.round((c.base[k] ?? 0) + (c.grow[k] ?? 0) * l); // 魔御职业成长未查到 → 0
     return r;
   }
+  static bossGateOn = true;
+  private _gate = { t: -1, id: '', v: 0 };
+  bossGap(id: string) { const c = this._gate; if (c.id !== id || this.time - c.t > 1) { c.t = this.time; c.id = id; c.v = gateGap(this.cls, this.equipStats() as any, id); } return c.v; }
   equipStats(): Stats {
     const r = { ...ZERO };
     for (const it of Object.values(this.equip)) if (it) { for (const [k, v] of Object.entries(it.stats)) (r as any)[k] += v ?? 0; if (it.stats.mdef === undefined) r.mdef += this.itemMdef(it); }
@@ -561,6 +565,11 @@ export class World {
     if (!ignoreDef) { const up = (u?: number, v?: number) => u && u > this.time ? v ?? 0 : 0; amount = mitigate(amount, (target.def ?? 0) + up(target.defUpUntil, target.defUp), (target.mdef ?? target.def ?? 0) + up(target.mdefUpUntil, target.mdefUp), magic, nb ? WORLD.legacyDmgFloor : WORLD.dmgFloor, nb ? WORLD.legacyDefFactor : WORLD.defFactor); }
     // 等级差修正：仅「怪物 → 主角/英雄」（balance-plan B 只定义了主角受伤）；首图豁免
     if (!nb && source && source.team === 'enemy' && (target.isHero || target.companion)) amount *= lvDiffMult(source.level ?? 1, target.isHero ? this.level : this.companion?.level ?? this.level);
+    // BOSS 装备卡点（bossGearGate.ts）[适配]：按主角实际装备与门槛的缺口平滑加减伤，不硬锁
+    if (!nb && World.bossGateOn && source) {
+      if (source.team === 'enemy' && target.isHero && BOSS_GEAR_GATE[source.id]) amount *= 1 + GATE_K_TAKEN * this.bossGap(source.id);
+      else if (target.team === 'enemy' && BOSS_GEAR_GATE[target.id] && (source.isHero || source.summon || source.companion)) amount *= 1 - GATE_K_DEALT * this.bossGap(target.id);
+    }
     if (target.redUntil && target.redUntil > this.time) amount *= 1 + OFFICIAL.redAmp; // R13 红毒
     if (target.vulnUntil && target.vulnUntil > this.time) amount *= 1 + (target.vulnPhys ?? 0) * (1 - magic) + (target.vulnMag ?? 0) * magic; // 阶段 B 合击受伤加深 [适配]
     if (target.armorUntil && target.armorUntil > this.time) amount *= 1 - (target.armorReduce ?? 0.5);

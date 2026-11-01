@@ -16,6 +16,9 @@ const NEW_BOOKS = ['big_fireball', 'burst_fire', 'hell_fire', 'lightning_flash',
 /** 模拟时长上限（游戏内秒） */
 export const SIM_MAX_T = 7200 * 6; // 任务 A 层长 ×~2.3：模拟时长上限按比例放宽（仅防死循环的保护上限，非验收指标）
 /** 练级：主线层清完但等级 < 下一层进入等级时，真打重刷本层最多 SIM_REPLAYS 次，之后按本层实测「秒/击杀」虚拟刷怪（只加经验与估算用时，不掉装备、不计死亡）——否则 60h 量级的模拟跑不完 */
+// BOSS 装备卡点模拟：SIM_GEAR_MUL=0.8 把装备属性整体压一档（≈赤月→祖玛，仅 Lv≥30 生效），BOSS_GATE_OFF=1 关闭卡点做对照
+if (process.env.BOSS_GATE_OFF) World.bossGateOn = false;
+if (process.env.SIM_GEAR_MUL) { const m = +process.env.SIM_GEAR_MUL, orig = World.prototype.equipStats; World.prototype.equipStats = function (this: World) { const r: any = orig.call(this); if (this.level >= 30) for (const k of Object.keys(r)) if (k !== 'mp') r[k] = Math.round(r[k] * m); return r; }; }
 export const SIM_REPLAYS = Number(process.env.SIM_REPLAYS ?? 2);
 /** 同层连死几次后回上一层练 1 级（玩家行为模拟 [适配]） */
 export const SIM_STUCK = 5;
