@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 召唤物脱战回血 + 雷电术冷却 = 火球术 + 诱惑宠物不叛变 + 修复召唤物攻击放大（feat/summon-regen）
+- 召唤物（骷髅/金甲骷髅/神兽/赶尸/诱惑宠物）统一在 World.summonRegen 回血：常态 0.5% 最大血/秒，4 秒无攻击且未被攻击 → ×5（2.5%/秒）；挨打或出手立即回常速；中毒不回。数值 [适配]（WORLD.summonRegen/summonOocSec/summonOocMul，官方未查到）。死亡/召回逻辑不变。
+- 雷电术冷却引用火球术（SKILL_CD.thunder = SKILL_CD.fireball，2.5→1.5s），单测断言相等。
+- 诱惑之光宠物不再叛变（适配：按用户要求取消叛变）：去掉 CHARM.duration / petUntil / 叛变恢复逻辑与「叛变」飘字；成功率、上限、等级差、宠物等级/名字不变。
+- 修复：召唤物攻击/受伤时立绘放大。根因：构建把 portraits/*_full 转成 640px webp，而姿态帧 fx/summon_*_atk|hurt.png 是原图（836×1096 / 960×747），showPose 换纹理不重算缩放 → 线上骷髅 ×1.71、神兽 ×1.5（开发环境用原图，所以看不出）。改为换帧/还原后按固定显示高度 fitArt 归一化，并在 swing/hit 前换帧；怪物狂暴不再放大卡牌（改为上下跳动）。
+- 测试：tests/summon-regen.test.ts、tests/card-scale.test.ts；e2e tests/e2e/summon-regen-verify.mjs、tests/e2e/card-scale-verify.mjs（逐帧采样容器/立绘 scale 与显示尺寸）。
+
 ## 召唤物名字颜色统一 + 「（人物）的宠物」后缀（feat/summon-label）
 - 法师诱惑之光宠物接入与道士召唤相同的等级→颜色规则（共用 src/combat/summonLabel.ts：0 级白，1–7 级浅蓝→深蓝，满级 7 保持最深蓝）；宠物升级不改原属性倍率，叛变时还原。
 - 召唤物名字：「骷髅·3级（道士）的宠物」；人物=存档槽名（只读，不改存档结构），空则回退职业名。名字自适应（缩字号→两行→「…」截断），不压血条/等级。

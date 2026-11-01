@@ -1,5 +1,5 @@
 // 卡牌本体不放大：动作关键帧 ≤1；姿态帧换纹理后按固定显示高度归一化；场景内不对卡牌容器做 scale tween
-import { readFileSync } from 'node:fs';
+const { readFileSync } = await import('node:' + 'fs') as any;
 import { SWING_SCALE, WINDUP_SCALE, HIT_SCALE, breathScaleY } from '../src/ui/cardMotion';
 let n = 0; const ok = (c: boolean, m: string) => { if (!c) throw new Error('FAIL ' + m); n++; console.log('ok', m); };
 for (const [k, v] of Object.entries({ SWING_SCALE, WINDUP_SCALE, HIT_SCALE })) ok(v.x <= 1 && v.y <= 1, `${k} ≤ 1`);
