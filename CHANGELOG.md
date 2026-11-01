@@ -10,6 +10,8 @@
 - 测试：tests/potion-combat.test.ts（28 项）。
 - 第 5 轮调参（魔兽授权改价格）：强效金创药 180→360 金；强效红蓝/太阳水/强效太阳水包门槛统一 Lv40。9 种子战士 40–50 63→47、道士 27→25 达标，法师 4→33 仍未达标（价格杠杆无效，见 docs §9.5）。
 - 桌面提示「药水 1-3」；药水拾取 999 上限拒收。
+- 定值复核（数据 360/Lv40，不设 SIM_POT_LV）：战 115/47、法 73/33、道 97/25，与第 5 轮逐种子一致。e2e potion-expand 购买改为升到 Lv40 后买超级金创药（扣 2160）。
+- 验收（c181930 之后）：tsc 0 错；npm test 全链跑完（equip-table 里「逐怪表 gen:monsters」✗ 只打印不退出，来自基线 maps-3050-combat 新怪未重生成文档，与药水无关）；build 通过；balance-battle / hj-battle / chuanshi / mobile-skills / potion-combat / potion-expand e2e 全部通过、0 JS 错误（potion-expand 手机双击解包偶发失败，重跑通过）。
 
 ## 修复：手机药水图标/数量被框盖住（fix/mobile-potion-clip，未合 main）
 - 根因 1：B6 皮肤给药水格（56px）套 btn_normal 框时，border-image-width 用了 1x 边距 14/16/14/16 CSS px。布局边框只有 2px，框图向内画到 padding 区，格内只剩 24×28 净空。图标 background-size 88%（≈45.8px）的上下左右边缘和右下角的数字都被框盖住。
