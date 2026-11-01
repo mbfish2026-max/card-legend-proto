@@ -522,7 +522,7 @@ export class Panel {
       if (cl?.length) lines.push([`职业：${cl.map(c => CLASSES[c].name).join('/')}`, cl.includes(w.cls) ? '#fff' : '#ff4040']);
     }
     lines.push([`售价 ${it.price} 金币`, '#ffd24a']);
-    if (touch) lines.push([this.mode === 'shop' ? '再点一次：出售' : it.slot && this.sel?.startsWith('eq_') ? '再点一次：卸下' : it.slot ? '再点一次：装备' : '不可装备', '#9fd']);
+    if (touch) lines.push([this.mode === 'shop' ? '再点一次：出售' : it.slot && this.sel?.startsWith('eq_') ? '再点一次：卸下' : it.slot ? '再点一次：装备' : BUNDLES[it.item] ? '再点一次：解开（6 瓶）' : '不可装备', '#9fd']);
     { const cd = it.slot ? compareRows(it, w.equip) : null; if (cd) { this.showCompare(it, cd, lines.slice(2).filter(([t]) => !/^需要等级|^(生命|魔法值|攻击|魔法|道术|防御|魔御) \+/.test(t)), x, y, touch); return; } }
     const c = this.tip = s.add.container(Math.min(x, 1280 - 230), Math.max(10, Math.min(y, 720 - lines.length * 20 - 20))).setDepth(300);
     const bg = frameBg(s, 'tooltip_frame', 0, 0, 220, lines.length * 20 + 16, { fill: 0x05060c, alpha: 0.95, stroke: 0x9a9aa8, sw: 2 }, 0, 0).setName('tipBg');

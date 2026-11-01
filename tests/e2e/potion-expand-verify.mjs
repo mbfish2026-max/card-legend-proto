@@ -57,7 +57,9 @@ try {
     chk((await W(p)).sel[1] === 'mp_small', `${tag} 点外关闭不改选择`);
     // 短按 = 用选中药（转发 onKey('P4')；用药规则归战斗侧）
     await p.evaluate(() => { const h = window.__game.scene.getScene('Battle').world.hero; h.hp = Math.round(h.maxHp * 0.3); });
-    const u0 = await W(p); await tap(ctr(0)); const u1 = await W(p);
+    const u0 = await W(p); await tap(ctr(0)); let u1 = await W(p);
+    for (let k = 0; k < 10 && u1.pots[4] === u0.pots[4]; k++) { await sleep(150); u1 = await W(p); }
+    if (u1.pots[4] === u0.pots[4]) console.log('dbg hit', await p.evaluate(c => { const e = document.elementFromPoint(c.x, c.y); return e ? (e.id || e.className || e.tagName) + ' ' + (e.dataset?.id ?? '') : 'none'; }, ctr(0)));
     chk(u1.pots[4] === u0.pots[4] - 1, `${tag} 短按红格 → 强效金创药 ${u0.pots[4]}→${u1.pots[4]}`);
     // ③ 背包双击解包
     await p.evaluate(() => window.__game.scene.getScene('Battle').openPanel('bag')); await sleep(800);
@@ -65,8 +67,8 @@ try {
       const c = o.getBounds(), cv = window.__game.canvas.getBoundingClientRect(), wv = U.cameras.main.worldView; return { x: cv.left + (c.centerX - wv.x) * cv.width / wv.width, y: cv.top + (c.centerY - wv.y) * cv.height / wv.height, t: o.text }; });
     chk(!!bq && bq.t === '2', `${tag} 背包捆显示数量角标（${bq?.t}）`);
     if (bq) { const q = { x: bq.x - 12, y: bq.y - 12 }; const b0 = await W(p);
-      if (mob) { await p.touchscreen.tap(q.x, q.y); await sleep(200); await p.touchscreen.tap(q.x, q.y); } else { await p.mouse.click(q.x, q.y); await sleep(120); await p.mouse.click(q.x, q.y); }
-      await sleep(500); const b1 = await W(p);
+      if (mob) { await p.touchscreen.tap(q.x, q.y); await sleep(900); if (process.env.DBG) console.log('dbg sel', await p.evaluate(() => { const P = window.__game.scene.getScene('UI').panel; return P.sel + ' mode=' + P.mode + ' tip=' + !!P.tip; }), await p.evaluate(q => { const U = window.__game.scene.getScene('UI'), cv = window.__game.canvas.getBoundingClientRect(), wv = U.cameras.main.worldView; const x = wv.x + (q.x - cv.left) * wv.width / cv.width, y = wv.y + (q.y - cv.top) * wv.height / cv.height; const hits = U.input.hitTestPointer({ x, y, worldX: x, worldY: y, camera: U.cameras.main, updateWorldPoint(){}, positionToCamera(c){ return { x, y }; } }); return x.toFixed(0) + ',' + y.toFixed(0) + ' ' + hits.map(h => h.type + ':' + (h.name || '') + ':' + h.depth).join(' '); }, q)); await p.touchscreen.tap(q.x, q.y); if (process.env.DBG) { await sleep(300); console.log('dbg sel2', await p.evaluate(() => { const P = window.__game.scene.getScene('UI').panel; return P.sel + ' mode=' + P.mode + ' ' + window.__game.scene.getScene('Battle').world.bag.map(b => b.item + 'x' + b.qty); })); } } else { await p.mouse.click(q.x, q.y); await sleep(120); await p.mouse.click(q.x, q.y); }
+      await sleep(500); let b1 = await W(p); for (let k = 0; k < 10 && b1.pots[4] === b0.pots[4]; k++) { await sleep(150); b1 = await W(p); }
       chk(b1.pots[4] === b0.pots[4] + 6 && b1.bag.find(x => x.item === 'bundle_hp_big')?.qty === 1, `${tag} 双击解包：强效金创药 ${b0.pots[4]}→${b1.pots[4]}，捆 2→${b1.bag.find(x => x.item === 'bundle_hp_big')?.qty}`);
       await p.screenshot({ path: `${dir}/${tag}-unbundle.png` });
       if (!mob) { await p.mouse.click(q.x, q.y); await sleep(700); await p.mouse.click(q.x, q.y); await sleep(400); const b2 = await W(p); chk(b2.pots[4] === b1.pots[4], `${tag} 两次单击间隔 >450ms 不解包`); }
