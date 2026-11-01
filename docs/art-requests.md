@@ -1468,6 +1468,17 @@ public/assets/ui/UI-Tooltip-Border.png
 | tianmo_armor | 天魔神甲 | 衣服 | eq_tianmo_armor.png / eq_tianmo_armor@2x.png | 64×64 / 128×128 透明 | 热血传奇「天魔神甲」 | 黑钢金边重甲，骷髅角肩，胸嵌红宝石 | 推测 |
 | fashen_cape | 法神披风 | 衣服 | eq_fashen_cape.png / eq_fashen_cape@2x.png | 64×64 / 128×128 透明 | 热血传奇「法神披风」 | 深蓝丝绒金绣披风，绿宝石扣 | 推测 |
 | tianzun_robe | 天尊道袍 | 衣服 | eq_tianzun_robe.png / eq_tianzun_robe@2x.png | 64×64 / 128×128 透明 | 热血传奇「天尊道袍」 | 白金宽袖道袍，绿腰带，金鹤纹 | 推测 |
+| leiting_armor | 雷霆战甲 | 衣服 | eq_leiting_armor.png / eq_leiting_armor@2x.png | 64×64 / 128×128 透明 | 热血传奇「雷霆战甲」 | 银蓝雷纹板甲，翼肩，蓝色电弧 | 推测 |
+| lieyan_robe | 烈焰魔衣 | 衣服 | eq_lieyan_robe.png / eq_lieyan_robe@2x.png | 64×64 / 128×128 透明 | 热血传奇「烈焰魔衣」 | 橙金火焰长袍，火焰缭绕 | 推测 |
+| guangmang_robe | 光芒道袍 | 衣服 | eq_guangmang_robe.png / eq_guangmang_robe@2x.png | 64×64 / 128×128 透明 | 热血传奇「光芒道袍」 | 淡金象牙道袍，领后日轮光环，珍珠串 | 推测 |
+| fengtian_armor | 凤天魔甲 | 衣服 | eq_fengtian_armor.png / eq_fengtian_armor@2x.png | 64×64 / 128×128 透明 | 热血传奇「凤天魔甲」 | 翠绿金鳞甲，凤首胸饰与凤羽 | 推测 |
+| shenglong_helm | 圣龙盔 | 头盔 | eq_shenglong_helm.png / eq_shenglong_helm@2x.png | 64×64 / 128×128 透明 | 热血传奇「圣龙盔」 | 金色全盔，顶部金龙，白金双翼 | 推测 |
+| molong_helm | 魔龙盔 | 头盔 | eq_molong_helm.png / eq_molong_helm@2x.png | 64×64 / 128×128 透明 | 热血传奇「魔龙盔」 | 暗紫黑钢盔，黑色弯龙角，额嵌紫晶 | 推测 |
+| tianlong_helm | 天龙盔 | 头盔 | eq_tianlong_helm.png / eq_tianlong_helm@2x.png | 64×64 / 128×128 透明 | 热血传奇「天龙盔」 | 玉白银盔，顶缠青龙，云纹侧翼，额嵌绿松石 | 推测 |
+| leiting_necklace | 雷霆项链 | 项链 | eq_leiting_necklace.png / eq_leiting_necklace@2x.png | 64×64 / 128×128 透明 | 热血传奇「雷霆项链」 | 银链，翼形银框托蓝色闪电晶石 | 推测 |
+| leiting_bracelet | 雷霆护腕 | 手镯 | eq_leiting_bracelet.png / eq_leiting_bracelet@2x.png | 64×64 / 128×128 透明 | 热血传奇「雷霆护腕」 | 银钢护腕，蓝色雷纹与电弧，蓝宝石 | 推测 |
+| leiting_ring | 雷霆战戒 | 戒指 | eq_leiting_ring.png / eq_leiting_ring@2x.png | 64×64 / 128×128 透明 | 热血传奇「雷霆战戒」 | 粗银戒，闪电爪托蓝色宝石 | 推测 |
+| leiting_boots | 雷霆战靴 | 靴子 | eq_leiting_boots.png / eq_leiting_boots@2x.png | 64×64 / 128×128 透明 | 热血传奇「雷霆战靴」 | 银钢战靴，蓝色雷纹，踝部小银翼 | 推测 |
 
 - 「是否推测」：原作图标的具体外观没有逐件查证（未查到），所以这里的造型、配色都是按名称和职业原创推测的，没有描摹原作或其他游戏素材，图里没有文字和符号。
 - 比 35 级以下的图标更华丽：金属雕花、宝石和光效更多。每件的造型和配色都不一样，同一套的首饰共用一个主色调。
