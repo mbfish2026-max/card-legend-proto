@@ -526,11 +526,20 @@ export class World {
     if (isHero) u.level = this.level;
     this.units.push(u); return u;
   }
+  /** 换图/换层/回城/出城后：召唤物（含诱惑宠物）立即落到英雄身边（≤100px，交替身后/身前，夹在地图内），不从旧坐标走过来 */
+  placeSummonsNearHero() {
+    const h = this.hero; if (!h) return; const W = this.town ? townWidth(this.town) : this.mapW;
+    this.units.filter(u => u.summon && !u.isHero).forEach((s, k) => {
+      const side = k % 2 ? h.facing : -h.facing, d = Math.min(100, 50 + 25 * Math.floor(k / 2));
+      let x = h.x + side * d; if (x < s.width / 2 || x > W - s.width / 2) x = h.x - side * d;
+      s.x = Math.max(s.width / 2, Math.min(W - s.width / 2, x)); s.y = WORLD.summonLane;
+    });
+  }
   loadFloor(i: number) { this.recall = null; this.mine = null; this.stepTarget = null; this.stepQueued = 0;
     this.floorIndex = i; this.cleared = false; this.womaPending = null; this.womaSec = -1; this.womaWarnAt = -99; this.ground = []; this.zones = []; this.farmQueue = []; this.reached.add(i); this.checkAchieves();
     this.units = this.units.filter(u => u.isHero || u.summon || u.companion); this.companionTarget = null;
     const h = this.hero; if (h) { h.x = WORLD.heroStartX; h.y = 0; h.facing = 1; }
-    this.units.filter(u => u.summon).forEach((s, k) => { s.x = WORLD.heroStartX - 110 - k * 60; s.y = WORLD.summonLane; });
+    this.placeSummonsNearHero();
     const cu = this.companionUnit; if (cu) { cu.x = WORLD.heroStartX - 80; cu.y = WORLD.summonLane; }
     const cd = this.bossCdLeft(i); // 任务B：进层时普通怪全量重刷；BOSS 冷却中不刷（防反复进出刷 BOSS）
     let densAcc = 0;
@@ -894,7 +903,7 @@ export class World {
     this.town = t; this.townsSeen.add(t); this.recall = null; this.mine = null; this.stepTarget = null; this.stepQueued = 0;
     const h = this.hero; if (h) { h.hp = h.maxHp; h.mp = h.maxMp; h.x = TOWN_SPAWN_X; h.y = WORLD.laneMin + (WORLD.laneMax - WORLD.laneMin) / 2; }
     // 横版长街：清掉野外怪物/地上物品（出城时重新刷层）
-    this.units = this.units.filter(u => u.isHero || u.summon); this.ground = []; this.zones = [];
+    this.units = this.units.filter(u => u.isHero || u.summon); this.ground = []; this.zones = []; this.placeSummonsNearHero();
     this.events.push({ type: 'town', id: t });
     this.events.push({ type: 'log', text: `进入 ${TOWNS[t].name}（安全区）：左右走到店铺门口进店，西端城门出城` }); return null;
   }
@@ -1828,7 +1837,7 @@ export class World {
   /** S 键：在本层起点附近返回上一层（出生在上一层出口前） */
   prevFloor(): boolean {
     const h = this.hero; if (!h || this.floorIndex <= 0 || h.x > WORLD.heroStartX + 150) return false;
-    const p = prevFloorOf(this.floorIndex, this.floors); if (p < 0) return false; this.loadFloor(p); h.x = this.exitX - WORLD.exitRadius - 80; return true;
+    const p = prevFloorOf(this.floorIndex, this.floors); if (p < 0) return false; this.loadFloor(p); h.x = this.exitX - WORLD.exitRadius - 80; this.placeSummonsNearHero(); return true;
   }
   drainEvents() { const e = this.events; this.events = []; return e; }
 }
