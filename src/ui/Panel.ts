@@ -176,13 +176,15 @@ export class Panel {
       armor: [Rx, y0], boots: [Rx, y0 + dy], belt: [Rx, y0 + dy * 2], bracelet2: [Rx, y0 + dy * 3], ring2: [Rx, y0 + dy * 4] };
     for (const sl of EQUIP_SLOTS) {
       const [x, y] = pos[sl];
-      this.slotBox(R, x, y, size, w.equip[sl], EQUIP_SLOT_NAMES[sl], () => {
+      const empty = (sl === 'belt' || sl === 'boots') && !w.equip[sl] && s.textures.exists('ui_slot_empty_' + sl); // 阶段2：腰带/靴子空栏底图（单图）
+      this.slotBox(R, x, y, size, w.equip[sl], empty ? '' : EQUIP_SLOT_NAMES[sl], () => {
         if (this.ironIdx != null) {
           const m = w.enhanceWithIron(this.ironIdx, sl); this.ironIdx = null;
           sfx(s, 'loot', 0.5); this.onChange(m, m.includes('成功')); this.render(); return;
         }
         const e = w.unequip(sl); this.onChange(e ?? `卸下 ${EQUIP_SLOT_NAMES[sl]}`); sfx(s, 'loot', 0.4); this.render();
       }, 'eq_' + sl, dy);
+      if (empty) R.add(s.add.image(x, y, 'ui_slot_empty_' + sl).setDisplaySize(size - 8, size - 8).setName('slotEmpty_' + sl));
     }
     const st = w.stats(), h = w.hero;
     const title = w.title(); const lines = [`${c.name}  Lv${w.level}${title ? '  「' + title + '」' : ''}`, `经验 ${fmtExp(w.exp)}/${fmtExp(w.expNext)}   金币 ${w.gold}   击杀 ${w.kills}`, `生命 ${h ? Math.ceil(h.hp) : 0}/${st.hp}   魔法 ${h ? Math.floor(h.mp ?? 0) : 0}/${st.mp}`,

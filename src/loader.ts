@@ -17,6 +17,8 @@ const OPT = typeof import.meta !== 'undefined' && !!(import.meta as any).env?.PR
 /** 技能图标：传世技能图标带 @2x（public/assets/skills/skill_<id>@2x.png），高画质时使用 */
 export function skillIconUrl(p: string) { const m = /^assets\/skills\/(skill_[a-z_]+)\.png$/.exec(p); return Render.k > 1 && m && SKILL_ICON_2X.has(m[1]) ? `assets/skills/${m[1]}@2x.png` : p; }
 const SKILL_ICON_2X = new Set(['thunder_sword', 'break_strike', 'shield_break', 'vajra_body', 'dash_slash', 'ice_arrow', 'ice_dragon', 'frost_blade', 'five_thunder', 'ice_whirl', 'drive_corpse', 'decoy_talisman', 'soul_wall', 'clear_mind', 'holy_light', 'cleanse'].map(id => 'skill_' + id));
+/** 装备面板空栏底图（public/assets/ui/<名>.png 与 @2x） */
+export const SLOT_EMPTY = ['slot_empty_belt', 'slot_empty_boots'] as const;
 export function itemIconUrl(p: string) { const m = /^assets\/items\/(.+)\.png$/.exec(p); return Render.k > 1 && m && ITEM_ICON_2X.has(m[1]) ? `assets/items/${m[1]}@2x.png` : p; }
 export function assetUrl(p: string) { return mapAssetUrl(p, OPT); }
 
@@ -52,6 +54,8 @@ export function queueCritical(s: Phaser.Scene) {
   queueImages(s.load, s.textures, criticalImageKeys());
   for (const c of Object.values(CLASSES)) for (const sk of c.skills) if (!s.textures.exists('sk_' + sk.id)) s.load.image('sk_' + sk.id, skillIconUrl(sk.icon));
   for (const it of Object.values(ITEMS)) if (!s.textures.exists('item_' + it.id)) s.load.image('item_' + it.id, itemIconUrl(it.icon));
+  // 阶段2 空栏底图（单图，不进图集；高清屏用 @2x）
+  for (const n of SLOT_EMPTY) if (!s.textures.exists('ui_' + n)) s.load.image('ui_' + n, `assets/ui/${n}${Render.k > 1 ? '@2x' : ''}.png`);
   for (const [id, p] of Object.entries(SFX)) if (p && !s.cache.audio.exists('sfx_' + id)) s.load.audio('sfx_' + id, p);
 }
 /** 剩余资源的后台加载顺序：按层顺序（近的层先），最后音乐 */

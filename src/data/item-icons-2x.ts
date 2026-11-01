@@ -158,4 +158,12 @@ export const ITEM_ICON_2X = new Set<string>([
   'h_deer_boots',
   'h_silk_boots',
   'h_soul_boots',
+  // 阶段2 腰带 7 条（美术2 AI 生成，art/belt-icons d581c18）
+  'belt_hide',
+  'belt_iron',
+  'belt_bronze',
+  'belt_steel',
+  'belt_leiting',
+  'belt_lieyan',
+  'belt_guangmang',
 ]);
