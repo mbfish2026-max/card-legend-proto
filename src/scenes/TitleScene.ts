@@ -65,7 +65,7 @@ export class TitleScene extends Phaser.Scene {
     if (save) L.add(txt(this, 640, 432, `${CLASSES[save.cls].name}  Lv${save.level}  第 ${floorNo(save.floorIndex)} 层  金币 ${save.gold}`, 14, '#cfc0a0').setOrigin(0.5, 0));
     L.add([...button(this, 640, 490, 280, 56, `存 档 位（${Slots.active()}）`, () => this.slotsScreen())]);
     L.add([...button(this, 640, 565, 280, 56, '设 置', () => this.settings())]);
-    L.add(txt(this, 640, 690, '素材：魔兽世界图标/音效（仅供个人原型）+ AI 生成立绘与背景', 13, '#999').setOrigin(0.5));
+    L.add(txt(this, 640, 690, '素材：原创与 AI 生成', 13, '#999').setOrigin(0.5));
   }
   /** 进战斗前等待目标层关键资源（继续存档可能在高层），显示进度条 */
   startBattle(data: { cls?: ClassId; save?: SaveData }) {

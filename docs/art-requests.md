@@ -1623,3 +1623,144 @@ public/assets/ui/UI-Tooltip-Border.png
 - 每层 3 倍放大自检：指节分段、拇指压在食指/中指上、护手在拳头上方、剑柄从拳头上下两端穿出、剑尖朝上，均通过。
 - portraits/warrior_full.png 已 3 倍检查：戴手套握拳，护手在拳上方，剑柄从拳下穿出并露出剑首，无同类问题，未改。
 - 备份：最初原图在 old/equip_{warrior,mage,taoist}/；171f568 版在 old/regen_171f568/。对比图（上原图、中新图、下手部 3 倍）：{warrior,mage,taoist}_equip_compare.png。部件与脚本：sample_src/（swords/、comp2.py）。
+
+## 清除魔兽素材（art/remove-wow，2026-11-01）
+
+以仓库实际核对（git ls-files + rg）：public/assets/{items,potions,skills,ui} 下 INV_/Ability_/Spell_/UI- 前缀文件实际为 80 个（转述为 81 个），其中 src 仍引用 10 个、未引用 70 个。另有 portraits/ 下 13 个同前缀 WoW 头像不在本次范围（其中 INV_Misc_Head_Human_01/02 仍被 assets-manifest 的 menu_0、merchant 引用），未处理。
+
+### 重画的 10 个（同名同路径覆盖，64×64 RGBA PNG，原创/AI 生成，未描摹任何 WoW 原图）
+| 文件 | 引用处 | 新图内容 |
+|---|---|---|
+| items/INV_Misc_Bag_08.png | assets-manifest menu_1（背包） | 棕皮背包，金边、红色皮扣，透明底 |
+| items/INV_Misc_Book_09.png | menu_2（书） | 暗红皮面古书，金色包角与搭扣，封面无字 |
+| items/INV_Misc_Coin_01.png | menu_3（金币） | 一堆光面金币（无图案），透明底 |
+| items/INV_Misc_Food_15.png | companion.ts 火龙之心喂食物品 | 烤鸡腿，透明底 |
+| items/INV_Misc_Gem_Pearl_01.png | companion.ts 火龙之心/白日门技能书/书页/金条 | 紫白发光宝珠嵌金爪托，透明底 |
+| skills/Ability_Warrior_BattleShout.png | menu_4 | 红金铠甲战士怒吼、橙红声波，满版方图，暗金边 |
+| skills/Ability_Warrior_DefensiveStance.png | classes.ts 神圣战甲术 | 红面金边盾 + 金蓝护体光罩，满版方图 |
+| skills/Spell_Holy_Renew.png | classes.ts 群体治愈术 | 掌心升起的绿叶治疗光流，满版方图 |
+| ui/UI-Backpack-EmptySlot.png | slot_empty | 程序绘制：深色凹槽 + 暗金斜面边框 + 暗红内线，四边对称可平铺 |
+| ui/UI-Quickslot2.png | slot_bg | 程序绘制：同款暗金边框，中心透明（与原图一样作为叠加框） |
+
+物品图标为洋红/绿幕生成后抠图；技能图标整图缩放；两张 UI 格子用 PIL 直接绘制（脚本在仓库外 /workspace/cardlegend/rw/build.py）。对比图（左旧右新）只放仓库外 /workspace/shared-gap/remove-wow/remove_wow_compare.jpg，不入库，避免在仓库保留 WoW 原图。
+
+### 删除的 70 个（git rm，src/tests/public 均无引用）
+- items/INV_Chest_Plate01.png
+- items/INV_Chest_Plate02.png
+- items/INV_Chest_Plate03.png
+- items/INV_Helmet_01.png
+- items/INV_Helmet_02.png
+- items/INV_Helmet_03.png
+- items/INV_Helmet_04.png
+- items/INV_Helmet_05.png
+- items/INV_Jewelry_Ring_01.png
+- items/INV_Jewelry_Ring_02.png
+- items/INV_Jewelry_Ring_03.png
+- items/INV_Jewelry_Ring_04.png
+- items/INV_Jewelry_Ring_05.png
+- items/INV_Misc_Bone_01.png
+- items/INV_Misc_Food_14.png
+- items/INV_Sword_01.png
+- items/INV_Sword_02.png
+- items/INV_Sword_03.png
+- items/INV_Sword_04.png
+- items/INV_Sword_05.png
+- potions/INV_Potion_50.png
+- potions/INV_Potion_51.png
+- potions/INV_Potion_52.png
+- potions/INV_Potion_53.png
+- potions/INV_Potion_54.png
+- potions/INV_Potion_55.png
+- potions/INV_Potion_56.png
+- potions/INV_Potion_57.png
+- potions/INV_Potion_58.png
+- potions/INV_Potion_59.png
+- potions/INV_Potion_70.png
+- potions/INV_Potion_71.png
+- potions/INV_Potion_72.png
+- potions/INV_Potion_73.png
+- potions/INV_Potion_74.png
+- potions/INV_Potion_75.png
+- potions/INV_Potion_76.png
+- potions/INV_Potion_77.png
+- potions/INV_Potion_78.png
+- potions/INV_Potion_79.png
+- skills/Ability_Warrior_Charge.png
+- skills/Ability_Warrior_Cleave.png
+- skills/Ability_Warrior_Revenge.png
+- skills/Ability_Warrior_SavageBlow.png
+- skills/Ability_Warrior_ShieldWall.png
+- skills/Ability_Warrior_Sunder.png
+- skills/Ability_Warrior_WarCry.png
+- skills/Ability_Whirlwind.png
+- skills/Spell_Fire_Fireball.png
+- skills/Spell_Fire_FlameBolt.png
+- skills/Spell_Frost_FrostNova.png
+- skills/Spell_Holy_FlashHeal.png
+- skills/Spell_Holy_Heal.png
+- skills/Spell_Holy_HolyBolt.png
+- skills/Spell_Nature_Lightning.png
+- skills/Spell_Nature_ThunderClap.png
+- skills/Spell_Shadow_AnimateDead.png
+- skills/Spell_Shadow_RaiseDead.png
+- skills/Spell_Shadow_ShadowBolt.png
+- ui/UI-DialogBox-Background.png
+- ui/UI-DialogBox-Border-9slice.png
+- ui/UI-DialogBox-Border.png
+- ui/UI-DialogBox-Gold-Border-9slice.png
+- ui/UI-DialogBox-Gold-Border.png
+- ui/UI-DialogBox-Header.png
+- ui/UI-EmptySlot.png
+- ui/UI-Panel-Button-Up.png
+- ui/UI-Tooltip-Background.png
+- ui/UI-Tooltip-Border-9slice.png
+- ui/UI-Tooltip-Border.png
+
+核查范围：rg 全仓库（含 src、tests、docs、public 下 json/webmanifest）；vite.config.ts 与 tests/regress.mjs 的目录遍历只处理 dist 中已有文件（压缩/线上 HEAD 检查），不按文件名加载，删除不影响运行。仅文档引用：docs/art-requests.md、docs/art-gap-audit.md 中的旧清单文字；docs/ui-preview/compose_shop_ref.py（旧商店参考图拼图脚本）引用了 INV_Chest_Plate01/02、INV_Helmet_02/04，重跑会找不到文件，属于历史预览脚本，未修改。
+
+### 署名修改位置
+- src/assets-manifest.ts 第 2 行：改为「// 图标为原创/AI 生成。」
+- src/scenes/TitleScene.ts 第 68 行：标题页署名改为「素材：原创与 AI 生成」
+- README.md 第 5、47、56 行仍写着魔兽来源，本次未改（任务只允许改上面两处）。
+
+### 音效与音乐来源（sfx 27 个、music 7 个）
+核查手段：git log 首次加入提交、ffprobe 元数据标签、README、scripts/ 下脚本（无音频生成脚本）。
+
+| 文件 | 首次加入 | 元数据 | 结论 |
+|---|---|---|---|
+| sfx/cleave.ogg | 5e11453 init | 无标签（Lavc libvorbis 转码） | WoW 来源（README「音效导出自魔兽世界 1.12.1 客户端」，文件本身无标签佐证） |
+| sfx/click.ogg | 5e11453 init | 无标签（Lavc libvorbis 转码） | WoW 来源（README「音效导出自魔兽世界 1.12.1 客户端」，文件本身无标签佐证） |
+| sfx/click2.ogg | 5e11453 init | 无标签（Lavc libvorbis 转码） | WoW 来源（README「音效导出自魔兽世界 1.12.1 客户端」，文件本身无标签佐证） |
+| sfx/coin.ogg | 5e11453 init | 无标签（Lavc libvorbis 转码） | WoW 来源（README「音效导出自魔兽世界 1.12.1 客户端」，文件本身无标签佐证） |
+| sfx/death.ogg | 5e11453 init | 无标签（Lavc libvorbis 转码） | WoW 来源（README「音效导出自魔兽世界 1.12.1 客户端」，文件本身无标签佐证） |
+| sfx/death2.ogg | 5e11453 init | 无标签（Lavc libvorbis 转码） | WoW 来源（README「音效导出自魔兽世界 1.12.1 客户端」，文件本身无标签佐证） |
+| sfx/death_boss.ogg | 5e11453 init | 无标签（Lavc libvorbis 转码） | WoW 来源（README「音效导出自魔兽世界 1.12.1 客户端」，文件本身无标签佐证） |
+| sfx/deer_death.ogg | 5e11453 init | 无标签（Lavc libvorbis 转码） | WoW 来源（README「音效导出自魔兽世界 1.12.1 客户端」，文件本身无标签佐证） |
+| sfx/fireball_cast.ogg | 5e11453 init | 无标签（Lavc libvorbis 转码） | WoW 来源（README「音效导出自魔兽世界 1.12.1 客户端」，文件本身无标签佐证） |
+| sfx/fireball_impact.ogg | 5e11453 init | 无标签（Lavc libvorbis 转码） | WoW 来源（README「音效导出自魔兽世界 1.12.1 客户端」，文件本身无标签佐证） |
+| sfx/ghoul_death.ogg | 5e11453 init | 无标签（Lavc libvorbis 转码） | WoW 来源（README「音效导出自魔兽世界 1.12.1 客户端」，文件本身无标签佐证） |
+| sfx/heal.ogg | 5e11453 init | 无标签（Lavc libvorbis 转码） | WoW 来源（README「音效导出自魔兽世界 1.12.1 客户端」，文件本身无标签佐证） |
+| sfx/heal2.ogg | 5e11453 init | 无标签（Lavc libvorbis 转码） | WoW 来源（README「音效导出自魔兽世界 1.12.1 客户端」，文件本身无标签佐证） |
+| sfx/hit.ogg | 5e11453 init | 无标签（Lavc libvorbis 转码） | WoW 来源（README「音效导出自魔兽世界 1.12.1 客户端」，文件本身无标签佐证） |
+| sfx/hit2.ogg | 5e11453 init | 无标签（Lavc libvorbis 转码） | WoW 来源（README「音效导出自魔兽世界 1.12.1 客户端」，文件本身无标签佐证） |
+| sfx/levelup.ogg | 5e11453 init | 无标签（Lavc libvorbis 转码） | WoW 来源（README「音效导出自魔兽世界 1.12.1 客户端」，文件本身无标签佐证） |
+| sfx/lich_death.ogg | 5e11453 init | 无标签（Lavc libvorbis 转码） | WoW 来源（README「音效导出自魔兽世界 1.12.1 客户端」，文件本身无标签佐证） |
+| sfx/loot.ogg | 5e11453 init | 无标签（Lavc libvorbis 转码） | WoW 来源（README「音效导出自魔兽世界 1.12.1 客户端」，文件本身无标签佐证） |
+| sfx/potion.ogg | 5e11453 init | 无标签（Lavc libvorbis 转码） | WoW 来源（README「音效导出自魔兽世界 1.12.1 客户端」，文件本身无标签佐证） |
+| sfx/shockwave.ogg | 5e11453 init | 无标签（Lavc libvorbis 转码） | WoW 来源（README「音效导出自魔兽世界 1.12.1 客户端」，文件本身无标签佐证） |
+| sfx/shockwave2.ogg | 5e11453 init | 无标签（Lavc libvorbis 转码） | WoW 来源（README「音效导出自魔兽世界 1.12.1 客户端」，文件本身无标签佐证） |
+| sfx/shout.ogg | 5e11453 init | 无标签（Lavc libvorbis 转码） | WoW 来源（README「音效导出自魔兽世界 1.12.1 客户端」，文件本身无标签佐证） |
+| sfx/skeleton_death.ogg | 5e11453 init | 无标签（Lavc libvorbis 转码） | WoW 来源（README「音效导出自魔兽世界 1.12.1 客户端」，文件本身无标签佐证） |
+| sfx/summon.ogg | 5e11453 init | 无标签（Lavc libvorbis 转码） | WoW 来源（README「音效导出自魔兽世界 1.12.1 客户端」，文件本身无标签佐证） |
+| sfx/summon2.ogg | 5e11453 init | 无标签（Lavc libvorbis 转码） | WoW 来源（README「音效导出自魔兽世界 1.12.1 客户端」，文件本身无标签佐证） |
+| sfx/swing.ogg | 5e11453 init | 无标签（Lavc libvorbis 转码） | WoW 来源（README「音效导出自魔兽世界 1.12.1 客户端」，文件本身无标签佐证） |
+| sfx/swing_crit.ogg | 5e11453 init | 无标签（Lavc libvorbis 转码） | WoW 来源（README「音效导出自魔兽世界 1.12.1 客户端」，文件本身无标签佐证） |
+| music/boss.ogg | a2d1dc6 背景音乐 | genre=Blues，无标题/作者 | 来源不明（未查到；与同批 WoW 曲目同提交同转码参数，推测 WoW） |
+| music/floor1.ogg | a2d1dc6 | title=DayEvilForest01，artist=Jason Hayes，album=World of Warcraft mp3s | WoW 来源 |
+| music/floor2.ogg | a2d1dc6 | genre=Blues，无标题/作者 | 来源不明（未查到；推测 WoW） |
+| music/floor3.ogg | a2d1dc6 | title=haunted01，album=World of Warcraft，Jason Hayes | WoW 来源 |
+| music/floor4.ogg | a2d1dc6 | genre=Blues，无标题/作者 | 来源不明（未查到；推测 WoW） |
+| music/floor5.ogg | a2d1dc6 | title=undercity01-zone，artist=Derek Duke，album=World of Warcraft | WoW 来源 |
+| music/title.ogg | a2d1dc6 | title=magic01-zone1，album=World of Warcraft mp3s，Jason Hayes | WoW 来源 |
+
+结论：没有任何音频能确认是原创或 AI 生成。27 个音效与 4 首音乐为 WoW 来源，另 3 首来源不明（推测 WoW），公开前需要全部替换。标题页新署名「素材：原创与 AI 生成」在音频替换前并不准确。
