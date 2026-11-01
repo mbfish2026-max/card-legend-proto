@@ -341,7 +341,7 @@ const free = (w: World) => w.skills.map(() => 0);
     wn.cast(kk, free(wn)); const x = wn.summon!; ok(x.sLv === n && x.name === `骷髅·${n}级 道士的宠物`, `技能 ${n} 级 → 召出 ${n} 级`);
     for (let i = 0; i < 300; i++) wn.kill(wn.spawn({ ...wn.alive('enemy')[0] } as any, 'enemy', 2000, 0)); ok(x.sLv === 7, `技能 ${n} 级召出后按总击杀成长到 7 级`);
     wn.kill(x); wn.cast(kk, free(wn)); ok(wn.summon!.sLv === n && wn.summon!.sKills === 0, `重新召唤重置为技能等级 ${n}（不继承 7 级）`); }
-  ok(!('sLv' in (w.toSave() as any)) && !JSON.stringify(w.toSave()).includes('sKills'), '召唤物等级/击杀不存档');
+  { const sv = w.toSave() as any; ok(!('sLv' in sv) && Array.isArray(sv.summons) && sv.summons.some((x: any) => x.sLv === sm.sLv && x.sKills === sm.sKills), '召唤物等级/击杀只存在可选字段 summons（feat/summon-regen 存读档保留）'); }
 }
 { // 自动施毒：跳过已中毒的怪；全部中毒则不施放（不耗蓝、不占公共间隔）；手动不受限
   const w = mk([{ id: 'orc', x: 1300 }, { id: 'orc', x: 1500 }], [], 'taoist', 30); tough(w); const h = w.hero!; h.x = 1000; h.mp = h.maxMp = 9999;
