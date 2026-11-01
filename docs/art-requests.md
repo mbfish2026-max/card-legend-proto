@@ -1764,3 +1764,13 @@ public/assets/ui/UI-Tooltip-Border.png
 | music/title.ogg | a2d1dc6 | title=magic01-zone1，album=World of Warcraft mp3s，Jason Hayes | WoW 来源 |
 
 结论：没有任何音频能确认是原创或 AI 生成。27 个音效与 4 首音乐为 WoW 来源，另 3 首来源不明（推测 WoW），公开前需要全部替换。标题页新署名「素材：原创与 AI 生成」在音频替换前并不准确。
+
+## 灵符商城（feat/lingfu-shop）缺图
+当前用 ui_atlas 已有帧（panel_frame_s/list_row/tab_on/tab_off/btn_normal/title_plate/lingfu_icon_s）+ 借用物品图标；以下为专用图缺口，交付前保持借用/回退绘制。
+| 文件名 | 用途 | 规格 | 当前占位 |
+|---|---|---|---|
+| icons/shop_summon_scroll.png | 召唤直升卷轴 | 64×64 透明底，金边卷轴+召唤符文 | dungeon_scroll.png |
+| icons/shop_return_stone.png | 回城石（10 次） | 64×64，蓝白发光石 | INV_Misc_Gem_Pearl_01.png |
+| icons/shop_skill_necklace.png | 技巧项链 | 64×64，绿宝石项链带书卷纹 | eq_green_necklace.png |
+| icons/bloodstone_s/m/l/xl.png | 血石 小/中/大/特 | 64×64 ×4，红色宝石体积递增 | eq_pearl.png |
+| ui_atlas 帧 lingfu_entry | 右下常驻入口按钮（桌面 88×44、手机 52×44 CSS） | 九宫格可拉伸，金色符纸 | btn_normal + 文字 |

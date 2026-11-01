@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 灵符商城第一版（feat/lingfu-shop，未合 main）
+- 灵符：1 元 = 10 灵符（仅显示）；访客本机钱包 `fcl_lingfu_v1`（不进 SaveData、不按存档槽，首次发 5000，删槽/新槽不再发，导入存档不带余额，扣费幂等、发货失败退款）；RemoteWallet 空实现（对齐 wallet Edge Function 形状，返回 not_configured）。充值页置灰「未接入支付」。
+- 入口：桌面右下「灵符」按钮（菜单圆钮上方）、手机 #mh-shop（自动开关上方 52×44 CSS px）、L 键。界面用 ui_atlas（panel_frame_s/list_row/tab_on/off/btn_normal），缺图集回退矩形；页签 推荐/召唤/成长/补给/便利/充值，列表拖动/滚轮，确认框、灵符不足提示，点面板外关闭。
+- 商品：召唤直升卷轴 300、回城石 100（10 次、30 s 冷却、无读条、回所在区域主城）、技巧项链 500（necklace 栏，熟练度×5 待战斗接）、血石 小/中/大/特（新 stone 装备栏，Lv30/35/40/45，200/450/900/1800）。商城物品绑定不可出售。
+- 存档：EquipSlot 加 stone、InvItem 加 uses/charge/bound/cdAt（可选字段，旧档兼容）。
+- 测试：tests/lingfu-shop.test.ts 40 项进 npm test；e2e tests/e2e/lingfu-shop-verify.mjs（844×390/932×430/874×402/1280×720 触屏 + 1280×720 桌面，含 NOATLAS）；tapclose e2e 改为 10 个装备格。截图 docs/shots/lingfu-shop/。
 ## 修复：换图后召唤物留在旧坐标/从远处走过来（fix/summon-mapchange，未合 main）
 - 根因：World.prevFloor（S 返回上一层）先 loadFloor 把召唤物放到本层起点附近，再把英雄挪到上一层终点（出口前），召唤物不跟着挪 → 相距约 8000px，要很久才走过来；enterTown（回城）完全不重置召唤物坐标；loadFloor 本身按 110+60k 排队，第 2/3 只已超 100px。另：读档恢复的召唤物（restoreSummons）不发 summon 事件，BattleScene 不建卡牌，直到换图前都看不见。
 - 修复：新增 World.placeSummonsNearHero()（召唤物含诱惑宠物交替落在英雄身后/身前 50/50/75/75/100px，夹在地图/长街内），在 loadFloor（下一层/传送/副本/出城/上一层按钮）、prevFloor 英雄落位之后、enterTown 调用；BattleScene.snapSummonViews() 换图/进城时卡牌直接跳到新坐标，缺卡牌的召唤物补建（读档后立即可见）。不改任何战斗/平衡数值。
