@@ -663,10 +663,10 @@ const free = (w: World) => w.skills.map(() => 0);
   w.unequip('bracelet1'); ok(w.setBonuses().length === 1 && w.stats().def === base.def + 10, '卸下 1 件：3 件加成失效');
   const c = mk([], [], 'mage', 35); for (const id of SETS.chiyue.pieces) { /* balance-sys 阶段3：赤月套需求 35 */ c.bag.push(c.makeItem(id)); c.equipItem(c.bag.length - 1); }
   ok(c.luck() === 1, '赤月 3 件：幸运+1');
-  ok(Object.values(SETS).every(st => st.pieces.every(id => ENEMIES && (id.startsWith('set_') || /^(shengzhan|fashen|tianzun)_/.test(id)))), '套装物品 ID 规范');
-  for (const [bid, sid] of [['boss_woma', 'woma'], ['boss_zuma', 'zuma'], ['boss_redmoon', 'shengzhan']] as const) {
+  ok(Object.values(SETS).every(st => st.pieces.every(id => ENEMIES && (id.startsWith('set_') || /^(shengzhan|fashen|tianzun|leiting|lieyan|guangmang|zhanshen|shengmo|zhenhun)_/.test(id)))), '套装物品 ID 规范');
+  for (const [bid, sid, want] of [['boss_woma', 'woma', true], ['boss_zuma', 'zuma', false], ['boss_redmoon', 'shengzhan', true]] as const) { // D8：祖玛自创套停掉落（eg-sets）
     const t = mk([{ id: bid, x: 800 }]); t.kill(t.alive('enemy')[0]); const ids = t.ground.map(g => g.item);
-    ok(ids.some(i => SETS[sid].pieces.includes(i)), `${ENEMIES[bid].name} 掉落${SETS[sid].name}套装 1 件`); // 阶段4：祝福油改为高级 BOSS 1/8，见 balance-sys.test
+    ok(ids.some(i => SETS[sid].pieces.includes(i)) === want, `${ENEMIES[bid].name} ${want ? '掉落' : '不再掉落'}${SETS[sid].name}套装`); // 阶段4：祝福油改为高级 BOSS 1/8，见 balance-sys.test
   }
   { // R14 #13 赤月三职业套：按职业掉
     for (const [c, sid] of [['warrior', 'shengzhan'], ['mage', 'fashen'], ['taoist', 'tianzun']] as const) { const t = mk([{ id: 'boss_redmoon', x: 800 }], [], c, 40); t.kill(t.alive('enemy')[0]);

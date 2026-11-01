@@ -1,0 +1,363 @@
+{
+"frames": {
+"panel_frame": {
+"frame": {
+"x": 0,
+"y": 0,
+"w": 192,
+"h": 192
+}
+},
+"recharge_card_normal": {
+"frame": {
+"x": 194,
+"y": 0,
+"w": 128,
+"h": 160
+}
+},
+"recharge_card_sel": {
+"frame": {
+"x": 324,
+"y": 0,
+"w": 128,
+"h": 160
+}
+},
+"recharge_card_rec": {
+"frame": {
+"x": 0,
+"y": 194,
+"w": 128,
+"h": 160
+}
+},
+"dialog_frame": {
+"frame": {
+"x": 130,
+"y": 194,
+"w": 128,
+"h": 128
+}
+},
+"orb_frame": {
+"frame": {
+"x": 260,
+"y": 194,
+"w": 128,
+"h": 128
+}
+},
+"orb_glass": {
+"frame": {
+"x": 0,
+"y": 356,
+"w": 128,
+"h": 128
+}
+},
+"divider_v": {
+"frame": {
+"x": 130,
+"y": 356,
+"w": 8,
+"h": 128
+}
+},
+"touch_round": {
+"frame": {
+"x": 140,
+"y": 356,
+"w": 112,
+"h": 112
+}
+},
+"panel_frame_s": {
+"frame": {
+"x": 254,
+"y": 356,
+"w": 96,
+"h": 96
+}
+},
+"lingfu_icon_l": {
+"frame": {
+"x": 352,
+"y": 356,
+"w": 96,
+"h": 96
+}
+},
+"goods_slot_normal": {
+"frame": {
+"x": 0,
+"y": 486,
+"w": 80,
+"h": 80
+}
+},
+"goods_slot_sel": {
+"frame": {
+"x": 82,
+"y": 486,
+"w": 80,
+"h": 80
+}
+},
+"goods_slot_soldout": {
+"frame": {
+"x": 164,
+"y": 486,
+"w": 80,
+"h": 80
+}
+},
+"inset_frame": {
+"frame": {
+"x": 246,
+"y": 486,
+"w": 64,
+"h": 64
+}
+},
+"slot": {
+"frame": {
+"x": 312,
+"y": 486,
+"w": 64,
+"h": 64
+}
+},
+"slot_sel": {
+"frame": {
+"x": 378,
+"y": 486,
+"w": 64,
+"h": 64
+}
+},
+"slot_bloodstone": {
+"frame": {
+"x": 444,
+"y": 486,
+"w": 64,
+"h": 64
+}
+},
+"tooltip_frame": {
+"frame": {
+"x": 0,
+"y": 568,
+"w": 48,
+"h": 48
+}
+},
+"scroll_track": {
+"frame": {
+"x": 50,
+"y": 568,
+"w": 12,
+"h": 48
+}
+},
+"title_plate": {
+"frame": {
+"x": 64,
+"y": 568,
+"w": 160,
+"h": 40
+}
+},
+"list_row": {
+"frame": {
+"x": 226,
+"y": 568,
+"w": 128,
+"h": 40
+}
+},
+"list_row_sel": {
+"frame": {
+"x": 356,
+"y": 568,
+"w": 128,
+"h": 40
+}
+},
+"btn_normal": {
+"frame": {
+"x": 0,
+"y": 618,
+"w": 96,
+"h": 40
+}
+},
+"btn_hover": {
+"frame": {
+"x": 98,
+"y": 618,
+"w": 96,
+"h": 40
+}
+},
+"btn_pressed": {
+"frame": {
+"x": 196,
+"y": 618,
+"w": 96,
+"h": 40
+}
+},
+"btn_disabled": {
+"frame": {
+"x": 294,
+"y": 618,
+"w": 96,
+"h": 40
+}
+},
+"btn_close": {
+"frame": {
+"x": 392,
+"y": 618,
+"w": 40,
+"h": 40
+}
+},
+"badge_corner": {
+"frame": {
+"x": 434,
+"y": 618,
+"w": 40,
+"h": 40
+}
+},
+"tab_on": {
+"frame": {
+"x": 0,
+"y": 660,
+"w": 96,
+"h": 36
+}
+},
+"tab_off": {
+"frame": {
+"x": 98,
+"y": 660,
+"w": 96,
+"h": 36
+}
+},
+"lingfu_icon_s": {
+"frame": {
+"x": 196,
+"y": 660,
+"w": 32,
+"h": 32
+}
+},
+"qframe_common": {
+"frame": {
+"x": 230,
+"y": 660,
+"w": 32,
+"h": 32
+}
+},
+"qframe_magic": {
+"frame": {
+"x": 264,
+"y": 660,
+"w": 32,
+"h": 32
+}
+},
+"qframe_rare": {
+"frame": {
+"x": 298,
+"y": 660,
+"w": 32,
+"h": 32
+}
+},
+"scroll_thumb": {
+"frame": {
+"x": 332,
+"y": 660,
+"w": 12,
+"h": 32
+}
+},
+"ribbon_limited": {
+"frame": {
+"x": 346,
+"y": 660,
+"w": 112,
+"h": 28
+}
+},
+"bar_frame": {
+"frame": {
+"x": 0,
+"y": 698,
+"w": 128,
+"h": 20
+}
+},
+"lingfu_icon_xs": {
+"frame": {
+"x": 130,
+"y": 698,
+"w": 16,
+"h": 16
+}
+},
+"bar_fill_hp": {
+"frame": {
+"x": 148,
+"y": 698,
+"w": 8,
+"h": 14
+}
+},
+"bar_fill_mp": {
+"frame": {
+"x": 158,
+"y": 698,
+"w": 8,
+"h": 14
+}
+},
+"bar_fill_exp": {
+"frame": {
+"x": 168,
+"y": 698,
+"w": 8,
+"h": 14
+}
+},
+"divider_gem": {
+"frame": {
+"x": 178,
+"y": 698,
+"w": 12,
+"h": 12
+}
+},
+"divider": {
+"frame": {
+"x": 192,
+"y": 698,
+"w": 128,
+"h": 8
+}
+}
+},
+"meta": {
+"image": "atlas_ui_preview.png",
+"size": {
+"w": 512,
+"h": 718
+}
+}
+}

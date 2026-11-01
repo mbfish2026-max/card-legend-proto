@@ -1,10 +1,21 @@
 # CHANGELOG
 
+## 网络可达性测试页 feat/net-test
+- 新增 public/net-test.html（部署后 /card-legend-proto/net-test.html）：串行测本站、Supabase REST、Supabase Auth，每项 8 秒超时，有状态码即可达；复制结果、重新测试；验证 tests/e2e/net-test-verify.mjs。
+
+## feat/account-doc 账号与数据库方案（仅文档）
+
+- docs/account-db.md：后端选型（CloudBase 推荐 / Supabase+自有域名备选；Firebase、LeanCloud、workers.dev 排除，附可达性来源）、账号体系、表设计（存档槽/灵符钱包与流水/订单）、云同步与冲突、防作弊底线、分阶段验收、需用户提供的账号密钥清单（均不进仓库）。未改代码、未建服务。
+
 ## 手机版：装备对比面板点外部关闭 feat/mobile-tapclose
 - 手机（IS_MOBILE）角色/背包界面：点装备弹出「身上/查看中」对比面板后，点面板外空白处即关闭并取消选中。
 - 点面板内部不关；点其他装备格切换为对比该装备；按下到抬起移动 >8px（拖动/滚动）不算点击。
 - 桌面行为不变（不挂监听，仍是悬停显示、移出隐藏）。
 - 逻辑 src/ui/tapClose.ts，接线 Panel.tapOutside；测试 tests/tap-close.test.ts、tests/e2e/tapclose-verify.mjs。
+## P2 eg-sets（feat/eg-sets）
+- 新增 40–50 级 40 件装备（eg-equip.ts，图标用美术 E4 eq_<id> 64/128，id 恒等）；雷霆/烈焰/光芒、战神/圣魔/真魂 6 套；三圣 4 件档 + 职业特效接口 setSpecials()。
+- 掉落 EG_DROPS（E1 ÷40，≤1/8，全部 ≥40 级层）；天尊进合击 BOSS；set_zuma/set_chiyue 停掉落、旧档保留。
+- 修 equip-3050-plan 三行错表；docs/eg-sets.md；tests/eg-sets.test.ts（17 项）。
 
 
 ## 战斗平衡 balance-battle2 第三轮 [适配]

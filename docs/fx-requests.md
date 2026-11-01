@@ -218,3 +218,24 @@
 ### 合击持续段素材接入（feat/hj-fx-assets，2026-10-31）
 - 已接入：fx_combo_shihun_loop/_end、fx_combo_mori_loop/_end、fx_combo_pixing_stun（每次麻痹播 1 次）、icon_status_stun（替换「⚡麻痹」文字）。未交付：无。
 - 本次无新增特效需求。
+
+## 脚下光环（fx/ground-aura）
+
+需求：除魔法盾外，buff/辅助类持续状态改为人物脚下的扁平椭圆光环，跟随人物、自带旋转/呼吸；魔法盾保持椭圆罩身不变。只出素材与登记，不改战斗逻辑。
+
+盘点（origin/main 3ba087e，src/data/classes.ts + BattleScene）：
+
+| 技能 id | 名称 | 现状表现 | 改光环 | 建议主色 / 符文 |
+|---|---|---|---|---|
+| holy_armor | 神圣战甲术 | fx_holy_armor_cast/loop 罩在身上（hv.cx, hv.cy） | 是 → fx_aura_holy_armor_* | 金 #ffc850 / 八枚十字圣印 + 双旋方阵 |
+| ghost_shield | 幽灵盾 | fx_ghost_shield_cast/loop 罩身（缺图回退 magic_shield tint） | 是 → fx_aura_ghost_shield_* | 蓝紫 #9a8cff / 六道鬼火纹反向旋转 + 升腾鬼火 |
+| vajra_body | 金刚护体 | 复用 fx_holy_armor_loop + tint 0xffc040 罩身 | 是 → fx_aura_vajra_body_*（独立新图） | 赤橙 #ff7a30 / 四枚金刚杵 + 齿轮内环 |
+| magic_shield | 魔法盾 | fx_magic_shield_cast/loop 椭圆罩身 | 否（按要求保留） | — |
+| heal / mass_heal / cleanse | 治愈术/群体治愈术/解毒术 | 瞬发，无持续罩 | 否 | — |
+| 召唤/诱饵/灵魂墙 | summon_* / drive_corpse / decoy_talisman / soul_wall | 无罩身表现 | 否 | — |
+
+main 上不存在、未做：强化术、无极真气、隐身、集体隐身。
+
+素材：每技能 _start(5帧) / _loop(10帧) / _end(4帧)，256×96，pivot (128,48)=光环中心=脚底，12fps，ADD，depth 9（卡牌 10 之下）。旋转/呼吸已画入帧内，代码勿再 setAngle，可等比 setScale 0.8–1.2。已在 FxPlayer FX_DEFS 登记，调用点未改（BattleScene 385/481 仍播旧罩身，待战斗开发切换到 (hv.cx, 脚底 y)）。
+
+制作记录：原创程序化生成（card-legend-art-out/fx/src/effects.py `_aura`），首尾无缝已帧差校验；预览 preview_fx_ground_aura.png。
