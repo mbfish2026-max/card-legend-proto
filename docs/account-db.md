@@ -7,7 +7,7 @@
 
 | 项 | 决定 |
 |---|---|
-| 后端 | Supabase，**复用现有项目 `yzhjhyroekrcdqqjrlgm`**（idle-arpg 的 cloud.js 正在用），用**独立 schema `fcl`** 隔离，见 §2 |
+| 后端 | Supabase，**新建独立项目**（已决定；等用户提供新项目 URL + anon/publishable key 再联调；暂不使用暗夜挂机的 `yzhjhyroekrcdqqjrlgm`），表放 schema `fcl`，见 §2 |
 | 登录 | **用户名 + 密码**（内部转假邮箱），关闭邮件确认，见 §3 |
 | 存档 | 本地仍是主存档、可离线；云端是多槽副本；`updated_at` 乐观锁，冲突让玩家选，不自动覆盖 |
 | 灵符 | 余额与流水只在服务端；客户端只读；扣费走 Edge Function `wallet` |
@@ -31,22 +31,23 @@
 
 cloud.js 的假邮箱规则：`'u' + hex(utf8(用户名)) + '@anye-game.local'`。本游戏用**不同域名** `@fcl.local`（见 §3），同一个用户名在两款游戏里是两个账号，互不影响。
 
-## 2. 复用现有项目 vs 新建隔离项目
+## 2. 新建独立 Supabase 项目（已决定）
 
-**建议：复用 `yzhjhyroekrcdqqjrlgm`，所有表放独立 schema `fcl`。** 理由：免费层每个账号最多 2 个活跃项目（官方定价页 supabase.com/pricing；具体额度以控制台为准），且免费项目 1 周无活动会暂停，两款游戏共用一个项目反而更不容易被暂停；cloud.js 已经验证这个项目在用户网络下可用。
+**决定：本游戏新建一个独立的 Supabase 项目，不再沿用暗夜挂机（idle-arpg，cloud.js）的 `yzhjhyroekrcdqqjrlgm`。** 魔兽已向用户建议，等用户创建项目并提供 **Project URL + anon / publishable key** 后再联调；在此之前前端为纯游客模式。
+
+理由：账号表 `auth.users`、Auth 设置（如 Confirm email）、配额和误操作面都与暗夜挂机完全隔离，改动本游戏配置不会影响暗夜挂机。
+代价：免费层每个账号的活跃项目数有限，免费项目约 1 周无活动会暂停（官方定价页 supabase.com/pricing；具体额度以控制台为准），暂停后在控制台点恢复即可。
 
 | 隔离手段 | 做法 |
 |---|---|
-| schema | 新建 `fcl` schema，不碰 `public.saves` / `public.profiles`（cloud.js 的表） |
+| 项目 | 独立项目，独立 `auth.users`、独立配额与 Auth 设置 |
+| schema | 表仍放 `fcl` schema（便于以后整体迁移：`pg_dump --schema=fcl`），不在 `public` 建表 |
 | API 暴露 | 控制台 Settings → API → Exposed schemas 里加上 `fcl`（不加则 REST 访问不到） |
 | RLS | `fcl` 下每张表都开 RLS，只允许 `auth.uid() = user_id` |
-| 账号 | Auth 用户表是**共用**的（`auth.users` 只有一张）。靠假邮箱域名区分：`@fcl.local` 只属于本游戏 |
 
-**风险（诚实说明）：**
-- `auth.users` 共用：同一个项目的任何账号在技术上都能拿到 JWT。所以 RLS 必须以 `auth.uid()` 为准，`fcl` 的表只认有 `fcl.accounts` 行的用户（注册后由触发器建行，且只给 `@fcl.local` 邮箱建）。
-- 共用配额：数据库 500MB、带宽、Auth 限流两款游戏共享（额度数字以控制台 Usage 页为准，此处未逐项核对）。
-- 误操作面：在 SQL 编辑器里跑错脚本可能影响 cloud.js 的表。迁移脚本全部带 `fcl.` 前缀，不出现 `public.` 的 DDL。
-- 如果以后要真钱支付或独立运营，再迁到新项目：`pg_dump --schema=fcl` 即可整体搬走。
+**风险（剩余）：**
+- 本项目内任何注册用户都能拿到 JWT，所以 RLS 仍以 `auth.uid()` 为准，`fcl` 的表只认有 `fcl.accounts` 行的用户。
+- 免费项目闲置会暂停，联调或上线前先确认项目处于运行状态。
 
 ## 3. 登录方式：用户名+密码（假邮箱） vs 邮箱
 
@@ -56,7 +57,7 @@ cloud.js 的假邮箱规则：`'u' + hex(utf8(用户名)) + '@anye-game.local'`�
 | 邮件确认 | 必须**关闭** Confirm email（假邮箱收不到信） | 可开可关 |
 | 找回密码 | **不能**邮件找回；只能人工（管理员用 service_role 后台重置） | 邮件重置 |
 | 内置邮件限流 | 不发邮件，不受影响 | 内置 SMTP 发信额度很低（官方文档写明仅供测试），量大要自配 SMTP |
-| 与 cloud.js 一致 | 一致，已验证可用 | — |
+| 与 cloud.js 一致 | 同样的假邮箱方案（cloud.js 已验证可行），但在独立项目里 | — |
 
 **建议：第一阶段用户名+密码。** 后续可在设置里「绑定真实邮箱」（`updateUser({email})`）作为找回手段。
 
@@ -104,19 +105,19 @@ Edge Function `wallet`（`POST /functions/v1/wallet`，带用户 JWT）：
 
 ## 6. 用户需要做的操作（按顺序）
 
-1. **跑 SQL**：Supabase 控制台 → 项目 `yzhjhyroekrcdqqjrlgm` → SQL Editor → New query → 粘贴仓库里 `supabase/migrations/0001_fcl_schema.sql` 全文 → Run。脚本只建 `fcl.*`，不改 `public`。
+1. **跑 SQL**：Supabase 控制台 → **新建的独立项目** → SQL Editor → New query → 粘贴仓库里 `supabase/migrations/0001_fcl_schema.sql` 全文 → Run。脚本只建 `fcl.*`，不改 `public`。
 2. **暴露 schema**：Settings → API（Data API）→ Exposed schemas 加 `fcl` → Save。
-3. **关闭邮件确认**：Authentication → Sign In / Providers → Email → 关掉 **Confirm email** → Save。（cloud.js 已在用这个项目，若它已关闭则无需再动；先看一眼当前状态。）
+3. **关闭邮件确认**：Authentication → Sign In / Providers → Email → 关掉 **Confirm email** → Save。（独立项目，此设置不影响暗夜挂机。）
 4. **部署 Edge Function**（需本机装 Supabase CLI）：
    ```bash
    supabase login
-   supabase link --project-ref yzhjhyroekrcdqqjrlgm
+   supabase link --project-ref <新项目 ref>
    supabase functions deploy wallet
    ```
    `SUPABASE_URL`、`SUPABASE_SERVICE_ROLE_KEY` 在 Edge Function 运行时由 Supabase 自动注入，**不需要也不要**手动放进仓库。
 5. **给前端的配置**（只有公开值）：
-   - `VITE_SUPABASE_URL=https://yzhjhyroekrcdqqjrlgm.supabase.co`
-   - `VITE_SUPABASE_KEY=sb_publishable_...`（publishable key；cloud.js 里已公开的那个即可）
+   - `VITE_SUPABASE_URL=https://<新项目 ref>.supabase.co`
+   - `VITE_SUPABASE_KEY=sb_publishable_...`（新项目的 publishable / anon key）
    - 放在 GitHub 仓库 Settings → Secrets and variables → Actions → Variables（构建时注入），或本地 `.env.local`（已被 gitignore）。需要我在盒子上测试时，通过 RequestUserForm 提供。
    - **service_role / secret key：任何情况下都不要发给前端、不要提交、不要贴进聊天。**
 6. 未配置 `VITE_SUPABASE_*` 时，游戏自动是纯游客模式，登录入口显示「未配置」。
