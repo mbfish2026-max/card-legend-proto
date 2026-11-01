@@ -33,7 +33,7 @@ try {
   await p.screenshot({ path: `${dir}/stone-float.png` });
   chk(st.c.hp < 20000 && st.c.mp === 20000, `小血石 HP 储量递减、不回 MP HP ${st.c.hp} MP ${st.c.mp}`);
   chk(st.hp > 0.3 && st.mp > 0, `HP/MP 被补（HP ${(st.hp * 100).toFixed(0)}% MP ${(st.mp * 100).toFixed(0)}%）`);
-  chk(st.fl.length >= 2, `飘字 ${JSON.stringify(st.fl)}`);
+  chk(st.fl.some(t => /血石 \+3/.test(t)), `飘字 ${JSON.stringify(st.fl)}`);
   // 存档里储量同步
   const saved = await p.evaluate(G0 => { window.__game.scene.getScene('Battle').saveGame?.(); const s = JSON.parse(localStorage.getItem('fcl_save_v1') || '{}'); return s.equip?.stone?.charge ?? (s.slots ? null : null); }, G);
   chk(!saved || saved.hp < 20000, `存档储量 ${JSON.stringify(saved)}`);
