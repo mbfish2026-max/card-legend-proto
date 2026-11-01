@@ -36,8 +36,8 @@ try {
     for (const L of [0, 3, 5, 7]) {
       const info = await p.evaluate(L => {
         const B = window.__game.scene.getScene('Battle'), W = B.world, h = W.hero, sm = W.units.find(u => u.summon && u.alive && u.sBase);
-        sm.sLv = L; W.applySummonLv(sm); const hv0 = B.views.get(h.uid), v0 = B.views.get(sm.uid); sm.x = h.x - h.facing * ((hv0.w + v0.w) / 2 + 40); sm.petUntil = W.time + 9999; sm.hp = sm.maxHp;
-        const v = B.views.get(sm.uid); v.sync(); for (let i = 0; i < 30; i++) v.sync();
+        B.scene.pause(); sm.sLv = L; W.applySummonLv(sm); const hv0 = B.views.get(h.uid), v0 = B.views.get(sm.uid); const off = (hv0.w + v0.w) / 2 + 40, cw = B.cameras.main.worldView; sm.x = [hv0.x - h.facing * off, hv0.x + h.facing * off, hv0.x - h.facing * off * 2].find(x => x - v0.w / 2 >= cw.x + 4 && x + v0.w / 2 <= cw.right - 4) ?? h.x - h.facing * off; sm.petUntil = W.time + 9999; sm.hp = sm.maxHp;
+        const v = B.views.get(sm.uid); for (let i = 0; i < 30; i++) { v.sync(); hv0.sync(); }
         const hv = B.views.get(h.uid), t = v.nameText, nb = t.getBounds(), cam = B.cameras.main.worldView, hp = v.hpFill.getBounds(), cardL = v.x - v.w / 2, cardR = v.x + v.w / 2;
         const cv = window.__game.canvas.getBoundingClientRect(), sx = cv.width / cam.width, sy = cv.height / cam.height;
         return { text: t.text, color: t.style.color, size: t.style.fontSize, want: sm.nameColor, inCard: nb.left >= cardL - 1 && nb.right <= cardR + 1, noBar: nb.bottom <= hp.top + 0.5, noHero: nb.right <= hv.x - hv.w / 2 || nb.left >= hv.x + hv.w / 2, noParen: !/[（）()]/.test(t.text), inCam: nb.left >= cam.x && nb.right <= cam.right && nb.top >= cam.y && nb.bottom <= cam.bottom,
