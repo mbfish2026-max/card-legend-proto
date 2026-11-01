@@ -38,6 +38,8 @@ export interface Unit extends UnitDef {
   armorUntil?: number; armorReduce?: number;
   /** #12 幽灵盾（魔御）/神圣战甲术（防御）增益，不存档 */
   mdefUpUntil?: number; mdefUp?: number; defUpUntil?: number; defUp?: number;
+  /** 最近一次施放的脚下光环类增益（holy_armor/ghost_shield/vajra_body），仅表现层用 */
+  auraSkill?: string;
   leapUntil?: number; leapReady?: number; slowUntil?: number; stunUntil?: number; vulnUntil?: number; vulnPhys?: number; vulnMag?: number; poisonUntil?: number; poisonDps?: number; poisonTick?: number;
   /** R13 红毒：受到伤害 +20% 截止时间 */
   redUntil?: number;

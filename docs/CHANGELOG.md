@@ -20,6 +20,11 @@
 - 诱惑之光宠物不再叛变（适配：按用户要求取消叛变）：去掉 CHARM.duration / petUntil / 叛变恢复逻辑与「叛变」飘字；成功率、上限、等级差、宠物等级/名字不变。
 - 修复：召唤物攻击/受伤时立绘放大。根因：构建把 portraits/*_full 转成 640px webp，而姿态帧 fx/summon_*_atk|hurt.png 是原图（836×1096 / 960×747），showPose 换纹理不重算缩放 → 线上骷髅 ×1.71、神兽 ×1.5（开发环境用原图，所以看不出）。改为换帧/还原后按固定显示高度 fitArt 归一化，并在 swing/hit 前换帧；怪物狂暴不再放大卡牌（改为上下跳动）。
 - 测试：tests/summon-regen.test.ts、tests/card-scale.test.ts；e2e tests/e2e/summon-regen-verify.mjs、tests/e2e/card-scale-verify.mjs（逐帧采样容器/立绘 scale 与显示尺寸）。
+## 增益改为脚下地面光环（feat/ground-aura-hook）
+- 神圣战甲术 / 幽灵盾 / 金刚护体不再播套在身上的罩，改播 fx_aura_<id>_start(5 帧) → _loop(10 帧循环) → _end(4 帧)：12fps、ADD、depth 9（卡牌之下），pivot=脚底中心，跟随人物 (cx, 脚底 y)；不旋转，等比缩放夹在 0.8–1.2。
+- 状态驱动（src/ui/groundAura.ts + groundAuraPlan.ts，BattleScene.update 每帧 sync）：buff 到期 / 被驱散（破击写负值）/ 单位死亡或视图移除 / 换图 → 播 end 后销毁；场景关闭直接销毁；每个单位至多 1 个光环（重复施放/刷新不叠加，后施放的优先）。覆盖所有有视图的单位（英雄、合击英雄、召唤物，以 Unit.auraSkill + def/mdef 增益字段判定）。换图后同一次增益不再重新出现。
+- 魔法盾保持身体椭圆罩不变；三技能缺光环素材时回退 Graphics holyLight。
+- 测试：tests/ground-aura.test.ts（映射表/素材帧数/源码断言/状态逻辑）；e2e tests/e2e/ground-aura-verify.mjs [截图目录]（桌面 1280×720 + 手机横屏 844×390）。
 
 ## 召唤物名字去括号（feat/summon-label2）
 - 格式改为「骷髅·3级 角色名的宠物」（等级后一个空格，无括号）；两行时第二行「角色名的宠物」，截断保留结尾「的宠物」；角色名回退规则不变。

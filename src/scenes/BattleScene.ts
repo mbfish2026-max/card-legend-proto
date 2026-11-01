@@ -27,6 +27,7 @@ import { Settings, SaveStore, Slots } from '../settings';
 import type { UIScene } from './UIScene';
 import { playMusic } from '../music';
 import { FxQuality } from '../ui/Fx';
+import { GroundAuras, hasAuraFx } from '../ui/groundAura';
 
 // 稀有度：光柱颜色 = 地上物品名颜色；越稀有光柱越高
 const RARITY_COLOR = { common: 0xf0e6c0, magic: 0x3d9bff, rare: 0xffa020 };
@@ -101,6 +102,7 @@ export class BattleScene extends Phaser.Scene {
     // 合击版 A1：点怪物卡指定英雄目标（无英雄/未召唤时静默忽略，不影响原操作）
     this.events.on('cardTap', (uid: number) => { const w = this.world; if (!w.companion?.out || this.paused) return; const e = w.setCompanionTarget(uid); if (e) this.log(e); else { const v = this.views.get(uid); if (v) fx.floatNumber(this, v.cx, v.cy - v.h * 0.45, v.h, '英雄目标', '#7fd7ff', 0.6); } this.handle(w.drainEvents()); });
     this.events.once('shutdown', () => this.events.off('cardTap'));
+    this.events.once('shutdown', () => this.groundAuras.clear());
     this.events.once('shutdown', () => { this.comboStatusClosing = true; this.comboStatus.clear(); this.comboStatusClosing = false; });
     // 其它键（F1~F4 技能等）：阻止 F1 帮助等默认行为；不占用 F5 等其它功能键
     this.input.keyboard!.on('keydown', (e: KeyboardEvent) => {
@@ -381,9 +383,8 @@ export class BattleScene extends Phaser.Scene {
         hv.lunge(dir, 60); const d = playFx(this, 'fx_rush_dash', hv.cx, hv.cy, { flip, decorative: true, tint: 0xffe0a0 }); if (d) follow(this, d, () => hv.active ? { x: hv.cx, y: hv.cy } : null);
         tv.forEach(v => { if (!playFx(this, 'fx_rush_hit', v.cx, v.cy)) fx.shadowSlash(this, v.cx, v.cy, v.h); }); return done();
       }
-      case 'vajra_body': {
-        const ms = dur * 1000, l = playFx(this, 'fx_holy_armor_loop', hv.cx, hv.cy, { ms, tint: 0xffc040, decorative: true });
-        if (l) follow(this, l, () => hv.active ? { x: hv.cx, y: hv.cy } : null); else fx.holyLight(this, hv.cx, hv.cy, hv.h);
+      case 'vajra_body': { // 脚下地面光环由 groundAuras 按 buff 状态驱动（update 里 sync）；缺素材 → Graphics 兜底
+        if (!hasAuraFx(this, 'vajra_body')) fx.holyLight(this, hv.cx, hv.cy, hv.h);
         fx.floatNumber(this, hv.cx, hv.cy - hv.h * 0.2, hv.h, '金刚护体', '#ffd060', 0.7); return done();
       }
       case 'ice_arrow': if (tv[0]) { const t = tv[0], x0 = hv.cx + dir * hv.w * 0.4, y0 = hv.cy - 20; fx.projectile(this, x0, y0, t.cx, t.cy, 'talisman', () => { if (!playFx(this, 'fx_ice_roar_burst', t.cx, t.y, { scale: 0.6 })) fx.hitSpark(this, t.cx, t.cy); fx.frostTint(t.art, 1500); done(); }); return; } return done();
@@ -476,13 +477,9 @@ export class BattleScene extends Phaser.Scene {
         return;
       } return done();
       // #12 道士：专属图集（docs/fx-requests.md #12 / v4）；缺图回落魔法盾图集着色 / 每目标治愈光柱 / Graphics
-      case 'ghost_shield': case 'holy_armor': {
-        const gs = skill === 'ghost_shield', tint = gs ? 0xb08cff : 0xffd860, ms = dur * 1000, name = gs ? '幽灵盾' : '神圣战甲术';
-        const kc = gs ? 'fx_ghost_shield_cast' : 'fx_holy_armor_cast', kl = gs ? 'fx_ghost_shield_loop' : 'fx_holy_armor_loop';
-        const own = this.textures.exists(kc);
-        const startLoop = () => { const l = this.textures.exists(kl) ? playFx(this, kl, hv.cx, hv.cy, { ms, decorative: true }) : playFx(this, 'fx_magic_shield_loop', hv.cx, hv.cy, { tint, ms, decorative: true }); if (l) follow(this, l, () => hv.active ? { x: hv.cx, y: hv.cy } : null); return !!l; };
-        const c = own ? playFx(this, kc, hv.cx, hv.cy, { onDone: () => { startLoop(); } }) : playFx(this, 'fx_magic_shield_cast', hv.cx, hv.cy, { tint, onDone: () => { startLoop(); } });
-        if (!c) fx.holyLight(this, hv.cx, hv.cy, hv.h);
+      case 'ghost_shield': case 'holy_armor': { // 改为脚下地面光环（groundAuras，按 buff 状态驱动）；不再播套在身上的罩
+        const gs = skill === 'ghost_shield', name = gs ? '幽灵盾' : '神圣战甲术';
+        if (!hasAuraFx(this, skill)) fx.holyLight(this, hv.cx, hv.cy, hv.h);
         fx.floatNumber(this, hv.cx, hv.cy - hv.h * 0.2, hv.h, name, gs ? '#c8a8ff' : '#ffe080', 0.7); return done();
       }
       case 'mass_heal': {
@@ -588,6 +585,7 @@ export class BattleScene extends Phaser.Scene {
     if (!FxQuality.low) this.cameras.main.shake(160, 0.006);
   }
   /** 合击持续状态（噬魂沼泽/末日审判循环段、劈星斩麻痹标记）；句柄生命周期见 ui/comboStatus.ts */
+  groundAuras = new GroundAuras(this);
   comboStatus = new ComboStatusTracker((id, u) => this.makeComboStatus(id, u));
   private comboStatusClosing = false;
   /** 循环段动画：专用素材 key（FX_DEFS 同名动画）优先；否则回退起手图集帧区间往返，key = cs_fallback_<id> */
@@ -703,7 +701,7 @@ export class BattleScene extends Phaser.Scene {
     const ui = this.scene.get('UI');
     const dim = ui.add.rectangle(640, 300, 1280, 600, 0x300000, 0.5).setDepth(99);
     const t = ui.add.text(640, 260, '你 已 阵 亡', { fontFamily: FONT, fontSize: '64px', color: '#ff4444', fontStyle: 'bold', stroke: '#000', strokeThickness: 6 }).setOrigin(0.5).setDepth(100);
-    const t2 = ui.add.text(640, 330, `3 秒后在本层起点复活（损失 ${Math.round(WORLD.deathGoldLoss * 100)}% 金币）`, { fontFamily: FONT, fontSize: '20px', color: '#fff', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5).setDepth(100);
+    const t2 = ui.add.text(640, 330, '3 秒后在本层起点复活（无损失）', { fontFamily: FONT, fontSize: '20px', color: '#fff', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5).setDepth(100);
     this.overlay = [dim, t, t2];
     this.time.delayedCall(3000, () => { this.world.respawn(); this.handle(this.world.drainEvents()); });
   }
@@ -717,6 +715,7 @@ export class BattleScene extends Phaser.Scene {
   }
   /** 进入新一层：淡入，换背景，清掉旧怪物与地上物品，刷新本层怪物；角色/召唤物保留 */
   enterFloor(i: number, name: string) {
+    this.groundAuras.endAll(this.world.units);
     this.clearStreet();
     for (const [uid, v] of [...this.views]) if (!v.unit.isHero && !((v.unit.summon || v.unit.companion) && this.world.units.includes(v.unit))) { v.destroy(); this.views.delete(uid); }
     this.groundObjs.forEach(os => os.forEach(o => o.destroy())); this.groundObjs.clear();
@@ -833,6 +832,7 @@ export class BattleScene extends Phaser.Scene {
     this.layoutQueue();
     this.comboStatus.sync(this.world.time, uid => this.views.get(uid)?.unit);
     this.views.forEach(v => { v.sync(); v.anim(time); v.setDepth(10 + v.unit.y / 1000 + (v.unit.isHero ? 0.0005 : 0)); });
+    this.groundAuras.sync(this.world.time, this.views.values());
     this.updateStreet();
     this.portal.setAlpha(!this.world.cleared ? 0.35 : 1);
     this.portalHint?.setVisible(this.world.atExit && this.state === 'play' && !(this.world.floor.boss && this.world.alive('enemy').some(u => u.tier === 'boss')));

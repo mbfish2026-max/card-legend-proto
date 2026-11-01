@@ -31,7 +31,7 @@ const SHENBING = ['nuzhan', 'longya', 'xiaoyao_fan'], HEAVY40 = ['tianmo_armor',
 const ACC = (pre: string[], parts: string[]) => pre.flatMap(p => parts.map(k => p + '_' + k));
 const LEITING = ACC(['leiting', 'lieyan', 'guangmang'], ['necklace', 'bracelet', 'ring', 'boots']), ZHANSHEN = ACC(['zhanshen', 'shengmo', 'zhenhun'], ['necklace', 'bracelet', 'ring']);
 export const EG_DROPS: Record<string, [string, number][]> = {
-  boss_zuma: [...P(SHENBING, 100), ...P(['shihun_staff'], 200), ...P(['mingyun_blade'], 60)],
+  boss_zuma: [...P(SHENBING, 100), ...P(['shihun_staff'], 200), ...P(['mingyun_blade'], 60)], // P3 复核：命运之刃官方为 35 级战士任务奖励（21cq「命运之刃任务」；祖玛教主 Mob 页无此物），本作无任务系统 → 暂以祖玛 1/60 代替 [适配]
   boss_bull_king: [...P(SHENBING, 100), ...P(['shihun_staff'], 200)],
   boss_hongmo: P(HEAVY40, 20),
   boss_redmoon: P(SHENBING, 50), // 天尊 4 件走 r14b setDrop（三圣职业套）
@@ -40,7 +40,7 @@ export const EG_DROPS: Record<string, [string, number][]> = {
   boss_hj_home: [...P(HEAVY40, 20), ...P(SHENBING, 40), ...P(['shihun_staff'], 80), ...P(['bazhe_blade'], 40)],
   boss_wolong: [...P(['shenglong_helm', 'molong_helm', 'tianlong_helm'], 20), ...P(['leiting_armor', 'lieyan_robe', 'guangmang_robe'], 25)],
   boss_leiyan: P(LEITING, 30),
-  boss_molong: [...P(ZHANSHEN, 30), ...P(LEITING, 40), ...P(['fengtian_armor'], 40)],
+  boss_molong: [...P(ZHANSHEN, 30), ...P(LEITING, 40), ...P(['fengtian_armor'], 40)], // P3 D7：副本内战神系 ×0.5（=1/60，dungeons.ts DUNGEON_ITEM_SCALE），普通击杀不变
   boss_fire_dragon: [...P(['kaitian', 'zhentian', 'xuantian'], 40), ...P(['fengtian_armor'], 25)],
 };
 for (const [b, add] of Object.entries(EG_DROPS)) (DROP_ADD[b] ??= []).push(...add);

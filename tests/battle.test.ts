@@ -202,7 +202,7 @@ const free = (w: World) => w.skills.map(() => 0);
 }
 { // 死亡复活 + 存档读档
   const w = mk([{ id: 'wolf', x: 3000 }], [], 'mage', 5); w.gold = 100; w.kill(w.hero!); ok(!w.hero, '主角死亡');
-  w.respawn(); ok(!!w.hero && w.hero.hp === w.hero.maxHp && w.gold === 90 && w.deaths === 1, '本层起点满血复活，损失 10% 金币');
+  w.respawn(); ok(!!w.hero && w.hero.hp === w.hero.maxHp && w.gold === 100 && w.deaths === 1, '本层起点满血复活，金币不损失');
   const w1 = new World(seeded(5), 7, FLOORS, 'taoist'); w1.gold = 321; w1.bag.push(w1.makeItem('tao_sword', 'rare')); w1.equipItem(0); w1.loadFloor(2);
   const json = JSON.stringify(w1.toSave()); const w2 = new World(seeded(6), 1, FLOORS, 'warrior', JSON.parse(json) as SaveData);
   ok(w2.cls === 'taoist' && w2.level === 7 && w2.gold === 321 && w2.floorIndex === 2 && w2.equip.weapon?.name.includes('极品') === true && w2.hero!.tao === w1.hero!.tao, '存档 JSON 往返：职业/等级/金币/层数/装备一致');
@@ -916,7 +916,7 @@ const free = (w: World) => w.skills.map(() => 0);
   const need = (l: number) => C.EXP_PER_LEVEL(l);
   let mono = true; for (let l = 1; l < 60; l++) if (!(need(l + 1) > need(l))) mono = false;
   ok(mono, '经验曲线 1–60 级严格单调递增');
-  ok([1, 10, 20, 30, 40, 49].every(l => need(l) === C.OFFICIAL_EXP[l] / C.EXP_SCALE), `各级 = 官方值 ÷ ${C.EXP_SCALE}`);
+  ok([1, 10, 20, 30, 40, 49].every(l => C.EXP_PER_LEVEL_BASE(l) === C.OFFICIAL_EXP[l] / C.EXP_SCALE) && [1, 10, 20, 30].every(l => need(l) === C.OFFICIAL_EXP[l] / C.EXP_SCALE), `各级 = 官方值 ÷ ${C.EXP_SCALE}`);
   const jump = (l: number) => need(l) / need(l - 1);
   // 官方跳变：9→10 ×2.4、13→14 ×2、20→21 ×1.79、37→38 ×1.46、45→46 ×4；相邻非跳变级 ≤ ×1.4
   ok(jump(10) >= 2.3 && jump(14) >= 1.9 && jump(21) >= 1.7 && jump(38) >= 1.4 && jump(46) >= 3.9, `10/14/21/38/46 级跳变（${[10, 14, 21, 38, 46].map(l => jump(l).toFixed(2)).join('/')}）`);
