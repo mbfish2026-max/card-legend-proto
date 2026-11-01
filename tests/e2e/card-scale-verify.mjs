@@ -32,6 +32,7 @@ try {
         const opaqueH = key => { if (key in tex) return tex[key]; const src = B.textures.get(key).getSourceImage(); const c = document.createElement('canvas'); c.width = src.width; c.height = src.height; const g = c.getContext('2d'); g.drawImage(src, 0, 0); const d = g.getImageData(0, 0, c.width, c.height).data; let t = c.height, bt = 0; for (let y = 0; y < c.height; y += 2) for (let x = 0; x < c.width; x += 4) if (d[(y * c.width + x) * 4 + 3] > 40) { t = Math.min(t, y); bt = Math.max(bt, y); } return tex[key] = (bt - t) / c.height; };
         const st = v => { const a = v.art; return { cs: Math.max(v.scaleX, v.scaleY), is: Math.max(v.inner.scaleX, v.inner.scaleY), ax: a.scaleX / v.artSX, ay: a.scaleY / v.artSY, dh: a.displayHeight * opaqueH(a.texture.key), dw: a.displayWidth, rh: v.artSY * a.frame.height * opaqueH(a.texture.key), rw: v.artSX * a.frame.width, key: a.texture.key }; };
         for (let i = 0; i < 30 && Object.values(vs).some(v => v.poseBase); i++) await new Promise(r => setTimeout(r, 50)); // 基准取原立绘（非姿态帧）
+        for (let i = 0; i < 100 && Object.values(vs).some(v => v.art.texture.key === '__silhouette'); i++) await new Promise(r => setTimeout(r, 100)); // 等立绘加载完（剪影占位不作基准）
         const base = {}; for (const k in vs) { const s0 = st(vs[k]); base[k] = { ...s0, dh: s0.rh, dw: s0.rw }; } // 基准 = 静态立绘的显示尺寸（不含呼吸压缩）
         const pk = {}; for (const k in vs) pk[k] = { cs: 0, is: 0, ax: 0, ay: 0, dh: 0, dw: 0, keys: new Set(), frames: 0 };
         let ev = { attack: 0, damage: 0, cast: 0 };
