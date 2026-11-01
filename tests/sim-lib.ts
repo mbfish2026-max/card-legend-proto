@@ -9,6 +9,22 @@ import { comboFor } from '../src/data/companion';
 import { WORLD, FLOOR_ORDER } from '../src/data/world';
 import { MAIN_ANCHORS, killExp, monsterLevelAt } from '../src/data/balance';
 import { ENEMIES } from '../src/data/units';
+import { POTIONS } from '../src/data/skills';
+// ===== feat/potion-combat 补给/用药策略（SIM_POT=1 开；默认关 = potion-expand 原轨迹）=====
+const POTC = !!process.env.SIM_POT;
+const SUN_HP = +(process.env.SIM_SUN_HP ?? 0.3), SUN_CAP = +(process.env.SIM_SUN_CAP ?? 2);
+/** 每格选「有货里最强」那种（玩家习惯：长按换成最好的药） */
+function potSelBest(w: any) { for (const [slot, items] of [[0, ['hp_big', 'hp_mid', 'hp_small']], [1, ['mp_big', 'mp_mid', 'mp_small']], [2, ['sun_big', 'sun']]] as [number, string[]][]) {
+  const it = items.find(x => w.pots[POTIONS.findIndex(p => p.item === x)] > 0); if (it && w.getSelectedPotion(slot) !== it) w.setSelectedPotion(slot, it); } }
+/** 补药：够等级买强效（散装），否则中药；太阳水 Lv22 起补到 SUN_CAP；强效太阳水只卖捆，Lv35 起金币够买 1 捆解开 */
+function potBuy(w: any, cap: number) {
+  const hp = w.level >= (POTIONS[4].lv ?? 1) ? 4 : 1, mp = w.level >= (POTIONS[5].lv ?? 1) ? 5 : 3;
+  const n = (a: number, b: number) => w.pots[a] + w.pots[b];
+  while (w.gold >= POTIONS[hp].price && n(1, 4) < cap && !w.buyPotion(hp)) { /* buy */ }
+  while (w.gold >= POTIONS[mp].price && n(3, 5) < cap && !w.buyPotion(mp)) { /* buy */ }
+  if (w.level >= (POTIONS[7].lv ?? 99) && n(6, 7) < SUN_CAP && w.gold >= 6 * POTIONS[7].price + 1000 && !w.buyBundle('bundle_sun_big')) { const bi = w.bag.findIndex((x: any) => x.item === 'bundle_sun_big'); if (bi >= 0) w.unbundle(bi); }
+  while (w.level >= (POTIONS[6].lv ?? 99) && w.gold >= POTIONS[6].price && n(6, 7) < SUN_CAP && !w.buyPotion(6)) { /* buy */ }
+}
 export function seeded(s: number) { return () => (s = (s * 16807) % 2147483647) / 2147483647; }
 const learnAll = (w: World) => { w.learned = new Set(CLASSES[w.cls].skills.map(s => s.id)); return w; };
 export const SEEDS = [3, 7, 11, 19, 23, 42, 57, 88, 101];
@@ -47,8 +63,15 @@ export const simRun = (c: ClassId, seed: number, maxT = SIM_MAX_T) => {
           let i = 0; while (w.level === lv0 && i < 5000) { const id = ids[i++ % ids.length]; const b = band(w.level); lvVK[w.level] = (lvVK[w.level] ?? 0) + 1; lvVT[w.level] = (lvVT[w.level] ?? 0) + spk; w.gainExp(killExp(id, pf, w.level, monsterLevelAt(id, pf))); w.gold += virtGold(id, pf); virtKills[b]++; virtT[b] += spk; t += spk; }
           w.drainEvents(); w.recompute(true); learnLog.push(`卡关练级@${pf + 1}层→Lv${w.level}`); }
         continue; }
+      if (POTC) { // feat/potion-combat（SIM_POT=1）：同阈值，按药水栏当前选中药用；太阳水 HP<30% 才喝（瞬回，独立冷却）
+        potSelBest(w);
+        if (h.hp < h.maxHp * 0.4 && w.usePotionSlot(0)) potUsed++;
+        if ((h.mp ?? 0) < 40) w.usePotionSlot(1);
+        if (h.hp < h.maxHp * SUN_HP && w.usePotionSlot(2)) potUsed++;
+      } else {
       if (h.hp < h.maxHp * 0.4 && w.usePotion(w.pots[1] > 0 ? 1 : 0)) potUsed++;
       if ((h.mp ?? 0) < 40) w.usePotion(w.pots[3] > 0 ? 3 : 2);
+      }
       for (let i = 0; i < w.skills.length; i++) { if (w.skills[i].id === 'charm' && !w.charmAutoOk()) continue; w.cast(i, cds); }
       for (let i = 0; i < w.skills.length; i++) w.cast(i, cds, { auto: true }); // 模拟 = 自动施法（施毒跳过已中毒）
       for (let i = w.bag.length - 1; i >= 0; i--) { const it = w.bag[i]; if (it.slot && it.req <= w.level && !w.equip[w.targetSlot(it)!]) w.equipItem(i); }
@@ -72,8 +95,10 @@ export const simRun = (c: ClassId, seed: number, maxT = SIM_MAX_T) => {
       const saving = w.shopBooks().some(b => !w.learned.has(b.skill) && w.level >= w.needLevel(w.skillPool.find(x => x.id === b.skill)!)); // 补给策略：进图前回村补药，药量随层深增加（存钱买书时也按层深少量补）
       const depth = w.floorIndex;
       const cap = saving ? Math.min(3, 1 + Math.floor(depth / 4)) : 3 + Math.floor(depth / 2);
+      if (POTC) potBuy(w, cap); else {
       while (w.gold >= 60 && w.pots[1] < cap) w.buyPotion(1);
       while (w.gold >= 60 && w.pots[3] < cap) w.buyPotion(3);
+      }
       if (w.floorIndex !== lastF) { lastF = w.floorIndex; if (process.env.SIMDBG && w.hero) console.log('enter', w.floorIndex, 'Lv', w.level, 'hp', w.hero.maxHp, 'atk', w.hero.atk, 'def', w.hero.def, 'deaths', w.deaths); floorKills = 0; floorT = 0; if (!w.town && !(w.floorIndex in firstClear)) { firstClear[w.floorIndex] = { lv: w.level, exp: 0 }; curFirst = w.floorIndex; } else curFirst = null; }
       const k = FLOOR_ORDER.indexOf(w.floorIndex);
       if (!w.town && k >= 0 && w.hero && w.hero.x >= w.exitX - WORLD.exitRadius - 20 && !w.alive('enemy').some(u => u.tier === 'boss') && w.level < MAIN_ANCHORS[k + 1]) {

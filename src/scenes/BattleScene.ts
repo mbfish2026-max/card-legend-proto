@@ -106,7 +106,7 @@ export class BattleScene extends Phaser.Scene {
     this.events.once('shutdown', () => { this.comboStatusClosing = true; this.comboStatus.clear(); this.comboStatusClosing = false; });
     // 其它键（F1~F4 技能等）：阻止 F1 帮助等默认行为；不占用 F5 等其它功能键
     this.input.keyboard!.on('keydown', (e: KeyboardEvent) => {
-      if (stepDir(e)) return; if (/^F([1-9]|10)$/.test(e.key)) e.preventDefault(); this.onKey(e.key.toUpperCase()); });
+      if (stepDir(e)) return; if (/^F([1-9]|10)$/.test(e.key)) e.preventDefault(); { const kk = e.key.toUpperCase(); this.onKey(/^[1-3]$/.test(kk) ? `SLOT${+kk - 1}` : kk); } }); // feat/potion-combat P4：键盘 1/2/3 = 药水栏红/蓝/太阳水格当前选中的药
     this.input.keyboard!.addCapture('F1,F2,F3,F4,F5,F6,F7,F8,F9,F10,F11,F12');
     // 失焦/切后台时清空按键状态，避免 keyup 丢失导致方向键"卡住"或失灵
     const reset = () => { hold.reset(); this.input.keyboard?.resetKeys(); this.ui?.pad?.reset?.(); };
@@ -348,8 +348,9 @@ export class BattleScene extends Phaser.Scene {
       this.time.delayedCall(FX.windupMs, () => this.skillFx(r.skill, hv, r.targets, evs));
       return;
     }
-    const pi = POTIONS.findIndex(p => p.key === k);
-    if (pi >= 0) { const hh = this.world.hero, cdl = hh ? ((POTIONS[pi]?.mp && !POTIONS[pi]?.hp ? hh.mpReady : hh.potReady) ?? 0) - this.world.time : 0; const n = this.world.usePotion(pi); if (n) { this.sfx('potion'); this.log(`${n}使用（${WORLD.potHotSec} 秒内回复）`, true); } else if (cdl > 0 && this.world.pots[pi] > 0) this.log(`药水冷却中（${cdl.toFixed(1)} 秒）`); }
+    // feat/potion-combat P4：SLOTn = 第 n 格当前选中药（getSelectedPotion）；点格转发的 POTIONS key 本身就是该格选中药
+    const pi = /^SLOT[0-2]$/.test(k) ? this.world.selectedPotionIndex(+k[4]) : POTIONS.findIndex(p => p.key === k);
+    if (pi >= 0) { const cdl = this.world.potionCooldown(pi); const n = this.world.usePotion(pi); if (n) { this.sfx('potion'); this.log(POTIONS[pi].instant ? `${n}使用（立刻回复）` : `${n}使用（${WORLD.potHotSec} 秒内回复）`, true); } else if (cdl > 0 && this.world.pots[pi] > 0) this.log(`药水冷却中（${cdl.toFixed(1)} 秒）`); }
   }
   skillFx(skill: string, hv: CardView, targets: number[], evs: BattleEvent[]) {
     const tv = targets.map(id => this.views.get(id)).filter((v): v is CardView => !!v);
