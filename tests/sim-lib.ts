@@ -24,6 +24,7 @@ const virtGold = (id: string, pf: number) => { const g = ENEMIES[id]?.drops?.fin
 const band = (lv: number) => Math.min(5, Math.floor((lv - 1) / 10));
 export const simRun = (c: ClassId, seed: number, maxT = SIM_MAX_T) => {
     const w = (process.env.ALL ? learnAll : (x: World) => x)(new World(seeded(seed), 1, FLOORS, c)); let cds = w.skills.map(() => 0); let t = 0, potUsed = 0; const learnLog: string[] = []; let hjCombo = 0, hjHeroDmg = 0, hjAllDmg = 0, hjT = 0, hjOut = 0;
+    const dg = { heroDmg: 0, sumDmg: 0, sumDeaths: 0, t: 0, sumT: 0, sumN: 0, foeOnSum: 0, foeOnHero: 0, sumLv: 0, sumHp: 0, heroHp: 0, samples: 0, sumKillDmg: 0, allKillDmg: 0 };
     const deathAt: { floor: number; lv: number }[] = []; const floorLv: Record<number, number> = {};
     const kills = [0, 0, 0, 0, 0, 0], killT = [0, 0, 0, 0, 0, 0], virtKills = [0, 0, 0, 0, 0, 0], virtT = [0, 0, 0, 0, 0, 0], replays: Record<number, number> = {}; let floorKills = 0, floorT = 0, lastF = -1;
     /** 首清经验：每层第一次进入到清完（离开）所得经验 ÷ 进入时等级所需 */
@@ -76,9 +77,13 @@ export const simRun = (c: ClassId, seed: number, maxT = SIM_MAX_T) => {
       }
       const _d0 = w.deaths, _near = process.env.SIMDBG ? w.units.filter(u => u.alive && u.team !== 'ally' && Math.abs(u.x - w.hero!.x) < 300).map(u => `${u.id}:${u.hp}/${u.maxHp}a${u.atk}`).join(',') : '';
       w.step(0.05, { dx: (() => { const f = w.queue(1)[0]; return f && w.inMelee(h, f) ? 0 : 1; })(), dy: 0 }); (globalThis as any)._near = _near; { const evs = w.drainEvents(); for (const e of evs) if (e.type === 'exp') { if (curFirst !== null) firstClear[curFirst].exp += (e as any).amount; } else if (e.type === 'death' && !w.town) { kills[band(w.level)]++; floorKills++; }
+      if (process.env.DIAG && w.level >= 11 && w.level <= 20 && !w.town && w.hero) { const ids = new Map(w.units.map(u => [u.uid, u])); dg.t += 0.05; const ss = w.units.filter(u => u.alive && u.summon); if (ss.length) dg.sumT += 0.05; dg.sumN += ss.length * 0.05;
+        if (Math.round(t * 20) % 20 === 0) { dg.samples++; dg.heroHp += w.hero.maxHp; for (const sm of ss) { dg.sumLv += sm.level ?? 0; dg.sumHp += sm.maxHp; } for (const f of w.units) if (f.alive && f.team === 'enemy' && Math.abs(f.x - w.hero.x) < 400) { const tg = (w as any).summonAggro?.(f); if (tg) dg.foeOnSum++; else dg.foeOnHero++; } }
+        for (const e of evs as any[]) { const tu = ids.get(e.target), su = ids.get(e.source); if (e.type === 'damage' && !e.heal && tu) { if (tu.isHero) dg.heroDmg += e.amount; else if (tu.summon) dg.sumDmg += e.amount; else if (tu.team === 'enemy') { dg.allKillDmg += e.amount; if (su?.summon) dg.sumKillDmg += e.amount; } } if (e.type === 'death' && tu?.summon) dg.sumDeaths++; } }
       killT[band(w.level)] += 0.05; floorT += 0.05; if (process.env.HJ) { const cu = w.companionUnit?.uid; if (w.level >= 40) hjT += 0.05; if (w.companionUnit) hjOut += 0.05; for (const e of evs) { if (e.type === 'combo') hjCombo++; else if (e.type === 'damage' && (e as any).source !== undefined && w.units.some(u => u.uid === (e as any).target && u.team === 'enemy') || (e.type === 'damage' && (e as any).source === cu && cu !== undefined)) { if ((e as any).source === cu) hjHeroDmg += (e as any).amount; else hjAllDmg += (e as any).amount; } } } } t += 0.05; /* 玩家：前方接战时站定输出（可穿怪） */ for (let i = 0; i < cds.length; i++) cds[i] = Math.max(0, cds[i] - 0.05);
     }
     if (process.env.HJ_STATS) console.log(`   HJ ${c} 种子${seed}: lv≥40 时长 ${Math.round(hjT)}s 英雄在场 ${Math.round(hjOut)}s 合击 ${hjCombo} 次 英雄伤害占比 ${(100 * hjHeroDmg / Math.max(1, hjHeroDmg + hjAllDmg)).toFixed(1)}% 英雄等级 ${w.companion?.level ?? "-"} Lv≥40后死亡 ${learnLog.filter(x => /死@.*Lv(\d+)/.test(x) && +x.match(/Lv(\d+)/)![1] >= 40).length}`);
+    if (process.env.DIAG) console.log('DIAG', c, seed, JSON.stringify(dg));
     return { deaths: w.deaths, done: w.done, potUsed, t, level: w.level, learnLog, deathAt, floorLv, kills, killT, virtKills, virtT, firstClear };
   };
 export const median = (a: number[]) => { const b = [...a].sort((x, y) => x - y); return b[(b.length - 1) >> 1] / 2 + b[b.length >> 1] / 2; };
