@@ -76,7 +76,7 @@ type Btn = HTMLDivElement;
 export class MobileHud {
   root: HTMLDivElement; dx = 0; dy = 0; onStep?: (d: number) => void;
   private bars: Record<string, [HTMLElement, HTMLElement]> = {}; private info!: HTMLElement; private log!: HTMLElement; private floor!: HTMLElement;
-  private skBtns: { el: Btn; cd: HTMLElement; t: HTMLElement; i: number }[] = []; private potBtns: HTMLElement[] = []; potBar!: PotBarDom;
+  private skBtns: { el: Btn; cd: HTMLElement; t: HTMLElement; i: number }[] = []; potBar!: PotBarDom;
   private act!: Btn; private auto!: Btn; private page!: Btn; skPage = 0; private comp!: HTMLElement; private skSig = ''; private logSig = '';
   constructor(private b: BattleScene, private hud: Hud) {
     if (!document.getElementById('mhud-css')) { const st = document.createElement('style'); st.id = 'mhud-css'; st.textContent = CSS + POT_POP_CSS; document.head.appendChild(st); }
