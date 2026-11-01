@@ -1031,8 +1031,8 @@ export class World {
   }
   cast(i: number, cds: number[], opts: { auto?: boolean } = {}): CastResult {
     const s = this.skills[i], h = this.hero;
+    if (h && this.stunned(h)) return { ok: false, reason: '眩晕中' }; // maps-3050：被幽影武士等眩晕时不能施法
     if (!s || !h) return { ok: false, reason: '' };
-    if (this.stunned(h)) return { ok: false, reason: '眩晕中' }; // maps-3050：被幽影武士等眩晕时不能施法
     if (this.recall && !opts.auto) this.cancelRecall('施法');
     if (this.mine && !opts.auto) this.cancelMine('施法');
     const need = this.needLevel(s);
