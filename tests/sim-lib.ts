@@ -37,7 +37,7 @@ export const simRun = (c: ClassId, seed: number, maxT = SIM_MAX_T) => {
     const firstClear: Record<number, { lv: number; exp: number }> = {}; let curFirst: number | null = null;
     while (!w.done && t < maxT) {
       if (floorLv[w.floorIndex] === undefined && !w.town) { floorLv[w.floorIndex] = w.level; gearAt[w.floorIndex] = { lv: w.level, ...w.equipStats() }; }
-      if (w.level > _gl) { _gl = w.level; goldAt[w.level] = w.gold; if (w.level === 25 || w.level === 35) eqAt[w.level] = Object.fromEntries(Object.entries(w.equip).filter(([, v]) => v).map(([k, v]: any) => [k, `${v.name}${v.req}`])); }
+      if (w.level > _gl) { _gl = w.level; goldAt[w.level] = w.gold; if ([25, 35, 40, 45, 50].includes(w.level)) eqAt[w.level] = Object.fromEntries(Object.entries(w.equip).filter(([, v]) => v).map(([k, v]: any) => [k, `${v.name}${v.req}`])); }
       const h = w.hero;
       if (!h) { if (process.env.SIMDBG && deathAt.length % (+process.env.SIMDBG > 1 ? +process.env.SIMDBG : 25) === 0) console.log('died', w.floorIndex, 'Lv', w.level, (globalThis as any)._near); deathAt.push({ floor: w.floorIndex, lv: w.level }); learnLog.push(`死@${w.floorIndex + 1}层Lv${w.level}`);
         // fix/sim-baseline：死亡分「无损失 / 有损失」计数（实测复活前后金币、经验、等级、背包、装备，不写死）；只读，不改轨迹
