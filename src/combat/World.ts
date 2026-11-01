@@ -1552,6 +1552,7 @@ export class World {
       const h = this.hero; if (!h) return; const dx = Math.sign(inp.dx), dy = Math.sign(inp.dy); h.moving = !!(dx || dy);
       if (dx) { h.facing = dx as 1 | -1; h.x = Math.max(24, Math.min(townWidth(this.town) - h.width / 2, h.x + dx * WORLD.heroSpeed * dt)); }
       if (dy) h.y = Math.max(WORLD.laneMin, Math.min(WORLD.laneMax, h.y + dy * WORLD.heroLaneSpeed * dt));
+      if (h.hots?.length) this.tickHots(h); // fix/town-hot：药水缓回在城内照常结算（原先城内不 tick，出城第一帧一次补上）
       return;
     }
     const h = this.hero;

@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 城内喝药水回血（fix/town-hot）
+- 根因：World.step 的城内分支只处理移动就 return，药水 HoT（tickHots）在城内不结算；HoT 用绝对时间 next，出城第一帧 while 一次补齐（单测实测 +120.25 一帧补上）。
+- 修：城内分支末尾对主角调用 tickHots（只此一行）。其它计时（技能 buff/冷却/药水冷却/复活无敌）本来就用绝对 this.time，城内照常倒计时，不变；中毒伤害、自然回血、召唤物回血城内仍不结算（安全区原设计，未扩大范围）。
+- HoT 不入存档（原设计），0.5 s 内结算完；读档兼容无变化。sim 不进城（sim-lib 无 enterTown），1–39 指纹不受影响。
+- 测试：tests/town-hot.test.ts 8 项（城内 HP 涨、城内到期清空、出城不重复补、存读档）。
+
 ## 召唤物：脱战回血 / 不叛变 / 继承英雄属性 / 移速=英雄 / 存读档保留（feat/summon-regen，未合 main）
 - 详见 docs/CHANGELOG.md 对应条目；消融表与 9 种子前后对比见 docs/summon-regen-ablation.md。
 - 存档新增可选字段 summons?（旧档无字段 = 无召唤物，兼容）；诱惑宠物同样存档。

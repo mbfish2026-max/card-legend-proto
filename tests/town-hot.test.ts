@@ -14,4 +14,4 @@ const mk = () => { const w = new World(() => 0.5); w.startInVillage(); w.pots[0]
 { const w = mk(); w.usePotion(0); for (let i = 0; i < 20; i++) w.step(0.05); const s = JSON.parse(JSON.stringify(w.toSave()));
   const w2 = new World(() => 0.5, s.level, undefined, s.cls, s); ok(!!w2.town && w2.pots[0] === 4, '城内喝药后存读档：仍在城内、瓶数一致');
   const hp = w2.hero!.hp; for (let i = 0; i < 20; i++) w2.step(0.05); ok(w2.hero!.hp >= hp && !(w2.hero!.hots?.length), '读档后无残留 HoT、不额外回血'); }
-console.log(`town-hot: ${n - fail}/${n}`); if (fail) { console.log('town-hot: FAILED'); process.exit(1); } else console.log('town-hot: all passed');
+console.log(`town-hot: ${n - fail}/${n}`); if (fail) { console.log('town-hot: FAILED'); (globalThis as any).process.exit(1); } else console.log('town-hot: all passed');
