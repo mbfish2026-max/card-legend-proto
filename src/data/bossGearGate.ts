@@ -12,7 +12,7 @@ export type GateNeed = [main: number, def: number, hp: number];
 export const GATE_KEYS: Record<ClassId, ['atk' | 'mag' | 'tao', 'def' | 'mdef', 'hp']> = {
   warrior: ['atk', 'def', 'hp'], mage: ['mag', 'mdef', 'hp'], taoist: ['tao', 'mdef', 'hp'],
 } as any;
-export const GATE_K_TAKEN = 0.5, GATE_K_DEALT = 0.4, GATE_GAP_CAP = 0.5;
+export const GATE_K_TAKEN = 0.8, GATE_K_DEALT = 0.4, GATE_GAP_CAP = 0.5;
 const ZUMA: Record<string, GateNeed> = { warrior: [43, 27, 370], mage: [31, 6, 335], taoist: [26, 6, 345] };
 const CHIYUE: Record<string, GateNeed> = { warrior: [46, 29, 400], mage: [33, 6, 365], taoist: [29, 6, 375] };
 const END: Record<string, GateNeed> = { warrior: [50, 32, 435], mage: [36, 7, 395], taoist: [31, 7, 405] };
