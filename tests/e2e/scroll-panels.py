@@ -56,9 +56,11 @@ with sync_playwright() as p:
       if npc == 'bq_veteran':
         open_npc(pg, npc); time.sleep(0.3); c = col_center(pg, X)
         pg.evaluate(f"""()=>{{const P=window.__game.scene.getScene('UI').panel; const i=P.scrollInfo[{X}]; P.npcScroll[i.key]=i.n; P.render();}}"""); time.sleep(0.3)
+        # W4（1e1c2b7）起列表按世界地图区域分组排序（Panel.ts），最后一行不再是第 n 层：读屏幕上最靠下的「区域·层名」行作为期望
+        last = pg.evaluate("""()=>{const out=[]; const walk=o=>{ if(o.list) o.list.forEach(walk); if(o.type==='Text'&&o.visible&&/^[^\s·]+·[^\s]+$/.test(o.text)){const m=o.getWorldTransformMatrix(); out.push({t:o.text,y:m.ty});} }; window.__game.scene.getScene('UI').children.list.forEach(walk); out.sort((a,b)=>b.y-a.y); return out.length?out[0].t:null;}""")
         bs = btn_screen(pg, '传送'); pg.mouse.click(bs['x'], bs['y']); time.sleep(1)
-        w = pg.evaluate("()=>{const w=window.__game.scene.getScene('Battle').world; return {town:w.town, f:w.floorIndex, n:w.floors.length};}")
-        ok(w['town'] is None and w['f'] == w['n'] - 1, f'{tag} 点最后一个传送点 → 第 {w["f"]+1} 层')
+        w = pg.evaluate("()=>{const w=window.__game.scene.getScene('Battle').world; return {town:w.town, f:w.floorIndex, nm:w.floors[w.floorIndex].name};}")
+        ok(last is not None and w['town'] is None and last.split('·',1)[1] == w['nm'], f'{tag} 点最后一个传送点「{last}」→ 第 {w["f"]+1} 层 {w["nm"]}')
         pg.evaluate(SETUP); time.sleep(0.5)
     # 其它面板：内容是否超出面板框（top-20 ~ top+480）或屏幕
     for mode in ['bag', 'shop', 'skills', 'quests', 'map']:

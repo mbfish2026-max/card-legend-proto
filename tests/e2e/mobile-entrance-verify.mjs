@@ -37,7 +37,9 @@ try {
   await setup(3, 'exit'); await sleep(400); let s = await st(); await shot('1-exit');
   chk(s.act === '进入' && s.hot, `出口：键显示「${s.act}」高亮=${s.hot}`); await tapAct(); chk(await until(s => s.f === 4), '出口：点「进入」→ 第5层');
   // 2 右端出口（点传送门本体）
-  await setup(3, 'exit'); await sleep(2000); // 等相机跟上
+  // 等上一步的换层淡出结束（fading 时 usePortal 直接 return；偶发 FAIL 来源）
+  const idle = () => p.waitForFunction(() => { const B = window.__game.scene.getScene('Battle'); return !B.fading && B.state === 'play'; }, { timeout: 10000 });
+  await idle(); await setup(3, 'exit'); await sleep(2000); // 等相机跟上 await idle();
   const pp = await W(() => { const B = window.__game.scene.getScene('Battle'), c = B.portal, wv = B.cameras.main.worldView, cv = window.__game.canvas.getBoundingClientRect();
     return { x: cv.left + (c.x - wv.x) * cv.width / wv.width, y: cv.top + (c.y - wv.y) * cv.height / wv.height }; });
   await p.touchscreen.tap(pp.x, pp.y); chk(await until(s => s.f === 4), `出口：点传送门本体 (${pp.x.toFixed(0)},${pp.y.toFixed(0)}) → 第5层`);
@@ -65,12 +67,16 @@ try {
   const lab = await p.$eval('[data-id="map"]', e => e.textContent).catch(() => null);
   await tapSel('[data-id="map"]'); await sleep(700); await shot('8-map');
   chk(/传送/.test(lab ?? ''), `顶栏有「传送」入口（${lab}）`);
-  const rg = await uiFind('^毒蛇山谷$', -40);
-  chk(!!rg, '地图：世界图有区域可点'); if (rg) { await p.touchscreen.tap(rg.x, rg.y); await sleep(700); await shot('8-region'); }
-  const nd = (await uiFind('^第\\d+层', -50, true)).filter(n => !/当前|未到达/.test(n.t));
+  // W2（6a79483）起世界地图是两级：点区域选中 → 再点进入区域插画 → 点节点 → 确认卡「传送」。当前层节点不可传送，故选比奇省（已到达 1–3 层，当前在第 4 层）
+  const rg = await uiFind('^比奇省$', -40);
+  chk(!!rg, '地图：世界图有区域可点'); if (rg) { await p.touchscreen.tap(rg.x, rg.y); await sleep(500); await p.touchscreen.tap(rg.x, rg.y); await sleep(800); await shot('8-region'); }
+  const cur = (await st()).f + 1;
+  const nd = (await uiFind('^第\\d+层', -50, true)).filter(n => !/当前|未到达/.test(n.t) && Number(n.t.match(/\d+/)[0]) !== cur);
   chk(nd.length > 0, `地图：可传送入口 ${nd.map(n => n.t).join(' ')}`);
-  if (nd[0]) { const f0 = (await st()).f; await p.touchscreen.tap(nd[0].x, nd[0].y); chk(await until(s => s.f !== f0 && s.f === Number(nd[0].t.match(/\d+/)[0]) - 1), `地图：点「${nd[0].t}」→ 传送到达`); }
-  // 9 侧线/裂隙层出口：清场后右端 → 回城
+  if (nd[0]) { const f0 = (await st()).f; await p.touchscreen.tap(nd[0].x, nd[0].y); await sleep(600); await shot('8-confirm');
+    const go = await uiFind('^传送$'); chk(!!go, '地图：点节点 → 确认卡「传送」'); if (go) await p.touchscreen.tap(go.x, go.y);
+    chk(await until(s => s.f !== f0 && s.f === Number(nd[0].t.match(/\d+/)[0]) - 1), `地图：点「${nd[0].t}」→ 确认 → 传送到达`); }
+  // 9 侧线层出口（下标 32 现为「山谷矿区·一」，侧线：清层后回城）：清场后右端 → 回城
   await setup(32, 'exit'); await sleep(400); await tapAct(); chk(await until(s => !!s.town || s.f !== 32), '侧线层：点「进入」→ 离开侧线（回城）');
   chk(ww.errs.length === 0, `无 JS 错误 ${ww.errs.slice(0, 2).join(' | ')}`);
 } finally { await b.close(); sv.stop?.(); sv.kill?.(); }

@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## fix/e2e-teleport（测试脚本更新，无游戏代码改动）
+- tests/e2e/mobile-entrance-verify.mjs：第 8 步按 W2 两级世界地图改写（点区域两次进入插画 → 点非当前层节点 → 确认卡「传送」）；「侧线层」FAIL 系第 8 步失败后地图面板未关、游戏暂停的连带失败。第 2 步点传送门前等待 `!fading && state==='play'`，消除偶发 FAIL。
+- tests/e2e/scroll-panels.py：W4 起传送列表按区域排序，最后一行不再是第 n 层；改为读屏上最底行「区域·层名」并断言传送到该层。
+
 ## 召唤物：脱战回血 / 不叛变 / 继承英雄属性 / 移速=英雄 / 存读档保留（feat/summon-regen，未合 main）
 - 详见 docs/CHANGELOG.md 对应条目；消融表与 9 种子前后对比见 docs/summon-regen-ablation.md。
 - 存档新增可选字段 summons?（旧档无字段 = 无召唤物，兼容）；诱惑宠物同样存档。
