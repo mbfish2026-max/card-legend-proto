@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 神圣战甲术/幽灵盾作用于友方召唤物与合击英雄（feat/ground-aura-ally）
+- 目标由「仅主角」改为主角 + 5×5（TAO_BUFF_RANGE=280px，[适配] 按群疗 3×3=170 等比）内存活召唤物 + 合击英雄；数值/持续/耗魔/冷却不变；同值刷新不叠加。
+- 「持续中」改为范围内全部友方已生效才拒绝（不扣魔不冷却）；自动施法因此只在主角或宠物/英雄缺 buff 时施放。金刚护体仍仅自身。
+- 21cq 600 称「宝宝不受加成」与本需求冲突，记录在 docs/ground-aura-ally.md、skills-official.md。
+- 光环：受益单位各显示一个脚下光环；换图不再抑制，未过期 buff 在新图重新显示。
+- 测试：ground-aura.test.ts 新增 14 项；e2e tests/e2e/ground-aura-ally-verify.mjs；9 种子道士死亡中位 12→11、最多 26→23、单层最多 6→5（战/法不变）。
+
 ## 增益改为脚下地面光环（feat/ground-aura-hook）
 - 神圣战甲术 / 幽灵盾 / 金刚护体不再播套在身上的罩，改播 fx_aura_<id>_start(5 帧) → _loop(10 帧循环) → _end(4 帧)：12fps、ADD、depth 9（卡牌之下），pivot=脚底中心，跟随人物 (cx, 脚底 y)；不旋转，等比缩放夹在 0.8–1.2。
 - 状态驱动（src/ui/groundAura.ts + groundAuraPlan.ts，BattleScene.update 每帧 sync）：buff 到期 / 被驱散（破击写负值）/ 单位死亡或视图移除 / 换图 → 播 end 后销毁；场景关闭直接销毁；每个单位至多 1 个光环（重复施放/刷新不叠加，后施放的优先）。覆盖所有有视图的单位（英雄、合击英雄、召唤物，以 Unit.auraSkill + def/mdef 增益字段判定）。换图后同一次增益不再重新出现。
