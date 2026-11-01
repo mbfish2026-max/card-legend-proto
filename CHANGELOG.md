@@ -9,6 +9,9 @@
 - 修：城内分支末尾对主角调用 tickHots（只此一行）。其它计时（技能 buff/冷却/药水冷却/复活无敌）本来就用绝对 this.time，城内照常倒计时，不变；中毒伤害、自然回血、召唤物回血城内仍不结算（安全区原设计，未扩大范围）。
 - HoT 不入存档（原设计），0.5 s 内结算完；读档兼容无变化。sim 不进城（sim-lib 无 enterTown），1–39 指纹不受影响。
 - 测试：tests/town-hot.test.ts 8 项（城内 HP 涨、城内到期清空、出城不重复补、存读档）。
+## fix/e2e-teleport（测试脚本更新，无游戏代码改动）
+- tests/e2e/mobile-entrance-verify.mjs：第 8 步按 W2 两级世界地图改写（点区域两次进入插画 → 点非当前层节点 → 确认卡「传送」）；「侧线层」FAIL 系第 8 步失败后地图面板未关、游戏暂停的连带失败。第 2 步点传送门前等待 `!fading && state==='play'`，消除偶发 FAIL。
+- tests/e2e/scroll-panels.py：W4 起传送列表按区域排序，最后一行不再是第 n 层；改为读屏上最底行「区域·层名」并断言传送到该层。
 
 ## 召唤物：脱战回血 / 不叛变 / 继承英雄属性 / 移速=英雄 / 存读档保留（feat/summon-regen，未合 main）
 - 详见 docs/CHANGELOG.md 对应条目；消融表与 9 种子前后对比见 docs/summon-regen-ablation.md。
