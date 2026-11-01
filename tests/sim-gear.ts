@@ -1,0 +1,43 @@
+// feat/sim-gear-swap：sim 换装（SIM_GEAR_SWAP=1；默认关 = 旧行为「只往空格穿」）。只改 sim，不改游戏代码/数据。
+// 打分：score = Σ 权重×属性（物品 stats + 未写 mdef 时按 World.itemMdef 推算的魔御 + 幸运），权重见 W。
+// 每个栏位组（武器/头盔/衣服/项链/靴子/腰带单格；戒指/手镯双格）从「背包里可穿的件 + 已穿戴」中取分数最高的；
+// 可穿 = 有 slot、req ≤ 当前等级、ITEMS.cls 为空或含本职业。只在分数严格更高时替换（需求更高但分更低不换）；换下的件经 equipItem 回到背包原位。
+// 评估时机：每个 tick 检查「背包签名（长度+uid 序列）或等级」是否变化，变化即评估（= 拾取、商店买入、解包、升级、复活、进图后背包变动时）。
+// SIM_GEAR_DUMP=路径：Lv40/45/50 首次到达时把各栏位穿戴写成 JSONL（只读）。
+// @ts-ignore tsconfig 无 node 类型（运行于 tsx）
+import { appendFileSync } from 'node:fs';
+declare const process: any;
+import { ITEMS } from '../src/data/items';
+export const GEAR_SWAP = !!process.env.SIM_GEAR_SWAP;
+const DUMP = process.env.SIM_GEAR_DUMP;
+export const W: Record<string, Record<string, number>> = {
+  warrior: { atk: 10, mag: 0, tao: 0, def: 4, mdef: 3, hp: 0.2, mp: 0.02, luck: 8 },
+  mage: { atk: 0.5, mag: 10, tao: 0, def: 4, mdef: 3, hp: 0.2, mp: 0.05, luck: 2 },
+  taoist: { atk: 0.5, mag: 0, tao: 10, def: 4, mdef: 3, hp: 0.2, mp: 0.05, luck: 2 },
+};
+const GROUPS: Record<string, string[]> = { ring: ['ring1', 'ring2'], bracelet: ['bracelet1', 'bracelet2'] };
+export function gearScore(w: any, it: any): number {
+  const wt = W[w.cls] ?? W.warrior; let s = 0;
+  for (const [k, v] of Object.entries(it.stats ?? {})) s += (wt[k] ?? 0) * ((v as number) ?? 0);
+  if (it.stats?.mdef === undefined && w.itemMdef) s += wt.mdef * w.itemMdef(it);
+  return s + wt.luck * (it.luck ?? 0);
+}
+const ok = (w: any, it: any) => { if (!it?.slot || it.req > w.level) return false; const cl = ITEMS[it.item]?.cls; return !(cl?.length && !cl.includes(w.cls)); };
+const st = new WeakMap<any, { sig: string; dumped: Set<number> }>();
+export function gearTick(w: any, cls: string, seed: number, swap = GEAR_SWAP) {
+  let m = st.get(w); if (!m) { m = { sig: '', dumped: new Set() }; st.set(w, m); }
+  const sig = w.level + ':' + w.bag.map((x: any) => x.uid).join(',');
+  if (swap && sig !== m.sig) {
+    for (let guard = 0; guard < 50; guard++) { let best: [number, string, number] | null = null;
+      for (let i = 0; i < w.bag.length; i++) { const it = w.bag[i]; if (!ok(w, it)) continue;
+        const sl = GROUPS[it.slot] ?? [it.slot]; const sc = gearScore(w, it);
+        // 目标格：空格优先，否则分最低的已穿件
+        let tgt = sl.find(s => !w.equip[s]); let cur = -Infinity;
+        if (!tgt) { tgt = sl.reduce((a, b) => gearScore(w, w.equip[a]) <= gearScore(w, w.equip[b]) ? a : b); cur = gearScore(w, w.equip[tgt]); }
+        const gain = sc - cur; if (gain > 1e-9 && (!best || gain > best[0])) best = [gain, tgt, i]; }
+      if (!best) break; if (w.equipItem(best[2], best[1])) break; }
+    m.sig = w.level + ':' + w.bag.map((x: any) => x.uid).join(',');
+  }
+  if (DUMP && [40, 45, 50].includes(w.level) && !m.dumped.has(w.level)) { m.dumped.add(w.level);
+    appendFileSync(DUMP, JSON.stringify({ cls, seed, lv: w.level, swap: GEAR_SWAP, equip: Object.fromEntries(Object.entries(w.equip).filter(([, v]) => v).map(([k, v]: any) => [k, `${v.name}(${v.item},req${v.req})`])) }) + '\n'); }
+}

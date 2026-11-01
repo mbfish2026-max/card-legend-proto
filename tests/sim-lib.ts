@@ -3,6 +3,7 @@ declare const process: { env: Record<string, string | undefined> };
 // @ts-ignore tsconfig 无 node 类型（运行于 tsx）
 import { appendFileSync } from 'node:fs';
 import { World } from '../src/combat/World';
+import { GEAR_SWAP, gearTick } from './sim-gear';
 import { FLOORS } from '../src/data/world';
 import { CLASSES, ClassId } from '../src/data/classes';
 import { ITEMS } from '../src/data/items';
@@ -82,7 +83,7 @@ export const simRun = (c: ClassId, seed: number, maxT = SIM_MAX_T) => {
       }
       for (let i = 0; i < w.skills.length; i++) { if (w.skills[i].id === 'charm' && !w.charmAutoOk()) continue; w.cast(i, cds); }
       for (let i = 0; i < w.skills.length; i++) w.cast(i, cds, { auto: true }); // 模拟 = 自动施法（施毒跳过已中毒）
-      for (let i = w.bag.length - 1; i >= 0; i--) { const it = w.bag[i]; if (it.slot && it.req <= w.level && !w.equip[w.targetSlot(it)!]) w.equipItem(i); }
+      if (GEAR_SWAP) gearTick(w, c, seed); else { for (let i = w.bag.length - 1; i >= 0; i--) { const it = w.bag[i]; if (it.slot && it.req <= w.level && !w.equip[w.targetSlot(it)!]) w.equipItem(i); } if (process.env.SIM_GEAR_DUMP) gearTick(w, c, seed, false); } // feat/sim-gear-swap
       // 黑铁：模拟脚本卖掉（避免碎装干扰难度基线；玩家可手动强化）
       for (let i = w.bag.length - 1; i >= 0; i--) if (w.bag[i]?.item === 'black_iron') w.sellItem(i);
       // 黑铁：模拟脚本卖掉（避免碎装干扰难度基线；玩家可手动强化）
