@@ -12,9 +12,9 @@ export const MAIN: Record<Cls, 'atk' | 'mag' | 'tao'> = { warrior: 'atk', mage: 
 const CN = { atk: '攻击', mag: '魔法', tao: '道术' } as const;
 /** 三圣 4 件职业特效（接口；数值 [适配]，战斗开发实现） */
 export const SET_SPECIALS: Record<string, { cls: Cls; text: string; param: number }> = {
-  shengzhan4: { cls: 'warrior', text: '普攻 5% 几率造成 1.5 倍伤害 [适配·待战斗开发]', param: 0.05 },
-  fashen4: { cls: 'mage', text: '技能耗蓝 -10% [适配·待战斗开发]', param: 0.1 },
-  tianzun4: { cls: 'taoist', text: '召唤物/治疗效果 +10% [适配·待战斗开发]', param: 0.1 },
+  shengzhan4: { cls: 'warrior', text: '暴击率 +5%，暴击伤害 ×1.5 [适配]', param: 0.05 },
+  fashen4: { cls: 'mage', text: '技能魔法消耗 -10% [适配]', param: 0.1 },
+  tianzun4: { cls: 'taoist', text: '召唤物伤害 +10%，治疗量 +10% [适配]', param: 0.1 },
 };
 // D4：三圣 2 件 主属性+12；4 件 再 主属性+12 + 生命250 防御10 幸运1 + 职业特效
 for (const s of CLASS_SETS) { const m = { warrior: 'atk', mage: 'mag', taoist: 'tao' }[s.cls] as 'atk' | 'mag' | 'tao', sp = s.id + '4';

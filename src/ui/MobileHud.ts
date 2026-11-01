@@ -200,7 +200,7 @@ export class MobileHud {
       const max = w.skills[s.i]?.cooldown ?? 0, c = cds[s.i] ?? 0;
       if (max && c > 0) { const deg = 360 * Math.min(1, c / max); s.cd.style.background = `conic-gradient(from ${360 - deg}deg, rgba(0,0,0,.62) 0 ${deg}deg, transparent ${deg}deg)`; s.t.textContent = c >= 0.5 ? fmtInt(c) : ''; }
       else { s.cd.style.background = ''; s.t.textContent = ''; }
-      s.el.style.opacity = (h && (h.mp ?? 0) < (w.skills[s.i]?.mana ?? 0)) ? '0.5' : '1';
+      s.el.style.opacity = (h && (h.mp ?? 0) < (w.skills[s.i] ? w.manaCost(w.skills[s.i]) : 0)) ? '0.5' : '1';
     });
     // 拾取飞入动画的目标：手机为「角色」图标（换算成 1280×720 逻辑坐标）
     const bag = this.root.querySelector('[data-id="bag"]') as HTMLElement, cv = this.b.game.canvas.getBoundingClientRect();
