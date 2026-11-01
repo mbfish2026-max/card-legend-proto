@@ -5,6 +5,7 @@
 - D7 调率（只在副本击杀生效）：赤月恶魔 setChance 1→0.15，魔龙战神系 1/30→1/60；World.dungeons 开关，sim 关闭，9 seed 不变；凑齐一套中位 22–29 次。存档 dungeonRuns/dungeonFirst，旧档兼容。
 - 命运之刃复核：官方为任务奖励，暂留祖玛 1/60 [适配]。docs/eg-dungeon.md；tests/eg-dungeon.test.ts。
 
+- 验收：npm test 全量 EXIT 0（eg-dungeon 全过，D7 中位 22–29 次）；tsc/build 通过；Chromium 1280×720/844×390 进入赤月魔穴提示「今日剩余 2/3 次｜首通…」无报错，截图 docs/shots/eg-dungeon/。
 ## P2 eg-sets（feat/eg-sets）
 - 新增 40–50 级 40 件装备（eg-equip.ts，图标用美术 E4 eq_<id> 64/128，id 恒等）；雷霆/烈焰/光芒、战神/圣魔/真魂 6 套；三圣 4 件档 + 职业特效接口 setSpecials()。
 - 掉落 EG_DROPS（E1 ÷40，≤1/8，全部 ≥40 级层）；天尊进合击 BOSS；set_zuma/set_chiyue 停掉落、旧档保留。
