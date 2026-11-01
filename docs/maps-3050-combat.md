@@ -87,3 +87,18 @@
 
 影响说明：sim 主路径 FLOOR_ORDER（src/data/world.ts）不含 52（石墓七层）、78（禁地·魔穴）和 82（恶魔祭坛）这三层。所以禁地魔王 immobile 和双 BOSS 按 id 冷却都不改变 sim 结果。PASS_MAX_DEATHS=14 没有放宽，战士中位 20 与 main 相同，是 main 现状。
 5. 手机横屏截图 m3050-mob-3-thunder.png 已人工看过。问题有两个：截图没拍到明显的雷击特效；e2e 在蜘蛛晶洞临时刷怪时，闪电魔、利爪魔和幽影武士的卡面显示成灰剪影，可能是按层懒加载、贴图没预载。**这两项未验证**，需要在 52/82 层实机确认。
+
+### 7.1 剪影与雷击特效排查（18:14 起）
+- **剪影，结论 A（测试问题）**：
+  - 4 张立绘都在 public/assets/portraits，dist 里也有对应 webp，ASSETS 已登记（8f30b04），所以不是 C。
+  - 幽影武士、烈焰使、闪电魔、利爪魔 BOSS **还没放进任何楼层**（黑暗轮回地图侧 C6 未入库，52/82 层刷的是别的 BOSS）。大立绘只在 floorKeys 里按层预载，后台队列又排在所有楼层之后，e2e 临时刷怪时贴图还没加载，就显示成剪影。
+  - 有真实路径的禁地魔王，按存档进 78 层「禁地·魔穴」后立绘正常（m3050-real-78-jindi.png）。
+  - e2e 改成刷怪前先插队加载这些立绘、等纹理就绪，重截后卡面正常。
+  - 以后把这几只怪放进楼层时，floorKeys 会自动预载，不用改代码。
+- **雷击特效，真接入 bug（已修）**：
+  - World 发的是 `attack` 事件，带 `skill:'thunder'`；而 combatAnim 遇到带 skill 的事件直接返回 null，BattleScene 的雷击分支永远走不到，也没有出手动画。
+  - 另外 'thunder' 和主角技能雷电术撞名。
+  - 改为 `skill:'foe_thunder'`，combatAnim 放行。加了单测（36 项通过）；e2e 统计 fx_thunder_strike 精灵数并断言 >0，手机实测 6 次。
+  - 只改表现层，不动战斗数值。
+- 回归：tsc 和 build 通过；全量 npm test EXIT=0（3119 行 ok）；四个 e2e 串行全过；maps-3050-combat-verify 桌面版和手机版 errs=[]，exit 0。
+- 剩余说明：雷击图集 fx_thunder_strike 在后台加载队列的最后（排在所有图片之后），刚开局时可能还没加载，这时会回退成 Graphics 闪电（原有机制）。
