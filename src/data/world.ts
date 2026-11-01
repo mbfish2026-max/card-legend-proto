@@ -34,7 +34,7 @@ export const WORLD = {
   legacyDefFactor: 0.6, legacyDmgFloor: 0.2,
   /** 等级差修正（balance-plan B [适配]，官方公式未查到）：怪物每高主角 1 级伤害 +3%；每低 1 级 −2%，下限 −30% */
   /** BOSS 调整（balance-plan I [适配]，官方数值未查到）：首图豁免 */
-  summonHpMul: 0.3, summonAtkMul: 0.3, summonNerfLv: 15, summonNerfFullLv: 25, // feat/balance-battle：道士召唤物血/攻倍率，人物 15 级起线性降到 25 级的 ×0.3（避免断崖） [适配]
+  summonHpMul: 0.3, summonAtkMul: 0.3, summonNerfLv: 11, summonNerfFullLv: 25, // feat/balance-battle：道士召唤物血/攻倍率，人物 15 级起线性降到 25 级的 ×0.3（避免断崖） [适配]
   bossAtkEarly: 0.6, bossAtkMid: 1.5, /* balance-battle2 W：1.12→1.5 [适配] */  bossAtkLate: 1.15, bossEarlyLv: 15, bossMidLv: 30,
   bossAtkVsNormal: 1.6, bossHpVsNormal: 4, bossAtkInterval: 1.2,
   bossMechMinLv: 31,          // 主线 BOSS 通用机制起始层目标等级（早期层只保留攻速）[适配]
