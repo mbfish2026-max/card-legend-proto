@@ -128,5 +128,6 @@ export const foeStatsAt = (id: string, f: number): { level: number; hp: number; 
   const avg = (k: 'hp' | 'atk') => ns.reduce((a, x) => a + x[k], 0) / Math.max(1, ns.length);
   // 21–30 死亡压力（怪物侧）[适配]：该段普通怪攻 ×1.15；尸王殿(5) 为战士断崖层，普通怪 ×0.85、BOSS 攻 ×0.7 血 ×0.8（9 种子 sim-band 校准，见 docs/exp-curve.md）
   const L = FLOOR_TARGET_LV[f], pa = f === 5 ? 0.85 : L >= 21 && L <= 30 ? 1.15 : 1;
-  return { level, hp: Math.round(s.hp * FOE_BAND.hp[fb(L)] * ratio(d.hp, avg('hp'))), atk: Math.round(s.atk * pa * FOE_BAND.atk[fb(L)] * ratio(d.atk, avg('atk'))), def: s.def };
+  // balance-battle2：尸王殿(5) 不吃段血量加成，保持 BOSS 血 >2 倍小怪（tests/drop-plan 不变式）[适配]
+  return { level, hp: Math.round(s.hp * (f === 5 ? 1 : FOE_BAND.hp[fb(L)]) * ratio(d.hp, avg('hp'))), atk: Math.round(s.atk * pa * FOE_BAND.atk[fb(L)] * ratio(d.atk, avg('atk'))), def: s.def };
 };
