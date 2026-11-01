@@ -1,4 +1,4 @@
--- 卡牌传奇 云存档 + 灵符账本（schema fcl）。只建 fcl.*，不改 public（idle-arpg 的 saves/profiles 不受影响）
+-- 卡牌传奇 云存档 + 灵符账本（schema fcl）。只建 fcl.*，不改 public（独立项目，表统一放 fcl 便于迁移）
 -- 执行：Supabase 控制台 → SQL Editor → 粘贴全文 → Run。可重复执行（IF NOT EXISTS / OR REPLACE）
 create schema if not exists fcl;
 grant usage on schema fcl to anon, authenticated, service_role;
@@ -65,7 +65,7 @@ begin
   end if;
   return new;
 exception when others then
-  -- auth.users 与 idle-arpg 共用：本触发器出错绝不能阻断任何注册（缺的账号行由客户端首次登录时报错提示，管理员补）
+  -- 本触发器出错绝不能阻断任何注册（缺的账号行由客户端首次登录时报错提示，管理员补）
   raise warning 'fcl.on_signup failed: %', sqlerrm; return new;
 end $$;
 drop trigger if exists fcl_on_signup on auth.users;
