@@ -3,7 +3,7 @@ declare const process: { env: Record<string, string | undefined> };
 // @ts-ignore tsconfig 无 node 类型（运行于 tsx）
 import { appendFileSync } from 'node:fs';
 import { World } from '../src/combat/World';
-import { GEAR_SWAP, gearTick } from './sim-gear';
+import { GEAR_SWAP, gearTick, gearEnd } from './sim-gear';
 import { FLOORS } from '../src/data/world';
 import { CLASSES, ClassId } from '../src/data/classes';
 import { ITEMS } from '../src/data/items';
@@ -133,6 +133,7 @@ export const simRun = (c: ClassId, seed: number, maxT = SIM_MAX_T) => {
     }
     if (process.env.HJ_STATS) console.log(`   HJ ${c} 种子${seed}: lv≥40 时长 ${Math.round(hjT)}s 英雄在场 ${Math.round(hjOut)}s 合击 ${hjCombo} 次 英雄伤害占比 ${(100 * hjHeroDmg / Math.max(1, hjHeroDmg + hjAllDmg)).toFixed(1)}% 英雄等级 ${w.companion?.level ?? "-"} Lv≥40后死亡 ${learnLog.filter(x => /死@.*Lv(\d+)/.test(x) && +x.match(/Lv(\d+)/)![1] >= 40).length}`);
     if (process.env.DIAG) console.log('DIAG', c, seed, JSON.stringify(dg));
+    gearEnd(w, c, seed); // feat/sim-gear-swap（只读）
     return { potGold, goldAt40, freeDeaths, costDeaths, gearAt, lvK, lvT, lvVK, lvVT, deaths: w.deaths, done: w.done, potUsed, t, level: w.level, learnLog, deathAt, floorLv, kills, killT, virtKills, virtT, firstClear };
   };
 export const median = (a: number[]) => { const b = [...a].sort((x, y) => x - y); return b[(b.length - 1) >> 1] / 2 + b[b.length >> 1] / 2; };

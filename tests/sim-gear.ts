@@ -22,7 +22,10 @@ export function gearScore(w: any, it: any): number {
   if (it.stats?.mdef === undefined && w.itemMdef) s += wt.mdef * w.itemMdef(it);
   return s + wt.luck * (it.luck ?? 0);
 }
-const ok = (w: any, it: any) => { if (!it?.slot || it.req > w.level) return false; const cl = ITEMS[it.item]?.cls; return !(cl?.length && !cl.includes(w.cls)); };
+// 职业：ITEMS.cls 有值按 cls；无 cls 的件按「主属性归属」——别职业主属性之和 > 本职业主属性 即视为他职业件不穿（如战士不穿魔法长袍 mag6、法师不穿灵魂战衣 tao6）
+const MAIN: Record<string, string> = { warrior: 'atk', mage: 'mag', taoist: 'tao' }, OTHER: Record<string, string[]> = { warrior: ['mag', 'tao'], mage: ['tao'], taoist: ['mag'] };
+export const foreign = (cls: string, it: any) => { const cl = ITEMS[it.item]?.cls; if (cl?.length) return !cl.includes(cls); const s = it.stats ?? {}; return (OTHER[cls] ?? []).reduce((a, k) => a + (s[k] ?? 0), 0) > (s[MAIN[cls]] ?? 0); };
+const ok = (w: any, it: any) => !!it?.slot && it.req <= w.level && !foreign(w.cls, it);
 const st = new WeakMap<any, { sig: string; dumped: Set<number> }>();
 export function gearTick(w: any, cls: string, seed: number, swap = GEAR_SWAP) {
   let m = st.get(w); if (!m) { m = { sig: '', dumped: new Set() }; st.set(w, m); }
@@ -38,6 +41,11 @@ export function gearTick(w: any, cls: string, seed: number, swap = GEAR_SWAP) {
       if (!best) break; if (w.equipItem(best[2], best[1])) break; }
     m.sig = w.level + ':' + w.bag.map((x: any) => x.uid).join(',');
   }
-  if (DUMP && [40, 45, 50].includes(w.level) && !m.dumped.has(w.level)) { m.dumped.add(w.level);
-    appendFileSync(DUMP, JSON.stringify({ cls, seed, lv: w.level, swap: GEAR_SWAP, equip: Object.fromEntries(Object.entries(w.equip).filter(([, v]) => v).map(([k, v]: any) => [k, `${v.name}(${v.item},req${v.req})`])) }) + '\n'); }
+  if (DUMP && [40, 45, 50].includes(w.level) && !m.dumped.has(w.level)) { m.dumped.add(w.level); dump(w, cls, seed, w.level); }
 }
+function dump(w: any, cls: string, seed: number, lv: number | string) {
+  const nm = (v: any) => `${v.name}(${v.item},req${v.req})`;
+  appendFileSync(DUMP, JSON.stringify({ cls, seed, lv, swap: GEAR_SWAP, equip: Object.fromEntries(Object.entries(w.equip).filter(([, v]) => v).map(([k, v]: any) => [k, nm(v)])),
+    bag40: w.bag.filter((x: any) => x.slot && x.req >= 35).map(nm) }) + '\n'); }
+/** sim 结束时（通关即 Lv50 后循环退出，tick 里拿不到 Lv50）再记一次，lv 记 'end@等级' */
+export function gearEnd(w: any, cls: string, seed: number) { if (DUMP) dump(w, cls, seed, 'end@' + w.level); }
