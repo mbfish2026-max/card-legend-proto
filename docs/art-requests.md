@@ -1449,3 +1449,55 @@ public/assets/ui/UI-Tooltip-Border.png
 - 三批真图已接入游戏（assets-manifest WM_ASSETS，按需加载）；节点坐标按 W-1/W-2/W-3 锚点回填。
 - 无锚点、手工放置 [适配] 的节点：bichi_xinshou、bichi_newbie、rift_58、sq_jiguan 群、bichi_to_woma、bichi_to_dushe、sq_snake 群、rift_66、rift_67、hj_town；其余未列锚点的节点按旧 0–1 比例换算（[适配]）。
 - 东北角紫雾浮岛仅装饰；出口用 icon_wm_portal；无需新增美术。
+
+## E4. 40–50 级装备图标（art/equip-40-50 分支交付）
+
+清单依据 origin/feat/equip-3050 的 docs/art-requests.md 第 E3 章和 equip-3050-plan.md §3（共 40 个 id）。规格跟现有物品图标一致：public/assets/items/eq_<id>.png 64×64 透明，另有 eq_<id>@2x.png 128×128 透明。
+
+| id | 中文名 | 部位 | 文件 | 尺寸 | 对应原作装备 | 外观 | 是否推测 |
+|---|---|---|---|---|---|---|---|
+| nuzhan | 怒斩 | 武器 | eq_nuzhan.png / eq_nuzhan@2x.png | 64×64 / 128×128 透明 | 热血传奇「怒斩」 | 血红锯齿宽刃大剑，金龙护手 | 推测 |
+| longya | 龙牙 | 武器 | eq_longya.png / eq_longya@2x.png | 64×64 / 128×128 透明 | 热血传奇「龙牙」 | 象牙色弯月龙牙刃，翡翠金柄，蓝色灵光 | 推测 |
+| xiaoyao_fan | 逍遥扇 | 武器 | eq_xiaoyao_fan.png / eq_xiaoyao_fan@2x.png | 64×64 / 128×128 透明 | 热血传奇「逍遥扇」 | 金骨白蓝绢折扇，翡翠坠白穗 | 推测 |
+| shihun_staff | 嗜魂法杖 | 武器 | eq_shihun_staff.png / eq_shihun_staff@2x.png | 64×64 / 128×128 透明 | 热血传奇「嗜魂法杖」 | 黑木扭杖，骨爪托紫色魂晶 | 推测 |
+| mingyun_blade | 命运之刃 | 武器 | eq_mingyun_blade.png / eq_mingyun_blade@2x.png | 64×64 / 128×128 透明 | 热血传奇「命运之刃」 | 银白直长剑，星蓝宝石剑首 | 推测 |
+| bazhe_blade | 霸者之刃 | 武器 | eq_bazhe_blade.png / eq_bazhe_blade@2x.png | 64×64 / 128×128 透明 | 热血传奇「霸者之刃」 | 黑金宽弯刀，金虎头护手，红柄 | 推测 |
+| kaitian | 开天 | 武器 | eq_kaitian.png / eq_kaitian@2x.png | 64×64 / 128×128 透明 | 热血传奇「开天」 | 巨型双手大刀，熔金裂纹橙光 | 推测 |
+| zhentian | 镇天 | 武器 | eq_zhentian.png / eq_zhentian@2x.png | 64×64 / 128×128 透明 | 热血传奇「镇天」 | 银杖顶新月环托蓝色法球 | 推测 |
+| xuantian | 玄天 | 武器 | eq_xuantian.png / eq_xuantian@2x.png | 64×64 / 128×128 透明 | 热血传奇「玄天」 | 青色云纹剑身，白玉云形护手，黑白穗 | 推测 |
+| tianmo_armor | 天魔神甲 | 衣服 | eq_tianmo_armor.png / eq_tianmo_armor@2x.png | 64×64 / 128×128 透明 | 热血传奇「天魔神甲」 | 黑钢金边重甲，骷髅角肩，胸嵌红宝石 | 推测 |
+| fashen_cape | 法神披风 | 衣服 | eq_fashen_cape.png / eq_fashen_cape@2x.png | 64×64 / 128×128 透明 | 热血传奇「法神披风」 | 深蓝丝绒金绣披风，绿宝石扣 | 推测 |
+| tianzun_robe | 天尊道袍 | 衣服 | eq_tianzun_robe.png / eq_tianzun_robe@2x.png | 64×64 / 128×128 透明 | 热血传奇「天尊道袍」 | 白金宽袖道袍，绿腰带，金鹤纹 | 推测 |
+| leiting_armor | 雷霆战甲 | 衣服 | eq_leiting_armor.png / eq_leiting_armor@2x.png | 64×64 / 128×128 透明 | 热血传奇「雷霆战甲」 | 银蓝雷纹板甲，翼肩，蓝色电弧 | 推测 |
+| lieyan_robe | 烈焰魔衣 | 衣服 | eq_lieyan_robe.png / eq_lieyan_robe@2x.png | 64×64 / 128×128 透明 | 热血传奇「烈焰魔衣」 | 橙金火焰长袍，火焰缭绕 | 推测 |
+| guangmang_robe | 光芒道袍 | 衣服 | eq_guangmang_robe.png / eq_guangmang_robe@2x.png | 64×64 / 128×128 透明 | 热血传奇「光芒道袍」 | 淡金象牙道袍，领后日轮光环，珍珠串 | 推测 |
+| fengtian_armor | 凤天魔甲 | 衣服 | eq_fengtian_armor.png / eq_fengtian_armor@2x.png | 64×64 / 128×128 透明 | 热血传奇「凤天魔甲」 | 翠绿金鳞甲，凤首胸饰与凤羽 | 推测 |
+| shenglong_helm | 圣龙盔 | 头盔 | eq_shenglong_helm.png / eq_shenglong_helm@2x.png | 64×64 / 128×128 透明 | 热血传奇「圣龙盔」 | 金色全盔，顶部金龙，白金双翼 | 推测 |
+| molong_helm | 魔龙盔 | 头盔 | eq_molong_helm.png / eq_molong_helm@2x.png | 64×64 / 128×128 透明 | 热血传奇「魔龙盔」 | 暗紫黑钢盔，黑色弯龙角，额嵌紫晶 | 推测 |
+| tianlong_helm | 天龙盔 | 头盔 | eq_tianlong_helm.png / eq_tianlong_helm@2x.png | 64×64 / 128×128 透明 | 热血传奇「天龙盔」 | 玉白银盔，顶缠青龙，云纹侧翼，额嵌绿松石 | 推测 |
+| leiting_necklace | 雷霆项链 | 项链 | eq_leiting_necklace.png / eq_leiting_necklace@2x.png | 64×64 / 128×128 透明 | 热血传奇「雷霆项链」 | 银链，翼形银框托蓝色闪电晶石 | 推测 |
+| leiting_bracelet | 雷霆护腕 | 手镯 | eq_leiting_bracelet.png / eq_leiting_bracelet@2x.png | 64×64 / 128×128 透明 | 热血传奇「雷霆护腕」 | 银钢护腕，蓝色雷纹与电弧，蓝宝石 | 推测 |
+| leiting_ring | 雷霆战戒 | 戒指 | eq_leiting_ring.png / eq_leiting_ring@2x.png | 64×64 / 128×128 透明 | 热血传奇「雷霆战戒」 | 粗银戒，闪电爪托蓝色宝石 | 推测 |
+| leiting_boots | 雷霆战靴 | 靴子 | eq_leiting_boots.png / eq_leiting_boots@2x.png | 64×64 / 128×128 透明 | 热血传奇「雷霆战靴」 | 银钢战靴，蓝色雷纹，踝部小银翼 | 推测 |
+| lieyan_necklace | 烈焰项链 | 项链 | eq_lieyan_necklace.png / eq_lieyan_necklace@2x.png | 64×64 / 128×128 透明 | 热血传奇「烈焰项链」 | 金链，金框托水滴形火红宝石，火焰环绕 | 推测 |
+| lieyan_bracelet | 烈焰护腕 | 手镯 | eq_lieyan_bracelet.png / eq_lieyan_bracelet@2x.png | 64×64 / 128×128 透明 | 热血传奇「烈焰护腕」 | 赤红漆甲护腕，金色火焰纹，橙色宝石 | 推测 |
+| lieyan_ring | 烈焰魔戒 | 戒指 | eq_lieyan_ring.png / eq_lieyan_ring@2x.png | 64×64 / 128×128 透明 | 热血传奇「烈焰魔戒」 | 金戒托圆形火欧泊，火焰升腾 | 推测 |
+| lieyan_boots | 烈焰魔靴 | 靴子 | eq_lieyan_boots.png / eq_lieyan_boots@2x.png | 64×64 / 128×128 透明 | 热血传奇「烈焰魔靴」 | 赤红皮金饰法靴，火焰纹靴口，踝部橙宝石 | 推测 |
+| guangmang_necklace | 光芒项链 | 项链 | eq_guangmang_necklace.png / eq_guangmang_necklace@2x.png | 64×64 / 128×128 透明 | 热血传奇「光芒项链」 | 珍珠金链，金色日轮吊坠，中心白钻发光 | 推测 |
+| guangmang_bracelet | 光芒护腕 | 手镯 | eq_guangmang_bracelet.png / eq_guangmang_bracelet@2x.png | 64×64 / 128×128 透明 | 热血传奇「光芒护腕」 | 象牙白金护腕，日芒纹，白珍珠 | 推测 |
+| guangmang_ring | 光芒道戒 | 戒指 | eq_guangmang_ring.png / eq_guangmang_ring@2x.png | 64×64 / 128×128 透明 | 热血传奇「光芒道戒」 | 金戒，日芒托淡黄黄晶 | 推测 |
+| guangmang_boots | 光芒道靴 | 靴子 | eq_guangmang_boots.png / eq_guangmang_boots@2x.png | 64×64 / 128×128 透明 | 热血传奇「光芒道靴」 | 象牙白布金边道靴，日芒金饰托珍珠 | 推测 |
+| zhanshen_necklace | 战神项链 | 项链 | eq_zhanshen_necklace.png / eq_zhanshen_necklace@2x.png | 64×64 / 128×128 透明 | 热血传奇「战神项链」 | 暗铜金链，交叉战斧盾形吊坠嵌深红石榴石 | 推测 |
+| zhanshen_bracelet | 战神手镯 | 手镯 | eq_zhanshen_bracelet.png / eq_zhanshen_bracelet@2x.png | 64×64 / 128×128 透明 | 热血传奇「战神手镯」 | 粗暗铜手镯，金刺，三颗深红石榴石 | 推测 |
+| zhanshen_ring | 战神戒指 | 戒指 | eq_zhanshen_ring.png / eq_zhanshen_ring@2x.png | 64×64 / 128×128 透明 | 热血传奇「战神戒指」 | 暗铜金戒，金狮头衔深红石榴石 | 推测 |
+| shengmo_necklace | 圣魔项链 | 项链 | eq_shengmo_necklace.png / eq_shengmo_necklace@2x.png | 64×64 / 128×128 透明 | 热血传奇「圣魔项链」 | 黑银链，一侧白羽翼一侧黑蝠翼，托紫水晶 | 推测 |
+| shengmo_bracelet | 圣魔手镯 | 手镯 | eq_shengmo_bracelet.png / eq_shengmo_bracelet@2x.png | 64×64 / 128×128 透明 | 热血传奇「圣魔手镯」 | 银黑双股扭绞手镯，紫晶与小白钻，紫雾 | 推测 |
+| shengmo_ring | 圣魔戒指 | 戒指 | eq_shengmo_ring.png / eq_shengmo_ring@2x.png | 64×64 / 128×128 透明 | 热血传奇「圣魔戒指」 | 黑银戒，白翼黑翼夹大紫水晶 | 推测 |
+| zhenhun_necklace | 真魂项链 | 项链 | eq_zhenhun_necklace.png / eq_zhenhun_necklace@2x.png | 64×64 / 128×128 透明 | 热血传奇「真魂项链」 | 铂金细链，冰蓝魂晶吊坠，银环环绕，灵气缭绕 | 推测 |
+| zhenhun_bracelet | 真魂手镯 | 手镯 | eq_zhenhun_bracelet.png / eq_zhenhun_bracelet@2x.png | 64×64 / 128×128 透明 | 热血传奇「真魂手镯」 | 铂金细手镯，云纹，三颗冰蓝月光石 | 推测 |
+| zhenhun_ring | 真魂戒指 | 戒指 | eq_zhenhun_ring.png / eq_zhenhun_ring@2x.png | 64×64 / 128×128 透明 | 热血传奇「真魂戒指」 | 铂金戒，银莲花托冰蓝月光石 | 推测 |
+
+- 「是否推测」：原作图标的具体外观没有逐件查证（未查到），所以这里的造型、配色都是按名称和职业原创推测的，没有描摹原作或其他游戏素材，图里没有文字和符号。
+- 比 35 级以下的图标更华丽：金属雕花、宝石和光效更多。每件的造型和配色都不一样，同一套的首饰共用一个主色调。
+- 男女款衣服按 plan 合并成一件，只做一个图标。
+- 预览：docs/art-gap-preview/equip_40_50.jpg（每格是放大的 128 版本，右下角是 64 原尺寸）。副本：/workspace/shared-gap/equip-40-50/。
