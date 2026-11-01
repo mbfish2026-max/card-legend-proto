@@ -1479,6 +1479,23 @@ public/assets/ui/UI-Tooltip-Border.png
 | leiting_bracelet | 雷霆护腕 | 手镯 | eq_leiting_bracelet.png / eq_leiting_bracelet@2x.png | 64×64 / 128×128 透明 | 热血传奇「雷霆护腕」 | 银钢护腕，蓝色雷纹与电弧，蓝宝石 | 推测 |
 | leiting_ring | 雷霆战戒 | 戒指 | eq_leiting_ring.png / eq_leiting_ring@2x.png | 64×64 / 128×128 透明 | 热血传奇「雷霆战戒」 | 粗银戒，闪电爪托蓝色宝石 | 推测 |
 | leiting_boots | 雷霆战靴 | 靴子 | eq_leiting_boots.png / eq_leiting_boots@2x.png | 64×64 / 128×128 透明 | 热血传奇「雷霆战靴」 | 银钢战靴，蓝色雷纹，踝部小银翼 | 推测 |
+| lieyan_necklace | 烈焰项链 | 项链 | eq_lieyan_necklace.png / eq_lieyan_necklace@2x.png | 64×64 / 128×128 透明 | 热血传奇「烈焰项链」 | 金链，金框托水滴形火红宝石，火焰环绕 | 推测 |
+| lieyan_bracelet | 烈焰护腕 | 手镯 | eq_lieyan_bracelet.png / eq_lieyan_bracelet@2x.png | 64×64 / 128×128 透明 | 热血传奇「烈焰护腕」 | 赤红漆甲护腕，金色火焰纹，橙色宝石 | 推测 |
+| lieyan_ring | 烈焰魔戒 | 戒指 | eq_lieyan_ring.png / eq_lieyan_ring@2x.png | 64×64 / 128×128 透明 | 热血传奇「烈焰魔戒」 | 金戒托圆形火欧泊，火焰升腾 | 推测 |
+| lieyan_boots | 烈焰魔靴 | 靴子 | eq_lieyan_boots.png / eq_lieyan_boots@2x.png | 64×64 / 128×128 透明 | 热血传奇「烈焰魔靴」 | 赤红皮金饰法靴，火焰纹靴口，踝部橙宝石 | 推测 |
+| guangmang_necklace | 光芒项链 | 项链 | eq_guangmang_necklace.png / eq_guangmang_necklace@2x.png | 64×64 / 128×128 透明 | 热血传奇「光芒项链」 | 珍珠金链，金色日轮吊坠，中心白钻发光 | 推测 |
+| guangmang_bracelet | 光芒护腕 | 手镯 | eq_guangmang_bracelet.png / eq_guangmang_bracelet@2x.png | 64×64 / 128×128 透明 | 热血传奇「光芒护腕」 | 象牙白金护腕，日芒纹，白珍珠 | 推测 |
+| guangmang_ring | 光芒道戒 | 戒指 | eq_guangmang_ring.png / eq_guangmang_ring@2x.png | 64×64 / 128×128 透明 | 热血传奇「光芒道戒」 | 金戒，日芒托淡黄黄晶 | 推测 |
+| guangmang_boots | 光芒道靴 | 靴子 | eq_guangmang_boots.png / eq_guangmang_boots@2x.png | 64×64 / 128×128 透明 | 热血传奇「光芒道靴」 | 象牙白布金边道靴，日芒金饰托珍珠 | 推测 |
+| zhanshen_necklace | 战神项链 | 项链 | eq_zhanshen_necklace.png / eq_zhanshen_necklace@2x.png | 64×64 / 128×128 透明 | 热血传奇「战神项链」 | 暗铜金链，交叉战斧盾形吊坠嵌深红石榴石 | 推测 |
+| zhanshen_bracelet | 战神手镯 | 手镯 | eq_zhanshen_bracelet.png / eq_zhanshen_bracelet@2x.png | 64×64 / 128×128 透明 | 热血传奇「战神手镯」 | 粗暗铜手镯，金刺，三颗深红石榴石 | 推测 |
+| zhanshen_ring | 战神戒指 | 戒指 | eq_zhanshen_ring.png / eq_zhanshen_ring@2x.png | 64×64 / 128×128 透明 | 热血传奇「战神戒指」 | 暗铜金戒，金狮头衔深红石榴石 | 推测 |
+| shengmo_necklace | 圣魔项链 | 项链 | eq_shengmo_necklace.png / eq_shengmo_necklace@2x.png | 64×64 / 128×128 透明 | 热血传奇「圣魔项链」 | 黑银链，一侧白羽翼一侧黑蝠翼，托紫水晶 | 推测 |
+| shengmo_bracelet | 圣魔手镯 | 手镯 | eq_shengmo_bracelet.png / eq_shengmo_bracelet@2x.png | 64×64 / 128×128 透明 | 热血传奇「圣魔手镯」 | 银黑双股扭绞手镯，紫晶与小白钻，紫雾 | 推测 |
+| shengmo_ring | 圣魔戒指 | 戒指 | eq_shengmo_ring.png / eq_shengmo_ring@2x.png | 64×64 / 128×128 透明 | 热血传奇「圣魔戒指」 | 黑银戒，白翼黑翼夹大紫水晶 | 推测 |
+| zhenhun_necklace | 真魂项链 | 项链 | eq_zhenhun_necklace.png / eq_zhenhun_necklace@2x.png | 64×64 / 128×128 透明 | 热血传奇「真魂项链」 | 铂金细链，冰蓝魂晶吊坠，银环环绕，灵气缭绕 | 推测 |
+| zhenhun_bracelet | 真魂手镯 | 手镯 | eq_zhenhun_bracelet.png / eq_zhenhun_bracelet@2x.png | 64×64 / 128×128 透明 | 热血传奇「真魂手镯」 | 铂金细手镯，云纹，三颗冰蓝月光石 | 推测 |
+| zhenhun_ring | 真魂戒指 | 戒指 | eq_zhenhun_ring.png / eq_zhenhun_ring@2x.png | 64×64 / 128×128 透明 | 热血传奇「真魂戒指」 | 铂金戒，银莲花托冰蓝月光石 | 推测 |
 
 - 「是否推测」：原作图标的具体外观没有逐件查证（未查到），所以这里的造型、配色都是按名称和职业原创推测的，没有描摹原作或其他游戏素材，图里没有文字和符号。
 - 比 35 级以下的图标更华丽：金属雕花、宝石和光效更多。每件的造型和配色都不一样，同一套的首饰共用一个主色调。
