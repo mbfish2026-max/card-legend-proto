@@ -6,6 +6,15 @@
 - r3 FOE_BAND.atk 41–50 1.05→0.97：41–50 段中位 战1/法1/道0（不足），整体中位 12/12/13
 - r4 FOE_BAND.atk 41–50 0.97→1.01：41–50 段中位 战2/法3/道1，整体中位 14/14/13
 - r5 FOE_BAND.atk 41–50 1.01→1.03：41–50 段中位 3/3/3，整体中位 17/14/13（战士按放宽 18），采用为终版
+## 手机版：装备对比面板点外部关闭 feat/mobile-tapclose
+- 手机（IS_MOBILE）角色/背包界面：点装备弹出「身上/查看中」对比面板后，点面板外空白处即关闭并取消选中。
+- 点面板内部不关；点其他装备格切换为对比该装备；按下到抬起移动 >8px（拖动/滚动）不算点击。
+- 桌面行为不变（不挂监听，仍是悬停显示、移出隐藏）。
+- 逻辑 src/ui/tapClose.ts，接线 Panel.tapOutside；测试 tests/tap-close.test.ts、tests/e2e/tapclose-verify.mjs。
+## P2 eg-sets（feat/eg-sets）
+- 新增 40–50 级 40 件装备（eg-equip.ts，图标用美术 E4 eq_<id> 64/128，id 恒等）；雷霆/烈焰/光芒、战神/圣魔/真魂 6 套；三圣 4 件档 + 职业特效接口 setSpecials()。
+- 掉落 EG_DROPS（E1 ÷40，≤1/8，全部 ≥40 级层）；天尊进合击 BOSS；set_zuma/set_chiyue 停掉落、旧档保留。
+- 修 equip-3050-plan 三行错表；docs/eg-sets.md；tests/eg-sets.test.ts（17 项）。
 
 
 ## 战斗平衡 balance-battle2 第三轮 [适配]

@@ -327,10 +327,10 @@ const free = (w: World) => w.skills.map(() => 0);
 { // 召唤物等级 [适配]：初始=技能等级(≤3)；主角+召唤物总击杀累计阈值升级，最高 7；名字带等级、蓝色逐级加深；重新召唤从初始等级重启
   const w = mk([{ id: 'orc', x: 3000 }], [], 'taoist', 30); const h = w.hero!; h.mp = h.maxMp = 9999;
   const k = idx(w, 'summon_skeleton'); w.cast(k, free(w)); const sm = w.summon!; const L0 = sm.sLv!;
-  ok(L0 === Math.min(3, w.skillLevel(w.skills[k])) && sm.name === `骷髅·${L0}级（道士）的宠物` && sm.nameColor === SUMMON_NAME_COLORS[L0], `初始等级=技能等级（${L0}），名字「${sm.name}」颜色 ${sm.nameColor}`);
+  ok(L0 === Math.min(3, w.skillLevel(w.skills[k])) && sm.name === `骷髅·${L0}级 道士的宠物` && sm.nameColor === SUMMON_NAME_COLORS[L0], `初始等级=技能等级（${L0}），名字「${sm.name}」颜色 ${sm.nameColor}`);
   const hp0 = sm.maxHp, atk0 = sm.atk; const colors = [sm.nameColor];
   for (let i = 0; i < 300; i++) { const e = w.spawn({ ...w.alive('enemy')[0] } as any, 'enemy', 2000, 0); w.kill(e); if (colors[colors.length - 1] !== sm.nameColor) colors.push(sm.nameColor); }
-  ok(sm.sLv === SUMMON_MAX_LV && sm.name === '骷髅·7级（道士）的宠物', `击杀 300 → 7 级封顶（${sm.name}）`);
+  ok(sm.sLv === SUMMON_MAX_LV && sm.name === '骷髅·7级 道士的宠物', `击杀 300 → 7 级封顶（${sm.name}）`);
   ok(sm.maxHp === Math.round(hp0 * 480 / SKELETON_OFFICIAL.hp[L0]) && sm.atk > atk0, `7 级属性按官方比例：HP ${hp0}→${sm.maxHp}，攻击 ${atk0}→${sm.atk}`);
   ok(colors.length === 8 - L0 && new Set(colors).size === colors.length, `每升一级换色：${colors.join(' ')}`);
   w.kill(sm); w.cast(k, free(w)); const s2 = w.summon!; ok(s2.sLv === L0 && s2.sKills === 0, '重新召唤从技能等级对应初始等级重启（不继承 7 级）');
@@ -338,7 +338,7 @@ const free = (w: World) => w.skills.map(() => 0);
   for (let i = 0; i < 9; i++) w0.kill(w0.spawn({ ...w0.alive('enemy')[0] } as any, 'enemy', 2000, 0)); const a = z.sLv; w0.kill(w0.spawn({ ...w0.alive('enemy')[0] } as any, 'enemy', 2000, 0));
   ok(z.sBase!.start === 0 && a === 0 && z.sLv === 1, `技能 0 级召出 0 级（白名），召出后第 10 次击杀升 1 级（${a}→${z.sLv}）`);
   for (const n of [1, 2, 3]) { const wn = mk([{ id: 'orc', x: 3000 }], [], 'taoist', 30); (wn as any).skillLevel = () => n; const kk = idx(wn, 'summon_skeleton');
-    wn.cast(kk, free(wn)); const x = wn.summon!; ok(x.sLv === n && x.name === `骷髅·${n}级（道士）的宠物`, `技能 ${n} 级 → 召出 ${n} 级`);
+    wn.cast(kk, free(wn)); const x = wn.summon!; ok(x.sLv === n && x.name === `骷髅·${n}级 道士的宠物`, `技能 ${n} 级 → 召出 ${n} 级`);
     for (let i = 0; i < 300; i++) wn.kill(wn.spawn({ ...wn.alive('enemy')[0] } as any, 'enemy', 2000, 0)); ok(x.sLv === 7, `技能 ${n} 级召出后按总击杀成长到 7 级`);
     wn.kill(x); wn.cast(kk, free(wn)); ok(wn.summon!.sLv === n && wn.summon!.sKills === 0, `重新召唤重置为技能等级 ${n}（不继承 7 级）`); }
   ok(!('sLv' in (w.toSave() as any)) && !JSON.stringify(w.toSave()).includes('sKills'), '召唤物等级/击杀不存档');
@@ -662,10 +662,10 @@ const free = (w: World) => w.skills.map(() => 0);
   w.unequip('bracelet1'); ok(w.setBonuses().length === 1 && w.stats().def === base.def + 10, '卸下 1 件：3 件加成失效');
   const c = mk([], [], 'mage', 35); for (const id of SETS.chiyue.pieces) { /* balance-sys 阶段3：赤月套需求 35 */ c.bag.push(c.makeItem(id)); c.equipItem(c.bag.length - 1); }
   ok(c.luck() === 1, '赤月 3 件：幸运+1');
-  ok(Object.values(SETS).every(st => st.pieces.every(id => ENEMIES && (id.startsWith('set_') || /^(shengzhan|fashen|tianzun)_/.test(id)))), '套装物品 ID 规范');
-  for (const [bid, sid] of [['boss_woma', 'woma'], ['boss_zuma', 'zuma'], ['boss_redmoon', 'shengzhan']] as const) {
+  ok(Object.values(SETS).every(st => st.pieces.every(id => ENEMIES && (id.startsWith('set_') || /^(shengzhan|fashen|tianzun|leiting|lieyan|guangmang|zhanshen|shengmo|zhenhun)_/.test(id)))), '套装物品 ID 规范');
+  for (const [bid, sid, want] of [['boss_woma', 'woma', true], ['boss_zuma', 'zuma', false], ['boss_redmoon', 'shengzhan', true]] as const) { // D8：祖玛自创套停掉落（eg-sets）
     const t = mk([{ id: bid, x: 800 }]); t.kill(t.alive('enemy')[0]); const ids = t.ground.map(g => g.item);
-    ok(ids.some(i => SETS[sid].pieces.includes(i)), `${ENEMIES[bid].name} 掉落${SETS[sid].name}套装 1 件`); // 阶段4：祝福油改为高级 BOSS 1/8，见 balance-sys.test
+    ok(ids.some(i => SETS[sid].pieces.includes(i)) === want, `${ENEMIES[bid].name} ${want ? '掉落' : '不再掉落'}${SETS[sid].name}套装`); // 阶段4：祝福油改为高级 BOSS 1/8，见 balance-sys.test
   }
   { // R14 #13 赤月三职业套：按职业掉
     for (const [c, sid] of [['warrior', 'shengzhan'], ['mage', 'fashen'], ['taoist', 'tianzun']] as const) { const t = mk([{ id: 'boss_redmoon', x: 800 }], [], c, 40); t.kill(t.alive('enemy')[0]);

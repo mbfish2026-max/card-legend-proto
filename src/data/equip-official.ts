@@ -5,6 +5,7 @@
 // 本文件不依赖 items.ts（避免循环引用）；items.ts 合并 NEW_EQUIP 并给每件挂 EQUIP_META。
 import type { ItemDef } from '../combat/types';
 
+import { EG_META } from './eg-equip';
 export type Cls = 'warrior' | 'mage' | 'taoist';
 export const ALL_CLS: Cls[] = ['warrior', 'mage', 'taoist'];
 /** 官方需求类型：等级 / 攻击力 / 魔法力 / 精神力 */
@@ -12,7 +13,7 @@ export type NeedKind = 'level' | 'atk' | 'mag' | 'tao';
 export interface Need { kind: NeedKind; v: number }
 export type Range = [number, number];
 export interface OffStats { atk?: Range; mag?: Range; tao?: Range; def?: Range; mdef?: Range; extra?: string }
-export type Tier = 'base' | 'woma' | 'zuma' | 'chiyue';
+export type Tier = 'base' | 'woma' | 'zuma' | 'chiyue' | 'eg40';
 export interface EquipMeta {
   /** 官方对应物名；'自创' = 1.76 无此物品 */
   official: string;
@@ -26,7 +27,7 @@ export interface EquipMeta {
   cls?: Cls[];
   tier?: Tier;
   /** 'r18' = 沿用存量数值；'v1' = 本表按 [适配] 系数生成 */
-  origin: 'r18' | 'v1';
+  origin: 'r18' | 'v1' | 'eg';
   note?: string;
 }
 export const CQ = (n: number) => `https://www.21cq.com/mir/View.aspx?id=${n}`;
@@ -39,7 +40,7 @@ export const NEED_CN: Record<NeedKind, string> = { level: '等级', atk: '攻击
  * 需求等级 req（本作唯一门槛）：官方为等级需求 → 取官方值；为攻击力/魔法力/精神力 → 按档次 [适配]：沃玛 24、祖玛 30、赤月 35、黑铁头盔 30。
  */
 export const ADAPT = { atk: 2, mag: 4, tao: 4, def: 3, mdef: 3, hpPerDef: 8 } as const;
-export const TIER_REQ: Record<Exclude<Tier, 'base'>, number> = { woma: 24, zuma: 30, chiyue: 35 };
+export const TIER_REQ: Record<Exclude<Tier, 'base' | 'eg40'>, number> = { woma: 24, zuma: 30, chiyue: 35 };
 const mid = (r?: Range) => (r ? (r[0] + r[1]) / 2 : 0);
 /** [适配] 魔御 = 官方魔御区间中值 × 3，四舍五入 */
 export const adaptMdef = (o?: OffStats) => Math.round(mid(o?.mdef) * ADAPT.mdef);
@@ -150,7 +151,7 @@ const NEW: NewSpec[] = [
   { id: 'black_iron_helm', name: '黑铁头盔', slot: 'helmet', cq: 151, need: A(46), off: { def: [4, 5], mdef: [2, 3] }, tier: 'zuma', icon: 'assets/items/eq_black_iron_helm.png', price: 250 },
   { id: 'medium_armor', name: '中型盔甲', slot: 'armor', cq: 120, need: L(16), off: { def: [3, 5], mdef: [1, 2] }, tier: 'base', icon: 'assets/items/eq_medium_armor.png', price: 60 },
 ];
-const reqOf = (s: NewSpec) => s.need.kind === 'level' ? s.need.v : s.id === 'black_iron_helm' ? 30 : TIER_REQ[s.tier as Exclude<Tier, 'base'>];
+const reqOf = (s: NewSpec) => s.need.kind === 'level' ? s.need.v : s.id === 'black_iron_helm' ? 30 : TIER_REQ[s.tier as Exclude<Tier, 'base' | 'eg40'>];
 
 export const NEW_EQUIP: Record<string, ItemDef> = Object.fromEntries(NEW.map(s => [s.id,
   { id: s.id, name: s.name, icon: s.icon, slot: s.slot, equip: adapt(s.off), req: reqOf(s), price: s.price, cls: clsOf(s.need) } as ItemDef]));
@@ -158,6 +159,7 @@ export const NEW_EQUIP: Record<string, ItemDef> = Object.fromEntries(NEW.map(s =
 export const EQUIP_META: Record<string, EquipMeta> = {
   ...Object.fromEntries(Object.entries(OLD).map(([id, m]) => [id, { ...m, cls: m.cls ?? clsOf(m.need), origin: 'r18' as const }])),
   ...Object.fromEntries(NEW.map(s => [s.id, { official: s.name, cq: s.cq, need: s.need, off: s.off, cls: clsOf(s.need), tier: s.tier, origin: 'v1' as const }])),
+  ...EG_META,
 };
 /** 存量（R18 及以前）装备 id —— 旧存档里可能出现，必须永远有效 */
 export const LEGACY_EQUIP_IDS = Object.keys(OLD);

@@ -14,17 +14,17 @@ export function summonOwnerLabel(slotName: string | null | undefined, cls: strin
   const n = typeof slotName === 'string' ? slotName.trim() : '';
   return n || CLASS_LABEL[cls] || cls;
 }
-/** 名字两段：「骷髅·3级」+「（道士）的宠物」 */
+/** 名字两段：「骷髅·3级」+「道士的宠物」；单行时以一个空格连接：「骷髅·3级 道士的宠物」 */
 export function summonNameParts(base: string, lv: number, owner: string): [string, string] {
-  return [`${base}·${lv}级`, `（${owner}）的宠物`];
+  return [`${base}·${lv}级`, `${owner}的宠物`];
 }
-export function summonDisplayName(base: string, lv: number, owner: string): string { return summonNameParts(base, lv, owner).join(''); }
+export function summonDisplayName(base: string, lv: number, owner: string): string { return summonNameParts(base, lv, owner).join(' '); }
 
 export type Measure = (text: string, size: number) => number;
 export interface FitOpts { max: number; min: number; maxW: number }
-/** 名字自适应：先单行缩字号（max→min）；仍放不下则两行（名字/归属）再缩字号；仍超宽则逐行尾部截断加「…」（归属行截人名，保留「）的宠物」） */
+/** 名字自适应：先单行缩字号（max→min）；仍放不下则两行（名字/归属）再缩字号；仍超宽则逐行尾部截断加「…」（归属行截人名，保留「的宠物」） */
 export function fitSummonName(parts: [string, string], m: Measure, o: FitOpts): { lines: string[]; size: number } {
-  const one = parts.join('');
+  const one = parts.join(' ');
   for (let s = o.max; s >= o.min; s--) if (m(one, s) <= o.maxW) return { lines: [one], size: s };
   for (let s = o.max; s >= o.min; s--) if (parts.every(p => m(p, s) <= o.maxW)) return { lines: [...parts], size: s };
   const s = o.min, cut = (t: string, keepTail = '') => {
@@ -33,5 +33,5 @@ export function fitSummonName(parts: [string, string], m: Measure, o: FitOpts): 
     while (head.length > 1 && m(head + '…' + keepTail, s) > o.maxW) head = head.slice(0, -1);
     return head + '…' + keepTail;
   };
-  return { lines: [cut(parts[0]), cut(parts[1], '）的宠物')], size: s };
+  return { lines: [cut(parts[0]), cut(parts[1], '的宠物')], size: s };
 }
