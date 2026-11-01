@@ -1770,3 +1770,4 @@ public/assets/ui/UI-Tooltip-Border.png
 - 散装：强效金创药（大红瓶）、强效魔法药（大蓝瓶）、太阳水（金黄小瓶）、强效太阳水（金黄大瓶，带光晕）。
 - 捆（6 瓶捆在一起，用麻绳或布包，颜色和单瓶对应）：金创药(小)包、魔法药(小)包、金创药(中)包、魔法药(中)包、超级金创药、超级魔法药、太阳水包、强效太阳水包。
 - 共 12 张；文件名建议 `assets/items/pot_<key>.png`、`assets/items/bundle_<key>.png`。
+- **状态：已出图**（art/potion-icons，美术2）。public/assets/items/ 下 pot_hp_big / pot_mp_big / pot_sun / pot_sun_big；bundle_hp_small / bundle_mp_small / bundle_hp_mid / bundle_mp_mid / bundle_hp_big（超级金创药）/ bundle_mp_big（超级魔法药）/ bundle_sun / bundle_sun_big，均 64×64 透明 PNG，无 @2x。预览 docs/ui-preview/preview_potion_icons.jpg；脚本 docs/ui-preview/build_potion.py。区分：小包=麻绳捆、中包=布袋、超级=木箱、太阳水包=皮袋、强效太阳水包=红绣袋+金光。
