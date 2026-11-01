@@ -87,7 +87,7 @@ export class BattleScene extends Phaser.Scene {
     this.registry.set('fxCls', this.world.cls); this.registry.set('fxLearned', [...this.world.learned]);
     this.buildPortal(this.world.exitX); this.buildMerchant();
     const h = this.world.hero!;
-    this.views.set(h.uid, new CardView(this, h)); this.refreshHeroLook();
+    this.views.set(h.uid, new CardView(this, h)); this.refreshHeroLook(); this.snapSummonViews();
     this.cameras.main.setBounds(0, 0, W, 720).startFollow(this.views.get(h.uid)!, true, 0.12, 0.12, 0, 120).setDeadzone(320, 720);
     this.keys = this.input.keyboard!.addKeys('LEFT,RIGHT,UP,DOWN,A,D') as any;
     // F1~F4 技能：阻止浏览器默认行为（F1 帮助等）；不占用 F5 等其它功能键
@@ -173,7 +173,8 @@ export class BattleScene extends Phaser.Scene {
   street?: Phaser.GameObjects.Container; streetFar?: Phaser.GameObjects.TileSprite; streetHint?: Phaser.GameObjects.Text; townTarget: { x: number; id: string } | null = null;
   /** 城镇长街：背景（占位：bg_town_street_<id> 远/中/近三层未到时用单屏 bg_bichi_town 拼接+色块），店铺门面 + NPC 立绘，西端城门 */
   /** 换图后召唤物（含诱惑宠物）卡牌直接跳到新坐标（World.placeSummonsNearHero 已放到英雄身边），不做插值滑过来 */
-  snapSummonViews() { for (const u of this.world.units) if (u.summon && u.alive) { const v = this.views.get(u.uid); if (v) v.x = u.x + ((v as any).dispOff ?? 0); } }
+  snapSummonViews() { for (const u of this.world.units) if (u.summon && u.alive && !u.isHero) { let v = this.views.get(u.uid); if (!v) { v = new CardView(this, u); this.views.set(u.uid, v); } v.x = u.x + ((v as any).dispOff ?? 0); } }
+  // 读档恢复的召唤物（World.restoreSummons 不发 summon 事件）也在这里补建卡牌
   buildStreet(id: string) {
     this.clearStreet(); const t = TOWNS[id]; if (!t) return;
     for (const [uid, v] of [...this.views]) if (!v.unit.isHero && !v.unit.summon) { v.destroy(); this.views.delete(uid); }
