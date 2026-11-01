@@ -699,7 +699,7 @@ export class BattleScene extends Phaser.Scene {
     const ui = this.scene.get('UI');
     const dim = ui.add.rectangle(640, 300, 1280, 600, 0x300000, 0.5).setDepth(99);
     const t = ui.add.text(640, 260, '你 已 阵 亡', { fontFamily: FONT, fontSize: '64px', color: '#ff4444', fontStyle: 'bold', stroke: '#000', strokeThickness: 6 }).setOrigin(0.5).setDepth(100);
-    const t2 = ui.add.text(640, 330, '3 秒后在本层起点复活（无损失）', { fontFamily: FONT, fontSize: '20px', color: '#fff', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5).setDepth(100);
+    const t2 = ui.add.text(640, 330, `3 秒后在${TOWNS[this.world.respawnTown()]?.name ?? '城镇'}复活（无损失）`, { fontFamily: FONT, fontSize: '20px', color: '#fff', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5).setDepth(100);
     this.overlay = [dim, t, t2];
     this.time.delayedCall(3000, () => { this.world.respawn(); this.handle(this.world.drainEvents()); });
   }
@@ -709,7 +709,7 @@ export class BattleScene extends Phaser.Scene {
     this.overlay.forEach(o => o.destroy()); this.overlay = [];
     const h = this.world.hero!; const v = new CardView(this, h); this.views.set(h.uid, v); this.refreshHeroLook();
     this.cameras.main.startFollow(v, true, 0.12, 0.12, 0, 120).setDeadzone(320, 720); this.cameras.main.fadeIn(500);
-    this.state = 'play'; this.sfx('heal'); this.log('你在本层起点复活了'); this.saveGame();
+    this.state = 'play'; this.sfx('heal'); this.log(`你在${TOWNS[this.world.respawnTown()]?.name ?? '城镇'}复活了`); this.saveGame();
   }
   /** 进入新一层：淡入，换背景，清掉旧怪物与地上物品，刷新本层怪物；角色/召唤物保留 */
   enterFloor(i: number, name: string) {
