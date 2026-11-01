@@ -347,7 +347,7 @@ export class World {
   }
   private spKey = '\u0000'; private spSet = new Set<string>();
   /** fashen4 [适配]：技能耗魔 −10%，向上取整，最低 1 */
-  manaCost(s: { mana: number }): number { return this.hasSpecial('fashen4') ? Math.max(1, Math.ceil(s.mana * (1 - SET_FX.fashenMana))) : s.mana; }
+  manaCost(s: { mana: number }): number { return this.hasSpecial('fashen4') && s.mana > 0 ? Math.max(1, Math.ceil(s.mana * (1 - SET_FX.fashenMana))) : s.mana; }
   setBonuses() { const c = this.setCounts(); return Object.values(SETS).flatMap(s => s.bonus.filter(b => (c[s.id] ?? 0) >= b.n)); }
   stats(): Stats { const b = this.baseStats(), e = this.equipStats(), r: any = {}; for (const k of Object.keys(ZERO)) r[k] = (b as any)[k] + (e as any)[k]; return r; }
   /** 旧档装备（存档 stats 无 mdef）：按物品定义 × 品质 × 强化 推导魔御，不改存档结构 */
