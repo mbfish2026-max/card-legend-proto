@@ -275,7 +275,7 @@ export class World {
     const def: UnitDef = { ...base, level: this.level + (beast ? slv : 0), hp: Math.round(hp0 * hpF * k.hp), atk: Math.round(atk0 * atkF * k.atk), def: Math.round(def0 * k.def) };
     const u = this.spawn(def, 'ally', h.x - h.facing * (110 + off), WORLD.summonLane); u.summon = true; u.facing = h.facing; u.ai = 'chase';
     // 召唤物等级：初始 = 技能等级（最高 3）；「重启」= 重新召唤从技能等级对应初始等级开始，不继承上一只已升等级
-    u.sLv = L; u.sKills = 0; u.sBase = { hp: def.hp, atk: def.atk, start: L, name: base.name }; this.applySummonLv(u);
+    u.sLv = L; u.sKills = 0; u.sBase = { hp: def.hp, atk: def.atk, def: def.def, start: L, name: base.name }; this.applySummonLv(u);
     this.events.push({ type: 'summon', uid: u.uid });
   }
   /** [适配] 召唤物仇恨：怪被召唤物打过（aggroUid）且主角离怪 > summonAggroNear 时，返回该召唤物；否则 undefined（走原主角/50% 规则） */
@@ -624,10 +624,20 @@ export class World {
     return { gid: this.nextGid++, item, name, rarity, x, y, landAt: this.time + WORLD.dropLandSec, atk: inv?.stats.atk ?? 0, hp: inv?.stats.hp ?? 0, amount, inv };
   }
   /** 召唤物等级 → 属性（相对初始等级按官方 HP/攻击上限比例放大）、名字「骷髅·3级」、名字颜色 */
+  /** [适配] 道士召唤物继承英雄属性（WORLD.summonInh*，见 world.ts 注释）；诱惑宠物/无英雄 → 0 */
+  summonInherit(u: Unit): { hp: number; atk: number; def: number; key: string } {
+    const h = this.hero; if (!h || u.pet) return { hp: 0, atk: 0, def: 0, key: '' };
+    return { hp: Math.round(WORLD.summonInhHp * h.maxHp), atk: Math.round(WORLD.summonInhAtk * Math.max(h.atk ?? 0, h.tao ?? 0)), def: Math.round(WORLD.summonInhDef * (h.def ?? 0)), key: `${h.maxHp}|${h.atk}|${h.tao}|${h.def}` };
+  }
+  /** 英雄当前移动速度（按住移动速度 × 加速/减速倍率）；召唤物/宠物跟随、追击都用它 */
+  heroMoveSpeed(): number { return WORLD.heroSpeed * (this.hero?.spdMul ?? 1); }
   applySummonLv(u: Unit) {
     // 诱惑之光宠物：不吃骷髅的召唤物整体倍率（只按等级比例成长）
     const b = u.sBase!, L = u.sLv ?? 0, O = SKELETON_OFFICIAL, hm = u.pet ? 1 : summonMulAt(this.level, WORLD.summonHpMul), am = u.pet ? 1 : summonMulAt(this.level, WORLD.summonAtkMul), r = u.maxHp > 0 ? u.hp / u.maxHp : 1;
-    u.maxHp = u.hp = Math.round(hm * b.hp * O.hp[L] / O.hp[b.start]); u.hp = Math.round(u.maxHp * r); u.atk = Math.round(am * b.atk * O.atkMax[L] / O.atkMax[b.start]);
+    const hi = this.summonInherit(u);
+    u.maxHp = u.hp = Math.round(hm * b.hp * O.hp[L] / O.hp[b.start]) + hi.hp; u.hp = Math.round(u.maxHp * r); u.atk = Math.round(am * b.atk * O.atkMax[L] / O.atkMax[b.start]) + hi.atk;
+    if (b.def !== undefined) u.def = b.def + hi.def;
+    u.inhKey = hi.key;
     u.name = summonDisplayName(b.name, L, this.ownerLabel); u.nameColor = summonNameColor(L);
   }
   private summonKill() {
@@ -1527,7 +1537,8 @@ export class World {
     // 召唤骷髅/神兽 + 诱惑之光宠物：跟随主角；有交战中的敌人则冲上去近战
     // 诱惑宠物不叛变（用户要求取消叛变 [适配]）：一直跟随，直到死亡或按原规则被移除
     const allies = this.units.filter(u => u.summon && u.alive);
-    for (const sm of allies) this.summonRegen(sm, dt);
+    for (const sm of allies) { if (sm.sBase && !sm.pet && sm.inhKey !== this.summonInherit(sm).key) this.applySummonLv(sm); this.summonRegen(sm, dt); }
+    const smSpd = this.heroMoveSpeed(); // 召唤物移动速度 = 英雄当前速度（实时）
     for (const [k, sm] of allies.entries()) if (h) {
       const tg = this.alive('enemy').filter(e => e.ai === 'chase' && Math.abs(e.x - h.x) < (e.aggroUid === sm.uid ? WORLD.leashRange : 700)).sort((a, b) => Math.abs(a.x - sm.x) - Math.abs(b.x - sm.x))[0];
       if (tg) {

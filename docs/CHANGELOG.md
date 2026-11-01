@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 道士召唤物继承英雄属性（feat/summon-regen）
+- [适配]（官方未查到）道士召唤物（骷髅/神兽/赶尸/金甲骷髅）在原公式之外叠加：攻击 += round(0.2 × max(英雄攻击, 英雄道术))，防御 += round(0.2 × 英雄防御)，生命上限 += round(0.15 × 英雄生命上限)（WORLD.summonInhAtk/Def/Hp）。
+- 实时：每帧比对英雄属性签名，升级/换装后刷新；生命上限变化按当前血量比例保持。诱惑宠物不继承。名字/颜色/回血不变。
+- 测试：tests/summon-inherit.test.ts。
+
 ## 召唤物脱战回血 + 雷电术冷却 = 火球术 + 诱惑宠物不叛变 + 修复召唤物攻击放大（feat/summon-regen）
 - 召唤物（骷髅/金甲骷髅/神兽/赶尸/诱惑宠物）统一在 World.summonRegen 回血：常态 0.5% 最大血/秒，4 秒无攻击且未被攻击 → ×5（2.5%/秒）；挨打或出手立即回常速；中毒不回。数值 [适配]（WORLD.summonRegen/summonOocSec/summonOocMul，官方未查到）。死亡/召回逻辑不变。
 - 雷电术冷却引用火球术（SKILL_CD.thunder = SKILL_CD.fireball，2.5→1.5s），单测断言相等。

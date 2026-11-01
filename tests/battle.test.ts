@@ -328,10 +328,10 @@ const free = (w: World) => w.skills.map(() => 0);
   const w = mk([{ id: 'orc', x: 3000 }], [], 'taoist', 30); const h = w.hero!; h.mp = h.maxMp = 9999;
   const k = idx(w, 'summon_skeleton'); w.cast(k, free(w)); const sm = w.summon!; const L0 = sm.sLv!;
   ok(L0 === Math.min(3, w.skillLevel(w.skills[k])) && sm.name === `骷髅·${L0}级 道士的宠物` && sm.nameColor === SUMMON_NAME_COLORS[L0], `初始等级=技能等级（${L0}），名字「${sm.name}」颜色 ${sm.nameColor}`);
-  const hp0 = sm.maxHp, atk0 = sm.atk; const colors = [sm.nameColor];
+  const hp0 = sm.maxHp, atk0 = sm.atk, ih0 = w.summonInherit(sm).hp; const colors = [sm.nameColor];
   for (let i = 0; i < 300; i++) { const e = w.spawn({ ...w.alive('enemy')[0] } as any, 'enemy', 2000, 0); w.kill(e); if (colors[colors.length - 1] !== sm.nameColor) colors.push(sm.nameColor); }
   ok(sm.sLv === SUMMON_MAX_LV && sm.name === '骷髅·7级 道士的宠物', `击杀 300 → 7 级封顶（${sm.name}）`);
-  ok(sm.maxHp === Math.round(hp0 * 480 / SKELETON_OFFICIAL.hp[L0]) && sm.atk > atk0, `7 级属性按官方比例：HP ${hp0}→${sm.maxHp}，攻击 ${atk0}→${sm.atk}`);
+  const ih = w.summonInherit(sm).hp; ok(Math.abs(sm.maxHp - (Math.round((hp0 - ih0) * 480 / SKELETON_OFFICIAL.hp[L0]) + ih)) <= 1 && sm.atk > atk0, `7 级属性按官方比例（+继承英雄 ${ih}）：HP ${hp0}→${sm.maxHp}，攻击 ${atk0}→${sm.atk}`);
   ok(colors.length === 8 - L0 && new Set(colors).size === colors.length, `每升一级换色：${colors.join(' ')}`);
   w.kill(sm); w.cast(k, free(w)); const s2 = w.summon!; ok(s2.sLv === L0 && s2.sKills === 0, '重新召唤从技能等级对应初始等级重启（不继承 7 级）');
   const w0 = mk([{ id: 'orc', x: 3000 }], [], 'taoist', 30); w0.skillTrain.summon_skeleton = 0; w0.cast(idx(w0, 'summon_skeleton'), free(w0)); const z = w0.summon!;
