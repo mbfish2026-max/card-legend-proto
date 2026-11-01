@@ -372,6 +372,9 @@ const free = (w: World) => w.skills.map(() => 0);
   // 可通关上限：调参时 9 种子×3 职业实测死亡最大 9（战士种子 57），中位数 2–3；取 12 = 实测最大 +3 余量，超过即视为明显卡关
   // feat/charm：诱惑之光书接入官方掉落（骷髅精灵/尸王/沃玛卫士）后掉落随机序列漂移，法师种子 19 由 10→13（该种子未买到地狱火；模拟中诱惑之光 0 次施放，目标均免疫/等级过高），上限 12→14
   const PASS_MAX_DEATHS = 14;
+  // fix/sim-baseline：no-death-drop 后复活无任何损失，sim 死亡分「无损失 / 有损失」计数（sim-lib 实测复活前后金币/经验/等级/背包/装备）。
+  // PASS_MAX_DEATHS=14 卡「有损失死亡」（每种子）；无损失死亡按新基线（a6a9afa 实测 9 种子，SIM_SET4 关）只报告不放宽，超出列 GAP。见 docs/sim-baseline.md
+  const FREE_BASE: Record<string, { med: number; max: number }> = { warrior: { med: 20, max: 29 }, mage: { med: 7, max: 16 }, taoist: { med: 11, max: 22 } };
   const median = (a: number[]) => { const b = [...a].sort((x, y) => x - y); return b[(b.length - 1) >> 1] / 2 + b[b.length >> 1] / 2; };
   // feat/balance-sys：目标按 docs/balance-plan（每 10 级段）：全程死亡中位 6–12、任一种子 ≤25、单层 ≤5、新手图 0 死、法师/战士用时 ≥0.7。
   // 已达标项硬断言；未达标项（职业成长差异，归 F 段战斗开发，本分支不改）列为 GAP 打印并写入报告，不放宽数字。
@@ -387,6 +390,8 @@ const free = (w: World) => w.skills.map(() => 0);
     ok(rs.every(r => r.done && r.level >= 48 && r.level <= 52), `${CLASSES[c].name} 每个种子通关主线、通关等级≈50（${rs.map(r => r.level).join('/')}）`);
     ok(rs.every(r => r.deathAt.every(d => d.floor !== 0)), `${CLASSES[c].name} 新手图 0 死亡`);
     ok(rs.every(r => Object.entries(r.firstClear).every(([f, v]) => +f === 0 || v.exp < 2 * EXPC.EXP_PER_LEVEL(v.lv) || r.deaths > 0)), `${CLASSES[c].name} 首清经验不跨多级（无死亡种子）`);
+    ok(rs.every(r => r.costDeaths <= PASS_MAX_DEATHS) && rs.every(r => r.freeDeaths + r.costDeaths === r.deaths), `${CLASSES[c].name} 有损失死亡每种子 ≤ ${PASS_MAX_DEATHS}（${rs.map(r => r.costDeaths).join('/')}）`);
+    { const fd = rs.map(r => r.freeDeaths), b = FREE_BASE[c]; want(median(fd) <= b.med && Math.max(...fd) <= b.max, `${CLASSES[c].name} 无损失死亡不超基线 中位≤${b.med} 最大≤${b.max}（实际 ${median(fd)}/${Math.max(...fd)}）`); }
     want(med >= 6 && med <= 12, `${CLASSES[c].name} 全程死亡中位 6–12（实际 ${med}）`);
     want(Math.max(...ds) <= 25, `${CLASSES[c].name} 任一种子死亡 ≤25（最多 ${Math.max(...ds)}）`);
     want(perFloor <= 5, `${CLASSES[c].name} 单层死亡 ≤5（最多 ${perFloor}）`);
