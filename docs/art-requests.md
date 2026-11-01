@@ -1449,3 +1449,24 @@ public/assets/ui/UI-Tooltip-Border.png
 - 三批真图已接入游戏（assets-manifest WM_ASSETS，按需加载）；节点坐标按 W-1/W-2/W-3 锚点回填。
 - 无锚点、手工放置 [适配] 的节点：bichi_xinshou、bichi_newbie、rift_58、sq_jiguan 群、bichi_to_woma、bichi_to_dushe、sq_snake 群、rift_66、rift_67、hj_town；其余未列锚点的节点按旧 0–1 比例换算（[适配]）。
 - 东北角紫雾浮岛仅装饰；出口用 icon_wm_portal；无需新增美术。
+
+## M3-A. 30–50 级新地图首批：背景与新怪立绘（art/maps-3050 分支交付）
+
+范围：feat/maps-3050 规划的 C1–C8 共 8 张地图。所有 id 均为美术侧「拟」定，接入时以程序侧为准；场景细节以官方资料为准的部分未查到，均为**推测**。
+
+### 背景（1920×1080 jpg，下 40% 为空旷地面）
+
+| 文件 | 对应地图/区段 | 画面 | 备注 |
+|---|---|---|---|
+| bg_floor84.jpg | 灌木林 | 夜间灌木丛林、萤火 | 推测 |
+| bg_floor85.jpg | 环冰道 | 冰洞长廊 | 推测 |
+| bg_floor86.jpg | 玄冰殿 | 冰殿、冰王座、蛇形冰雕 | 推测 |
+| bg_floor87.jpg | 通天塔 1–3 层 | 砂岩走廊、灯笼 | 推测 |
+| bg_floor88.jpg | 通天塔 4–6 层 | 五行祭坛大厅 | 推测；中央帷幔纹样已模糊处理 |
+| bg_floor89.jpg | 通天塔 7–9 层 | 落日云台 | 推测 |
+| bg_floor90.jpg | 失乐园·北部丛林 | 巨树藤蔓、遗迹 | 推测 |
+| bg_floor91.jpg | 禁地·黑暗轮回 | 紫色漩涡深渊、游魂 | 推测 |
+| bg_floor92.jpg | 铁血魔城·叹息回廊 | 铁壁、吊笼、血色火把 | 推测 |
+| bg_floor93.jpg | 铁血魔宫 | 角状铁王座、熔岩 | 推测；两侧旗帜纹样已模糊处理 |
+
+预览：docs/art-gap-preview/maps3050_bg.jpg
