@@ -81,6 +81,7 @@ export type BattleEvent =
   | { type: 'combo'; id: string; name: string; source: number; partner: number; target: number; amount: number; hits?: number; /** 表现层：被施加毒/麻痹的目标 uid */ affected?: number[]; /** 表现层：该合击持续状态结束的 world.time */ statusUntil?: number }
   | { type: 'charm'; uid: number; result: 'ok' | 'fail' | 'immune' | 'high' }
   | { type: 'respawn' }
+  | { type: 'stone'; hp: number; mp: number }
   | { type: 'inventory' }
   | { type: 'bossfx'; uid: number; kind: 'spark' | 'fireball' | 'spike_warn' | 'spike' | 'daze' | 'crazy' | 'fly' | 'call' | 'enrage' | 'aoe_warn' | 'aoe'; x: number; target?: number }
   | { type: 'log'; text: string; color?: 'white' | 'green' };

@@ -27,6 +27,7 @@ import { DUNGEON_BY_FLOOR, DUNGEON_DAILY, DUNGEON_PENALTY, DUNGEON_FIRST_GUARANT
 import { QUESTS, ACHIEVES, QuestDef, AchieveDef } from '../data/quests';
 import { gateGap, BOSS_GEAR_GATE, GATE_K_TAKEN, GATE_K_DEALT } from '../data/bossGearGate';
 import { summonDisplayName, summonNameColor, summonOwnerLabel } from './summonLabel';
+import { SKILL_NECKLACE_MUL } from '../shop/catalog';
 
 export const CRIT_CHANCE = 0.15, CRIT_MULT = 1.8;
 /** 三圣 4 件特效数值（用户指定，官方未查到 → [适配]），见 docs/set-fx.md */
@@ -35,6 +36,8 @@ export interface Input { dx: number; dy: number; use?: boolean; step?: number; /
 /** 召唤物存档：id = 召唤物/原怪 UnitDef id；pet = 诱惑宠物；base = sBase（未继承的原公式属性）；hpR = 当前血量比例 */
 export interface SummonSave { id: string; pet?: boolean; sLv: number; sKills: number; base: { hp: number; atk: number; def?: number; start: number; name: string }; hpR: number; level?: number; def?: number; mdef?: number }
 export interface SaveData {
+  /** feat/lingfu-combat：召唤直升卷轴已用 → 之后新召唤物初始等级（可选字段，缺省 0 = 未用） */
+  summonBoostLv?: number;
   v: 1; cls: ClassId; level: number; exp: number; gold: number; pots: number[];
   equip: Partial<Record<EquipSlot, InvItem>>; bag: InvItem[]; floorIndex: number; kills: number; nextUid: number;
   /** 技能修炼点（熟练度），按技能 id */
@@ -212,6 +215,7 @@ export class World {
   }
   /** [适配] 修炼点获得：施放 +100，被动 +10（原版获得量未查到） */
   addTrain(s: SkillDef, n: number) {
+    if (this.equip.necklace?.item === 'skill_necklace') n *= SKILL_NECKLACE_MUL; // 灵符商城·技巧项链：熟练度 ×5 [用户要求]
     const before = this.skillLevel(s); this.skillTrain[s.id] = Math.min((this.skillTrain[s.id] ?? 0) + n, s.train?.[2] ?? 0);
     const after = this.skillLevel(s); if (after > before) { this.events.push({ type: 'log', text: `${s.name} 修炼到 ${after} 级` }); if (s.passive && this.hero) this.events.push({ type: 'proc', skill: s.id, target: this.hero.uid }); }
   }
@@ -219,6 +223,7 @@ export class World {
     if (save) {
       this.cls = save.cls; this.level = save.level; this.exp = migrateExp(save.level, save.exp, save.expV); this.gold = save.gold; this.pots = [...save.pots];
       this.equip = migrateEquip(save); this.bag = [...save.bag]; this.kills = save.kills; this.nextItem = save.nextUid;
+      this.summonBoostLv = Math.max(0, Math.min(SUMMON_MAX_LV, (save.summonBoostLv ?? 0) | 0));
       this.skillTrain = { ...(save.skillTrain ?? {}) }; this.reached = new Set(save.reached ?? []); this.bossKilled = new Set(save.bossKilled ?? []); this.townsSeen = new Set(Array.isArray(save.townsSeen) ? save.townsSeen.filter(x => typeof x === 'string') : []);
       for (const [k, v] of Object.entries(save.bossCd ?? {})) if (v > 0) this.bossCdUntil[+k] = Math.min(BOSS_RESPAWN, v);
       for (const [k, v] of Object.entries(save.dungeonRuns ?? {})) if (v && typeof v.n === 'number') this.dungeonRuns[k] = { day: String(v.day), n: v.n };
@@ -311,7 +316,9 @@ export class World {
     const def: UnitDef = { ...base, level: this.level + (beast ? slv : 0), hp: Math.round(hp0 * hpF * k.hp), atk: Math.round(atk0 * atkF * k.atk), def: Math.round(def0 * k.def) };
     const u = this.spawn(def, 'ally', h.x - h.facing * (110 + off), WORLD.summonLane); u.summon = true; u.facing = h.facing; u.ai = 'chase';
     // 召唤物等级：初始 = 技能等级（最高 3）；「重启」= 重新召唤从技能等级对应初始等级开始，不继承上一只已升等级
-    u.sLv = L; u.sKills = 0; u.sBase = { hp: def.hp, atk: def.atk, def: def.def, start: L, name: base.name }; this.applySummonLv(u);
+    u.sLv = L; u.sKills = 0; u.sBase = { hp: def.hp, atk: def.atk, def: def.def, start: L, name: base.name };
+    if (this.summonBoostLv > L) { u.sLv = this.summonBoostLv; u.sKills = SUMMON_LV_KILLS[this.summonBoostLv]; } // 召唤直升卷轴：之后新召唤也从 7 级起（成长仍按 start=技能等级 的官方比例）
+    this.applySummonLv(u);
     this.events.push({ type: 'summon', uid: u.uid });
   }
   /** [适配] 召唤物仇恨：怪被召唤物打过（aggroUid）且主角离怪 > summonAggroNear 时，返回该召唤物；否则 undefined（走原主角/50% 规则） */
@@ -699,6 +706,38 @@ export class World {
   }
   /** 英雄当前移动速度（按住移动速度 × 加速/减速倍率）；召唤物/宠物跟随、追击都用它 */
   heroMoveSpeed(): number { return WORLD.heroSpeed * (this.hero?.spdMul ?? 1); }
+  /** 召唤直升卷轴已用 → 新召唤物初始等级（0 = 未用）；存档字段 summonBoostLv */
+  summonBoostLv = 0;
+  /** 召唤直升卷轴（灵符商城）：场上召唤物/宠物立即升到 lv，并记住 → 之后新召唤也按 lv。返回提升的只数 */
+  boostSummon(lv: number): number {
+    const L = Math.max(0, Math.min(SUMMON_MAX_LV, lv | 0)); let n = 0;
+    this.summonBoostLv = Math.max(this.summonBoostLv, L);
+    for (const u of this.units) if (u.summon && u.alive && u.sBase && (u.sLv ?? 0) < L) {
+      u.sLv = L; u.sKills = Math.max(u.sKills ?? 0, SUMMON_LV_KILLS[L]); this.applySummonLv(u); n++;
+      this.events.push({ type: 'log', text: `${u.sBase.name}升到 ${L} 级`, color: 'green' });
+    }
+    return n;
+  }
+  /** 血石参数 [适配]（官方：每秒 HP10/MP15，扣储量，耗尽消失；本作按 docs/lingfu-shop.md §3.3 加快节奏，见 §10.6） */
+  static STONE = { hpAt: 0.6, mpAt: 0.4, pct: 0.15, cd: 2 };
+  stoneHpReady = 0; stoneMpReady = 0;
+  /** 血石：野外（含战斗/BOSS 房）HP<60% 或 MP<40% 时从储量补 15% 上限，HP/MP 各 2 秒冷却；手动药水优先（药水缓回中或药水冷却中不触发）。城内不生效（安全区 + 进城满血） */
+  tickStone() {
+    const h = this.hero, s = this.equip.stone, c = s?.charge, K = World.STONE;
+    if (!h || !h.alive || this.town || !s || !c || this.level < (s.req ?? 0)) return;
+    const hotHp = h.hots?.some(x => x.hp > 0 && x.left > 0), hotMp = h.hots?.some(x => x.mp > 0 && x.left > 0);
+    let hp = 0, mp = 0;
+    if (c.hp > 0 && h.hp < h.maxHp * K.hpAt && this.time >= this.stoneHpReady && !hotHp && this.time >= (h.potReady ?? 0)) {
+      hp = Math.min(c.hp, Math.ceil(h.maxHp * K.pct), h.maxHp - h.hp); c.hp -= hp; h.hp += hp; this.stoneHpReady = this.time + K.cd;
+    }
+    if (c.mp > 0 && h.maxMp > 0 && (h.mp ?? 0) < h.maxMp * K.mpAt && this.time >= this.stoneMpReady && !hotMp && this.time >= (h.mpReady ?? 0)) {
+      mp = Math.min(c.mp, Math.ceil(h.maxMp * K.pct), h.maxMp - (h.mp ?? 0)); c.mp -= mp; h.mp = (h.mp ?? 0) + mp; this.stoneMpReady = this.time + K.cd;
+    }
+    if (hp || mp) {
+      this.events.push({ type: 'stone', hp, mp });
+      if (c.hp <= 0 && c.mp <= 0) this.events.push({ type: 'log', text: `${s.name}储量耗尽（保留空石，可卸下/出售）` }, { type: 'inventory' });
+    }
+  }
   applySummonLv(u: Unit) {
     // 诱惑之光宠物：不吃骷髅的召唤物整体倍率（只按等级比例成长）
     const b = u.sBase!, L = u.sLv ?? 0, O = SKELETON_OFFICIAL, hm = u.pet ? 1 : summonMulAt(this.level, WORLD.summonHpMul), am = u.pet ? 1 : summonMulAt(this.level, WORLD.summonAtkMul), r = u.maxHp > 0 ? u.hp / u.maxHp : 1;
@@ -1456,7 +1495,7 @@ export class World {
     this.ground.push(it); this.events.push({ type: 'drop', uid: 0, x, y: it.y, items: [it] }, { type: 'log', text: `${d.name} 奖励：${ITEMS[id].name}`, color: 'green' });
   }
   toSave(): SaveData {
-    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, town: this.town, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, townsSeen: [...this.townsSeen], reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], ringQ: this.ringQ, ringDone: this.ringDone, eqV: EQUIP_VERSION, expV: EXP_VERSION, bossCd: Object.fromEntries(Object.keys(this.bossCdUntil).map(k => [k, this.bossCdLeft(+k)]).filter(e => (e[1] as number) > 0)), mineCd: Object.fromEntries(Object.keys(this.mineCdUntil).map(k => [k, this.mineCdLeft(+k)]).filter(e => (e[1] as number) > 0)), companion: this.companion ? JSON.parse(JSON.stringify(this.companion)) : null, summons: this.units.filter(u => u.summon && u.alive && !u.decoy && u.sBase).map(u => ({ id: u.id, ...(u.pet ? { pet: true } : {}), sLv: u.sLv ?? 0, sKills: u.sKills ?? 0, base: { ...u.sBase! }, hpR: u.maxHp > 0 ? u.hp / u.maxHp : 1, level: u.level, ...(u.pet ? { def: u.def, mdef: u.mdef } : {}) })), dungeonRuns: JSON.parse(JSON.stringify(this.dungeonRuns)), dungeonFirst: [...this.dungeonFirst]  };
+    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, town: this.town, ...(this.summonBoostLv ? { summonBoostLv: this.summonBoostLv } : {}), kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, townsSeen: [...this.townsSeen], reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], ringQ: this.ringQ, ringDone: this.ringDone, eqV: EQUIP_VERSION, expV: EXP_VERSION, bossCd: Object.fromEntries(Object.keys(this.bossCdUntil).map(k => [k, this.bossCdLeft(+k)]).filter(e => (e[1] as number) > 0)), mineCd: Object.fromEntries(Object.keys(this.mineCdUntil).map(k => [k, this.mineCdLeft(+k)]).filter(e => (e[1] as number) > 0)), companion: this.companion ? JSON.parse(JSON.stringify(this.companion)) : null, summons: this.units.filter(u => u.summon && u.alive && !u.decoy && u.sBase).map(u => ({ id: u.id, ...(u.pet ? { pet: true } : {}), sLv: u.sLv ?? 0, sKills: u.sKills ?? 0, base: { ...u.sBase! }, hpR: u.maxHp > 0 ? u.hp / u.maxHp : 1, level: u.level, ...(u.pet ? { def: u.def, mdef: u.mdef } : {}) })), dungeonRuns: JSON.parse(JSON.stringify(this.dungeonRuns)), dungeonFirst: [...this.dungeonFirst]  };
   }
 
   /** 点按一格：滑行中的按键全部排队（同向最多 10 格，反向则替换队列），每次按键都会走一格 */
@@ -1570,6 +1609,7 @@ export class World {
       this.moveHero(h, inp, dt);
       h.mp = Math.min(h.maxMp, (h.mp ?? 0) + WORLD.mpRegen * dt);
       h.hp = Math.min(h.maxHp, h.hp + WORLD.hpRegen * (fighting ? 1 : 5) * dt);
+      this.tickStone();
     }
     const chase = WORLD.baseSpeed * WORLD.chaseSpeedRatio * (this.floors === FLOORS ? FOE_BAND.spd[floorBand(this.floorIndex)] : 1), // balance-battle2 [适配]：段追击速度倍率
        ret = WORLD.baseSpeed * WORLD.returnSpeedRatio;
