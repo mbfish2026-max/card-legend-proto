@@ -5,6 +5,7 @@ import { appendFileSync } from 'node:fs';
 import { World } from '../src/combat/World';
 import { GEAR_SWAP, gearTick, gearEnd } from './sim-gear';
 import { DL, dlVirt, dlTick, dlEnd } from './sim-droplog';
+import './sim-tune'; // 默认关：SIM_TUNE_* 未设时不打任何补丁
 import { FLOORS } from '../src/data/world';
 import { CLASSES, ClassId } from '../src/data/classes';
 import { ITEMS } from '../src/data/items';
