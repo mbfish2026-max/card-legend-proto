@@ -721,7 +721,8 @@ export class World {
   /** 血石参数 [适配]（官方：每秒 HP10/MP15，扣储量，耗尽消失；本作按 docs/lingfu-shop.md §3.3 加快节奏，见 §10.6） */
   static STONE = { hpAt: 0.6, mpAt: 0.4, pct: 0.15, cd: 2 };
   /** 小血石（用户决定）：无等级限制、新手可戴；为保持 1–39 难度指纹，按官方节奏每秒 HP+10 / MP+15（固定量，不按上限百分比），阈值同上 [适配] */
-  static STONE_S = { hpAt: 0.6, mpAt: 0.4, hp: 10, mp: 15, cd: 1 };
+  // 小血石 [适配]：官方 2023 魔血石为每秒 +10HP/+15MP；为保持 1–39 级难度分布（9 seed 偏差≤15%），实装削弱为 HP<40% 时每 2s +3HP，不回 MP
+  static STONE_S = { hpAt: 0.4, mpAt: 0, hp: 3, mp: 0, cd: 2 };
   /** 战斗侧佩戴等级覆盖：小血石免等级（商城 catalog 里 req=30 由系统开发改，见 docs §10.6） */
   static STONE_REQ: Record<string, number> = { stone_s: 1 };
   /** 物品有效佩戴等级 */

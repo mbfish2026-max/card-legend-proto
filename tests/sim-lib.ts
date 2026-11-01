@@ -58,7 +58,7 @@ export const simRun = (c: ClassId, seed: number, maxT = SIM_MAX_T) => {
       // feat/lingfu-combat：SIM_STONE=1 → Lv1 起佩戴血石（小血石免等级/35 中/40 大/45 特，每档各一块，储量用完销毁）；默认关 → 与 lingfu-shop 基线一致
       if (process.env.SIM_STONE) { const tier = STONE_TIERS.filter(x => w.level >= (process.env.SIM_STONE_M40 && x[0] === 'stone_m' ? 40 : x[1])).pop(); const cur = w.equip.stone;
         if (cur?.charge && cur.charge.hp <= 0 && cur.charge.mp <= 0) { stoneUsed.add(cur.item); w.equip.stone = undefined; }
-        if (tier && !stoneUsed.has(tier[0]) && w.equip.stone?.item !== tier[0]) { if (w.equip.stone) stoneUsed.add(w.equip.stone.item); const it = w.makeItem(tier[0], 'common'); it.req = tier[1]; const ch = tier[0] === 'stone_s' && process.env.SIM_STONE_S_CHARGE ? +process.env.SIM_STONE_S_CHARGE : tier[2]; it.charge = { hp: ch, mp: ch }; w.equip.stone = it; } }
+        if (tier && !stoneUsed.has(tier[0]) && w.equip.stone?.item !== tier[0]) { if (w.equip.stone) stoneUsed.add(w.equip.stone.item); const it = w.makeItem(tier[0], 'common'); it.req = tier[1]; it.charge = { hp: tier[2], mp: tier[2] }; w.equip.stone = it; } }
       // 黑铁：模拟脚本卖掉（避免碎装干扰难度基线；玩家可手动强化）
       for (let i = w.bag.length - 1; i >= 0; i--) if (w.bag[i]?.item === 'black_iron') w.sellItem(i);
       // 黑铁：模拟脚本卖掉（避免碎装干扰难度基线；玩家可手动强化）

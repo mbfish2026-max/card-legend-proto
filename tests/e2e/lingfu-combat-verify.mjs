@@ -31,7 +31,7 @@ try {
   const st = await p.evaluate(G0 => { const w = eval(G0), h = w.hero, B = window.__game.scene.getScene('Battle'); const fl = []; const walk = l => l.forEach(o => { if (o.type === 'Text' && o.visible && /血石 \+/.test(o.text)) fl.push(o.text); if (o.list) walk(o.list); }); walk(B.children.list);
     return { c: { ...w.equip.stone.charge }, hp: h.hp / h.maxHp, mp: h.mp / h.maxMp, fl }; }, G);
   await p.screenshot({ path: `${dir}/stone-float.png` });
-  chk(st.c.hp < 20000 && st.c.mp < 20000, `血石储量递减 HP ${st.c.hp} MP ${st.c.mp}`);
+  chk(st.c.hp < 20000 && st.c.mp === 20000, `小血石 HP 储量递减、不回 MP HP ${st.c.hp} MP ${st.c.mp}`);
   chk(st.hp > 0.3 && st.mp > 0, `HP/MP 被补（HP ${(st.hp * 100).toFixed(0)}% MP ${(st.mp * 100).toFixed(0)}%）`);
   chk(st.fl.length >= 2, `飘字 ${JSON.stringify(st.fl)}`);
   // 存档里储量同步

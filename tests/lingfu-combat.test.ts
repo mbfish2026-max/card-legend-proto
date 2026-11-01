@@ -28,13 +28,13 @@ const evs = (w: World) => w.drainEvents().filter((e: any) => e.type === 'stone')
   const w3 = mk(); w3.equip.stone = makeShopItem(w3, 'stone_s'); w3.enterTown('xinshou', true); w3.hero!.hp = 1; w3.step(0.05); ok(evs(w3).length === 0 && w3.equip.stone!.charge!.hp === 20000, '城内不生效、不扣储量');
   // 等级不足不生效
   const w4 = mk('warrior', 20); w4.equip.stone = makeShopItem(w4, 'stone_m'); w4.hero!.hp = 1; w4.step(0.05); ok(evs(w4).length === 0, '中血石 Lv<35 不生效');
-  // 小血石：无等级限制（Lv1 可装备、生效），官方节奏 HP+10 / MP+15 每秒
+  // 小血石：无等级限制（Lv1 可装备、生效），实装 [适配]：HP<40% 每 2s +3HP、不回 MP
   const w7 = mk('warrior', 1); w7.bag.push(makeShopItem(w7, 'stone_s')); ok(w7.equipItem(w7.bag.length - 1) === null && w7.equip.stone?.item === 'stone_s', 'Lv1 可佩戴小血石');
-  const h7 = w7.hero!; h7.hp = Math.floor(h7.maxHp * 0.3); h7.mp = 0; w7.step(0.05); let e7 = evs(w7); ok(e7.length === 1 && e7[0].hp === 10 && e7[0].mp === Math.min(15, h7.maxMp), `Lv1 小血石生效 +${e7[0]?.hp}/+${e7[0]?.mp}`);
-  w7.step(0.05); ok(evs(w7).length === 0, '小血石 1 秒冷却'); for (let i = 0; i < 20; i++) w7.step(0.05); ok(evs(w7).length >= 1, '1 秒后再触发');
+  const h7 = w7.hero!; h7.hp = Math.floor(h7.maxHp * 0.3); h7.mp = 0; w7.step(0.05); let e7 = evs(w7); ok(e7.length === 1 && e7[0].hp === 3 && e7[0].mp === 0, `Lv1 小血石生效 +${e7[0]?.hp}/+${e7[0]?.mp}`);
+  w7.step(0.05); ok(evs(w7).length === 0, '小血石 2 秒冷却'); for (let i = 0; i < 40; i++) w7.step(0.05); ok(evs(w7).length >= 1, '2 秒后再触发');
   // 储量不足：只补剩余，耗尽保留空石
-  const w5 = mk(); const h5 = w5.hero!; const s5 = makeShopItem(w5, 'stone_s'); s5.charge = { hp: 7, mp: 0 }; w5.equip.stone = s5; h5.hp = 10; w5.step(0.05);
-  const ev5 = w5.drainEvents(); ok(ev5.some((x: any) => x.type === 'stone' && x.hp === 7) && s5.charge.hp === 0 && w5.equip.stone === s5 && ev5.some((x: any) => x.type === 'log' && /耗尽/.test(x.text)), '储量只补剩余；耗尽保留空石并提示');
+  const w5 = mk(); const h5 = w5.hero!; const s5 = makeShopItem(w5, 'stone_s'); s5.charge = { hp: 2, mp: 0 }; w5.equip.stone = s5; h5.hp = 10; w5.step(0.05);
+  const ev5 = w5.drainEvents(); ok(ev5.some((x: any) => x.type === 'stone' && x.hp === 2) && s5.charge.hp === 0 && w5.equip.stone === s5 && ev5.some((x: any) => x.type === 'log' && /耗尽/.test(x.text)), '储量只补剩余；耗尽保留空石并提示');
   h5.hp = 10; for (let i = 0; i < 60; i++) w5.step(0.05); ok(evs(w5).length === 0, '空石不再触发');
   // 存档：储量随存档
   const sv = JSON.parse(JSON.stringify(w.toSave())); const w6 = mk('warrior', 50, sv); ok(w6.equip.stone?.charge?.hp === st.charge!.hp && w6.equip.stone?.charge?.mp === st.charge!.mp, '储量随存档保存/读取');
