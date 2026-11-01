@@ -1764,3 +1764,48 @@ public/assets/ui/UI-Tooltip-Border.png
 | music/title.ogg | a2d1dc6 | title=magic01-zone1，album=World of Warcraft mp3s，Jason Hayes | WoW 来源 |
 
 结论：没有任何音频能确认是原创或 AI 生成。27 个音效与 4 首音乐为 WoW 来源，另 3 首来源不明（推测 WoW），公开前需要全部替换。标题页新署名「素材：原创与 AI 生成」在音频替换前并不准确。
+
+## 装备重新对齐：新增物品图标与腰带栏（feat/drop-realign，提案，未生成）
+
+- 来源：全部 **AI 生成**，像素风，参照现有 gen_* 图标；本次不生成图。
+- 共 36 个图标 + 1 个腰带空栏底图。
+
+| # | 物品 | 部位 | 需求 | 来源 |
+|---|---|---|---|---|
+| 1 | 金项链 | necklace | 2 | AI 生成 |
+| 2 | 黑色水晶项链 | necklace | 13 | AI 生成 |
+| 3 | 黑檀项链 | necklace | 13 | AI 生成 |
+| 4 | 黄色水晶项链 | necklace | 13 | AI 生成 |
+| 5 | 魔鬼项链 | necklace | 17 | AI 生成 |
+| 6 | 琥珀项链 | necklace | 17 | AI 生成 |
+| 7 | 凤凰明珠 | necklace | 17 | AI 生成 |
+| 8 | 蓝翡翠项链 | necklace | 23 | AI 生成 |
+| 9 | 皮制手套 | bracelet | 7 | AI 生成 |
+| 10 | 钢手镯 | bracelet | 8 | AI 生成 |
+| 11 | 大手镯 | bracelet | 9 | AI 生成 |
+| 12 | 魔法手镯 | bracelet | 18 | AI 生成 |
+| 13 | 坚固手套 | bracelet | 18 | AI 生成 |
+| 14 | 黑檀手镯 | bracelet | 19 | AI 生成 |
+| 15 | 道士手镯 | bracelet | 19 | AI 生成 |
+| 16 | 魔力手镯 | bracelet | 20 | AI 生成 |
+| 17 | 死神手套 | bracelet | 22 | AI 生成 |
+| 18 | 金手镯 | bracelet | 23 | AI 生成 |
+| 19 | 六角戒指 | ring | 7 | AI 生成 |
+| 20 | 玻璃戒指 | ring | 7 | AI 生成 |
+| 21 | 牛角戒指 | ring | 9 | AI 生成 |
+| 22 | 蓝色水晶戒指 | ring | 16 | AI 生成 |
+| 23 | 黑色水晶戒指 | ring | 20 | AI 生成 |
+| 24 | 蛇眼戒指 | ring | 20 | AI 生成 |
+| 25 | 珍珠戒指 | ring | 20 | AI 生成 |
+| 26 | 布鞋 | boots | 15 | AI 生成 |
+| 27 | 鹿皮靴 | boots | 22 | AI 生成 |
+| 28 | 紫绸靴 | boots | 30 | AI 生成 |
+| 29 | 避魂靴 | boots | 35 | AI 生成 |
+| 30 | 兽皮腰带 | belt | 15 | AI 生成 |
+| 31 | 铁腰带 | belt | 22 | AI 生成 |
+| 32 | 青铜腰带 | belt | 30 | AI 生成 |
+| 33 | 钢铁腰带 | belt | 35 | AI 生成 |
+| 34 | 雷霆腰带 | belt | 45 | AI 生成 |
+| 35 | 烈焰腰带 | belt | 45 | AI 生成 |
+| 36 | 光芒腰带 | belt | 45 | AI 生成 |
+| 37 | 腰带空栏底图（slot_belt_empty） | ui | - | AI 生成 |

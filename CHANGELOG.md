@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 文档：装备需求/掉落重新对齐方案（feat/drop-realign，只出文档，未合 main）
+- 新增 docs/drop-realign.md（A–I 章）和 docs/drop-realign.csv。内容：124 件逐件需求/来源/新爆率；新曲线（按档 K 换算＋上下限）；风险；9 种子评估方案；分阶段实施；待定问题；1–30 级过渡链（新增 25 件首饰）；腰带栏与靴子补全（新增 4 靴 7 腰带）。
+- 新增只读脚本 scripts/drop-realign-plan.py，并扩展 scripts/drop-realign-dump.ts 的导出。art-requests 增加 36 个图标和腰带空栏底图的需求（AI 生成，未出图）。没有改任何游戏代码。
 ## 修复：手机药水图标/数量被框盖住（fix/mobile-potion-clip，未合 main）
 - 根因 1：B6 皮肤给药水格（56px）套 btn_normal 框时，border-image-width 用了 1x 边距 14/16/14/16 CSS px。布局边框只有 2px，框图向内画到 padding 区，格内只剩 24×28 净空。图标 background-size 88%（≈45.8px）的上下左右边缘和右下角的数字都被框盖住。
 - 根因 2：MobileHud 每帧用 potBtns[i].textContent 写数量，把角标 span 冲掉了。数字变成按钮里的居中文字，角标 CSS（right:3px/bottom:1px）不生效，2/3 位数会压到框上。
