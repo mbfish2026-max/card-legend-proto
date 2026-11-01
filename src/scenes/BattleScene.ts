@@ -28,6 +28,7 @@ import type { UIScene } from './UIScene';
 import { playMusic } from '../music';
 import { FxQuality } from '../ui/Fx';
 import { GroundAuras, hasAuraFx } from '../ui/groundAura';
+import { PORTAL_LOOK, PORTAL_TEXT, PORTAL_W, PORTAL_H, portalArtKind, type PortalDir } from '../ui/portalArt';
 
 // 稀有度：光柱颜色 = 地上物品名颜色；越稀有光柱越高
 const RARITY_COLOR = { common: 0xf0e6c0, magic: 0x3d9bff, rare: 0xffa020 };
@@ -35,6 +36,8 @@ const RARITY_TEXT = { common: '#f0e6c0', magic: '#3d9bff', rare: '#ffa020' };
 // 参考 video2 g_103：细长光柱（4px 芯 + 16px 辉），高度按稀有度
 const PILLAR_H = { common: 70, magic: 150, rare: 250 };
 const MERCHANT_X = 110, SHOP_RANGE = 380;
+/** 下一层容器（GROUND_Y-120）内的贴图底边 y：与上一层（GROUND_Y+14）同高 */
+const PORTAL_FOOT = 134;
 
 export class BattleScene extends Phaser.Scene {
   world!: World; views = new Map<number, CardView>(); hud?: Hud; pendingLogs: [string, boolean][] = [];
@@ -142,32 +145,36 @@ export class BattleScene extends Phaser.Scene {
     const cast = qs.get('cast');
     if (cast) this.time.delayedCall(Number(qs.get('castdelay') ?? 900), () => this.onKey(cast.toUpperCase()));
   }
+  /** fix/portal-same：右端「下一层」传送门与左端「上一层」共用 portalArt()（同一张 portal_exit_sheet / portal_exit，缺图同一程序占位），下一层水平镜像 + 偏紫着色区分方向 */
+  nextPortalArt?: Phaser.GameObjects.GameObject;
   buildPortal(x: number) {
+    // 容器原点仍在 GROUND_Y-120（portal.setX / 透明度逻辑不变）；贴图底边落地 = 与左侧上一层同高（GROUND_Y+14）
     const c = this.add.container(x, GROUND_Y - 120).setDepth(4);
-    const core = this.add.ellipse(0, 10, 150, 225, 0x8a2cff, 0.45).setBlendMode(Phaser.BlendModes.ADD);
-    this.tweens.add({ targets: core, alpha: { from: 0.25, to: 0.55 }, duration: 900, yoyo: true, repeat: -1 });
-    // 参考 video2 g_070：紫色漩涡
-    const swirl = this.add.graphics().setBlendMode(Phaser.BlendModes.ADD);
-    for (let k = 0; k < 3; k++) { swirl.lineStyle(5, [0xd080ff, 0xa040ff, 0xff90ff][k], 0.7); swirl.beginPath(); for (let a = 0; a < Math.PI * 3; a += 0.15) { const r = 8 + a * 11; const px = Math.cos(a + k * 2.1) * r * 0.62, py = Math.sin(a + k * 2.1) * r * 0.95; if (a === 0) swirl.moveTo(px, py); else swirl.lineTo(px, py); } swirl.strokePath(); }
-    this.tweens.add({ targets: swirl, angle: 360, duration: 4000, repeat: -1 });
-    const rings = [0xb050ff, 0x7a2cff, 0xe090ff].map((col, i) => {
-      const e = this.add.ellipse(0, 0, 150 - i * 34, 230 - i * 50).setStrokeStyle(8 - i * 2, col, 0.9).setFillStyle(col, 0.12);
-      this.tweens.add({ targets: e, scaleX: { from: 0.92, to: 1.06 }, alpha: { from: 0.7, to: 1 }, duration: 700 + i * 200, yoyo: true, repeat: -1 });
-      return e;
-    });
-    // 参考原作：石质拱门 + 紫色漩涡 + 上升光点
-    const arch = this.add.graphics();
-    arch.fillStyle(0x4a4e58, 1).fillRect(-98, -100, 26, 225).fillRect(72, -100, 26, 225);
-    arch.lineStyle(26, 0x4a4e58, 1).beginPath().arc(0, -100, 85, Math.PI, 0, false).strokePath();
-    arch.lineStyle(2, 0x9aa0ac, 0.8).strokeRect(-98, -100, 26, 225).strokeRect(72, -100, 26, 225);
-    for (let i = -3; i <= 3; i++) { const a = Math.PI * (1 + (i + 3) / 6); arch.fillStyle(0x6a7080, 1).fillRect(Math.cos(a) * 85 - 7, -100 + Math.sin(a) * 85 - 7, 14, 14); }
-    const motes = this.add.particles(0, 0, '__WHITE', { x: { min: -60, max: 60 }, y: { min: 60, max: 110 }, speedY: { min: -60, max: -25 }, lifespan: 1800, scale: { start: 3, end: 0 }, alpha: { start: 0.8, end: 0 }, tint: [0xd090ff, 0xaa66ff], frequency: 120 });
-    const t = this.add.text(0, -205, '下一层', { fontFamily: FONT, fontSize: '22px', color: '#e0c8ff', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5);
-    this.portalHint = this.add.text(0, -235, IS_MOBILE ? '点「进入」' : '按 W/空格 进入', { fontFamily: FONT, fontSize: '18px', color: '#ffffff', fontStyle: 'bold', stroke: '#2a0a5a', strokeThickness: 5 }).setOrigin(0.5).setVisible(false);
-    this.tweens.add({ targets: this.portalHint, y: -242, duration: 500, yoyo: true, repeat: -1 });
-    c.add([arch, core, swirl, ...rings, motes, t, this.portalHint]); this.portal = c;
-    // 手机：传送门本体可点（与「进入」键同效，不在门口则提示走近）；电脑不加交互，保持原样
-    if (IS_MOBILE) arch.setInteractive(new Phaser.Geom.Rectangle(-110, -200, 220, 330), Phaser.Geom.Rectangle.Contains).on('pointerdown', () => this.mobileAct('portal'));
+    const t = this.add.text(0, PORTAL_FOOT - PORTAL_H - 16, PORTAL_TEXT.next, { fontFamily: FONT, fontSize: '22px', color: '#e0c8ff', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5);
+    this.portalHint = this.add.text(0, PORTAL_FOOT - PORTAL_H - 46, IS_MOBILE ? '点「进入」' : '按 W/空格 进入', { fontFamily: FONT, fontSize: '18px', color: '#ffffff', fontStyle: 'bold', stroke: '#2a0a5a', strokeThickness: 5 }).setOrigin(0.5).setVisible(false);
+    this.tweens.add({ targets: this.portalHint, y: PORTAL_FOOT - PORTAL_H - 53, duration: 500, yoyo: true, repeat: -1 });
+    // 点击区：与上一层同尺寸（150×220，≥44 CSS）；与「进入」键同效，不在门口则提示走近
+    const hit = this.add.zone(0, PORTAL_FOOT - 110, 150, 220).setInteractive().on('pointerdown', () => this.mobileAct('portal'));
+    c.add([hit, t, this.portalHint]); this.portal = c; this.syncNextPortal();
+  }
+  syncNextPortal() { if (this.portal) this.nextPortalArt = this.syncPortalArt(this.portal, this.nextPortalArt, 'next', PORTAL_FOOT); }
+  /** 两个传送门的贴图（同一创建函数）：已是想要的种类则原样返回，否则重建并放到容器底层 */
+  syncPortalArt(c: Phaser.GameObjects.Container, cur: Phaser.GameObjects.GameObject | undefined, dir: PortalDir, foot: number) {
+    const want = portalArtKind(this.textures.exists('portal_exit_sheet'), this.textures.exists('portal_exit'));
+    if (cur?.getData('kind') === want) return cur;
+    cur?.destroy();
+    let o: Phaser.GameObjects.GameObject;
+    const look = PORTAL_LOOK[dir];
+    if (want === 'sheet') {
+      if (!this.anims.exists('portal_exit_loop')) this.anims.create({ key: 'portal_exit_loop', frames: this.anims.generateFrameNumbers('portal_exit_sheet', { start: 0, end: 3 }), frameRate: 8, repeat: -1 });
+      o = this.add.sprite(0, foot, 'portal_exit_sheet', 0).setOrigin(0.5, 1).setDisplaySize(PORTAL_W, PORTAL_H).setFlipX(look.flip).setTint(look.tint).play('portal_exit_loop'); // 与英雄高度相当（约 0.6× 原图）
+    } else if (want === 'still') o = this.add.image(0, foot, 'portal_exit').setOrigin(0.5, 1).setDisplaySize(PORTAL_W, PORTAL_H).setFlipX(look.flip).setTint(look.tint);
+    else { // 程序占位（缺图）：脉动椭圆 + 光圈，按方向换色
+      const g = this.add.graphics(); g.fillStyle(look.gfx[0], 0.35).fillEllipse(0, foot - 110, 130, 210); g.lineStyle(4, look.gfx[1], 0.9).strokeEllipse(0, foot - 110, 130, 210); g.lineStyle(2, look.gfx[2], 0.7).strokeEllipse(0, foot - 110, 90, 160);
+      this.tweens.add({ targets: g, alpha: { from: 0.6, to: 1 }, duration: 800, yoyo: true, repeat: -1 }); o = g;
+    }
+    o.setData('kind', want); c.addAt(o, 0); c.setData('portalArt', 'portalArt:' + want);
+    return o;
   }
   // ===== R14 横版长街城镇 =====
   street?: Phaser.GameObjects.Container; streetFar?: Phaser.GameObjects.TileSprite; streetHint?: Phaser.GameObjects.Text; townTarget: { x: number; id: string } | null = null;
@@ -255,21 +262,7 @@ export class BattleScene extends Phaser.Scene {
   /** 贴图晚到时也能切换：每次进层/切层调用 */
   syncBackPortal() {
     const c = this.merchant; if (!c) return;
-    const sheet = this.textures.exists('portal_exit_sheet'), still = this.textures.exists('portal_exit');
-    const want = sheet ? 'sheet' : still ? 'still' : 'gfx';
-    if (this.backPortalArt?.getData('kind') !== want) {
-      this.backPortalArt?.destroy();
-      let o: Phaser.GameObjects.GameObject;
-      if (sheet) {
-        if (!this.anims.exists('portal_exit_loop')) this.anims.create({ key: 'portal_exit_loop', frames: this.anims.generateFrameNumbers('portal_exit_sheet', { start: 0, end: 3 }), frameRate: 8, repeat: -1 });
-        o = this.add.sprite(0, 0, 'portal_exit_sheet', 0).setOrigin(0.5, 1).setDisplaySize(150, 225).play('portal_exit_loop'); // 与英雄高度相当（约 0.6× 原图）
-      } else if (still) o = this.add.image(0, 0, 'portal_exit').setOrigin(0.5, 1).setDisplaySize(150, 225);
-      else { // 程序占位：脉动椭圆 + 旋转光圈
-        const g = this.add.graphics(); g.fillStyle(0x3a6cff, 0.35).fillEllipse(0, -110, 130, 210); g.lineStyle(4, 0x9fc0ff, 0.9).strokeEllipse(0, -110, 130, 210); g.lineStyle(2, 0xd0e0ff, 0.7).strokeEllipse(0, -110, 90, 160);
-        this.tweens.add({ targets: g, alpha: { from: 0.6, to: 1 }, duration: 800, yoyo: true, repeat: -1 }); o = g;
-      }
-      o.setData('kind', want); c.addAt(o, 0); this.backPortalArt = o;
-    }
+    this.backPortalArt = this.syncPortalArt(c, this.backPortalArt, 'back', 0); this.syncNextPortal();
     const b = this.world.backGate(); this.gateLabel?.setText(b ? `${b.label}${IS_MOBILE ? '' : ' [S]'}` : '');
   }
   /** 点传送门/S：上一层或（首层）回城镇；与回城卷轴（任务C，H 键）无关 */
@@ -706,7 +699,7 @@ export class BattleScene extends Phaser.Scene {
     const ui = this.scene.get('UI');
     const dim = ui.add.rectangle(640, 300, 1280, 600, 0x300000, 0.5).setDepth(99);
     const t = ui.add.text(640, 260, '你 已 阵 亡', { fontFamily: FONT, fontSize: '64px', color: '#ff4444', fontStyle: 'bold', stroke: '#000', strokeThickness: 6 }).setOrigin(0.5).setDepth(100);
-    const t2 = ui.add.text(640, 330, '3 秒后在本层起点复活（无损失）', { fontFamily: FONT, fontSize: '20px', color: '#fff', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5).setDepth(100);
+    const t2 = ui.add.text(640, 330, `3 秒后在${TOWNS[this.world.respawnTown()]?.name ?? '城镇'}复活（无损失）`, { fontFamily: FONT, fontSize: '20px', color: '#fff', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5).setDepth(100);
     this.overlay = [dim, t, t2];
     this.time.delayedCall(3000, () => { this.world.respawn(); this.handle(this.world.drainEvents()); });
   }
@@ -716,7 +709,7 @@ export class BattleScene extends Phaser.Scene {
     this.overlay.forEach(o => o.destroy()); this.overlay = [];
     const h = this.world.hero!; const v = new CardView(this, h); this.views.set(h.uid, v); this.refreshHeroLook();
     this.cameras.main.startFollow(v, true, 0.12, 0.12, 0, 120).setDeadzone(320, 720); this.cameras.main.fadeIn(500);
-    this.state = 'play'; this.sfx('heal'); this.log('你在本层起点复活了'); this.saveGame();
+    this.state = 'play'; this.sfx('heal'); this.log(`你在${TOWNS[this.world.respawnTown()]?.name ?? '城镇'}复活了`); this.saveGame();
   }
   /** 进入新一层：淡入，换背景，清掉旧怪物与地上物品，刷新本层怪物；角色/召唤物保留 */
   enterFloor(i: number, name: string) {

@@ -41,7 +41,7 @@ try {
     const x0 = await p.evaluate(() => window.__game.scene.getScene('Battle').world.hero.x);
     await p.evaluate(() => { const B = window.__game.scene.getScene('Battle'), o = B.onKey.bind(B); window.__keys = []; B.onKey = k => { window.__keys.push(k); return o(k); }; });
     const cdp = await p.target().createCDPSession();
-    const bx = base.x + base.w / 2 + 60, by = base.y - 40; // 摇杆区任意处按下
+    const bx = base.x + base.w / 2, by = base.y + base.h / 2; // fix/portal-same：摇杆区缩到「移动」圆钮附近，按圆钮中心
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: bx, y: by, id: 1 }] });
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: bx + 40, y: by, id: 1 }] });
     await sleep(100);

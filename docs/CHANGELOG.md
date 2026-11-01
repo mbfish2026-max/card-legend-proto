@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 死亡复活回「最近待过的城镇」（feat/respawn-last-town，未合 main）
+- 旧行为：World.respawn() 清空 units（召唤物一并丢失），在**本层起点**满血复活、本层怪物重置；BattleScene.heroDied 显示「3 秒后在本层起点复活」，3s 后调 respawn → onRespawn 建英雄卡、相机跟随。
+- 新行为：进入任一城镇/新手村（enterTown：xinshou 银杏村、bichi 比奇城、mengzhong 盟重土城、bairimen 白日门、cangyue 苍月岛、fengmo 封魔谷）时记录 `World.lastTownId`（野外不改）；死亡后满血复活并 enterTown(respawnTown())，落点=该城现有进城出生点 TOWN_SPAWN_X；存活召唤物（含诱惑宠物、等级保留）跟随，经 placeSummonsNearHero ≤100px、snapSummonViews 对齐卡牌。无损失规则（no-death-drop）、血量规则（满血）不变，未改战斗数值。阵亡提示/日志改为城名。
+- **存档字段变化（系统开发注意）**：SaveData 新增可选字段 `lastTownId?: string`（TOWNS 的 id，如 `"bichi"`）；仅在去过城镇后写出。读档：合法 id → 用之；缺省/非法 → 回退存档 `town`（若在城内存档）→ 再回退 `returnTownOf(floorIndex)`（本层原有「回城」城镇）。`v` 仍为 1，无迁移，旧档兼容。
+- sim：sim-lib / scripts/balance-sim 复活后若在城，立即 leaveTown(死亡层)（失败则直接 loadFloor），轨迹同旧「本层起点复活」；差异仅召唤物复活后保留。
+- 测试：tests/respawn-last-town.test.ts（多城切换回最近城、野外不改记录、旧档回退、非法字段、存档往返、召唤物 ≤100px/等级、多次死亡；修复前在 `lastTownId=bichi` 失败）；e2e tests/e2e/respawn-last-town-verify.mjs（比奇城→野外→阵亡→回比奇；盟重→野外→阵亡→回盟重，断言 town/城名/召唤物距离与等级/镜头内/0 console error；修复前阵亡提示仍为「本层起点」并超时失败）。
 ## 文档：全装备审计（feat/drop-audit，未合 main，未改代码）
 - docs/drop-audit-full.md/.csv：124 件装备逐件对照 21cq（79 件打开物品页核验，32 件 EG 未查到，13 件自创），新增问题 14 条与 D7–D12 待决策；只读脚本 scripts/drop-audit-items.ts、scripts/drop-audit-full.py；抓取记录 docs/drop-audit-21cq/
 
