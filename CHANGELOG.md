@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## balance-4050（feat/balance-4050，未合 main）[适配]
+- r1 40–49 级升级经验 ×2（EXP_LATE_MUL），怪物经验仍按官方表定标 → 40–49 级用时 ×2.0，1–39 级 0 差异。详见 docs/balance-4050.md
+
 
 ## 战斗平衡 balance-battle2 第三轮 [适配]
 ### 最终（r3-5；9 个 seed 跑 sim-bands，日志 r3-5-*）
