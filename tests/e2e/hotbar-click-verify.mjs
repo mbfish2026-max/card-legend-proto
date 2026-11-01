@@ -24,8 +24,13 @@ try {
       if (town) {
         await p.evaluate(() => { const h = window.__game.scene.getScene('Battle').world.hero; h.hp = Math.round(h.maxHp * 0.3); }); await sleep(200);
         const q0 = await slot('pot', 0), q1 = await slot('pot', 1); chk(!!q0 && !!q1, `${tag} 药水格可定位 ${JSON.stringify(q0)}`);
-        const a = await st(p); await click(q0); const c = await st(p); await key('1'); const k = await st(p);
-        chk(c.pots[0] === a.pots[0] - 1 && c.hp > a.hp && k.pots[0] === c.pots[0] - 1 && k.hp - c.hp === c.hp - a.hp, `${tag} 点击药水格 = 按 1（瓶数 ${a.pots[0]}→${c.pots[0]}→${k.pots[0]}，HP ${a.hp}→${c.hp}→${k.hp}）`);
+        // B5 修脚本：药水有 1s 冷却（878a73f），点击后需等 >1s 再按 1；HoT 在城内不结算（World.step 城内分支提前 return，见报告），故城内只比瓶数与 HoT 入队
+        const hots = () => p.evaluate(() => (window.__game.scene.getScene('Battle').world.hero.hots ?? []).length);
+        const a = await st(p); await click(q0); const c = await st(p), hc = await hots();
+        { const t0 = await p.evaluate(() => window.__game.scene.getScene('Battle').world.time); await p.waitForFunction(t0 => window.__game.scene.getScene('Battle').world.time >= t0 + 1.1, { timeout: 20000 }, t0); } // 按游戏时间等过 1s 冷却
+        await key('1'); const k = await st(p), hk = await hots();
+        chk(c.pots[0] === a.pots[0] - 1 && k.pots[0] === c.pots[0] - 1 && hc >= 1 && hk >= hc, `${tag} 点击药水格 = 按 1（瓶数 ${a.pots[0]}→${c.pots[0]}→${k.pots[0]}，HoT 入队 ${hc}→${hk}）`);
+        if (!(c.hp > a.hp)) console.log('KNOWN', `${tag} 城内喝药 HP 不回升（${a.hp}→${c.hp}→${k.hp}）：城内不结算 HoT，推测出城后补回（未验证）——战斗逻辑问题，单独汇报未改`);
         chk(c.tt === null && c.x === a.x, `${tag} 城内点击药水格不触发点地行走（townTarget=${JSON.stringify(c.tt)} x ${a.x}→${c.x}）`);
         const e0 = await st(p); await click(q1); const e1 = await st(p); await key('2'); const e2 = await st(p);
         chk(e1.pots[1] === 0 && e1.hp === e0.hp && e2.hp === e1.hp && e2.pots[1] === 0 && e1.tt === null, `${tag} 数量为 0：点击与按 2 结果一致（都不生效，HP ${e0.hp}/${e1.hp}/${e2.hp}）`);

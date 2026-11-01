@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## UI 美术 B5 桌面 HUD + 血球叠层 feat/ui-art-b05（基于 feat/ui-art-b04 44d8d2d；docs/ui-art-integration.md §1 B5、docs/ui-art-plan.md §3.1）
+- `src/ui/uiSlices.ts`：新增 `orbLayers()`，按四层叠放：黑底圆（半径 D×52/128）→ orb_fill_red/blue（显示 D×104/128，setCrop 从上裁出水位）→ orb_glass → orb_frame。另加 `orbGeom()`、`orbCrop()`、`orbReady()`、`barFillW()`，只用 setDisplaySize / setSize。图集缺失或缺任一帧时返回 null，回退原来的代码 Orb（波浪液面）。
+- 桌面血球直径 ORB_D=136：底栏 760×112（y 608–720），球心保持 (330/950, 652)，到屏幕底只剩 68，所以选 136（在 128–160 范围内），不越出屏幕底。水位仍按 hp/maxHp、mp/maxMp 和原来的 orbLerp 平滑，只改显示。
+- Hud.ts（仅桌面）：层名牌匾改用 title_plate，底栏用 dialog_frame，经验条用 bar_frame + bar_fill_exp（宽度按比例 setSize），战斗日志底用 tooltip_frame，地图总览的 ✕ 用 btn_close（点击区仍是 48 矩形）。缺图时全部回退原绘制。位置条和小图标保留代码绘制。
+- 手机（IS_MOBILE）：不建血球，也不用九宫格，沿用现状（Phaser HUD 隐藏，DOM HUD 不变）。
+- tests/e2e/hotbar-click-verify.mjs：「点药水格 = 按 1」失败是脚本问题。脚本写在药水 1s 冷却（878a73f）之前，点击后 0.5s 就按 1，被冷却拦住。现在改为按游戏时间等过 1.1s 再按，断言改为瓶数和 HoT 入队。另外发现城内喝药 HP 不回升：World.step 城内分支提前 return，HoT 不结算。这属于战斗逻辑，没有改，脚本里输出 KNOWN 提示。
+- 测试：新增 tests/ui-hud.test.ts（40 项，已加入 npm test）；新增 e2e tests/e2e/ui-hud-verify.mjs（27 项）。截图在 docs/shots/ui-art/b05/。
+- 9-seed：sim-band 的 esbuild metafile 共 31 个输入，没有一个是本批改动的文件。
+
 ## UI 美术 B4 装备槽、品质框、血石空槽 feat/ui-art-b04（基于 feat/ui-art-b03 1a53fc2；docs/ui-art-integration.md §1 B4）
 - `src/ui/uiSlices.ts`：新增 `slotBg()`（slot / slot_sel 九宫格）、`qualityFrame()`（qframe_common/magic/rare）、`bloodstoneSlot()`、`slotHitSize()`、`rowTint()` 和 `SKILL_ROW_TINT`。只用 setSize，边距从切片表读；图集被拦或缺帧时退回代码绘制。
 - Panel.ts：背包、装备槽、仓库槽和装备对比图标改用切片槽底和品质框；有图集时用 slot_sel 表示选中，没有图集时仍用描边。手机上槽位点击区不低于 36 CSS px，但不超过槽距。技能行在有图集时恢复按状态着色的半透明叠层（已学、未解锁、可学），没有图集时不变。

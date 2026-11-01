@@ -1,4 +1,4 @@
-import { frameBg, slotBg } from './uiSlices';
+import { frameBg, slotBg, ns, orbLayers, ORB_D, barFillW, atlasReady, UI_ATLAS } from './uiSlices';
 import { fmtExp } from '../data/expCurve';
 import Phaser from 'phaser';
 import { POTIONS, SkillDef } from '../data/skills';
@@ -11,8 +11,12 @@ const txt = (s: Phaser.Scene, x: number, y: number, t: string, size: number, col
 
 /** 液体球：液面平滑升降，顶部持续波浪 */
 class Orb {
-  g: Phaser.GameObjects.Graphics; t: Phaser.GameObjects.Text; shown = 1; phase = Math.random() * 6;
-  constructor(public s: Phaser.Scene, public x: number, public y: number, public r: number, public color: number, public deep: number) {
+  g!: Phaser.GameObjects.Graphics; t: Phaser.GameObjects.Text; shown = 1; phase = Math.random() * 6;
+  /** B5：桌面且图集齐全时为四层血球（只改显示，水位仍按 v/max） */
+  art: ReturnType<typeof orbLayers> = null;
+  constructor(public s: Phaser.Scene, public x: number, public y: number, public r: number, public color: number, public deep: number, fill?: 'orb_fill_red' | 'orb_fill_blue') {
+    this.art = fill ? orbLayers(s, x, y, ORB_D, fill) : null;
+    if (this.art) { this.t = txt(s, x, y, '', 16).setOrigin(0.5).setDepth(23); return; }
     s.add.circle(x, y, r + 6, 0x2a1c0c).setStrokeStyle(5, 0xb8893a).setDepth(20);
     s.add.circle(x, y, r, 0x0a0a0a).setDepth(20);
     this.g = s.add.graphics().setDepth(21);
@@ -25,6 +29,7 @@ class Orb {
     const target = Math.max(0, Math.min(1, v / max));
     this.shown += (target - this.shown) * Math.min(1, FX.orbLerp * dt);
     this.phase += FX.orbWaveSpeed * dt;
+    if (this.art) { this.art.set(this.shown); this.t.setText(`${Math.max(0, Math.floor(v))}/${max}`); return; }
     const { g, x, y, r } = this, top = y + r - 2 * r * this.shown;
     g.clear();
     const pts: Phaser.Math.Vector2[] = [];
@@ -39,9 +44,10 @@ class Orb {
 export class Hud {
   hp: Orb; mp: Orb; radar: Phaser.GameObjects.Graphics; skillPos: { x: number; y: number }[] = [];
   potT: Phaser.GameObjects.Text[] = []; dots: Phaser.GameObjects.Rectangle[] = [];
-  logT: Phaser.GameObjects.Text[] = []; lines: { t: string; c: string; at: number }[] = []; logBg?: Phaser.GameObjects.Rectangle;
+  logT: Phaser.GameObjects.Text[] = []; lines: { t: string; c: string; at: number }[] = []; logBg?: Phaser.GameObjects.Rectangle | Phaser.GameObjects.NineSlice;
   expFill!: Phaser.GameObjects.Rectangle; expT!: Phaser.GameObjects.Text;
-  setExp(lv: number, cur: number, next: number) { this.expFill.width = 480 * Math.max(0, Math.min(1, cur / Math.max(1, next))); this.expT.setText(`Lv${lv}  经验 ${fmtExp(cur)}/${fmtExp(next)}`); } info: Phaser.GameObjects.Text;
+  expNs?: Phaser.GameObjects.NineSlice | null;
+  setExp(lv: number, cur: number, next: number) { const w = barFillW(cur / Math.max(1, next), 480); if (this.expNs) { this.expNs.setVisible(w >= 4); if (w >= 4) this.expNs.setSize(w, 8); } this.expFill.width = this.expNs ? 0 : w; this.expT.setText(`Lv${lv}  经验 ${fmtExp(cur)}/${fmtExp(next)}`); } info: Phaser.GameObjects.Text;
   bagPos = { x: 0, y: 0 }; plaque!: Phaser.GameObjects.Text; dotObjs: Phaser.GameObjects.GameObject[] = [];
   setFloor(name: string, icons: string[]) {
     this.plaque?.setText(name); this.floorName = name; this.dotObjs.forEach(o => o.destroy()); this.dotObjs = []; this.dots = [];
@@ -76,9 +82,11 @@ export class Hud {
     const W = 600, lh = 30, H = 70 + rows.length * lh + 16, c = this.ovw = s.add.container(640 - W / 2, 120).setDepth(250).setName('mapOverview');
     c.add(frameBg(s, 'dialog_frame', 0, 0, W, H, { fill: 0x05060c, alpha: 0.96, stroke: 0xd4a64a, sw: 2 }, 0, 0).setInteractive().setName('ovwBg'));
     c.add(txt(s, W / 2, 16, `当前地图：${o.name}`, 22, '#ffe8a0', { fontStyle: 'bold' }).setOrigin(0.5, 0));
-    const close = s.add.rectangle(W - 30, 28, 48, 48, 0x2a1d10).setStrokeStyle(2, 0xb8893a).setInteractive({ useHandCursor: true }).setName('ovwClose');
+    const cart = atlasReady(s, 'btn_close'); // B5：✕ 用 btn_close（固定 40→48 等比），点击区仍是 48 矩形
+    const close = s.add.rectangle(W - 30, 28, 48, 48, 0x2a1d10, cart ? 0.001 : 1).setStrokeStyle(cart ? 0 : 2, 0xb8893a).setInteractive({ useHandCursor: true }).setName('ovwClose');
+    if (cart) c.add(s.add.image(W - 30, 28, UI_ATLAS, 'btn_close').setDisplaySize(48, 48).setName('ovwCloseImg'));
     close.on('pointerdown', (_p: any, _x: any, _y: any, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); this.toggleOverview(null); });
-    c.add([close, txt(s, W - 30, 28, '✕', 22, '#ffe8a0').setOrigin(0.5)]);
+    c.add(cart ? [close] : [close, txt(s, W - 30, 28, '✕', 22, '#ffe8a0').setOrigin(0.5)]);
     rows.forEach(([t, col], k) => c.add(txt(s, 20, 66 + k * lh, t, 16, col, { strokeThickness: 2, wordWrap: { width: W - 40 } } as any)));
     if (this.onWorldMap) { const b = s.add.rectangle(W / 2, H + 26, 240, 44, 0x2a1d10).setStrokeStyle(2, 0xb8893a).setInteractive({ useHandCursor: true }).setName('ovwWorld');
       b.on('pointerdown', (_p: any, _x: any, _y: any, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); this.onWorldMap?.(); });
@@ -92,8 +100,10 @@ export class Hud {
   constructor(public s: Phaser.Scene, levelName: string, waveIcons: string[], public skills: SkillDef[], onMenu: (i: number) => void, mobile = false, onSkill?: (key: string) => void) {
     const n0 = s.children.list.length; this.mobile = mobile; this.floorName = levelName;
     // 右上角牌匾（层名）+ 本层怪物进度小图标
-    s.add.rectangle(1130, 36, 270, 46, 0x8a1010).setStrokeStyle(3, 0xd4a64a).setDepth(20);
-    s.add.rectangle(1130, 36, 258, 34).setStrokeStyle(1, 0xffe8a0, 0.6).setDepth(20);
+    const plate = !mobile ? ns(s, 'title_plate', 1130, 36, 270, 46) : null; // B5：牌匾 title_plate，无图集回退双层金边
+    if (plate) plate.setDepth(20).setName('plaqueBg');
+    else { s.add.rectangle(1130, 36, 270, 46, 0x8a1010).setStrokeStyle(3, 0xd4a64a).setDepth(20);
+      s.add.rectangle(1130, 36, 258, 34).setStrokeStyle(1, 0xffe8a0, 0.6).setDepth(20); }
     this.plaque = txt(s, 1130, 36, levelName, 22, '#ffe8a0', { fontStyle: 'bold' }).setOrigin(0.5).setDepth(21);
     this.setFloor(levelName, waveIcons);
     // 地图总览：点击牌匾（层名）开关；位置条在牌匾/怪物图标下方（docs/map-overview.md）
@@ -103,10 +113,14 @@ export class Hud {
     if (!mobile) txt(s, 640, 574, '移动 A/D ←→ 按住走  纵深 ↑↓  W/空格 传送门  S 回上层  技能 F1-F12(更多点击)  药水 1-4  背包 B/C  悬赏 Q  商人 T  地图 M  设置 Esc  静音 N', 13, '#cccccc', { strokeThickness: 2 }).setOrigin(0.5).setDepth(30);
     // 底部栏
     // Diablo 式紧凑底栏：红球 | 技能+药水 | 蓝球，中间上方经验条
-    s.add.rectangle(640, 664, 760, 112, 0x140f0a, 0.92).setStrokeStyle(2, 0x6a5030).setDepth(19);
-    this.hp = new Orb(s, 330, 652, 60, 0xd01818, 0x700000);
-    this.mp = new Orb(s, 950, 652, 60, 0x1a4fd8, 0x081a60);
-    s.add.rectangle(640, 601, 480, 10, 0x000000, 0.9).setStrokeStyle(1, 0x8a7040).setDepth(20);
+    (mobile ? s.add.rectangle(640, 664, 760, 112, 0x140f0a, 0.92).setStrokeStyle(2, 0x6a5030)
+      : frameBg(s, 'dialog_frame', 640, 664, 760, 112, { fill: 0x140f0a, alpha: 0.92, stroke: 0x6a5030, sw: 2 })).setDepth(19).setName('hudBar');
+    // B5：桌面血球四层（直径 ORB_D=136，见 CHANGELOG）；手机/无图集仍走代码 Orb
+    this.hp = new Orb(s, 330, 652, 60, 0xd01818, 0x700000, mobile ? undefined : 'orb_fill_red');
+    this.mp = new Orb(s, 950, 652, 60, 0x1a4fd8, 0x081a60, mobile ? undefined : 'orb_fill_blue');
+    const ef = !mobile ? ns(s, 'bar_frame', 640, 601, 492, 16) : null;
+    if (ef) ef.setDepth(20).setName('expFrame'); else s.add.rectangle(640, 601, 480, 10, 0x000000, 0.9).setStrokeStyle(1, 0x8a7040).setDepth(20);
+    this.expNs = ef ? ns(s, 'bar_fill_exp', 400, 601, 4, 8) : null; this.expNs?.setOrigin(0, 0.5).setDepth(21).setName('expFillNs').setVisible(false);
     this.expFill = s.add.rectangle(400, 601, 0, 8, 0xc8a020).setOrigin(0, 0.5).setDepth(21);
     this.expT = txt(s, 640, 601, '', 10, '#fff', { strokeThickness: 2 }).setOrigin(0.5).setDepth(22);
     // #11 法师最多 10 技能：>5 时两行各 5 格，缩小格子不挤占药水栏
@@ -152,7 +166,7 @@ export class Hud {
     // 战斗日志：电脑放左下（底栏左侧空位，不挡商人），手机放左上（左下是方向键）；半透明、6 秒后自动淡出
     if (mobile) this.bagPos = { x: 600, y: 44 };
     const ly = mobile ? 92 : 606, lh = mobile ? 18 : 18;
-    if (!mobile) this.logBg = s.add.rectangle(0, 596, 252, 124, 0x000000, 0.35).setOrigin(0, 0).setDepth(29);
+    if (!mobile) { const lb = ns(s, 'tooltip_frame', 0, 596, 252, 124); this.logBg = lb ? lb.setOrigin(0, 0).setDepth(29).setName('logBg') as any : s.add.rectangle(0, 596, 252, 124, 0x000000, 0.35).setOrigin(0, 0).setDepth(29); }
     for (let i = 0; i < 6; i++) this.logT.push(txt(s, 8, ly + i * lh, '', mobile ? 14 : 12, '#fff', { strokeThickness: 2, ...(mobile ? {} : { fixedWidth: 244 }) }).setDepth(30));
     this.info = txt(s, 12, 10, '', 14, '#ffe8a0').setDepth(30);
     if (mobile) s.children.list.slice(n0).forEach(o => (o as any).setVisible?.(false));

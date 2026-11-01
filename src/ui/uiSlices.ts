@@ -108,3 +108,26 @@ export function rowTint(s: Phaser.Scene, row: Phaser.GameObjects.GameObject, x: 
   if (color === undefined || row.type !== 'NineSlice') return null;
   return s.add.rectangle(x, y, w - 8, h - 8, color, alpha).setName('rowTint');
 }
+
+/** B5 桌面血球四层（docs/ui-art-plan.md §3.1）：黑底圆 → orb_fill（D×104/128，setCrop 水位）→ orb_glass → orb_frame */
+export const ORB_D = 136;
+export const ORB_FRAMES = ['orb_fill_red', 'orb_fill_blue', 'orb_glass', 'orb_frame'];
+export function orbGeom(D: number) { return { base: D * 52 / 128, fill: D * 104 / 128, frame: D }; }
+/** 水位裁切（帧坐标，从上裁）：ratio 0..1 → 保留下部 h */
+export function orbCrop(ratio: number, frameH = 64) { const r = Math.max(0, Math.min(1, ratio || 0)); const h = frameH * r; return { y: frameH - h, h }; }
+export function orbReady(s: TexHost, fill: string) { return ['orb_glass', 'orb_frame', fill].every(f => atlasReady(s, f)); }
+/** 建四层；不可用返回 null（调用方回退代码绘制）。只用 setDisplaySize */
+export function orbLayers(s: Phaser.Scene, x: number, y: number, D: number, fill: 'orb_fill_red' | 'orb_fill_blue', depth = 20) {
+  if (!orbReady(s, fill)) return null;
+  const g = orbGeom(D);
+  const base = s.add.circle(x, y, g.base, 0x0a0a0a).setDepth(depth).setName('orbBase');
+  const liq = s.add.image(x, y, UI_ATLAS, fill).setDisplaySize(g.fill, g.fill).setDepth(depth + 1).setName('orbFill');
+  const glass = s.add.image(x, y, UI_ATLAS, 'orb_glass').setDisplaySize(D, D).setDepth(depth + 2).setName('orbGlass');
+  const frame = s.add.image(x, y, UI_ATLAS, 'orb_frame').setDisplaySize(D, D).setDepth(depth + 2).setName('orbFrame');
+  const fh = liq.frame.height, fw = liq.frame.width;
+  const set = (ratio: number) => { const c = orbCrop(ratio, fh); liq.setCrop(0, c.y, fw, c.h); return c; };
+  set(1);
+  return { base, liq, glass, frame, set };
+}
+/** 横条填充宽度（bar_fill_* 两端 2px 不拉伸：宽度不足 L+R 时隐藏） */
+export function barFillW(ratio: number, w: number) { return w * Math.max(0, Math.min(1, ratio || 0)); }
