@@ -2,6 +2,7 @@
 // 打分：score = Σ 权重×属性（物品 stats + 未写 mdef 时按 World.itemMdef 推算的魔御 + 幸运），权重见 W。
 // 每个栏位组（武器/头盔/衣服/项链/靴子/腰带单格；戒指/手镯双格）从「背包里可穿的件 + 已穿戴」中取分数最高的；
 // 可穿 = 有 slot、req ≤ 当前等级、ITEMS.cls 为空或含本职业。只在分数严格更高时替换（需求更高但分更低不换）；换下的件经 equipItem 回到背包原位。
+// 换装后清包：卖他职业件与已被淘汰的件（见 gearTick）。
 // 评估时机：每个 tick 检查「背包签名（长度+uid 序列）或等级」是否变化，变化即评估（= 拾取、商店买入、解包、升级、复活、进图后背包变动时）。
 // SIM_GEAR_DUMP=路径：Lv40/45/50 首次到达时把各栏位穿戴写成 JSONL（只读）。
 // @ts-ignore tsconfig 无 node 类型（运行于 tsx）
@@ -39,6 +40,12 @@ export function gearTick(w: any, cls: string, seed: number, swap = GEAR_SWAP) {
         if (!tgt) { tgt = sl.reduce((a, b) => gearScore(w, w.equip[a]) <= gearScore(w, w.equip[b]) ? a : b); cur = gearScore(w, w.equip[tgt]); }
         const gain = sc - cur; if (gain > 1e-9 && (!best || gain > best[0])) best = [gain, tgt, i]; }
       if (!best) break; if (w.equipItem(best[2], best[1])) break; }
+    // 清包（像真人卖垃圾）：旧 sim 从不卖装备 → 实测 Lv40 前背包 200/200 满（173 件装备），之后什么都捡不起来。
+    // 卖：他职业件；以及 req ≤ 当前等级、且分数 ≤ 该栏位组已穿最低分的件（已被淘汰）。req 高于当前等级的件保留（以后可穿）。
+    for (let i = w.bag.length - 1; i >= 0; i--) { const it = w.bag[i]; if (!it?.slot) continue;
+      const sl = GROUPS[it.slot] ?? [it.slot]; if (sl.some(s => !w.equip[s])) { if (foreign(w.cls, it)) w.sellItem(i); continue; }
+      const worst = Math.min(...sl.map(s => gearScore(w, w.equip[s])));
+      if (foreign(w.cls, it) || (it.req <= w.level && gearScore(w, it) <= worst)) w.sellItem(i); }
     m.sig = w.level + ':' + w.bag.map((x: any) => x.uid).join(',');
   }
   if (DUMP && [40, 45, 50].includes(w.level) && !m.dumped.has(w.level)) { m.dumped.add(w.level); dump(w, cls, seed, w.level); }
@@ -46,6 +53,6 @@ export function gearTick(w: any, cls: string, seed: number, swap = GEAR_SWAP) {
 function dump(w: any, cls: string, seed: number, lv: number | string) {
   const nm = (v: any) => `${v.name}(${v.item},req${v.req})`;
   appendFileSync(DUMP, JSON.stringify({ cls, seed, lv, swap: GEAR_SWAP, equip: Object.fromEntries(Object.entries(w.equip).filter(([, v]) => v).map(([k, v]: any) => [k, nm(v)])),
-    bag40: w.bag.filter((x: any) => x.slot && x.req >= 35).map(nm) }) + '\n'); }
+    bagN: w.bag.length, bagEq: w.bag.filter((x: any) => x.slot).length, bag40: w.bag.filter((x: any) => x.slot && x.req >= 35).map(nm) }) + '\n'); }
 /** sim 结束时（通关即 Lv50 后循环退出，tick 里拿不到 Lv50）再记一次，lv 记 'end@等级' */
 export function gearEnd(w: any, cls: string, seed: number) { if (DUMP) dump(w, cls, seed, 'end@' + w.level); }
