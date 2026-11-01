@@ -15,7 +15,7 @@ const srcMap: Record<string, any> = src;
 ok(atlas.meta.size.w === 512 && atlas.meta.size.h === 512, '图集 512×512');
 const vc = readFileSync(join(R, 'vite.config.ts'), 'utf8');
 const fr = atlas.frames as Record<string, any>, keys = Object.keys(SLICES as any).sort();
-ok(keys.length === 46, `最终图集 46 帧（44 切片 + orb_fill_red/blue）（实际 ${keys.length}）`);
+ok(keys.length === 47, `最终图集 47 帧（45 切片含 lingfu_entry + orb_fill_red/blue）（实际 ${keys.length}）`);
 ok(JSON.stringify(Object.keys(fr).sort()) === JSON.stringify(keys), '图集帧名 = ui-slices 表');
 ok(JSON.stringify(Object.keys(srcMap).sort()) === JSON.stringify(keys), '图集帧名 = 美术 slices.json');
 for (const k of keys) {

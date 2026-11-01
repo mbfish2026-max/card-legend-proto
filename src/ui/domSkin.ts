@@ -10,7 +10,7 @@ import { mapAssetUrl } from '../assetUrlMap';
 const OPT = typeof import.meta !== 'undefined' && !!(import.meta as any).env?.PROD;
 export const domSrc = (name: string, opt = OPT) => mapAssetUrl(domUrl(name), opt);
 /** 本批用到的 DOM 图（全部须为 dom:true） */
-export const DOM_SKIN = ['btn_normal', 'btn_pressed', 'bar_frame', 'bar_fill_hp', 'bar_fill_mp', 'bar_fill_exp', 'touch_round', 'btn_close', 'tooltip_frame', 'panel_frame_s'] as const;
+export const DOM_SKIN = ['btn_normal', 'btn_pressed', 'bar_frame', 'bar_fill_hp', 'bar_fill_mp', 'bar_fill_exp', 'touch_round', 'btn_close', 'tooltip_frame', 'panel_frame_s', 'lingfu_entry'] as const;
 export type DomName = typeof DOM_SKIN[number];
 /** T R B L：slice（@2x 图像素）与 width（CSS px） */
 export function domSlice(name: string) {
@@ -48,6 +48,8 @@ export function skinCss(opt = OPT) {
     `${B('panel_frame_s')} #mh-ovw .box{${borderImage('panel_frame_s', true, opt, '2px')};background:none;border-radius:0}`,
     `${B('btn_close')} #mh-ovw .x{${bg('btn_close', opt)};border-color:transparent;color:transparent}`,
     `${B('btn_normal')} #mh-ovw .wm{${btnBox('btn_normal')}}`,
+    // 灵符入口 #mh-shop 52×44：lingfu_entry @2x，slice 28/36（=1x 14/18 ×2）；!important 压过通用 btn_normal（含 3 个 id 选择器）
+    `${B('lingfu_entry')} #mh-shop{border-style:solid!important;border-width:2px!important;border-image:url("${domSrc('lingfu_entry', opt)}") 28 36 28 36 fill / 14px 18px 14px 18px stretch!important;background:none!important;border-radius:0!important}`,
   ].join('\n');
 }
 /** 逐张预载，成功后加 class；失败不加（回退纯 CSS）。返回 Promise 供测试等待 */

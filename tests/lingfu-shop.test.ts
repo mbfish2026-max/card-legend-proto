@@ -36,7 +36,7 @@ const mk = (c: any = 'warrior', save?: any) => { const w = new World(() => 0.5, 
   const want: Record<string, number> = { summon_lv7_scroll: 300, return_stone: 100, skill_necklace: 500, stone_s: 200, stone_m: 450, stone_l: 900, stone_x: 1800 };
   ok(PRODUCTS.length === 7 && PRODUCTS.every(p => want[p.sku] === p.price), '价格表 = 简报（300/100/500/200/450/900/1800）');
   ok(PRODUCTS.every(p => ITEMS[p.item] && SHOP_ITEMS[p.item]), '每个商品都有物品定义');
-  ok(['stone_s', 'stone_m', 'stone_l', 'stone_x'].map(k => (BLOODSTONES as any)[k]).map((b: any) => `${b.hp}/${b.req}`).join(',') === '20000/30,50000/35,120000/40,300000/45', '血石储量/佩戴等级');
+  ok(['stone_s', 'stone_m', 'stone_l', 'stone_x'].map(k => (BLOODSTONES as any)[k]).map((b: any) => `${b.hp}/${b.req}`).join(',') === '20000/1,50000/35,120000/40,300000/45', '血石储量/佩戴等级');
   ok(!PRODUCTS.some(p => /bless_oil|black_iron/.test(p.item)) && PRODUCTS.every(p => !ITEMS[p.item].equip || Object.keys(ITEMS[p.item].equip!).length === 0), '不售祝福油/黑铁/带属性装备');
   const doc = readFileSync('docs/lingfu-shop.md', 'utf8'); ok(PRODUCTS.every(p => doc.includes(`| ${p.sku} |`) && doc.includes(`${p.price}`)), '文档实现表与价格表一致');
   ok(SHOP_TABS.length === 6 && productsOf('recharge').length === 0 && productsOf('hot').length > 0 && RECHARGE_TIERS.every(t => t.lingfu === t.yuan * 10), '页签/充值档位');
@@ -57,8 +57,9 @@ ok(EQUIP_SLOTS.includes('stone') && EQUIP_SLOT_NAMES.stone === '血石' && SLOT_
 }
 // ── 血石佩戴等级 / 技巧项链占项链栏
 {
-  const w = mk(); w.level = 30; const wal = new LocalWallet(mem()); buy(w, wal, 'stone_s'); buy(w, wal, 'skill_necklace');
-  const si = w.bag.findIndex(i => i.item === 'stone_s'); ok(!w.equipItem(si) && w.equip.stone?.item === 'stone_s', '30 级可戴小血石进 stone 栏');
+  const w = mk(); w.level = 1; const wal = new LocalWallet(mem()); buy(w, wal, 'stone_s'); buy(w, wal, 'skill_necklace');
+  const si = w.bag.findIndex(i => i.item === 'stone_s'); ok(!w.equipItem(si) && w.equip.stone?.item === 'stone_s', '1 级即可戴小血石进 stone 栏（无等级限制）');
+  { const w2 = mk(); w2.level = 34; const wal2 = new LocalWallet(mem()); buy(w2, wal2, 'stone_m'); const mi = w2.bag.findIndex(i => i.item === 'stone_m'); ok(!!w2.equipItem(mi) && !w2.equip.stone, '34 级戴中血石（Lv35）→ 等级不足'); w2.level = 35; ok(!w2.equipItem(w2.bag.findIndex(i => i.item === 'stone_m')) && w2.equip.stone?.item === 'stone_m', '35 级可戴中血石'); }
   const ni = w.bag.findIndex(i => i.item === 'skill_necklace'); ok(!w.equipItem(ni) && w.equip.necklace?.item === 'skill_necklace', '技巧项链占项链栏');
 }
 // ── 回城石：冷却 / 次数 / 目的地
