@@ -1316,7 +1316,7 @@ export class World {
       if (h.hp >= h.maxHp && (h.mp ?? 0) >= h.maxMp) return null;
       if (this.time < (h.sunReady ?? 0)) return null;
       this.pots[i]--; h.sunReady = this.time + WORLD.potCd;
-      h.hp = Math.min(h.maxHp, h.hp + (p.hp ?? 0)); if (h.maxMp > 0) h.mp = Math.min(h.maxMp, (h.mp ?? 0) + (p.mp ?? 0));
+      if (p.hp) this.heal(h, p.hp, false); /* 走 heal 事件 → 绿色回血飘字 */ if (h.maxMp > 0) h.mp = Math.min(h.maxMp, (h.mp ?? 0) + (p.mp ?? 0));
       return ITEMS[p.item].name;
     }
     if ((p.hp && h.hp >= h.maxHp && !p.mp) || (p.mp && (h.mp ?? 0) >= h.maxMp && !p.hp)) return null;
