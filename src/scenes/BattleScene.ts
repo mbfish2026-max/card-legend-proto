@@ -329,6 +329,7 @@ export class BattleScene extends Phaser.Scene {
     if (k === 'B' || k === 'C' || k === 'I') return this.openPanel('bag');
     if (k === 'T') { if (this.world.town) { this.townUse(); return; } return this.openPanel('shop'); }
     if (k === 'K') return this.openPanel('skills');
+    if (k === 'L') return this.openPanel('lingfu'); // 灵符商城
     if (k === 'H') { this.log(this.world.useRecallScroll()); return; } // 任务C：回城卷快捷键
     if (k === 'Q') return this.openPanel('quests');
     if (this.paused || this.state !== 'play') return;

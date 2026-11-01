@@ -5,6 +5,8 @@ import { POTIONS, SkillDef } from '../data/skills';
 import { FX, FONT } from '../data/fx';
 import { MENU_LABELS } from '../assets-manifest';
 import type { Overview, PosBar } from '../data/mapOverview';
+/** 桌面灵符商城入口（1280×720 逻辑坐标，中心点） */
+export const LINGFU_BTN = { x: 1226, y: 596, w: 88, h: 44 };
 
 const txt = (s: Phaser.Scene, x: number, y: number, t: string, size: number, color = '#fff', extra: Phaser.Types.GameObjects.Text.TextStyle = {}) =>
   s.add.text(x, y, t, { fontFamily: FONT, fontSize: size + 'px', color, stroke: '#000', strokeThickness: 3, ...extra });
@@ -163,6 +165,15 @@ export class Hud {
       txt(s, x, y + 30, label, 11, '#ffe8a0').setOrigin(0.5).setDepth(21);
       if (i === 1) this.bagPos = { x, y };
     });
+    // 灵符商城入口（桌面右下，菜单圆钮上方；点击区 84×44，不压菜单钮/底栏）。手机入口在 MobileHud #mh-shop
+    if (!mobile && onSkill) {
+      const x = LINGFU_BTN.x, y = LINGFU_BTN.y, bw = LINGFU_BTN.w, bh = LINGFU_BTN.h;
+      const bg = ns(s, 'btn_normal', x, y, bw, bh); if (bg) bg.setDepth(20); else s.add.rectangle(x, y, bw, bh, 0x2a1d10).setStrokeStyle(2, 0xd4a64a).setDepth(20);
+      const hasIc = atlasReady(s, 'lingfu_icon_s'); if (hasIc) s.add.image(x - 22, y, UI_ATLAS, 'lingfu_icon_s').setDisplaySize(24, 24).setDepth(21);
+      txt(s, hasIc ? x + 10 : x, y, '灵符', 16, '#ffe070', { fontStyle: 'bold' }).setOrigin(0.5).setDepth(21);
+      s.add.rectangle(x, y, bw, bh, 0, 0.001).setDepth(25).setName('lingfuEntry').setInteractive({ useHandCursor: true })
+        .on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); onSkill('L'); });
+    }
     // 战斗日志：电脑放左下（底栏左侧空位，不挡商人），手机放左上（左下是方向键）；半透明、6 秒后自动淡出
     if (mobile) this.bagPos = { x: 600, y: 44 };
     const ly = mobile ? 92 : 606, lh = mobile ? 18 : 18;

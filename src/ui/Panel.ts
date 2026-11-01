@@ -7,6 +7,7 @@ import { SKILL_BOOK_DROPS } from '../data/skillBookDrops';
 import { COMPANION_UNLOCK_LEVEL, comboFor, BOOK_PAGE, BRM_BOOK, GOLD_BAR, PAGES_PER_BOOK, COMBO_LEVEL, heartFeedValue, RAGE_MAX, HEART_STORE_MAX, RECRUIT_DIALOG } from '../data/companion';
 import { toLogic, toLogicX, MAX_LW, Render } from '../render';
 import { isShopUsable, useShopItem } from '../shop/shop';
+import { renderLingfu, resetLingfu } from './LingfuShopView';
 import { frameBg, atlasReady, listRowPitch, rowHitHeight, viewCss, rowBg, scrollBar, slotBg, qualityFrame, slotHitSize, bloodstoneSlot, rowTint, SKILL_ROW_TINT, UI_SLICES , panelFrameName, MOBILE_TABS, MIN_TAP } from './uiSlices';
 import { compareRows, diffText, CmpData } from './equipCompare';
 import { shouldTapClose } from './tapClose';
@@ -40,7 +41,7 @@ import { CONSUMABLE } from '../data/items-town';
 import { Settings, DEFAULT_AUTO_SKILLS } from '../settings';
 import { equipLook } from './EquipLayers';
 
-export type PanelMode = 'bag' | 'shop' | 'skills' | 'settings' | 'map' | 'quests' | 'town';
+export type PanelMode = 'bag' | 'shop' | 'skills' | 'settings' | 'map' | 'quests' | 'town' | 'lingfu';
 export const RARITY_HEX: Record<string, string> = { common: '#ffffff', magic: '#5aa8ff', rare: '#ffb020' };
 const RARITY_NUM: Record<string, number> = { common: 0x8a8a8a, magic: 0x3a7aff, rare: 0xffa020 };
 const RARITY_CN: Record<string, string> = { common: '普通', magic: '精良', rare: '极品' };
@@ -57,6 +58,8 @@ export class Panel {
   /** 商店分页：杂货 / 书店（R11 技能书） */
   shopTab: 'goods' | 'books' = 'goods';
   onTeleport?: () => void;
+  /** 灵符商城购买成功后立即存档 */
+  onSave?: () => void;
   /** R14 城镇：当前选中的 NPC id */
   npc: string | null = null;
   constructor(public s: Phaser.Scene, public world: () => World, public onChange: (msg?: string, green?: boolean) => void, public onTitle: () => void) {
@@ -77,6 +80,7 @@ export class Panel {
   close() {
     // R14 横版长街：关闭店铺界面 = 回到街上（出城走西端城门）
     if (this.mode === 'town') this.npc = null;
+    if (this.mode === 'lingfu') resetLingfu();
     this.clearMapInput(); this.sel = null; this.ironIdx = null; this.mode = null; this.root?.destroy(true); this.root = undefined; this.hideTip(); }
   /** #11 修复：面板打开时升级/得经验不刷新。render 时记录快照，UIScene.update 每帧比对 */
   private snap = ''; mscale = 1; skPage = 0; bookPage = 0; bookCs = false;
@@ -101,7 +105,7 @@ export class Panel {
     const W = this.mode === 'settings' ? 640 : 1000, H = this.mode === 'settings' ? 580 : 500, top = Math.max(40, 360 - H / 2);
     // 边框与内容对齐：非设置面板内容从 top 起排到 top+478，边框覆盖 top-20 ~ top+480
     R.add(frameBg(s, panelFrameName(IS_MOBILE, f => atlasReady(s, f)), 640, this.mode === 'settings' ? 300 : top + H / 2 - 20, W, H, { fill: 0x15100b, alpha: 0.97, stroke: 0xd4a64a, sw: 3 }).setName('panelBg'));
-    const titles = { bag: '角色 / 背包', shop: '商人 · 杂货铺', skills: '技能', settings: '设置', map: this.wm.area ? '' : '世界地图', quests: '悬赏 / 成就', town: `${TOWNS[this.world().town ?? 'bichi']?.name ?? '城镇'} · 安全区` };
+    const titles = { bag: '角色 / 背包', shop: '商人 · 杂货铺', skills: '技能', settings: '设置', map: this.wm.area ? '' : '世界地图', quests: '悬赏 / 成就', lingfu: '灵符商城', town: `${TOWNS[this.world().town ?? 'bichi']?.name ?? '城镇'} · 安全区` };
     if (titles[this.mode] && atlasReady(s, 'title_plate')) R.add(frameBg(s, 'title_plate', 640, top + 22, Math.max(200, titles[this.mode].length * 26 + 80), 40, { fill: 0 }).setName('titlePlate')); // B2 标题底牌（无图集不画，保持原样）
     R.add(txt(s, 640, top + 22, titles[this.mode], 24, '#ffd24a', { fontStyle: 'bold' }).setOrigin(0.5));
     // 手机：面板整体放大到接近全屏（地图面板自带拖动/缩放坐标换算，不放大）；关闭键加大到 ≥44px
@@ -111,6 +115,7 @@ export class Panel {
     if (this.mode === 'settings') return this.renderSettings(R, top);
     if (this.mode === 'skills') { this.renderSkills(R, top); return this.mobileTabs(R, top); }
     if (this.mode === 'map') return this.renderMap(R, top);
+    if (this.mode === 'lingfu') return renderLingfu({ s, R, top, W, H, world: this.world, cssU: this.cssU(), toPanel: p => this.toPanel(p), addOff: f => this.mapOff.push(f), rerender: () => this.render(), close: () => this.close(), onChange: this.onChange, save: () => this.onSave?.() });
     if (this.mode === 'quests') return this.renderQuests(R, top);
     if (this.mode === 'town') { this.renderTown(R, top); if (this.npcNeedsBag()) this.renderBag(R, top); return; }
     if (this.mode === 'bag') this.renderEquip(R, top); else this.renderShop(R, top);

@@ -1,5 +1,6 @@
 // 灵符商城：钱包 / 购买扣费 / 库存 / 冷却 / 存档迁移 / 价格表一致性 / 旧存档兼容（docs/lingfu-shop.md）
 declare const process: { exit(c: number): never };
+// @ts-ignore 测试运行于 node（tsx），项目未装 @types/node
 import { readFileSync } from 'node:fs';
 import { World, migrateEquip } from '../src/combat/World';
 import { FLOORS, WORLD } from '../src/data/world';
@@ -8,6 +9,7 @@ import { TOWNS, returnTownOf } from '../src/data/towns';
 import { LocalWallet, LINGFU_KEY, SIGNUP_GRANT, LINGFU_PER_YUAN, yuanOf, parseWallet, RemoteWallet } from '../src/shop/wallet';
 import { PRODUCTS, PRODUCT_BY_SKU, BLOODSTONES, SHOP_ITEMS, productsOf, SHOP_TABS, RETURN_STONE_USES, RETURN_STONE_CD_MS, RECHARGE_TIERS } from '../src/shop/catalog';
 import { buy, useReturnStone, useSummonScroll, makeShopItem, isShopUsable } from '../src/shop/shop';
+const last = <T>(a: T[]): T => a[a.length - 1];
 let pass = 0; const ok = (c: unknown, m: string) => { if (!c) { console.error('FAIL', m); process.exit(1); } pass++; console.log('ok', m); };
 const mem = () => { const m = new Map<string, string>(); return { m, getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v) }; };
 const mk = (c: any = 'warrior', save?: any) => { const w = new World(() => 0.5, 50, FLOORS, c, save); w.step(0.05); w.drainEvents(); return w; };
@@ -45,8 +47,8 @@ ok(EQUIP_SLOTS.includes('stone') && EQUIP_SLOT_NAMES.stone === '血石' && SLOT_
 // ── 购买扣费 / 库存
 {
   const w = mk(), wal = new LocalWallet(mem());
-  const r = buy(w, wal, 'return_stone'); ok(r.ok && wal.balance() === 4900 && w.bag.at(-1)!.item === 'return_stone' && w.bag.at(-1)!.uses === RETURN_STONE_USES && w.bag.at(-1)!.bound, '购买回城石：扣 100，入包 10 次，绑定');
-  const s = buy(w, wal, 'stone_x'); ok(s.ok && w.bag.at(-1)!.charge!.hp === 300000 && w.bag.at(-1)!.req === 45 && w.bag.at(-1)!.slot === 'stone', '血石（特）储量 30 万、45 级');
+  const r = buy(w, wal, 'return_stone'); ok(r.ok && wal.balance() === 4900 && last(w.bag).item === 'return_stone' && last(w.bag).uses === RETURN_STONE_USES && last(w.bag).bound, '购买回城石：扣 100，入包 10 次，绑定');
+  const s = buy(w, wal, 'stone_x'); ok(s.ok && last(w.bag).charge!.hp === 300000 && last(w.bag).req === 45 && last(w.bag).slot === 'stone', '血石（特）储量 30 万、45 级');
   const n0 = w.bag.length; const f = buy(w, wal, 'stone_x');
   const bal = wal.balance(); const g = buy(w, wal, 'stone_x'); ok(!g.ok && g.reason === 'balance' && wal.balance() === bal && w.bag.length === n0 + 1 && f.ok, '灵符不足：不扣费不发货');
   ok(!buy(w, wal, 'nope').ok, '未知商品拒绝');
@@ -83,9 +85,9 @@ ok(EQUIP_SLOTS.includes('stone') && EQUIP_SLOT_NAMES.stone === '血石' && SLOT_
 // ── 存档迁移 / 旧存档兼容
 {
   const w = mk(), wal = new LocalWallet(mem()); w.level = 40; buy(w, wal, 'stone_l'); w.equipItem(w.bag.findIndex(x => x.item === 'stone_l')); buy(w, wal, 'return_stone');
-  w.bag.at(-1)!.uses = 3; w.bag.at(-1)!.cdAt = 123;
+  last(w.bag).uses = 3; last(w.bag).cdAt = 123;
   const sv = JSON.parse(JSON.stringify(w.toSave())); ok(!('lingfu' in sv) && !JSON.stringify(sv).includes('balance'), '灵符余额不进 SaveData');
-  const w2 = mk('warrior', sv); ok(w2.equip.stone?.charge?.hp === 120000 && w2.bag.at(-1)!.uses === 3 && w2.bag.at(-1)!.cdAt === 123, 'stone 栏/次数/冷却随存档往返');
+  const w2 = mk('warrior', sv); ok(w2.equip.stone?.charge?.hp === 120000 && last(w2.bag).uses === 3 && last(w2.bag).cdAt === 123, 'stone 栏/次数/冷却随存档往返');
   const old: any = JSON.parse(JSON.stringify(mk().toSave())); delete old.equip.stone; old.eqV = 1; old.equip.ring = old.equip.ring1; delete old.equip.ring1;
   const e = migrateEquip(old); ok(!e.stone && !('ring' in e), '旧档（无 stone）迁移：stone 为空');
   const w3 = mk('warrior', old); ok(!w3.equip.stone && w3.stats().hp > 0, '旧存档可加载');
