@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 账号系统 P1：用户名密码登录 + 多存档位云存档 feat/account-p1
+- 用户名+密码（内部伪邮箱 u<hex>@fcl.local），Supabase schema fcl；supabase-js 自托管打包（无 CDN），动态加载。
+- 游客模式保留；本地存档仍为主，离线可玩；未配置 VITE_SUPABASE_URL/KEY 时显示「账号：未配置」。
+- 首次登录先整份备份（fcl_cloud_backup_<ts>）再迁移；同槽冲突由玩家选择，不自动覆盖，放弃的一份存本机备份。旧存档格式不变。
+- 本地保存后 30s 节流上传；切后台立即 flush；pagehide 用 keepalive（<60KB）。
+- SQL：supabase/migrations/0001_fcl_schema.sql；Edge Function：supabase/functions/wallet（均未部署）；.env.example。
+- 测试 tests/cloud-sync.test.ts（mock：会话恢复/冲突/离线/keepalive）、tests/e2e/account-p1-verify.mjs。
 ## 手机版：装备对比面板点外部关闭 feat/mobile-tapclose
 - 手机（IS_MOBILE）角色/背包界面：点装备弹出「身上/查看中」对比面板后，点面板外空白处即关闭并取消选中。
 - 点面板内部不关；点其他装备格切换为对比该装备；按下到抬起移动 >8px（拖动/滚动）不算点击。

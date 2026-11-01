@@ -80,7 +80,7 @@ export function conflictScreen(h: AccountHost, c: CloudSync) {
       L.add(txt(s, x, y + 44, title, 15, '#9fd'));
       L.add(txt(s, x, y + 66, brief(d), 15, '#e8d8b0'));
       L.add(txt(s, x, y + 88, when, 13, '#a89a7a'));
-      L.add([...button(s, x + 380, y + 72, 120, 40, choice === 'local' ? '保留本机' : '保留云端', async () => { await c.resolve(cf.slot, choice); h.rerender(); }, 15)]);
+      L.add([...button(s, x + 380, y + 72, 120, 40, choice === 'local' ? '保留本机' : '保留云端', async () => { await c.resolve(cf.slot, choice); if (c.conflicts.length) h.rerender(); else h.back(); }, 15)]);
     };
     side(160, '本机', cf.local, `最后游玩 ${fmtDate(Slots.list().find(x => x.i === cf.slot)?.lastAt ?? null)}`, 'local');
     L.add(s.add.rectangle(640, y + 72, 2, 80, 0x6a5a3a));
