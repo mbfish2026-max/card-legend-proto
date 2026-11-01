@@ -12,15 +12,33 @@ import { FLOORS, floorNo } from '../data/world';
 import type { SaveData } from '../combat/World';
 import { MUSIC, playMusic } from '../music';
 import { IS_MOBILE } from '../mobile';
+import { ns, nsFrame, minTapHeight, UI_ATLAS, UI_ATLAS_PNG, UI_ATLAS_JSON } from '../ui/uiSlices';
+import { assetUrl } from '../loader';
 
 export const txt = (s: Phaser.Scene, x: number, y: number, t: string, size: number, color = '#fff', extra: Phaser.Types.GameObjects.Text.TextStyle = {}) =>
   s.add.text(x, y, t, { fontFamily: FONT, fontSize: size + 'px', color, stroke: '#000', strokeThickness: 3, ...extra });
-/** 通用按钮：暗金边框矩形 + 文字，悬停高亮，点击音效 */
+/** 通用按钮（全游戏唯一按钮工厂，签名不变）：B1 起优先用 ui_atlas 九宫格 btn_normal/hover/pressed/disabled；
+ *  图集未加载或缺帧时退回原暗金边框矩形绘制。点击区高度不低于 minTapHeight（桌面 44 逻辑 px；手机物理 ≥36 px），宽度=按钮宽 */
 export function button(s: Phaser.Scene, x: number, y: number, w: number, h: number, label: string, onClick: () => void, size = 22, enabled = true) {
-  const r = s.add.rectangle(x, y, w, h, 0x2a1a0c, 0.92).setStrokeStyle(2, enabled ? 0xd4a64a : 0x555555);
   const t = txt(s, x, y, label, size, enabled ? '#ffe8a0' : '#777', { fontStyle: 'bold' }).setOrigin(0.5);
+  // CSS px / 逻辑 px：手机 FIT 铺满视口（逻辑 Render.lw×720），用视口尺寸算，不依赖创建时画布是否已完成缩放
+  const css = typeof window !== 'undefined' ? Math.min(window.innerHeight / 720, window.innerWidth / (Render.lw || 1280)) : 1;
+  const hitH = Math.max(h, minTapHeight(IS_MOBILE, css || 1));
+  const bg = ns(s, enabled ? 'btn_normal' : 'btn_disabled', x, y, w, h);
+  if (bg) {
+    if (enabled) {
+      bg.setInteractive({ hitArea: new Phaser.Geom.Rectangle(0, (h - hitH) / 2, w, hitH), hitAreaCallback: Phaser.Geom.Rectangle.Contains, useHandCursor: true })
+        .on('pointerover', () => nsFrame(bg, 'btn_hover')).on('pointerout', () => nsFrame(bg, 'btn_normal'))
+        .on('pointerup', () => nsFrame(bg, 'btn_hover'))
+        .on('pointerdown', () => { nsFrame(bg, 'btn_pressed'); sfx(s, 'click'); onClick(); });
+    }
+    s.children.bringToTop(t); // 文字在九宫格之上（未进容器时）
+    return [bg, t] as const;
+  }
+  const r = s.add.rectangle(x, y, w, h, 0x2a1a0c, 0.92).setStrokeStyle(2, enabled ? 0xd4a64a : 0x555555);
+  s.children.bringToTop(t);
   if (enabled) {
-    r.setInteractive({ useHandCursor: true })
+    r.setInteractive({ hitArea: new Phaser.Geom.Rectangle(0, (h - hitH) / 2, w, hitH), hitAreaCallback: Phaser.Geom.Rectangle.Contains, useHandCursor: true })
       .on('pointerover', () => r.setFillStyle(0x5a3a14, 0.95)).on('pointerout', () => r.setFillStyle(0x2a1a0c, 0.92))
       .on('pointerdown', () => { sfx(s, 'click'); onClick(); });
   }
@@ -39,6 +57,8 @@ export class TitleScene extends Phaser.Scene {
     this.load.on('loaderror', (f: any) => console.warn('素材缺失，使用回退:', f?.key));
     // R10：首屏只等关键资源（小图标/音效/三职业立绘/第 1 层）；其余由常驻 Preload 场景后台加载
     queueCritical(this);
+    // B0：UI 图集在开始界面预加载（失败时 loaderror 只记日志，button() 等自动退回代码绘制）
+    if (!this.textures.exists(UI_ATLAS)) this.load.atlas(UI_ATLAS, assetUrl(UI_ATLAS_PNG), UI_ATLAS_JSON);
   }
   create() {
     Settings.load(); Settings.apply(this.sound);

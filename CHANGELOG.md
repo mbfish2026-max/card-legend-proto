@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## UI 美术 B0 资源管线 + B1 按钮 feat/ui-art-b01（docs/ui-art-integration.md）
+- 合并 origin/art/ui-plan 62d266c（美术2 最终图集）。`scripts/sync-ui-atlas.py`：把 docs/ui-preview/atlas/ui_atlas.{png,json}（512×512，46 帧 = 44 切片 + orb_fill_red/blue）拷到 public/assets/ui/，17 张手机 DOM 2x 图拷到 public/assets/ui/dom/，并从 slices.json（含 fixed/dom、最终边距）生成 src/data/ui-slices.ts。换图集只需重跑脚本，代码不改。
+- `src/ui/uiSlices.ts`：边距只从表里读；`ns()` 九宫格工厂只用 setSize（禁 setScale）；`atlasReady()` 是唯一回退判断点；`minTapHeight()`：桌面 44 逻辑 px，手机 ≥36 CSS px；`domUrl()` 供 B6 用。
+- 构建：vite compressAssets 加入 ui_atlas.png 与 ui/dom/*（无损 webp）；`assetUrl` 抽成纯函数 `mapAssetUrl`（src/assetUrlMap.ts）并映射这两类；json 帧表不改名。TitleScene preload 加载图集。
+- B1：`button()` 签名不变，有图集时用 btn_normal/hover/pressed/disabled 九宫格，没有图集时退回原矩形绘制。点击区高度不低于最小点击高度，宽度等于按钮宽。
+- 测试：tests/ui-atlas.test.ts（285 项：46 帧与表/slices.json 一致、边距合法、DOM 图与 dom 标记一致、src 无九宫格 setScale、assetUrl 映射、compressAssets 无损、缺图集/缺帧回退）已加入 npm test；e2e tests/e2e/ui-atlas-verify.mjs 截 1280×720、844×390 触屏的四态和图集 404 回退，截图在 docs/shots/ui-art/b01/。
+- 9 seed：sim-band 的依赖图（esbuild metafile，31 个输入）不含本批改动的任何文件，结果不变。
+
 ## 网络可达性测试页 feat/net-test
 - 新增 public/net-test.html（部署后 /card-legend-proto/net-test.html）：串行测本站、Supabase REST、Supabase Auth，每项 8 秒超时，有状态码即可达；复制结果、重新测试；验证 tests/e2e/net-test-verify.mjs。
 

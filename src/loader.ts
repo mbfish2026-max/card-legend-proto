@@ -8,6 +8,8 @@ import { FLOORS, Floor } from './data/world';
 import { ITEM_ICON_2X } from './data/item-icons-2x';
 import { Render } from './render';
 import { fxLoadOrder, fxUrl } from './ui/FxPlayer';
+import { mapAssetUrl } from './assetUrlMap';
+export { mapAssetUrl };
 
 /** 生产构建：大图（立绘/背景/地图）在构建期压成 webp（vite.config 插件），原 PNG/JPG 仍保留在 public/ */
 const OPT = typeof import.meta !== 'undefined' && !!(import.meta as any).env?.PROD;
@@ -16,7 +18,7 @@ const OPT = typeof import.meta !== 'undefined' && !!(import.meta as any).env?.PR
 export function skillIconUrl(p: string) { const m = /^assets\/skills\/(skill_[a-z_]+)\.png$/.exec(p); return Render.k > 1 && m && SKILL_ICON_2X.has(m[1]) ? `assets/skills/${m[1]}@2x.png` : p; }
 const SKILL_ICON_2X = new Set(['thunder_sword', 'break_strike', 'shield_break', 'vajra_body', 'dash_slash', 'ice_arrow', 'ice_dragon', 'frost_blade', 'five_thunder', 'ice_whirl', 'drive_corpse', 'decoy_talisman', 'soul_wall', 'clear_mind', 'holy_light', 'cleanse'].map(id => 'skill_' + id));
 export function itemIconUrl(p: string) { const m = /^assets\/items\/(.+)\.png$/.exec(p); return Render.k > 1 && m && ITEM_ICON_2X.has(m[1]) ? `assets/items/${m[1]}@2x.png` : p; }
-export function assetUrl(p: string) { return OPT && /^assets\/(portraits|bg|map)\//.test(p) || OPT && p === 'assets/ui/bg_dungeon.jpg' ? p.replace(/\.(png|jpe?g)$/i, '.webp') : p; }
+export function assetUrl(p: string) { return mapAssetUrl(p, OPT); }
 
 const BIG = (k: string) => /^assets\/(portraits\/.*_full|bg|map\/map_world)/.test(ASSETS[k] ?? '') || k === 'bg';
 /** 某层需要的大图：背景 + 该层怪物立绘 */

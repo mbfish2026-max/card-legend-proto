@@ -15,7 +15,7 @@ function compressAssets(): Plugin {
       const root = 'dist/assets'; let before = 0, after = 0, n = 0;
       const walk = (d: string): string[] => existsSync(d) ? readdirSync(d).flatMap(f => { const p = join(d, f); return statSync(p).isDirectory() ? walk(p) : [p]; }) : [];
       for (const f of walk(root)) if (/_old\.(png|jpe?g)$/i.test(f)) unlinkSync(f);
-      const targets = [...walk(join(root, 'portraits')), ...walk(join(root, 'bg')), ...walk(join(root, 'map')), join(root, 'ui/bg_dungeon.jpg')]
+      const targets = [...walk(join(root, 'portraits')), ...walk(join(root, 'bg')), ...walk(join(root, 'map')), join(root, 'ui/bg_dungeon.jpg'), join(root, 'ui/ui_atlas.png'), ...walk(join(root, 'ui/dom'))]
         .filter(f => existsSync(f) && /\.(png|jpe?g)$/i.test(f));
       for (const f of targets) {
         const out = f.slice(0, -extname(f).length) + '.webp';
@@ -26,7 +26,9 @@ function compressAssets(): Plugin {
         if (portrait) pipe = pipe.resize({ width: 640, height: 640, fit: 'inside', withoutEnlargement: true });
         else if ((meta.width ?? 0) > 1280) pipe = pipe.resize({ width: 1280, withoutEnlargement: true });
         const small = (meta.width ?? 0) <= 128;
-        await pipe.webp(small ? { lossless: true } : portrait ? { quality: 80, alphaQuality: 85, effort: 5 } : { quality: 72, effort: 5 }).toFile(out);
+        // B0 UI 图集：只能无损（或 q≥90），否则金边细线出现色带（docs/ui-art-integration.md §0.4）
+        const uiAtlas = f.endsWith('ui/ui_atlas.png') || /ui[\\/]dom[\\/]/.test(f);
+        await pipe.webp(small || uiAtlas ? { lossless: true } : portrait ? { quality: 80, alphaQuality: 85, effort: 5 } : { quality: 72, effort: 5 }).toFile(out);
         after += statSync(out).size; unlinkSync(f); n++;
       }
       console.log(`[compress-assets] ${n} 张：${(before / 1048576).toFixed(1)}MB → ${(after / 1048576).toFixed(1)}MB`);
