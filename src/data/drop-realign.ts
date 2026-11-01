@@ -24,11 +24,6 @@ export function realignDen(req: number, boss: boolean, officialN?: number): numb
 }
 /** 改造前的装备来源（只读快照，供审计/测试） */
 export const REALIGN_BEFORE: Record<string, { item: string; chance: number }[]> = {};
-/**
- * 战士 40–49 单件降掉率（战斗开发复评：战士 40–50 段变快变容易）：只乘这些战士专属件的分母，
- * 不动 REALIGN_BANDS 全局 K，法/道件不受影响。值 = 分母倍数 [适配]。
- */
-export const WAR_4049_DEN_MUL: Record<string, number> = { nuzhan: 2, tianmo_armor: 2, leiting_armor: 2, kaitian: 2 };
 export function applyRealign(): void {
   for (const [id, u] of Object.entries(ENEMIES)) {
     REALIGN_BEFORE[id] = (u.drops ?? []).filter(d => d.item in REALIGN_PLAN).map(d => ({ ...d }));
@@ -36,7 +31,7 @@ export function applyRealign(): void {
   }
   for (const [item, src] of Object.entries(REALIGN_PLAN)) {
     if (!ITEMS[item]) continue;
-    for (const [uid, n] of src) { const u = ENEMIES[uid]; if (!u) continue; (u.drops ??= []).push({ item, chance: 1 / (n * (WAR_4049_DEN_MUL[item] ?? 1)) }); }
+    for (const [uid, n] of src) { const u = ENEMIES[uid]; if (!u) continue; (u.drops ??= []).push({ item, chance: 1 / n }); }
   }
   // H 章过渡链新物品（只掉落，G9 不上商店）
   for (const [item, src] of Object.entries(H_PLAN)) for (const [uid, n] of src) { const u = ENEMIES[uid]; if (u) (u.drops ??= []).push({ item, chance: 1 / n }); }
