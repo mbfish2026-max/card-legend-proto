@@ -172,9 +172,12 @@ export class BattleScene extends Phaser.Scene {
   // ===== R14 横版长街城镇 =====
   street?: Phaser.GameObjects.Container; streetFar?: Phaser.GameObjects.TileSprite; streetHint?: Phaser.GameObjects.Text; townTarget: { x: number; id: string } | null = null;
   /** 城镇长街：背景（占位：bg_town_street_<id> 远/中/近三层未到时用单屏 bg_bichi_town 拼接+色块），店铺门面 + NPC 立绘，西端城门 */
+  /** 换图后召唤物（含诱惑宠物）卡牌直接跳到新坐标（World.placeSummonsNearHero 已放到英雄身边），不做插值滑过来 */
+  snapSummonViews() { for (const u of this.world.units) if (u.summon && u.alive) { const v = this.views.get(u.uid); if (v) v.x = u.x + ((v as any).dispOff ?? 0); } }
   buildStreet(id: string) {
     this.clearStreet(); const t = TOWNS[id]; if (!t) return;
     for (const [uid, v] of [...this.views]) if (!v.unit.isHero && !v.unit.summon) { v.destroy(); this.views.delete(uid); }
+    this.snapSummonViews();
     this.groundObjs.forEach(os => os.forEach(o => o.destroy())); this.groundObjs.clear(); this.floorUids = [];
     this.bgImgs.forEach(b => b.setVisible(false)); this.portal.setVisible(false); this.merchant.setVisible(false);
     const L = TOWN_LAYOUT[id];
@@ -721,7 +724,7 @@ export class BattleScene extends Phaser.Scene {
     this.groundObjs.forEach(os => os.forEach(o => o.destroy())); this.groundObjs.clear();
     this.floorUids = this.world.alive('enemy').map(u => u.uid);
     for (const u of this.world.alive('enemy')) this.views.set(u.uid, new CardView(this, u));
-    for (const s of this.world.summons) { const v = this.views.get(s.uid); if (v) v.x = s.x; }
+    this.snapSummonViews();
     const bg = this.world.floor.bg && this.textures.exists(this.world.floor.bg) ? this.world.floor.bg : 'bg';
     this.bgImgs.forEach(b => b.setTexture(bg).setDisplaySize(1280, 720));
     // R10：本层背景未到 → 到了自动替换；下一层资源插队预加载
