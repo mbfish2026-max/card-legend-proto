@@ -1852,4 +1852,5 @@ public/assets/ui/UI-Tooltip-Border.png
 - 戒指：h_hex_ring 六角戒指 / h_glass_ring 玻璃戒指 / h_horn_ring 牛角戒指 / h_blue_crystal_ring 蓝色水晶戒指 / h_black_crystal_ring 黑色水晶戒指 / h_snake_eye_ring 蛇眼戒指 / h_pearl_ring 珍珠戒指
 - 靴子：h_cloth_shoes 布鞋 / h_deer_boots 鹿皮靴 / h_silk_boots 紫绸靴 / h_soul_boots 避魂靴
 
-脚本 `docs/ui-preview/build_h_chain.py`、`compose_h_chain.py`；源图 `docs/ui-preview/src/h_*_src.jpg`；预览 `docs/ui-preview/preview_h_chain_icons.jpg`。待系统开发把对应物品 icon 从 gen_necklace/gen_bracelet/eq_iron_ring/gen_boots 换为上述文件。
+脚本 `docs/ui-preview/build_h_chain.py`、`compose_h_chain.py`；源图 `docs/ui-preview/src/h_*_src.jpg`；预览 `docs/ui-preview/preview_h_chain_icons.jpg`。**v2（主Bot 审后修正）**：①暗色提亮+左上轮廓高光：h_black_crystal_necklace/h_black_crystal_ring（紫青）、h_ebony_necklace/h_ebony_bracelet（暖棕）、h_death_glove（紫）；②8 条项链裁短链条放大吊坠，占比对齐 eq_* 项链；③h_steel_bracelet 改为带铰链锁扣铆钉的扁平宽钢箍，h_ebony_bracelet 改为雕纹粗圆木镯（源图 src/h_br_v2_src.jpg）。64 与 @2x 同步重出，预览底部加修正前后对比。
+待系统开发把对应物品 icon 从 gen_necklace/gen_bracelet/eq_iron_ring/gen_boots 换为上述文件。
