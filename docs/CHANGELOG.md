@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 召唤物名字颜色统一 + 「（人物）的宠物」后缀（feat/summon-label）
+- 法师诱惑之光宠物接入与道士召唤相同的等级→颜色规则（共用 src/combat/summonLabel.ts：0 级白，1–7 级浅蓝→深蓝，满级 7 保持最深蓝）；宠物升级不改原属性倍率，叛变时还原。
+- 召唤物名字：「骷髅·3级（道士）的宠物」；人物=存档槽名（只读，不改存档结构），空则回退职业名。名字自适应（缩字号→两行→「…」截断），不压血条/等级。
+- 测试：tests/summon-label.test.ts；e2e tests/e2e/summon-label-verify.mjs [截图目录]。
+
 ## 合击持续段专用素材接入（feat/hj-fx-assets）
 - 噬魂沼泽/末日审判：状态期间播 fx_combo_shihun_loop / fx_combo_mori_loop（不再取起手图集帧 8–11 往返），状态结束（到期或目标死亡）播 *_end 一次后自毁；场景关闭不播收尾。
 - 劈星斩：每次麻痹播 fx_combo_pixing_stun 一次（动画 cs_once_fx_combo_pixing_stun，1×），头顶「⚡麻痹」文字换成 icon_status_stun 图标（32×32），保留到麻痹结束。

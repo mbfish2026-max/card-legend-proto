@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { Unit } from '../combat/types';
 import { FX, FONT, GROUND_Y } from '../data/fx';
 import { equipLook } from './EquipLayers';
+import { IS_MOBILE } from '../mobile';
 import { fitSummonName, summonNameParts } from '../combat/summonLabel';
 import { SWING_SCALE, WINDUP_SCALE, HIT_SCALE, breathScaleY } from './cardMotion';
 
@@ -155,7 +156,7 @@ export class CardView extends Phaser.GameObjects.Container {
     if (!u.sBase) { t.setFontSize(12).setOrigin(1, 0).setPosition(this.w / 2 - 4, -this.barH + 3).setText(u.name); return; }
     const own = u.name.startsWith(u.sBase.name + '·') ? u.name.slice(u.sBase.name.length + 1) : '';
     const m = /^(\d+)级（(.*)）的宠物$/.exec(own), parts = m ? summonNameParts(u.sBase.name, +m[1], m[2]) : [u.name, ''] as [string, string];
-    const f = fitSummonName(parts, (x, sz) => t.setFontSize(sz).setText(x).width, { max: 12, min: 10, maxW: this.barW - 2 });
+    const f = fitSummonName(parts, (x, sz) => t.setFontSize(sz).setText(x).width, IS_MOBILE ? { max: 14, min: 12, maxW: this.barW - 10 } : { max: 12, min: 11, maxW: this.barW - 14 });
     t.setFontSize(f.size).setAlign('right').setOrigin(1, 1).setPosition(this.w / 2 - 3, -12).setText(f.lines.filter(Boolean).join('\n'));
   }
   /** 移动时上下起伏，停下时立绘待机呼吸（只缩放立绘，不动卡框） */
