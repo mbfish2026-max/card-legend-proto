@@ -54,6 +54,16 @@ export const FX_DEFS: Record<string, FxDef> = {
   fx_ghost_shield_loop: D(11, 'ADD', 11, ['ghost_shield'], { loop: true }),
   fx_holy_armor_cast: D(20, 'ADD', 56, ['holy_armor', 'vajra_body']),
   fx_holy_armor_loop: D(11, 'ADD', 11, ['holy_armor', 'vajra_body'], { loop: true }),
+  // 脚下光环（fx/ground-aura）：pivot=脚底光环中心，depth 9 在卡牌之下；仅登记，接入由战斗开发做
+  fx_aura_holy_armor_start: D(12, 'ADD', 9, ['holy_armor']),
+  fx_aura_holy_armor_loop: D(12, 'ADD', 9, ['holy_armor'], { loop: true }),
+  fx_aura_holy_armor_end: D(12, 'ADD', 9, ['holy_armor']),
+  fx_aura_ghost_shield_start: D(12, 'ADD', 9, ['ghost_shield']),
+  fx_aura_ghost_shield_loop: D(12, 'ADD', 9, ['ghost_shield'], { loop: true }),
+  fx_aura_ghost_shield_end: D(12, 'ADD', 9, ['ghost_shield']),
+  fx_aura_vajra_body_start: D(12, 'ADD', 9, ['vajra_body']),
+  fx_aura_vajra_body_loop: D(12, 'ADD', 9, ['vajra_body'], { loop: true }),
+  fx_aura_vajra_body_end: D(12, 'ADD', 9, ['vajra_body']),
   fx_mass_heal_burst: D(20, 'ADD', 55, ['mass_heal']),
   // 合击（阶段 B）：目标卡中心播放，第 6 帧（0.3s）为命中/最亮帧；持续段用下方 *_loop/*_end/pixing_stun（ui/comboStatus.ts）；缺图时回退取 shihun/mori 帧 8–11、pixing 帧 6–9
   fx_combo_pohun: D(20, 'ADD', 60, ['combo']),

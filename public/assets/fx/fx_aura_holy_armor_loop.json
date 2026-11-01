@@ -1,0 +1,271 @@
+{
+ "frames": {
+  "fx_aura_holy_armor_loop_00": {
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 96
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   }
+  },
+  "fx_aura_holy_armor_loop_01": {
+   "frame": {
+    "x": 256,
+    "y": 0,
+    "w": 256,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 96
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   }
+  },
+  "fx_aura_holy_armor_loop_02": {
+   "frame": {
+    "x": 512,
+    "y": 0,
+    "w": 256,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 96
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   }
+  },
+  "fx_aura_holy_armor_loop_03": {
+   "frame": {
+    "x": 768,
+    "y": 0,
+    "w": 256,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 96
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   }
+  },
+  "fx_aura_holy_armor_loop_04": {
+   "frame": {
+    "x": 0,
+    "y": 96,
+    "w": 256,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 96
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   }
+  },
+  "fx_aura_holy_armor_loop_05": {
+   "frame": {
+    "x": 256,
+    "y": 96,
+    "w": 256,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 96
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   }
+  },
+  "fx_aura_holy_armor_loop_06": {
+   "frame": {
+    "x": 512,
+    "y": 96,
+    "w": 256,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 96
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   }
+  },
+  "fx_aura_holy_armor_loop_07": {
+   "frame": {
+    "x": 768,
+    "y": 96,
+    "w": 256,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 96
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   }
+  },
+  "fx_aura_holy_armor_loop_08": {
+   "frame": {
+    "x": 0,
+    "y": 192,
+    "w": 256,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 96
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   }
+  },
+  "fx_aura_holy_armor_loop_09": {
+   "frame": {
+    "x": 256,
+    "y": 192,
+    "w": 256,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 96
+   },
+   "anchor": {
+    "x": 0.5,
+    "y": 0.5
+   }
+  }
+ },
+ "meta": {
+  "app": "card-legend fx proc (python numpy/Pillow)",
+  "image": "fx_aura_holy_armor_loop.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 1024,
+   "h": 288
+  },
+  "scale": "1",
+  "fx": {
+   "w": 256,
+   "h": 96,
+   "n": 10,
+   "fps": 12,
+   "loop": true,
+   "pivot": [
+    128,
+    48
+   ],
+   "anchor": "ground",
+   "skill": "holy_armor",
+   "phase": "loop",
+   "blend": "ADD",
+   "ms": 833,
+   "cols": 4
+  }
+ }
+}
