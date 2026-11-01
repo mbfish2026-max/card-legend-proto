@@ -172,6 +172,16 @@ export default {
   "bottom": 12,
   "fixed": false
  },
+ "lingfu_entry": {
+  "w": 56,
+  "h": 44,
+  "left": 18,
+  "right": 18,
+  "top": 14,
+  "bottom": 14,
+  "fixed": false,
+  "dom": true
+ },
  "lingfu_icon_l": {
   "w": 96,
   "h": 96,

@@ -475,5 +475,16 @@
   "bottom": 0,
   "fixed": true,
   "use": "血球液面（蓝/魔）圆盘，半径 32；显示直径=球显示直径×104/128，按水位 setCrop 从上裁；层序 2"
+ },
+ "lingfu_entry": {
+  "w": 56,
+  "h": 44,
+  "left": 18,
+  "right": 18,
+  "top": 14,
+  "bottom": 14,
+  "use": "灵符商城常驻入口按钮（源 56×44，桌面 setSize 88×44；手机 DOM 52×44 CSS，border-image 18/14）；中间叠 lingfu_icon_s + 文字",
+  "fixed": false,
+  "dom": true
  }
 }

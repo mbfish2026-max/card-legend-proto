@@ -15,7 +15,7 @@ const srcMap: Record<string, any> = src;
 ok(atlas.meta.size.w === 512 && atlas.meta.size.h === 512, '图集 512×512');
 const vc = readFileSync(join(R, 'vite.config.ts'), 'utf8');
 const fr = atlas.frames as Record<string, any>, keys = Object.keys(SLICES as any).sort();
-ok(keys.length === 46, `最终图集 46 帧（44 切片 + orb_fill_red/blue）（实际 ${keys.length}）`);
+ok(keys.length === 47, `最终图集 47 帧（45 切片含 lingfu_entry + orb_fill_red/blue）（实际 ${keys.length}）`);
 ok(JSON.stringify(Object.keys(fr).sort()) === JSON.stringify(keys), '图集帧名 = ui-slices 表');
 ok(JSON.stringify(Object.keys(srcMap).sort()) === JSON.stringify(keys), '图集帧名 = 美术 slices.json');
 for (const k of keys) {
@@ -28,7 +28,7 @@ for (const k of keys) {
 for (const k of ['btn_normal', 'btn_hover', 'btn_pressed', 'btn_disabled']) ok(k in fr, `按钮状态帧 ${k}`);
 for (const k of ['orb_fill_red', 'orb_fill_blue', 'orb_glass', 'orb_frame']) ok(k in fr, `血球层帧 ${k}`);
 const dom = keys.filter(k => srcMap[k].dom);
-ok(dom.length === 17, `dom 标记 17 张（实际 ${dom.length}）`);
+ok(dom.length === 18, `dom 标记 18 张（含 lingfu_entry）（实际 ${dom.length}）`);
 const domFiles = readdirSync(join(R, 'public/assets/ui/dom')).sort();
 ok(JSON.stringify(domFiles) === JSON.stringify(dom.map(k => k + '@2x.png').sort()), 'public/assets/ui/dom 2x 图 = slices.json dom 标记');
 ok(mapAssetUrl(domUrl('btn_normal'), true) === 'assets/ui/dom/btn_normal@2x.webp' && mapAssetUrl(domUrl('btn_normal'), false) === domUrl('btn_normal'), 'DOM 2x 图构建版 → webp');

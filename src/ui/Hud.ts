@@ -168,7 +168,7 @@ export class Hud {
     // 灵符商城入口（桌面右下，菜单圆钮上方；点击区 84×44，不压菜单钮/底栏）。手机入口在 MobileHud #mh-shop
     if (!mobile && onSkill) {
       const x = LINGFU_BTN.x, y = LINGFU_BTN.y, bw = LINGFU_BTN.w, bh = LINGFU_BTN.h;
-      const bg = ns(s, 'btn_normal', x, y, bw, bh); if (bg) bg.setDepth(20); else s.add.rectangle(x, y, bw, bh, 0x2a1d10).setStrokeStyle(2, 0xd4a64a).setDepth(20);
+      const bg = atlasReady(s, 'lingfu_entry') ? s.add.nineslice(x, y, UI_ATLAS, 'lingfu_entry', 56, 44, 18, 18, 14, 14).setSize(bw, bh) : ns(s, 'btn_normal', x, y, bw, bh); // 美术2 入口帧（源 56×44，只 setSize 拉到 88×44）；缺帧回退 btn_normal / 纯色 if (bg) bg.setDepth(20); else s.add.rectangle(x, y, bw, bh, 0x2a1d10).setStrokeStyle(2, 0xd4a64a).setDepth(20);
       const hasIc = atlasReady(s, 'lingfu_icon_s'); if (hasIc) s.add.image(x - 22, y, UI_ATLAS, 'lingfu_icon_s').setDisplaySize(24, 24).setDepth(21);
       txt(s, hasIc ? x + 10 : x, y, '灵符', 16, '#ffe070', { fontStyle: 'bold' }).setOrigin(0.5).setDepth(21);
       s.add.rectangle(x, y, bw, bh, 0, 0.001).setDepth(25).setName('lingfuEntry').setInteractive({ useHandCursor: true })
