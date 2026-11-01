@@ -40,6 +40,7 @@ import { CONSUMABLE } from '../data/items-town';
 import { Settings, DEFAULT_AUTO_SKILLS } from '../settings';
 import { equipLook } from './EquipLayers';
 
+import { flushInput } from './flushInput';
 export type PanelMode = 'bag' | 'shop' | 'skills' | 'settings' | 'map' | 'quests' | 'town';
 export const RARITY_HEX: Record<string, string> = { common: '#ffffff', magic: '#5aa8ff', rare: '#ffb020' };
 const RARITY_NUM: Record<string, number> = { common: 0x8a8a8a, magic: 0x3a7aff, rare: 0xffa020 };
@@ -100,7 +101,8 @@ export class Panel {
     if (now - this.lastAuto < Panel.AUTO_REFRESH_MS) return false;
     this.lastAuto = now; this.render(); return true;
   }
-  render() {
+  render() { this.renderInner(); flushInput(this.s); }
+  private renderInner() {
     if (this.mode) this.snap = this.statSnap();
     this.root?.destroy(true); this.hideTip(); this.clearMapInput();
     if (!this.mode) return;
