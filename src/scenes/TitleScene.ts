@@ -12,19 +12,50 @@ import { FLOORS, floorNo } from '../data/world';
 import type { SaveData } from '../combat/World';
 import { MUSIC, playMusic } from '../music';
 import { IS_MOBILE } from '../mobile';
+import { frameBg, ns, nsFrame, minTapHeight, UI_ATLAS, UI_ATLAS_PNG, UI_ATLAS_JSON } from '../ui/uiSlices';
+import { assetUrl } from '../loader';
 
 export const txt = (s: Phaser.Scene, x: number, y: number, t: string, size: number, color = '#fff', extra: Phaser.Types.GameObjects.Text.TextStyle = {}) =>
   s.add.text(x, y, t, { fontFamily: FONT, fontSize: size + 'px', color, stroke: '#000', strokeThickness: 3, ...extra });
-/** 通用按钮：暗金边框矩形 + 文字，悬停高亮，点击音效 */
+/** 通用按钮（全游戏唯一按钮工厂，签名不变）：B1 起优先用 ui_atlas 九宫格 btn_normal/hover/pressed/disabled；
+ *  图集未加载或缺帧时退回原暗金边框矩形绘制。点击区高度不低于 minTapHeight（桌面 44 逻辑 px；手机物理 ≥36 px），宽度=按钮宽 */
 export function button(s: Phaser.Scene, x: number, y: number, w: number, h: number, label: string, onClick: () => void, size = 22, enabled = true) {
-  const r = s.add.rectangle(x, y, w, h, 0x2a1a0c, 0.92).setStrokeStyle(2, enabled ? 0xd4a64a : 0x555555);
   const t = txt(s, x, y, label, size, enabled ? '#ffe8a0' : '#777', { fontStyle: 'bold' }).setOrigin(0.5);
+  // CSS px / 逻辑 px：手机 FIT 铺满视口（逻辑 Render.lw×720），用视口尺寸算，不依赖创建时画布是否已完成缩放
+  const css = typeof window !== 'undefined' ? Math.min(window.innerHeight / 720, window.innerWidth / (Render.lw || 1280)) : 1;
+  const hitH = Math.max(h, minTapHeight(IS_MOBILE, css || 1));
+  const bg = ns(s, enabled ? 'btn_normal' : 'btn_disabled', x, y, w, h);
+  if (bg) {
+    if (enabled) {
+      bg.setInteractive({ hitArea: new Phaser.Geom.Rectangle(0, (h - hitH) / 2, w, hitH), hitAreaCallback: Phaser.Geom.Rectangle.Contains, useHandCursor: true })
+        .on('pointerover', () => nsFrame(bg, 'btn_hover')).on('pointerout', () => nsFrame(bg, 'btn_normal'))
+        .on('pointerup', () => nsFrame(bg, 'btn_hover'))
+        .on('pointerdown', () => { nsFrame(bg, 'btn_pressed'); sfx(s, 'click'); onClick(); });
+    }
+    s.children.bringToTop(t); // 文字在九宫格之上（未进容器时）
+    return [bg, t] as const;
+  }
+  const r = s.add.rectangle(x, y, w, h, 0x2a1a0c, 0.92).setStrokeStyle(2, enabled ? 0xd4a64a : 0x555555);
+  s.children.bringToTop(t);
   if (enabled) {
-    r.setInteractive({ useHandCursor: true })
+    r.setInteractive({ hitArea: new Phaser.Geom.Rectangle(0, (h - hitH) / 2, w, hitH), hitAreaCallback: Phaser.Geom.Rectangle.Contains, useHandCursor: true })
       .on('pointerover', () => r.setFillStyle(0x5a3a14, 0.95)).on('pointerout', () => r.setFillStyle(0x2a1a0c, 0.92))
       .on('pointerdown', () => { sfx(s, 'click'); onClick(); });
   }
   return [r, t] as const;
+}
+/** B3 页签：有图集用 tab_on / tab_off 九宫格（当前页不可点）；否则退回 button()（当前页加 ▶ 前缀，与原样一致）。点击区高度同 button() */
+export function tabButton(s: Phaser.Scene, x: number, y: number, w: number, h: number, label: string, on: boolean, onClick: () => void, size = 22) {
+  const bg = ns(s, on ? 'tab_on' : 'tab_off', x, y, w, h);
+  if (!bg) return button(s, x, y, w, h, `${on ? '▶' : ''}${label}`, onClick, size);
+  const t = txt(s, x, y + 2, label, size, on ? '#ffe8a0' : '#b8a888', { fontStyle: 'bold' }).setOrigin(0.5);
+  const css = typeof window !== 'undefined' ? Math.min(window.innerHeight / 720, window.innerWidth / (Render.lw || 1280)) : 1;
+  const hitH = Math.max(h, minTapHeight(IS_MOBILE, css || 1));
+  bg.setName(on ? 'tabOn' : 'tabOff');
+  if (!on) bg.setInteractive({ hitArea: new Phaser.Geom.Rectangle(0, (h - hitH) / 2, w, hitH), hitAreaCallback: Phaser.Geom.Rectangle.Contains, useHandCursor: true })
+    .on('pointerdown', () => { sfx(s, 'click'); onClick(); });
+  s.children.bringToTop(t);
+  return [bg, t] as const;
 }
 export function sfx(s: Phaser.Scene, id: string, volume = 0.6) { try { if (s.cache.audio.exists('sfx_' + id)) s.sound.play('sfx_' + id, { volume }); } catch { /* ignore */ } }
 
@@ -39,6 +70,8 @@ export class TitleScene extends Phaser.Scene {
     this.load.on('loaderror', (f: any) => console.warn('素材缺失，使用回退:', f?.key));
     // R10：首屏只等关键资源（小图标/音效/三职业立绘/第 1 层）；其余由常驻 Preload 场景后台加载
     queueCritical(this);
+    // B0：UI 图集在开始界面预加载（失败时 loaderror 只记日志，button() 等自动退回代码绘制）
+    if (!this.textures.exists(UI_ATLAS)) this.load.atlas(UI_ATLAS, assetUrl(UI_ATLAS_PNG), UI_ATLAS_JSON);
   }
   create() {
     Settings.load(); Settings.apply(this.sound);
@@ -87,7 +120,7 @@ export class TitleScene extends Phaser.Scene {
   settings() {
     const L = this.clear();
     const H = 580, top = Math.max(40, 360 - H / 2);
-    L.add(this.add.rectangle(640, 300, 640, H, 0x15100b, 0.97).setStrokeStyle(3, 0xd4a64a));
+    L.add(frameBg(this, 'panel_frame', 640, 300, 640, H, { fill: 0x15100b, alpha: 0.97, stroke: 0xd4a64a, sw: 3 }).setName('panelBg'));
     L.add(txt(this, 640, top + 10, '设置', 24, '#ffd24a', { fontStyle: 'bold' }).setOrigin(0.5).setY(top + 22));
     renderSettingsView(this, L, top, {
       cls: this.setCls, learned: (() => { const sv = SaveStore.load(); if (sv?.cls === this.setCls) return sv.learned ? new Set([...sv.learned, STARTER[this.setCls]]) : undefined; return new Set([STARTER[this.setCls]]); })(), rerender: () => this.settings(), onPickClass: c => { this.setCls = c; this.settings(); },
@@ -96,22 +129,24 @@ export class TitleScene extends Phaser.Scene {
   }
   /** 多存档位：选择/新建/删除（二次确认）/改名；每格显示职业、等级、层数、最后游玩、游玩时长 */
   slotsScreen(note = '', armDel = 0) {
-    const L = this.clear(), list = Slots.list(), rowH = Math.min(84, 520 / list.length), top = 110;
-    L.add(this.add.rectangle(640, 395, 1000, 640, 0x15100b, 0.96).setStrokeStyle(3, 0xd4a64a));
-    L.add(txt(this, 640, 98, '存 档 位', 26, '#ffd24a', { fontStyle: 'bold' }).setOrigin(0.5).setName('slots-title'));
+    const L = this.clear(), list = Slots.list(), rowH = Math.min(84, 520 / list.length), top = 100;
+    // B3：面板上移 15（60~700），「返回」完整落在面板与屏幕内；手机（标题页不放大，1 逻辑 px≈0.54 CSS px）字号提到 ≥12 CSS px 并提高对比度
+    const fN = IS_MOBILE ? 24 : 18, fS = IS_MOBILE ? 22 : 14;
+    L.add(frameBg(this, 'panel_frame', 640, 380, 1000, 640, { fill: 0x15100b, alpha: 0.96, stroke: 0xd4a64a, sw: 3 }).setName('panelBg'));
+    L.add(txt(this, 640, 90, '存 档 位', 26, '#ffd24a', { fontStyle: 'bold' }).setOrigin(0.5).setName('slots-title'));
     list.forEach((sl, k) => {
       const y = top + 40 + k * rowH + rowH / 2, d = sl.data;
       L.add(this.add.rectangle(640, y, 960, rowH - 8, sl.active ? 0x3a2c14 : 0x221a10).setStrokeStyle(2, sl.active ? 0xffd24a : 0x6a5a3a).setName('slot:' + sl.i));
-      L.add(txt(this, 180, y - 12, `${sl.i}. ${sl.name}${sl.active ? '（当前）' : ''}`, 18, sl.active ? '#ffe8a0' : '#e8d8b0').setOrigin(0, 0.5));
-      L.add(txt(this, 180, y + 14, d ? `${CLASSES[d.cls]?.name ?? d.cls}  Lv${d.level}  第 ${floorNo(d.floorIndex)} 层  ·  最后游玩 ${fmtDate(sl.lastAt)}  ·  时长 ${fmtPlay(sl.playMs)}` : '空', 14, d ? '#cfc0a0' : '#8a7a5a').setOrigin(0, 0.5));
+      L.add(txt(this, 180, y - (IS_MOBILE ? 15 : 12), `${sl.i}. ${sl.name}${sl.active ? '（当前）' : ''}${IS_MOBILE && d ? `  ${fmtDate(sl.lastAt)}` : ''}`, fN, sl.active ? '#ffe8a0' : '#e8d8b0').setOrigin(0, 0.5));
+      L.add(txt(this, 180, y + (IS_MOBILE ? 17 : 14), d ? (IS_MOBILE ? `${CLASSES[d.cls]?.name ?? d.cls} Lv${d.level} 第${floorNo(d.floorIndex)}层 · 时长 ${fmtPlay(sl.playMs)}` : `${CLASSES[d.cls]?.name ?? d.cls}  Lv${d.level}  第 ${floorNo(d.floorIndex)} 层  ·  最后游玩 ${fmtDate(sl.lastAt)}  ·  时长 ${fmtPlay(sl.playMs)}`) : '空', fS, d ? '#e0d0b0' : '#b0a080').setOrigin(0, 0.5).setName('slot-sub'));
       let x = 1070;
       const btn = (w: number, label: string, fn: () => void) => { L.add([...button(this, x - w / 2, y, w, Math.min(44, rowH - 16), label, fn, 15)]); x -= w + 10; };
       if (d) btn(90, armDel === sl.i ? '确认删除' : '删除', () => armDel === sl.i ? (Slots.remove(sl.i), this.slotsScreen(`已删除 ${sl.name}`)) : this.slotsScreen(`再点一次「确认删除」删除 ${sl.name}，不可恢复`, sl.i));
       btn(80, '改名', () => { const n = globalThis.prompt?.('存档名称（最多 16 字）', sl.name); if (n != null) { Slots.rename(sl.i, n); this.slotsScreen(); } });
       btn(90, d ? '选择' : '新建', () => { Slots.select(sl.i); if (d) this.mainMenu(); else this.classSelect(); });
     });
-    if (note) L.add(txt(this, 640, 676, note, 15, armDel ? '#ff9a7a' : '#cfc0a0').setOrigin(0.5).setName('slots-note'));
-    L.add([...button(this, 640, 712 - 10, 160, 36, '返回', () => this.mainMenu(), 16)]);
+    if (note) L.add(txt(this, 640, 632, note, 15, armDel ? '#ff9a7a' : '#cfc0a0').setOrigin(0.5).setName('slots-note'));
+    L.add([...button(this, 640, 668, 160, 40, '返回', () => this.mainMenu(), IS_MOBILE ? 22 : 16)]);
   }
   classSelect() {
     const L = this.clear();
