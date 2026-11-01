@@ -200,6 +200,7 @@ export class World {
   dungeons = true;
   dungeonLeft(id: string) { const r = this.dungeonRuns[id]; return DUNGEON_DAILY - (r && r.day === this.today() ? r.n : 0); }
   bossOnCd(i: number, id: string) { const k = i + ':' + id;
+    if (this.bossCdLeft(i) <= 0) return false; // 整层冷却仍是总开关（清空 bossCdUntil 即全部可刷）
     if (k in this.bossCdId) return this.bossCdId[k] > this.time;
     return !Object.keys(this.bossCdId).some(x => x.startsWith(i + ':')) && this.bossCdLeft(i) > 0; } // 旧档：整层冷却
   bossCdLeft(i = this.floorIndex) { return Math.max(0, Math.ceil((this.bossCdUntil[i] ?? 0) - this.time)); }
