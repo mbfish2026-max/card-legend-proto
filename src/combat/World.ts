@@ -802,6 +802,10 @@ export class World {
       if (this.time - this.bagFullLogT > 3) { this.bagFullLogT = this.time; this.events.push({ type: 'log', text: '背包已满，无法拾取' }); }
       return false;
     }
+    if (def?.potion !== undefined && this.pots[def.potion] >= POT_MAX) { // feat/potion-combat：拾取药水也守 999 上限，满了留在地上
+      if (this.time - this.bagFullLogT > 3) { this.bagFullLogT = this.time; this.events.push({ type: 'log', text: '药水已满，无法拾取' }); }
+      return false;
+    }
     this.ground.splice(this.ground.indexOf(g), 1);
     if (g.item === 'gold') this.gold += g.amount;
     else if (def.potion !== undefined) this.pots[def.potion]++;

@@ -45,7 +45,7 @@ export const SIM_STUCK = 5;
 const virtGold = (id: string, pf: number) => { const g = ENEMIES[id]?.drops?.find(d => d.item === 'gold'); const [g0, g1] = WORLD.goldAmount; return g ? g.chance * (g0 + g1) / 2 * (1 + pf * 0.6) : 0; };
 const band = (lv: number) => Math.min(5, Math.floor((lv - 1) / 10));
 export const simRun = (c: ClassId, seed: number, maxT = SIM_MAX_T) => {
-    const w = (process.env.ALL ? learnAll : (x: World) => x)(Object.assign(new World(seeded(seed), 1, FLOORS, c), { dungeons: false })); let cds = w.skills.map(() => 0); let t = 0, potUsed = 0, freeDeaths = 0, costDeaths = 0; const learnLog: string[] = []; let hjCombo = 0, hjHeroDmg = 0, hjAllDmg = 0, hjT = 0, hjOut = 0;
+    const w = (process.env.ALL ? learnAll : (x: World) => x)(Object.assign(new World(seeded(seed), 1, FLOORS, c), { dungeons: false })); let cds = w.skills.map(() => 0); let t = 0, potUsed = 0, goldAt40 = -1; const potGold = [0, 0]; let freeDeaths = 0, costDeaths = 0; const learnLog: string[] = []; let hjCombo = 0, hjHeroDmg = 0, hjAllDmg = 0, hjT = 0, hjOut = 0;
     const dg = { heroDmg: 0, sumDmg: 0, sumDeaths: 0, t: 0, sumT: 0, sumN: 0, foeOnSum: 0, foeOnHero: 0, sumLv: 0, sumHp: 0, heroHp: 0, samples: 0, sumKillDmg: 0, allKillDmg: 0 };
     const deathAt: { floor: number; lv: number }[] = []; const floorLv: Record<number, number> = {};
     const gearAt: Record<number, any> = {}; const lvK: number[] = [], lvT: number[] = [], lvVK: number[] = [], lvVT: number[] = []; const kills = [0, 0, 0, 0, 0, 0], killT = [0, 0, 0, 0, 0, 0], virtKills = [0, 0, 0, 0, 0, 0], virtT = [0, 0, 0, 0, 0, 0], replays: Record<number, number> = {}; let floorKills = 0, floorT = 0, lastF = -1;
@@ -95,10 +95,12 @@ export const simRun = (c: ClassId, seed: number, maxT = SIM_MAX_T) => {
       const saving = w.shopBooks().some(b => !w.learned.has(b.skill) && w.level >= w.needLevel(w.skillPool.find(x => x.id === b.skill)!)); // 补给策略：进图前回村补药，药量随层深增加（存钱买书时也按层深少量补）
       const depth = w.floorIndex;
       const cap = saving ? Math.min(3, 1 + Math.floor(depth / 4)) : 3 + Math.floor(depth / 2);
+      const _g0 = w.gold; // 金币流水（只读）：买药花费按 <40 / ≥40 分段
       if (POTC) potBuy(w, cap); else {
       while (w.gold >= 60 && w.pots[1] < cap) w.buyPotion(1);
       while (w.gold >= 60 && w.pots[3] < cap) w.buyPotion(3);
       }
+      potGold[w.level >= 40 ? 1 : 0] += _g0 - w.gold; if (w.level >= 40 && goldAt40 < 0) goldAt40 = w.gold;
       if (w.floorIndex !== lastF) { lastF = w.floorIndex; if (process.env.SIMDBG && w.hero) console.log('enter', w.floorIndex, 'Lv', w.level, 'hp', w.hero.maxHp, 'atk', w.hero.atk, 'def', w.hero.def, 'deaths', w.deaths); floorKills = 0; floorT = 0; if (!w.town && !(w.floorIndex in firstClear)) { firstClear[w.floorIndex] = { lv: w.level, exp: 0 }; curFirst = w.floorIndex; } else curFirst = null; }
       const k = FLOOR_ORDER.indexOf(w.floorIndex);
       if (!w.town && k >= 0 && w.hero && w.hero.x >= w.exitX - WORLD.exitRadius - 20 && !w.alive('enemy').some(u => u.tier === 'boss') && w.level < MAIN_ANCHORS[k + 1]) {
@@ -117,6 +119,6 @@ export const simRun = (c: ClassId, seed: number, maxT = SIM_MAX_T) => {
     }
     if (process.env.HJ_STATS) console.log(`   HJ ${c} 种子${seed}: lv≥40 时长 ${Math.round(hjT)}s 英雄在场 ${Math.round(hjOut)}s 合击 ${hjCombo} 次 英雄伤害占比 ${(100 * hjHeroDmg / Math.max(1, hjHeroDmg + hjAllDmg)).toFixed(1)}% 英雄等级 ${w.companion?.level ?? "-"} Lv≥40后死亡 ${learnLog.filter(x => /死@.*Lv(\d+)/.test(x) && +x.match(/Lv(\d+)/)![1] >= 40).length}`);
     if (process.env.DIAG) console.log('DIAG', c, seed, JSON.stringify(dg));
-    return { freeDeaths, costDeaths, gearAt, lvK, lvT, lvVK, lvVT, deaths: w.deaths, done: w.done, potUsed, t, level: w.level, learnLog, deathAt, floorLv, kills, killT, virtKills, virtT, firstClear };
+    return { potGold, goldAt40, freeDeaths, costDeaths, gearAt, lvK, lvT, lvVK, lvVT, deaths: w.deaths, done: w.done, potUsed, t, level: w.level, learnLog, deathAt, floorLv, kills, killT, virtKills, virtT, firstClear };
   };
 export const median = (a: number[]) => { const b = [...a].sort((x, y) => x - y); return b[(b.length - 1) >> 1] / 2 + b[b.length >> 1] / 2; };

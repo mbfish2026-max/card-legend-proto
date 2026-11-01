@@ -2,6 +2,8 @@
 import { World } from '../src/combat/World';
 import { WORLD } from '../src/data/world';
 import { POTIONS } from '../src/data/skills';
+// @ts-ignore
+import { readFileSync } from 'node:fs';
 let fail = 0, n = 0; const ok = (c: boolean, m: string) => { n++; if (!c) { fail++; console.log('FAIL', m); } else console.log('ok', m); };
 const I = (it: string) => POTIONS.findIndex(p => p.item === it);
 const mk = () => { const w = new World(() => 0.5, 40); w.leaveTown?.(0); const h = w.hero!; h.maxHp = 2000; h.maxMp = 2000; h.hp = 100; h.mp = 100; for (let i = 0; i < w.pots.length; i++) w.pots[i] = 5; return w; };
@@ -30,4 +32,11 @@ ok(POTIONS[I('sun_big')].hp === 300 && POTIONS[I('sun_big')].mp === 480 && !!POT
 { const w = mk(), h = w.hero!; const hp0 = h.hp; w.usePotion(I('hp_big')); run(w, 1); ok(h.hp - hp0 >= 560 && !(h.hots?.length), `强效金创药 1s 内到账 560（+${h.hp - hp0}）`); }
 // 城内瞬回
 { const w = new World(() => 0.5); w.startInVillage(); w.pots[I('sun')] = 1; const h = w.hero!; h.hp = 10; ok(w.usePotion(I('sun')) !== null && h.hp === Math.min(h.maxHp, 190), '城内太阳水瞬回'); }
+// 拾取药水 999 上限
+{ const w = mk(); const g = (item: string) => { const x: any = { gid: 1, item, name: item, rarity: 'common', x: 0, y: 0, landAt: 0, atk: 0, hp: 0, amount: 1 }; w.ground.push(x); return x; };
+  w.pots[I('hp_big')] = 998; ok(w.pickup(g('hp_big')) && w.pots[I('hp_big')] === 999, '998 瓶时可拾取 → 999');
+  const g2 = g('hp_big'); ok(!w.pickup(g2) && w.pots[I('hp_big')] === 999 && w.ground.includes(g2), '999 瓶时拒绝拾取，药留在地上');
+  w.pots[I('sun')] = 999; ok(!w.pickup(g('sun')) && w.pots[I('sun')] === 999, '太阳水同样封顶 999'); }
+// 桌面提示文案
+{ const hud = readFileSync('src/ui/Hud.ts', 'utf8'); ok(hud.includes('药水 1-3') && !hud.includes('药水 1-4'), '桌面底部提示 = 药水 1-3'); }
 console.log(`potion-combat: ${n - fail}/${n}`); if (fail) { console.log('potion-combat: FAILED'); (globalThis as any).process.exit(1); } else console.log('potion-combat: all passed');

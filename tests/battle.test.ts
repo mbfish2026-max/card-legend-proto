@@ -462,7 +462,7 @@ const free = (w: World) => w.skills.map(() => 0);
   ok(keys.every(k => /^F([1-9]|1[01])$/.test(k)) && !keys.some(k => 'WASD'.includes(k)), `三职业主动技能键均为 F1~F11（${[...new Set(keys)].join(',')}）`);
   ok(CLASSES.warrior.skills.filter(s => !s.passive && !s.cs).length === 4 && CLASSES.mage.skills.filter(s => !s.passive && !s.cs).length === 11, '战士 4 主动 / 法师 11 主动（#11 + 诱惑之光）');
   ok(CLASSES.warrior.skills.filter(s => s.cs).length === 5 && CLASSES.mage.skills.filter(s => s.cs).length === 5 && CLASSES.taoist.skills.filter(s => s.cs).length === 7, '传世秘籍：战士 5 / 法师 5 / 道士 6+金甲骷髅');
-  ok(POTIONS.every(p => !keys.includes(p.key)), '药水 1-4 与技能键不冲突');
+  ok(POTIONS.every(p => !keys.includes(p.key)), '药水键（1-4/P4-P7）与技能键不冲突');
 }
 { // S 键：起点返回上一层
   const w = mk([], [{ name: '二层', spawns: [] }]); w.loadFloor(1); const h = w.hero!;
