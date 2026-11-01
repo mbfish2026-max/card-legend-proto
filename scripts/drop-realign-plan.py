@@ -82,11 +82,11 @@ for iid, it in d['items'].items():
         tags.append('D3 兽人酋长保留(适配,违反X)')
     if a.get('official') == '自创': tags.append('自创保留(适配)')
     if a.get('tier') == 'eg40' and not cs and kind == '适配': tags.append('D12 EG未查到维持')
-    srcs = []
+    srcs = []; plan = []
     for u in pick:
         boss = U[u]['tier'] == 'boss'
         N = offN.get((norm(U[u]['name']), OFF_NAME.get(iid, name))) or offN.get((norm(d['official'].get(u, {}).get('name', U[u]['name'])), OFF_NAME.get(iid, name)))
-        den, why = rate(req, boss, N)
+        den, why = rate(req, boss, N); plan.append([u, den])
         f = ufl[u]; srcs.append(f"{f['n']}{f['name']}L{ulv[u]}×{U[u]['name']}{'(BOSS)' if boss else ''}×1/{den}[{why}]")
     mech = [s for s in a.get('src', []) if 'setDrop' in s or '副本补正' in s]
     if mech: srcs.append(f'机制源保留×{len(mech)}(setDrop/副本补正)')
@@ -99,7 +99,9 @@ for iid, it in d['items'].items():
     chg.append('爆率')
     rows.append(dict(id=iid, name=name, slot=it['slot'], cls='/'.join(it.get('cls') or []) or '通用', req_old=req0, req_new=req,
         official=a.get('official', ''), cq=cqid, tier=a.get('tier', ''), kind=kind, old_n=len(old),
-        old_min=min([int(m) for s in old for m in re.findall(r'L(\d+)×', s)] or [0]), new_src=' ; '.join(srcs), change='+'.join(chg), tags=' ; '.join(tags), note=note))
+        old_min=min([int(m) for s in old for m in re.findall(r'L(\d+)×', s)] or [0]), new_src=' ; '.join(srcs), change='+'.join(chg), tags=' ; '.join(tags), note=note, plan=plan))
+PLAN = {r['id']: r.pop('plan') for r in rows}
+json.dump(PLAN, open(f'{OUT}/plan.json', 'w'))
 json.dump(rows, open(f'{OUT}/rows.json', 'w'), ensure_ascii=False, indent=0)
 with open(f'{OUT}/drop-realign.csv', 'w', newline='') as fh:
     w = csv.DictWriter(fh, fieldnames=list(rows[0].keys())); w.writeheader(); w.writerows(rows)
@@ -136,19 +138,19 @@ def srcs_for(names, req):
     kind = '官方'
     if not pick:
         kind = '适配'; pick = sorted([u for u in ulv if U[u]['tier'] == 'boss' and max(req - X_B, 48 if req >= 45 else 0) <= ulv[u] <= req + OVER and (req < 45 or U[u]['name'] in ('雷炎蛛王', '魔龙教主'))], key=lambda u: (ulv[u], u))[:2]
-    out = []
+    out = []; plan = []
     for u in pick:
-        boss = U[u]['tier'] == 'boss'; den, why = rate(req, boss, None)
+        boss = U[u]['tier'] == 'boss'; den, why = rate(req, boss, None); plan.append([u, den])
         out.append(f"{ufl[u]['n']}{ufl[u]['name']}L{ulv[u]}×{U[u]['name']}{'(BOSS)' if boss else ''}×1/{den}")
-    return kind, out
+    return kind, out, plan
 for nm, cl in NEWC:
     c = by[nm]; slot = SLOTK[c['type']]; req = int(c['need'][1])
-    st, drop, why = conv(slot, c['stats']); kind, ss = srcs_for(c['mobs'], req)
+    st, drop, why = conv(slot, c['stats']); kind, ss, pl = srcs_for(c['mobs'], req)
     newrows.append(dict(name=nm, slot=slot, cls=cl, req=req, official=' '.join(f'{k}{v}' for k, v in c['stats'].items()), ours=st, conv='；'.join(why) + ('；舍弃' + '/'.join(drop) + '(本作无此属性)' if drop else ''),
-        price_off=c['price'], price=max(1, round(int(c['price']) / 100)), src_kind=kind, src=' ; '.join(ss), url=c['url']))
+        price_off=c['price'], price=max(1, round(int(c['price']) / 100)), src_kind=kind, src=' ; '.join(ss), url=c['url'], plan=pl))
 # 靴子/腰带：17173 + tayewan（1.76 21cq 无此类别 → 掉落/价格未查到）
 BB = [('布鞋', 'boots', 15, '防御0-1 负重+3', {'def': 1}), ('鹿皮靴', 'boots', 22, '防御0-2 负重+4', {'def': 2}), ('紫绸靴', 'boots', 30, '防御0-3 负重+5', {'def': 3}), ('避魂靴', 'boots', 35, '防御1-3 负重+6', {'def': 3}),
-      ('兽皮腰带', 'belt', 15, '防御0-1', {'def': 1}), ('铁腰带', 'belt', 22, '防御0-2', {'def': 2}), ('青铜腰带', 'belt', 30, '防御0-3（另一来源1-2+魔御0-1，有出入）', {'def': 3}),
+      ('兽皮腰带', 'belt', 15, '防御0-1', {'def': 1}), ('铁腰带', 'belt', 22, '防御0-2', {'def': 2}), ('青铜腰带', 'belt', 30, '防御0-3（另有资料1-2+魔御0-1，有出入；G8 取保守值：防御上限 2、不加魔御）', {'def': 2}),
       ('钢铁腰带', 'belt', 35, '防御0-3 魔御0-1', {'def': 3, 'mdef': 1}), ('雷霆腰带', 'belt', 45, '需攻击45；防御2-3 魔御0-1 攻击1', {'def': 3, 'mdef': 1, 'atk': 1}),
       ('烈焰腰带', 'belt', 45, '需魔法30；数值未查到', None), ('光芒腰带', 'belt', 45, '需道术28；数值未查到', None)]
 kb = K.get(('boots', 'def')) or 1.67
@@ -157,9 +159,9 @@ for nm, slot, req, off, base in BB:
     else: prov = f'防御类×{kb}（雷霆战靴折算系数）'
     st = {k: max(1, round(v * kb)) if k in ('def', 'mdef') else v for k, v in base.items()}
     st['hp'] = st['def'] * 8
-    kind, ss = srcs_for([], req)
+    kind, ss, pl = srcs_for([], req)
     newrows.append(dict(name=nm, slot=slot, cls={'雷霆腰带': '战', '烈焰腰带': '法', '光芒腰带': '道'}.get(nm, '通用'), req=req, official=off, ours=st, conv=prov + '；hp=防御×8（沿用本作护甲 hp/def 比，适配）',
-        price_off='未查到', price='未查到→暂按同档鞋/镯定价', src_kind='适配（1.76 掉落未查到）', src=' ; '.join(ss), url='https://mir.17173.com/0323/item4.htm'))
+        price_off='未查到', price='未查到→暂按同档鞋/镯定价', src_kind='适配（1.76 掉落未查到）', src=' ; '.join(ss), url='https://mir.17173.com/0323/item4.htm', plan=pl))
 json.dump(dict(K={f'{a}.{b}': v for (a, b), v in K.items()}, new=newrows), open(f'{OUT}/new.json', 'w'), ensure_ascii=False, indent=0)
 print(len(newrows), 'new', K)
 

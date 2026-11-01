@@ -25,6 +25,7 @@ export const ITEMS: Record<string, ItemDef> = {
   bless_oil: { id: 'bless_oil', name: '祝福油', icon: 'assets/items/bless_oil.png', price: 50 },
   // 黑铁矿石：强化武器/头盔/衣服/靴子（手机版规则简化，见 World.enhanceWithIron）
   black_iron: { id: 'black_iron', name: '黑铁矿石', icon: 'assets/items/black_iron.png', price: 20 },
+  // drop-realign（D1，已批准）：魔杖/银蛇 26、骨玉 35、青铜头盔 10、铁剑 10、破魂 20、重盔甲/金戒指 22 取官方需求；D5 银蛇剑→银蛇、屠龙刀→屠龙（只改显示名，id 不变）。以下两行为旧注释（已被取代）：
   // 阶段3（balance-sys）：需求等级对齐——屠龙 34 = 官方需求（21cq）；重盔甲 12（官方 22）、金戒指 9（官方 22）暂保留 [待决定]：9 种子模拟抬到 22 后战士 2 种子卡尸王殿 L29、法师死亡中位 35→54；自创沃玛/祖玛/赤月套 = equip-official TIER_REQ 24/30/35 [适配]。
   // 魔杖/银蛇 保留 6（官方 26）[适配]：二者是法师/道士 6–20 级唯一职业武器，抬到 26 会使法师前期无武器（与「法师不得更难」冲突），待决定。
   // 旧存档：背包/身上实例保留存档时的 req（不追溯），新掉落按新 req。
@@ -45,20 +46,20 @@ export const ITEMS: Record<string, ItemDef> = {
   bone: { id: 'bone', name: '骷髅骨头', icon: 'assets/items/bone.png', price: 6 },
   // 武器
   wood_sword: { id: 'wood_sword', name: '木剑', icon: 'assets/items/eq_wood_sword.png', slot: 'weapon', equip: { atk: 6, mag: 3, tao: 3 }, req: 1, price: 10 },
-  iron_sword: { id: 'iron_sword', name: '铁剑', icon: 'assets/items/eq_iron_sword.png', slot: 'weapon', equip: { atk: 14 }, req: 4, price: 30 },
-  magic_staff: { id: 'magic_staff', name: '魔杖', icon: 'assets/items/eq_magic_staff.png', slot: 'weapon', equip: { mag: 16, atk: 3 }, req: 6, price: 45 },
-  tao_sword: { id: 'tao_sword', name: '银蛇剑', icon: 'assets/items/eq_tao_sword.png', slot: 'weapon', equip: { tao: 14, atk: 6 }, req: 6, price: 45 },
-  dragon_sword: { id: 'dragon_sword', name: '屠龙刀', icon: 'assets/items/eq_dragon_sword.png', slot: 'weapon', equip: { atk: 45, mag: 20, tao: 20 }, req: 34, price: 300 },
+  iron_sword: { id: 'iron_sword', name: '铁剑', icon: 'assets/items/eq_iron_sword.png', slot: 'weapon', equip: { atk: 14 }, req: 10, price: 30 },
+  magic_staff: { id: 'magic_staff', name: '魔杖', icon: 'assets/items/eq_magic_staff.png', slot: 'weapon', equip: { mag: 16, atk: 3 }, req: 26, price: 45 },
+  tao_sword: { id: 'tao_sword', name: '银蛇', icon: 'assets/items/eq_tao_sword.png', slot: 'weapon', equip: { tao: 14, atk: 6 }, req: 26, price: 45 },
+  dragon_sword: { id: 'dragon_sword', name: '屠龙', icon: 'assets/items/eq_dragon_sword.png', slot: 'weapon', equip: { atk: 45, mag: 20, tao: 20 }, req: 34, price: 300 },
   // 防具
-  helmet: { id: 'helmet', name: '青铜头盔', icon: 'assets/items/eq_helmet.png', slot: 'helmet', equip: { def: 4, hp: 20 }, req: 3, price: 20 },
+  helmet: { id: 'helmet', name: '青铜头盔', icon: 'assets/items/eq_helmet.png', slot: 'helmet', equip: { def: 4, hp: 20 }, req: 10, price: 20 },
   bone_helm: { id: 'bone_helm', name: '骷髅头盔', icon: 'assets/items/eq_bone_helm.png', slot: 'helmet', equip: { def: 9, hp: 50 }, req: 10, price: 60 },
   cloth: { id: 'cloth', name: '布衣', icon: 'assets/items/eq_cloth.png', slot: 'armor', equip: { def: 5, hp: 30 }, req: 1, price: 12 },
-  armor: { id: 'armor', name: '重盔甲', icon: 'assets/items/eq_armor.png', slot: 'armor', equip: { def: 16, hp: 120 }, req: 12, price: 150 },
+  armor: { id: 'armor', name: '重盔甲', icon: 'assets/items/eq_armor.png', slot: 'armor', equip: { def: 16, hp: 120 }, req: 22, price: 150 },
   pearl: { id: 'pearl', name: '黑珍珠项链', icon: 'assets/items/eq_pearl.png', slot: 'necklace', equip: { atk: 5, mag: 5, tao: 5 }, req: 5, price: 40 },
   iron_ring: { id: 'iron_ring', name: '铁戒指', icon: 'assets/items/eq_iron_ring.png', slot: 'ring', equip: { atk: 3, hp: 20 }, req: 2, price: 15 },
-  gold_ring: { id: 'gold_ring', name: '金戒指', icon: 'assets/items/eq_gold_ring.png', slot: 'ring', equip: { atk: 8, mag: 8, tao: 8 }, req: 9, price: 70 },
+  gold_ring: { id: 'gold_ring', name: '金戒指', icon: 'assets/items/eq_gold_ring.png', slot: 'ring', equip: { atk: 8, mag: 8, tao: 8 }, req: 22, price: 70 },
   bracelet: { id: 'bracelet', name: '翡翠手镯', icon: 'assets/items/eq_bracelet.png', slot: 'bracelet', equip: { def: 3, hp: 30 }, req: 4, price: 25 },
-  boots: { id: 'boots', name: '铁靴', icon: I + 'gen_boots.png', slot: 'boots', equip: { def: 4, hp: 25 }, req: 3, price: 20 },
+  boots: { id: 'boots', name: '铁靴', icon: I + 'gen_boots.png', slot: 'boots', equip: { def: 1, hp: 8 }, req: 3, price: 20 }, // [适配] G4：降到低于布鞋 15（防 2 生命 16），不倒挂
   // R13 资料装备（21cq 1.76 物品库 https://www.21cq.com/mir/View.aspx?id=<n>）。卡牌属性 = 资料上限 × 换算 [适配]：攻击×1.5、魔法/道术×3、防御×2.3、生命=防御×8；
   // 需求等级取资料值；资料缺失（未查到）的按同档 [适配]。图标暂复用旧图，美术见 art-requests §R13 掉落。
   short_sword: { id: 'short_sword', name: '短剑', icon: 'assets/items/eq_short_sword.png', slot: 'weapon', equip: { atk: 16 }, req: 10, price: 10 }, // id=84
@@ -74,14 +75,14 @@ export const ITEMS: Record<string, ItemDef> = {
   yanyue: { id: 'yanyue', name: '偃月', icon: 'assets/items/eq_yanyue.png', slot: 'weapon', equip: { atk: 15, mag: 9 }, req: 20, price: 100 }, // id=95
   xiuluo: { id: 'xiuluo', name: '修罗', icon: 'assets/items/eq_xiuluo.png', slot: 'weapon', equip: { atk: 30 }, req: 22, price: 100 }, // id=97
   zhanma: { id: 'zhanma', name: '斩马刀', icon: 'assets/items/eq_zhanma.png', slot: 'weapon', equip: { atk: 22 }, req: 20, price: 60 }, // id=94
-  pohun: { id: 'pohun', name: '破魂', icon: 'assets/items/eq_pohun.png', slot: 'weapon', equip: { atk: 21 }, req: 22, price: 80 }, // id=93
+  pohun: { id: 'pohun', name: '破魂', icon: 'assets/items/eq_pohun.png', slot: 'weapon', equip: { atk: 21 }, req: 20, price: 80 }, // id=93
   ningshuang: { id: 'ningshuang', name: '凝霜', icon: 'assets/items/eq_ningshuang.png', slot: 'weapon', equip: { atk: 20 }, req: 25, price: 80 }, // id=98
   lianyu: { id: 'lianyu', name: '炼狱', icon: 'assets/items/eq_lianyu.png', slot: 'weapon', equip: { atk: 38 }, req: 26, price: 250 }, // id=99
   jingzhongyue: { id: 'jingzhongyue', name: '井中月', icon: 'assets/items/eq_jingzhongyue.png', slot: 'weapon', equip: { atk: 33 }, req: 28, price: 300 }, // id=102
   wujigun: { id: 'wujigun', name: '无极棍', icon: 'assets/items/eq_wujigun.png', slot: 'weapon', equip: { atk: 24, tao: 15 }, req: 30, price: 300 }, // id=104
   longwen: { id: 'longwen', name: '龙纹剑', icon: 'assets/items/eq_longwen.png', slot: 'weapon', equip: { atk: 30, tao: 18 }, req: 35, price: 350 }, // id=107
   caijue: { id: 'caijue', name: '裁决之杖', icon: 'assets/items/eq_caijue.png', slot: 'weapon', equip: { atk: 45 }, req: 30, price: 350 }, // id=105
-  guyu: { id: 'guyu', name: '骨玉权杖', icon: 'assets/items/eq_guyu.png', slot: 'weapon', equip: { atk: 9, mag: 18 }, req: 26, price: 200 }, // id=106（v1：官方为魔法 2-6，原误写道术）
+  guyu: { id: 'guyu', name: '骨玉权杖', icon: 'assets/items/eq_guyu.png', slot: 'weapon', equip: { atk: 9, mag: 18 }, req: 35, price: 200 }, // id=106（v1：官方为魔法 2-6，原误写道术）
   light_armor: { id: 'light_armor', name: '轻型盔甲', icon: 'assets/items/eq_light_armor.png', slot: 'armor', equip: { def: 7, hp: 56 }, req: 11, price: 30 }, // id=118
   soul_robe: { id: 'soul_robe', name: '灵魂战衣', icon: 'assets/items/eq_soul_robe.png', slot: 'armor', equip: { def: 14, hp: 112, tao: 6 }, req: 22, price: 100 }, // id=126
   magic_robe: { id: 'magic_robe', name: '魔法长袍', icon: 'assets/items/eq_magic_robe.png', slot: 'armor', equip: { def: 12, hp: 96, mag: 6 }, req: 22, price: 100 }, // id=124

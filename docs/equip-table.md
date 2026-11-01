@@ -20,10 +20,10 @@
 | id | 名称 | 部位 | 档次 | 官方需求 | 本作 req | 职业 | 官方属性 | 本作属性 | 来源 |
 |---|---|---|---|---|---|---|---|---|---|
 | wood_sword | 木剑 | 武器 | — | 等级 1 | 1 | 通用 | 攻2-5 | 攻击+6 魔法+3 道术+3 | https://www.21cq.com/mir/View.aspx?id=80 |
-| iron_sword | 铁剑 | 武器 | — | 等级 10 | 4 | 通用 | 攻5-9 | 攻击+14 | https://www.21cq.com/mir/View.aspx?id=85 |
-| magic_staff | 魔杖 | 武器 | 沃玛 | 等级 26 | 6 | 通用 | 攻5-9 魔2-5 | 魔法+16 攻击+3 | https://www.21cq.com/mir/View.aspx?id=100 |
-| tao_sword | 银蛇剑 | 武器 | 沃玛 | 等级 26 | 6 | 通用 | 攻7-14 道1-3 准确+1 | 道术+14 攻击+6 | https://www.21cq.com/mir/View.aspx?id=101 |
-| dragon_sword | 屠龙刀 | 武器 | — | 等级 34 | 34 | 战士 | 攻5-35 | 攻击+50 | https://www.21cq.com/mir/View.aspx?id=108 |
+| iron_sword | 铁剑 | 武器 | — | 等级 10 | 10 | 通用 | 攻5-9 | 攻击+14 | https://www.21cq.com/mir/View.aspx?id=85 |
+| magic_staff | 魔杖 | 武器 | 沃玛 | 等级 26 | 26 | 通用 | 攻5-9 魔2-5 | 魔法+16 攻击+3 | https://www.21cq.com/mir/View.aspx?id=100 |
+| tao_sword | 银蛇 | 武器 | 沃玛 | 等级 26 | 26 | 通用 | 攻7-14 道1-3 准确+1 | 道术+14 攻击+6 | https://www.21cq.com/mir/View.aspx?id=101 |
+| dragon_sword | 屠龙 | 武器 | — | 等级 34 | 34 | 战士 | 攻5-35 | 攻击+50 | https://www.21cq.com/mir/View.aspx?id=108 |
 | short_sword | 短剑 | 武器 | — | 等级 10 | 10 | 通用 | 攻3-11 | 攻击+16 | https://www.21cq.com/mir/View.aspx?id=84 |
 | bronze_sword | 青铜剑 | 武器 | — | 等级 5 | 5 | 通用 | 攻3-7 | 攻击+10 | https://www.21cq.com/mir/View.aspx?id=83 |
 | dagger | 匕首 | 武器 | — | 等级 1 | 1 | 通用 | 未查到 | 攻击+8 | https://www.21cq.com/mir/View.aspx?id=81 |
@@ -37,25 +37,25 @@
 | yanyue | 偃月 | 武器 | — | 等级 20 | 20 | 通用 | 攻4-10 魔1-3 | 攻击+15 魔法+9 | https://www.21cq.com/mir/View.aspx?id=95 |
 | xiuluo | 修罗 | 武器 | — | 等级 22 | 22 | 通用 | 攻0-20 | 攻击+30 | https://www.21cq.com/mir/View.aspx?id=97 |
 | zhanma | 斩马刀 | 武器 | — | 等级 20 | 20 | 通用 | 攻5-15 | 攻击+22 | https://www.21cq.com/mir/View.aspx?id=94 |
-| pohun | 破魂 | 武器 | — | 等级 20 | 22 | 通用 | 攻8-10 准确+2 | 攻击+21 | https://www.21cq.com/mir/View.aspx?id=93 |
+| pohun | 破魂 | 武器 | — | 等级 20 | 20 | 通用 | 攻8-10 准确+2 | 攻击+21 | https://www.21cq.com/mir/View.aspx?id=93 |
 | ningshuang | 凝霜 | 武器 | — | 等级 25 | 25 | 通用 | 攻10-13 | 攻击+20 | https://www.21cq.com/mir/View.aspx?id=98 |
 | lianyu | 炼狱 | 武器 | 沃玛 | 等级 26 | 26 | 通用 | 攻0-25 | 攻击+38 | https://www.21cq.com/mir/View.aspx?id=99 |
 | jingzhongyue | 井中月 | 武器 | 沃玛 | 等级 28 | 28 | 通用 | 攻7-22 | 攻击+33 | https://www.21cq.com/mir/View.aspx?id=102 |
 | wujigun | 无极棍 | 武器 | 沃玛 | 精神力 25 | 30 | 道士 | 攻8-16 道3-5 | 攻击+24 道术+15 | https://www.21cq.com/mir/View.aspx?id=104 |
 | longwen | 龙纹剑 | 武器 | 祖玛 | 等级 35 | 35 | 通用 | 攻8-20 道3-6 | 攻击+30 道术+18 | https://www.21cq.com/mir/View.aspx?id=107 |
 | caijue | 裁决之杖 | 武器 | 祖玛 | 等级 30 | 30 | 通用 | 攻0-30 | 攻击+45 | https://www.21cq.com/mir/View.aspx?id=105 |
-| guyu | 骨玉权杖 | 武器 | 祖玛 | 等级 35 | 26 | 通用 | 攻6-12 魔2-6 | 攻击+9 魔法+18 | https://www.21cq.com/mir/View.aspx?id=106 |
+| guyu | 骨玉权杖 | 武器 | 祖玛 | 等级 35 | 35 | 通用 | 攻6-12 魔2-6 | 攻击+9 魔法+18 | https://www.21cq.com/mir/View.aspx?id=106 |
 | nuzhan | 怒斩 | 武器 | 40–50 | 攻击力 46 | 40 | 战士 | 未查到 | 攻击+38 | 来源 C21 |
 | longya | 龙牙 | 武器 | 40–50 | 魔法力 28 | 40 | 法师 | 未查到 | 攻击+28 魔法+18 | 来源 C21 |
-| xiaoyao_fan | 逍遥扇 | 武器 | 40–50 | 等级 35 | 40 | 道士 | 未查到 | 攻击+18 道术+28 | 来源 C21 |
-| shihun_staff | 嗜魂法杖 | 武器 | 40–50 | 等级 35 | 40 | 法师 | 未查到 | 攻击+19 魔法+20 | 来源 C21 |
+| xiaoyao_fan | 逍遥扇 | 武器 | 40–50 | 等级 35 | 35 | 道士 | 未查到 | 攻击+18 道术+28 | 来源 C21 |
+| shihun_staff | 嗜魂法杖 | 武器 | 40–50 | 等级 35 | 35 | 法师 | 未查到 | 攻击+19 魔法+20 | 来源 C21 |
 | mingyun_blade | 命运之刃 | 武器 | 40–50 | 等级 35 | 35 | 战士 | 未查到 | 攻击+28 | 来源 C21 |
 | bazhe_blade | 霸者之刃 | 武器 | 40–50 | 等级 40 | 40 | 通用 | 未查到 | 攻击+38 魔法+18 道术+22 | 来源 T1(C) |
 | kaitian | 开天 | 武器 | 40–50 | 未查到 | 47 | 战士 | 未查到 | 攻击+46 | 来源 A1 |
 | zhentian | 镇天 | 武器 | 40–50 | 未查到 | 46 | 法师 | 未查到 | 攻击+32 魔法+34 | 来源 A1 |
 | xuantian | 玄天 | 武器 | 40–50 | 未查到 | 46 | 道士 | 未查到 | 攻击+39 道术+34 | 来源 A1 |
 | cloth | 布衣 | 衣服 | — | 等级 1 | 1 | 通用 | 防0-2 魔御0-1 | 防御+5 生命+30 魔御+2 | https://www.21cq.com/mir/View.aspx?id=116 |
-| armor | 重盔甲 | 衣服 | — | 等级 22 | 12 | 通用 | 防4-7 魔御2-3 | 防御+16 生命+120 魔御+8 | https://www.21cq.com/mir/View.aspx?id=122 |
+| armor | 重盔甲 | 衣服 | — | 等级 22 | 22 | 通用 | 防4-7 魔御2-3 | 防御+16 生命+120 魔御+8 | https://www.21cq.com/mir/View.aspx?id=122 |
 | light_armor | 轻型盔甲 | 衣服 | — | 等级 11 | 11 | 通用 | 防3-3 魔御1-2 | 防御+7 生命+56 魔御+5 | https://www.21cq.com/mir/View.aspx?id=118 |
 | soul_robe | 灵魂战衣 | 衣服 | — | 等级 22 | 22 | 通用 | 道0-2 防3-6 魔御3-3 | 防御+14 生命+112 道术+6 魔御+9 | https://www.21cq.com/mir/View.aspx?id=126 |
 | magic_robe | 魔法长袍 | 衣服 | — | 等级 22 | 22 | 通用 | 魔0-2 防3-5 魔御3-4 | 防御+12 生命+96 魔法+6 魔御+11 | https://www.21cq.com/mir/View.aspx?id=124 |
@@ -72,7 +72,7 @@
 | fengtian_armor | 凤天魔甲 | 衣服 | 40–50 | 等级 45 | 48 | 通用 | 未查到 | 防御+30 魔御+24 攻击+6 魔法+16 道术+16 生命+240 | 来源 T1+A2(C) |
 | set_woma_helm | 沃玛头盔 | 头盔 | 沃玛 | 自创 | 24 | 通用 | 自创 | 防御+10 生命+60 | 自创 |
 | set_zuma_helm | 祖玛头盔 | 头盔 | 祖玛 | 自创 | 30 | 通用 | 自创 | 防御+13 生命+90 | 自创 |
-| helmet | 青铜头盔 | 头盔 | — | 等级 10 | 3 | 通用 | 防0-1 | 防御+4 生命+20 | https://www.21cq.com/mir/View.aspx?id=147 |
+| helmet | 青铜头盔 | 头盔 | — | 等级 10 | 10 | 通用 | 防0-1 | 防御+4 生命+20 | https://www.21cq.com/mir/View.aspx?id=147 |
 | bone_helm | 骷髅头盔 | 头盔 | — | 攻击力 30 | 10 | 战士 | 防2-3 | 防御+9 生命+50 | https://www.21cq.com/mir/View.aspx?id=150 |
 | tao_helm | 道士头盔 | 头盔 | — | 等级 24 | 24 | 通用 | 防1-2 魔御2-3 | 防御+5 生命+40 魔御+8 | https://www.21cq.com/mir/View.aspx?id=149 |
 | magic_helm | 魔法头盔 | 头盔 | — | 等级 14 | 14 | 通用 | 防0-1 魔御1-1 | 防御+2 生命+16 魔御+3 | https://www.21cq.com/mir/View.aspx?id=148 |
@@ -104,7 +104,7 @@
 | set_zuma_ring | 祖玛戒指 | 戒指 | 祖玛 | 自创 | 30 | 通用 | 自创 | 攻击+11 魔法+11 道术+11 | 自创 |
 | set_chiyue_ring | 赤月戒指 | 戒指 | 赤月 | 自创 | 35 | 通用 | 自创 | 攻击+14 魔法+14 道术+14 | 自创 |
 | iron_ring | 铁戒指 | 戒指 | — | 自创 | 2 | 通用 | 自创 | 攻击+3 生命+20 | 自创 |
-| gold_ring | 金戒指 | 戒指 | — | 等级 22 | 9 | 通用 | 攻1-1 魔1-1 道1-1 魔御0-3 | 攻击+8 魔法+8 道术+8 魔御+5 | https://www.21cq.com/mir/View.aspx?id=206 |
+| gold_ring | 金戒指 | 戒指 | — | 等级 22 | 22 | 通用 | 攻1-1 魔1-1 道1-1 魔御0-3 | 攻击+8 魔法+8 道术+8 魔御+5 | https://www.21cq.com/mir/View.aspx?id=206 |
 | dragon_ring | 龙之戒指 | 戒指 | 沃玛 | 攻击力 37 | 24 | 战士 | 攻0-5 | 攻击+5 | https://www.21cq.com/mir/View.aspx?id=212 |
 | ruby_ring | 红宝石戒指 | 戒指 | 沃玛 | 魔法力 17 | 24 | 法师 | 魔0-4 | 魔法+8 | https://www.21cq.com/mir/View.aspx?id=213 |
 | platinum_ring | 铂金戒指 | 戒指 | 沃玛 | 精神力 17 | 24 | 道士 | 道0-4 | 道术+8 | https://www.21cq.com/mir/View.aspx?id=214 |
@@ -139,7 +139,7 @@
 | shengmo_bracelet | 圣魔手镯 | 手镯 | 40–50 | 魔法力 32 | 48 | 法师 | 未查到 | 魔法+12 防御+3 魔御+3 生命+24 | 来源 T1(C) |
 | zhenhun_bracelet | 真魂手镯 | 手镯 | 40–50 | 精神力 30 | 48 | 道士 | 未查到 | 道术+12 | 来源 T1(C) |
 | set_zuma_boots | 祖玛靴 | 靴子 | 祖玛 | 自创 | 30 | 通用 | 自创 | 防御+8 生命+70 | 自创 |
-| boots | 铁靴 | 靴子 | — | 自创 | 3 | 通用 | 自创 | 防御+4 生命+25 | 自创 |
+| boots | 铁靴 | 靴子 | — | 自创 | 3 | 通用 | 自创 | 防御+1 生命+8 | 自创 |
 | leiting_boots | 雷霆战靴 | 靴子 | 40–50 | 攻击力 45 | 45 | 战士 | 未查到 | 攻击+2 防御+5 生命+40 | 来源 B4 |
 | lieyan_boots | 烈焰魔靴 | 靴子 | 40–50 | 魔法力 30 | 45 | 法师 | 未查到 | 魔法+4 防御+5 生命+40 | 来源 B4 |
 | guangmang_boots | 光芒道靴 | 靴子 | 40–50 | 精神力 28 | 45 | 道士 | 未查到 | 道术+4 防御+6 生命+48 | 来源 B4 |
@@ -160,8 +160,8 @@
 | wood_sword | 木剑 | 木剑 |  |
 | iron_sword | 铁剑 | 铁剑 | 本作 req4（R2 存量，保留） |
 | magic_staff | 魔杖 | 魔杖 | 本作 req6（R2 存量，保留） |
-| tao_sword | 银蛇剑 | 银蛇 | 本作名「银蛇剑」、req6（R2 存量，保留） |
-| dragon_sword | 屠龙刀 | 屠龙 | 本作名「屠龙刀」、req15（R2 存量，保留） |
+| tao_sword | 银蛇 | 银蛇 | 本作名「银蛇剑」、req6（R2 存量，保留） |
+| dragon_sword | 屠龙 | 屠龙 | 本作名「屠龙刀」、req15（R2 存量，保留） |
 | helmet | 青铜头盔 | 青铜头盔 | 本作 req3（R2 存量，保留） |
 | bone_helm | 骷髅头盔 | 骷髅头盔 | 本作 req10（R2 存量，保留） |
 | cloth | 布衣 | 布衣(男/女) |  |

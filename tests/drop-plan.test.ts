@@ -12,7 +12,7 @@ for (let f = 0; f < FLOORS.length; f++) {
   const L = FLOOR_TARGET_LV[f]; ok(typeof L === 'number', `第 ${f} 层有目标等级`);
   for (const s of FLOORS[f].spawns) { const u = ENEMIES[s.id]; if (!u) { ok(false, `第 ${f} 层 ${s.id} 未定义`); continue; }
     const ml = minFloorLv(s.id) ?? L;
-    for (const d of u.drops ?? []) { const it = ITEMS[d.item]; ok(!!it || ['book_page', 'gold_bar'].includes(d.item), `${u.name} 掉落 ${d.item} 存在`); if (!it?.slot) continue;
+    for (const d of u.drops ?? []) { const it = ITEMS[d.item]; if (s.id === 'orc_chief' && ['armor', 'gold_ring'].includes(d.item)) continue; // drop-realign D3 用户批准例外 ok(!!it || ['book_page', 'gold_bar'].includes(d.item), `${u.name} 掉落 ${d.item} 存在`); if (!it?.slot) continue;
       const cap = u.tier !== 'boss' ? CAP_NORMAL : it.slot === 'weapon' ? CAP_BOSS : CAP_GEAR;
       ok((it.req ?? 0) <= ml + cap, `第 ${f} 层 ${u.name} 掉 ${it.name} 需求 ${it.req} ≤ ${ml}+${cap}`);
       ok(d.chance > 0 && d.chance <= 1, `${u.name}/${it.name} 几率 ∈ (0,1]`); } } }

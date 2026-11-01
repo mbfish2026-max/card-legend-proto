@@ -14,6 +14,7 @@ import { HERO, ENEMIES, SUMMON, SUMMON_BEAST, SUMMON_CORPSE, SUMMON_GOLDEN, DECO
 import { EXP_PER_LEVEL, EXP_VERSION, migrateExp, scaledExp, fmtExp } from '../data/expCurve';
 import { killExp, foeStatsAt, FLOOR_TARGET_LV, FOE_BAND, floorBand } from '../data/balance';
 import '../data/drop-plan';
+import { refreshInvItem } from '../data/drop-realign';
 import { REGIONS } from '../data/map';
 import { MINE_FLOORS, MINE_CAST, MINE_RESPAWN, MINE_RADIUS, mineX, minePurity, OIL_BOSSES, OIL_RATE } from '../data/mining'; // 阶段4：drop-plan 覆盖（副作用：改写 ENEMIES.drops）
 import { WORLD, FLOORS, Floor, FARM_RESPAWN, FARM_SAFE_DIST, nextFloorOf, SIDE_FLOORS, DEPTH_STEP, prevLayerOf, prevFloorOf, floorWidth, OLD_MAP_W, summonMulAt } from '../data/world';
@@ -243,7 +244,8 @@ export class World {
         save = { ...save, floorIndex: m(save.floorIndex ?? 0) }; this.reached = new Set([...this.reached].map(m)); this.bossKilled = new Set([...this.bossKilled].map(m));
       }
       // 旧存档兼容：已达到学习等级的技能视为已学
-      this.storage = [...(save.storage ?? [])]; this.skillOrder = [...(save.skillOrder ?? [])]; this.ringQ = save.ringQ ?? null; this.ringDone = save.ringDone ?? 0; this.companion = migrateCompanion(save.companion);
+      this.storage = [...(save.storage ?? [])]; for (const it of [...this.bag, ...this.storage, ...Object.values(this.equip)]) refreshInvItem(it); // drop-realign：D5 改名/D1 需求刷新（已穿戴不卸下）
+      this.skillOrder = [...(save.skillOrder ?? [])]; this.ringQ = save.ringQ ?? null; this.ringDone = save.ringDone ?? 0; this.companion = migrateCompanion(save.companion);
       // #11：旧档推导排除尚无获取途径的新书技能（shop:false 且无掉落）
       this.learned = new Set(save.learned ?? this.skillPool.filter(s => this.level >= (s.unlock ?? s.learn?.[0] ?? 1) && !(s.id in LATE_BOOKS) && (!BOOKS[s.id] || BOOKS[s.id].shop || BOOKS[s.id].drops.length)).map(s => s.id));
     }

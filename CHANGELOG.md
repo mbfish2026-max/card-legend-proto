@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 掉落重新对齐 阶段 1：数据层（feat/drop-realign，未合 main）
+- 10 件装备的需求改为官方值。银蛇/屠龙只改显示名，id 不变。124 件按方案表重设来源和爆率（新曲线）。撤掉尸王搬迁。铁靴降数值。老存档读档时刷新名称和需求，已穿戴的保留。
+- 新增 tests/drop-realign.test.ts。9 种子有回退（道士死亡中位 11→22，战士有 1 个种子只到 47 级）；battle 和 eg-dungeon 两个断言不过，没有放宽。详见 docs/drop-realign.md「实施记录」。
+
 ## 文档：装备需求/掉落重新对齐方案（feat/drop-realign，只出文档，未合 main）
 - 新增 docs/drop-realign.md（A–I 章）和 docs/drop-realign.csv。内容：124 件逐件需求/来源/新爆率；新曲线（按档 K 换算＋上下限）；风险；9 种子评估方案；分阶段实施；待定问题；1–30 级过渡链（新增 25 件首饰）；腰带栏与靴子补全（新增 4 靴 7 腰带）。
 - 新增只读脚本 scripts/drop-realign-plan.py，并扩展 scripts/drop-realign-dump.ts 的导出。art-requests 增加 36 个图标和腰带空栏底图的需求（AI 生成，未出图）。没有改任何游戏代码。
