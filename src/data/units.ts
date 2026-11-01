@@ -156,7 +156,7 @@ for (const [id, name, lv, tpl] of SQMIR3_BOSS) ENEMIES[id] = sqClone(id, name, l
 ENEMIES.sq_youying = { ...sqClone('sq_youying', '幽影武士', 45, 'sq_lizhua', 'sq_youying'), onHit: { stun: { chance: 0.1, dur: 2 } } }; // 官方「麻痹」；10%/2s [适配]
 ENEMIES.sq_lieyan_shi = { ...sqClone('sq_lieyan_shi', '烈焰使', 44, 'sq_shanling', 'sq_lieyan_shi'), immobile: true }; // 官方「极品不移动」
 ENEMIES.boss_sq_shandian = { ...sqClone('boss_sq_shandian', '闪电魔', 34, 'boss_sq_jindi', 'boss_sq_shandian', true), ranged: true, magic: 1, range: 320, speed: 90 }; // 雷系远程；射程 320 [适配]
-ENEMIES.boss_sq_lizhua = { ...sqClone('boss_sq_lizhua', '利爪魔', 33, 'boss_sq_jindi', 'sq_lizhua', true), range: 8, speed: 100 }; // 近战 BOSS；立绘复用 sq_lizhua [缺图]
+ENEMIES.boss_sq_lizhua = { ...sqClone('boss_sq_lizhua', '利爪魔', 33, 'boss_sq_jindi', 'boss_sq_lizhua', true), range: 8, speed: 100 }; // 近战 BOSS；立绘复用 sq_lizhua [缺图]
 ENEMIES.boss_sq_jindi.immobile = true; // 禁地魔王：不移动 + BOSS（重生 BOSS_RESPAWN 600s）
 export const DROPS_AS: Record<string, string> = { mine_zombie: 'zombie' };
 /** R13：有资料的怪，装备/药水/祝福油掉落替换为资料表（1/N）；金币条目保留 [适配]。见 docs/drops-official.md */
