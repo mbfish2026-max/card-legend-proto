@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 文档：全装备审计（feat/drop-audit，未合 main，未改代码）
+- docs/drop-audit-full.md/.csv：124 件装备逐件对照 21cq（79 件打开物品页核验，32 件 EG 未查到，13 件自创），新增问题 14 条与 D7–D12 待决策；只读脚本 scripts/drop-audit-items.ts、scripts/drop-audit-full.py；抓取记录 docs/drop-audit-21cq/
+
 ## 文档：装备掉落地点审计（feat/drop-audit，未合 main，未改代码）
 - docs/drop-audit.md：对照 21cq 1.76 资料审计 23 项问题和修正方案（魔杖/银蛇 req6→官方26、黑暗法师/蜘蛛女王掉魔杖等），新增只读脚本 scripts/drop-audit-dump.ts
 ## 修复：换图后召唤物留在旧坐标/从远处走过来（fix/summon-mapchange，未合 main）
