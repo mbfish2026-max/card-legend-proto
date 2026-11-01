@@ -18,7 +18,7 @@ export const EXP_BEYOND_GROWTH = 1.5;
 export const OFFICIAL_MAX = OFFICIAL_EXP.length - 1;
 /** 新曲线：lv 级升下一级所需经验 */
 /** [适配] feat/balance-4050：40–49 级升级所需 ×EXP_LATE_MUL（官方表 40–49 级已原样使用，更高的官方值 未查到；依据：用户要求 40–49 段升级用时约为 R61 的 1.8–2.5 倍）。
- *  怪物经验倍率仍按官方表（EXP_PER_LEVEL_BASE）定标，所以每级所需击杀数 ×EXP_LATE_MUL；1–39 级、50 级以上不变 */
+ *  怪物经验倍率仍按官方表（EXP_PER_LEVEL_BASE）定标，所以每级所需击杀数 ×EXP_LATE_MUL；1–39 级不变；50 级以上随 49 级一起 ×EXP_LATE_MUL（保持单调） */
 export const EXP_LATE_MUL = 2;
 export const EXP_LATE_LV: readonly [number, number] = [40, 49];
 /** 官方形状曲线（不含 40–49 级加倍），用于怪物/悬赏经验定标 */
@@ -31,7 +31,8 @@ export const EXP_PER_LEVEL = (lv: number): number => {
   const l = Math.max(1, Math.floor(lv));
   if (l >= EXP_LATE_LV[0] && l <= EXP_LATE_LV[1]) return Math.round(OFFICIAL_EXP[l] / EXP_SCALE * EXP_LATE_MUL);
   if (l <= OFFICIAL_MAX) return Math.round(OFFICIAL_EXP[l] / EXP_SCALE);
-  return Math.round(OFFICIAL_EXP[OFFICIAL_MAX] / EXP_SCALE * EXP_BEYOND_GROWTH ** (l - OFFICIAL_MAX));
+  // 50 级以上从加倍后的 49 级外推，保证曲线严格单调（battle.test R22）
+  return Math.round(OFFICIAL_EXP[OFFICIAL_MAX] / EXP_SCALE * EXP_LATE_MUL * EXP_BEYOND_GROWTH ** (l - OFFICIAL_MAX));
 };
 /** 旧线性曲线（expV<2 存档），仅迁移与对照用 */
 export const EXP_PER_LEVEL_V1 = (lv: number) => 80 + lv * 45;

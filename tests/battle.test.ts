@@ -915,7 +915,7 @@ const free = (w: World) => w.skills.map(() => 0);
   const need = (l: number) => C.EXP_PER_LEVEL(l);
   let mono = true; for (let l = 1; l < 60; l++) if (!(need(l + 1) > need(l))) mono = false;
   ok(mono, '经验曲线 1–60 级严格单调递增');
-  ok([1, 10, 20, 30, 40, 49].every(l => need(l) === C.OFFICIAL_EXP[l] / C.EXP_SCALE), `各级 = 官方值 ÷ ${C.EXP_SCALE}`);
+  ok([1, 10, 20, 30, 40, 49].every(l => C.EXP_PER_LEVEL_BASE(l) === C.OFFICIAL_EXP[l] / C.EXP_SCALE) && [1, 10, 20, 30].every(l => need(l) === C.OFFICIAL_EXP[l] / C.EXP_SCALE), `各级 = 官方值 ÷ ${C.EXP_SCALE}`);
   const jump = (l: number) => need(l) / need(l - 1);
   // 官方跳变：9→10 ×2.4、13→14 ×2、20→21 ×1.79、37→38 ×1.46、45→46 ×4；相邻非跳变级 ≤ ×1.4
   ok(jump(10) >= 2.3 && jump(14) >= 1.9 && jump(21) >= 1.7 && jump(38) >= 1.4 && jump(46) >= 3.9, `10/14/21/38/46 级跳变（${[10, 14, 21, 38, 46].map(l => jump(l).toFixed(2)).join('/')}）`);
