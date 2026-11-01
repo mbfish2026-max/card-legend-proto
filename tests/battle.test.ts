@@ -1108,7 +1108,7 @@ console.log('# 诱惑之光');
   { const { w, e, i } = setup('deer'); w.rng = () => 0; const mp = w.hero!.mp!; const r = w.cast(i, cds());
     ok(r.ok && e.team === 'ally' && !!e.pet && !!e.summon && w.pets.length === 1 && w.summon === undefined, '成功：转为宠物，不占骷髅位');
     ok(e.hp === 100 && w.hero!.mp! < mp, '无伤害，扣魔');
-    ok(!JSON.stringify(w.toSave()).includes('"pet"'), '宠物不存档');
+    ok(!!(w.toSave() as any).summons?.some((x: any) => x.pet && x.id === 'deer'), '宠物存档（summons 字段，读档保留）');
     w.drainEvents(); const nm = e.name, col = e.nameColor, hp = e.maxHp, atk = e.atk; w.time += 1e5; run(w, 2); ok(e.alive && e.team === 'ally' && !!e.pet && !!e.summon && e.name === nm && e.nameColor === col && e.maxHp === hp && e.atk === atk && !w.drainEvents().some((v: any) => v.type === 'charm'), '不叛变：快进 10 万秒后仍为宠物，名字/颜色/属性不变'); }
   { const { w, e, i } = setup('deer'); w.rng = () => 0.99; const r = w.cast(i, cds()); const evs = w.drainEvents();
     ok(r.ok && e.team === 'enemy' && evs.some(v => v.type === 'charm' && v.result === 'fail'), '失败：诱惑失败事件，仍为敌'); }
