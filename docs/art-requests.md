@@ -1500,3 +1500,11 @@ public/assets/ui/UI-Tooltip-Border.png
 - 法师批 3 张、道士批 4 张已完成。fx/summon_skeleton_atk.png 按用户要求不改；战士 body 不重画（等用户决定）。
 - 旧图备份：docs/sword-up-preview/old/equip_{warrior,mage,taoist}/（战士为最初原图，旋转版不再保留）；对比图（上旧下新）：docs/sword-up-preview/{warrior,mage,taoist}_equip_compare.png。
 - 注意：各剑倾角略有差异（约 10–25°）；法师木剑首版拳边有杂线，已重新生成。
+
+### 分层重画批量（10 个武器层）
+- 用户确认战士木剑分层样张后，用同法完成其余 9 个：战士 iron/dragon、法师 wood/iron/dragon、道士 wood/iron/dragon/tao；战士木剑直接用已确认的样张层。全部同名替换为 1024×1024 RGBA，body/护甲层未改。
+- 剑部件：单独生成不带手的竖直剑（参考 old/ 原图保留外观）：木剑、铁剑、直刃龙剑（法师）、弯刃龙剑（战士/道士）、道士剑（银色角形护手+紫宝石+蓝银柄+红剑穗）。法师/道士木剑、三职业铁剑共用同款部件（原图本就近似）。
+- 手部：共用样张拳头；脚本 comp2.py 在 body 袖口（非肤色）处裁掉手腕，让手从法师/道士袖口伸出；拳内只在拳头上沿去掉棍像素，避免剑柄色从指缝透出。
+- 每层 3 倍放大自检：指节分段、拇指压在食指/中指上、护手在拳头上方、剑柄从拳头上下两端穿出、剑尖朝上，均通过。
+- portraits/warrior_full.png 已 3 倍检查：戴手套握拳，护手在拳上方，剑柄从拳下穿出并露出剑首，无同类问题，未改。
+- 备份：最初原图在 old/equip_{warrior,mage,taoist}/；171f568 版在 old/regen_171f568/。对比图（上原图、中新图、下手部 3 倍）：{warrior,mage,taoist}_equip_compare.png。部件与脚本：sample_src/（swords/、comp2.py）。
