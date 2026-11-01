@@ -9,6 +9,7 @@ let pass = 0; const ok = (c: unknown, m: string) => { if (!c) { console.error('F
 const ALLOWED_SHARE: Record<string, { ids: string[]; why: string }> = {
   'assets/portraits/boss_molong_full.png': { ids: ['boss_molong', 'boss_hj_home'], why: '魔龙守将与魔龙教主按 art/sq-mir3 108d607 有意共用（m4-official 美术注记）；boss_hj_home_full.png 未交付' },
   'assets/portraits/boss_orc_chief_full.png': { ids: ['orc_chief', 'boss_wolong'], why: '卧龙名将 boss_wolong_full.png 未交付（合击版 BOSS，待美术），暂借兽人酋长' },
+  'assets/portraits/sq_lizhua_full.png': { ids: ['sq_lizhua', 'boss_sq_lizhua'], why: 'maps-3050 利爪魔 BOSS boss_sq_lizhua_full.png 未交付（双 BOSS 黑暗轮回，待美术），暂借普通利爪魔' },
   'assets/portraits/boss_redmoon_full.png': { ids: ['boss_redmoon', 'boss_leiyan', 'boss_fire_dragon'], why: '雷炎蛛王/火龙 boss_leiyan_full.png、boss_fire_dragon_full.png 未交付（合击版 BOSS，待美术），暂借赤月恶魔' },
 };
 const by: Record<string, string[]> = {};

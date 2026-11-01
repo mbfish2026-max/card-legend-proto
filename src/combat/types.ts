@@ -17,6 +17,14 @@ export interface UnitDef {
   art?: string;
   /** 渲染用（不影响战斗逻辑） */
   card?: { w: number; h: number; figureScale: number; anchorX?: number; footSink?: number; maxWidthRatio?: number; artFacing?: 1 | -1; bg?: number; tint?: number };
+  /** maps-3050：不移动——不追击不走位，只打射程内目标（脱战/回血按常规） */
+  immobile?: true;
+  /** maps-3050：普攻命中附带效果；stun = 几率 chance(0–1) 眩晕 dur 秒，BOSS 免疫，眩晕中不叠加不刷新 */
+  onHit?: { stun?: { chance: number; dur: number } };
+  /** maps-3050：远程——不必排队首位，射程(range)内即可隔着前排攻击 */
+  ranged?: true;
+  /** maps-3050：普攻魔法伤害占比 0–1（走魔御 mdef）；ranged+magic 播雷击特效 */
+  magic?: number;
 }
 /** idle 原地待机；alert 发现主角（感叹号）；chase 追击/战斗；return 脱战回位 */
 export type AIState = 'idle' | 'alert' | 'chase' | 'return';

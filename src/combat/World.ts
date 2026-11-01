@@ -61,6 +61,8 @@ export interface SaveData {
   expV?: number;
   /** balance-sys 任务B：BOSS 刷新冷却剩余秒数（层 index → 秒），存档时写剩余值；缺省=旧档，无冷却 */
   bossCd?: Record<string, number>;
+  /** maps-3050：按「层:BOSS id」的剩余冷却秒（可选） */
+  bossCdId?: Record<string, number>;
   /** 阶段4 挖矿：各矿层距下次刷新的剩余秒数 */
   mineCd?: Record<string, number>;
   /** P3 副本：每日次数（副本 id → 本地日 + 已用次数）、已首通副本 */
@@ -189,12 +191,18 @@ export class World {
   reached = new Set<number>(); bossKilled = new Set<number>(); townsSeen = new Set<string>();
   /** 任务B：层 index → BOSS 可再刷新的游戏时间（this.time） */
   bossCdUntil: Record<number, number> = {};
+  /** maps-3050：按「层:BOSS id」记冷却（双 BOSS 层杀一只不再挡另一只）；旧档无条目时沿用整层冷却 */
+  bossCdId: Record<string, number> = {};
   /** P3 副本 */
   dungeonRuns: Record<string, { day: string; n: number }> = {}; dungeonFirst = new Set<string>(); dungeonCur: { id: string; floor: number; tired: boolean; left: string[] } | null = null;
   today: () => string = () => localDay();
   /** P3：副本机制开关。难度回归 sim（tests/sim-lib）关闭，保证 9 seed 与改动前一致（sim 不刷副本，endgame-plan §5.2） */
   dungeons = true;
   dungeonLeft(id: string) { const r = this.dungeonRuns[id]; return DUNGEON_DAILY - (r && r.day === this.today() ? r.n : 0); }
+  bossOnCd(i: number, id: string) { const k = i + ':' + id;
+    if (this.bossCdLeft(i) <= 0) return false; // 整层冷却仍是总开关（清空 bossCdUntil 即全部可刷）
+    if (k in this.bossCdId) return this.bossCdId[k] > this.time;
+    return !Object.keys(this.bossCdId).some(x => x.startsWith(i + ':')) && this.bossCdLeft(i) > 0; } // 旧档：整层冷却
   bossCdLeft(i = this.floorIndex) { return Math.max(0, Math.ceil((this.bossCdUntil[i] ?? 0) - this.time)); }
   questProg: Record<string, number> = {}; questDone = new Set<string>(); achieves = new Set<string>();
   /** R11 已学技能（新角色只有初始技能，其余用技能书学习） */
@@ -221,6 +229,7 @@ export class World {
       this.equip = migrateEquip(save); this.bag = [...save.bag]; this.kills = save.kills; this.nextItem = save.nextUid;
       this.skillTrain = { ...(save.skillTrain ?? {}) }; this.reached = new Set(save.reached ?? []); this.bossKilled = new Set(save.bossKilled ?? []); this.townsSeen = new Set(Array.isArray(save.townsSeen) ? save.townsSeen.filter(x => typeof x === 'string') : []);
       for (const [k, v] of Object.entries(save.bossCd ?? {})) if (v > 0) this.bossCdUntil[+k] = Math.min(BOSS_RESPAWN, v);
+      for (const [k, v] of Object.entries(save.bossCdId ?? {})) if (v > 0) this.bossCdId[k] = Math.min(BOSS_RESPAWN, v);
       for (const [k, v] of Object.entries(save.dungeonRuns ?? {})) if (v && typeof v.n === 'number') this.dungeonRuns[k] = { day: String(v.day), n: v.n };
       this.dungeonFirst = new Set(save.dungeonFirst ?? []);
       for (const [k, v] of Object.entries(save.mineCd ?? {})) if (v > 0) this.mineCdUntil[+k] = Math.min(MINE_RESPAWN, v);
@@ -541,17 +550,17 @@ export class World {
     const h = this.hero; if (h) { h.x = WORLD.heroStartX; h.y = 0; h.facing = 1; }
     this.placeSummonsNearHero();
     const cu = this.companionUnit; if (cu) { cu.x = WORLD.heroStartX - 80; cu.y = WORLD.summonLane; }
-    const cd = this.bossCdLeft(i); // 任务B：进层时普通怪全量重刷；BOSS 冷却中不刷（防反复进出刷 BOSS）
+    const cd = this.bossCdLeft(i); let skipped = 0; // 任务B：进层时普通怪全量重刷；BOSS 冷却中不刷（防反复进出刷 BOSS）
     let densAcc = 0;
     for (const sp of this.floor.spawns) {
-      if (cd > 0 && ENEMIES[sp.id]?.tier === 'boss') continue;
+      if (ENEMIES[sp.id]?.tier === 'boss' && this.bossOnCd(i, sp.id)) { skipped++; continue; }
       if (sp.id === 'boss_woma' && this.floor.name === WOMA_FLOOR_NAME) { this.womaPending = { x: sp.x, y: sp.y ?? 0 }; continue; } // R14 #14：教主之家需号角
       this.spawnFoe(sp.id, sp.x, sp.y ?? 0);
       // 层内密度 [适配]：FOE_BAND.dens 按段给普通怪追加副本（累加器，确定性；BOSS/精英不复制；新手层除外）
       if (ENEMIES[sp.id]?.tier !== 'boss' && this.floors === FLOORS && !this.newbieFloor) { densAcc += (FOE_BAND.dens[floorBand(this.floorIndex)] ?? 1) - 1; while (densAcc >= 1) { densAcc -= 1; this.spawnFoe(sp.id, sp.x + 45, sp.y ?? 0); } }
     }
     this.events.push({ type: 'floor', index: i, name: this.floor.name });
-    if (cd > 0) this.events.push({ type: 'log', text: `本层首领已被击败，${Math.ceil(cd / 60)} 分钟内不会刷新（出口已开启）` });
+    if (cd > 0 && skipped) this.events.push({ type: 'log', text: `本层首领已被击败，${Math.ceil(cd / 60)} 分钟内不会刷新（出口已开启）` });
     const dg = this.dungeons && this.floors === FLOORS ? DUNGEON_BY_FLOOR[i] : undefined; this.dungeonCur = null;
     if (dg) { const left = this.dungeonLeft(dg.id), st = SETS[dg.sets[this.cls]], have = st.pieces.filter(p => [...Object.values(this.equip), ...this.bag].some(x => x?.item === p)).length;
       this.events.push({ type: 'log', text: `【${dg.name}】今日剩余 ${Math.max(0, left)}/${DUNGEON_DAILY} 次${left > 0 ? '' : '（用尽：BOSS 冷却 600 秒、掉率 ×0.25）'}｜${this.dungeonFirst.has(dg.id) ? '已首通' : '首通必掉 1 件'}｜${st.name} ${have}/${st.pieces.length}`, color: 'green' }); }
@@ -737,7 +746,7 @@ export class World {
       this.events.push({ type: 'drop', uid: u.uid, x: u.x, y: u.y, items });
     }
     // 额外掉落：独立随机流 lootRng（不消耗主 rng，保持平衡模拟稳定）。Boss 必掉 1 瓶祝福油；setDrop 随机 1 件套装
-    if (u.tier === 'boss') { this.bossKilled.add(this.floorIndex); this.bossCdUntil[this.floorIndex] = this.time + (dg && !dg.tired ? 0 : BOSS_RESPAWN); } // P3：副本次数内 BOSS 不冷却（每次进入必刷），用尽后 600 s
+    if (u.tier === 'boss') { this.bossKilled.add(this.floorIndex); this.bossCdUntil[this.floorIndex] = this.time + (dg && !dg.tired ? 0 : BOSS_RESPAWN); this.bossCdId[this.floorIndex + ':' + u.id] = this.bossCdUntil[this.floorIndex]; } // P3：副本次数内 BOSS 不冷却（每次进入必刷），用尽后 600 s
     else if (this.floor?.farm && !u.summon) this.farmQueue.push({ id: u.id, x: u.homeX, y: u.homeY, at: this.time + FARM_RESPAWN });
     const extra: { id: string; purity?: number }[] = [];
     // 阶段4：祝福油只由高级 BOSS（OIL_BOSSES）掉，[适配] 1/8；普通怪/精英不掉（oilChance 已停用）
@@ -1031,8 +1040,21 @@ export class World {
     return null;
   }
   /** opts.auto：自动施法（施毒术跳过已中毒的怪，无未中毒目标则不施放）；手动释放不受限 */
+  /** maps-3050：不移动（immobile 字段；boss_redmoon 历史硬编码保留） */
+  isImmobile(u: Unit) { return !!u.immobile || u.id === 'boss_redmoon'; }
+  stunned(u: Unit) { return (u.stunUntil ?? 0) > this.time; }
+  /** maps-3050：怪物普攻一次（伤害 + magic 魔法占比 + onHit.stun 命中眩晕） */
+  foeHit(f: Unit, tgt: Unit) {
+    this.events.push({ type: 'attack', source: f.uid, target: tgt.uid, ...(f.ranged && f.magic ? { skill: 'foe_thunder' } : {}) });
+    this.damage(tgt, f.atk * (0.9 + this.rng() * 0.2), f, true, false, false, f.magic ?? 0);
+    const st = f.onHit?.stun; if (!st || !tgt.alive || tgt.tier === 'boss' || this.stunned(tgt)) return; // BOSS 免疫；眩晕中不叠加不刷新
+    if (this.lootRng() >= st.chance) return; // 用 lootRng：不扰动主随机序列
+    tgt.stunUntil = this.time + st.dur; tgt.cd = Math.max(tgt.cd, st.dur);
+    this.events.push({ type: 'log', text: `${tgt.name}被${f.name}击晕 ${st.dur} 秒` });
+  }
   cast(i: number, cds: number[], opts: { auto?: boolean } = {}): CastResult {
     const s = this.skills[i], h = this.hero;
+    if (h && this.stunned(h)) return { ok: false, reason: '眩晕中' }; // maps-3050：被幽影武士等眩晕时不能施法
     if (!s || !h) return { ok: false, reason: '' };
     if (this.recall && !opts.auto) this.cancelRecall('施法');
     if (this.mine && !opts.auto) this.cancelMine('施法');
@@ -1456,7 +1478,7 @@ export class World {
     this.ground.push(it); this.events.push({ type: 'drop', uid: 0, x, y: it.y, items: [it] }, { type: 'log', text: `${d.name} 奖励：${ITEMS[id].name}`, color: 'green' });
   }
   toSave(): SaveData {
-    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, town: this.town, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, townsSeen: [...this.townsSeen], reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], ringQ: this.ringQ, ringDone: this.ringDone, eqV: EQUIP_VERSION, expV: EXP_VERSION, bossCd: Object.fromEntries(Object.keys(this.bossCdUntil).map(k => [k, this.bossCdLeft(+k)]).filter(e => (e[1] as number) > 0)), mineCd: Object.fromEntries(Object.keys(this.mineCdUntil).map(k => [k, this.mineCdLeft(+k)]).filter(e => (e[1] as number) > 0)), companion: this.companion ? JSON.parse(JSON.stringify(this.companion)) : null, summons: this.units.filter(u => u.summon && u.alive && !u.decoy && u.sBase).map(u => ({ id: u.id, ...(u.pet ? { pet: true } : {}), sLv: u.sLv ?? 0, sKills: u.sKills ?? 0, base: { ...u.sBase! }, hpR: u.maxHp > 0 ? u.hp / u.maxHp : 1, level: u.level, ...(u.pet ? { def: u.def, mdef: u.mdef } : {}) })), dungeonRuns: JSON.parse(JSON.stringify(this.dungeonRuns)), dungeonFirst: [...this.dungeonFirst]  };
+    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, town: this.town, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, townsSeen: [...this.townsSeen], reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], ringQ: this.ringQ, ringDone: this.ringDone, eqV: EQUIP_VERSION, expV: EXP_VERSION, bossCd: Object.fromEntries(Object.keys(this.bossCdUntil).map(k => [k, this.bossCdLeft(+k)]).filter(e => (e[1] as number) > 0)), bossCdId: Object.fromEntries(Object.entries(this.bossCdId).map(([k, v]) => [k, Math.ceil(v - this.time)]).filter(e => (e[1] as number) > 0)), mineCd: Object.fromEntries(Object.keys(this.mineCdUntil).map(k => [k, this.mineCdLeft(+k)]).filter(e => (e[1] as number) > 0)), companion: this.companion ? JSON.parse(JSON.stringify(this.companion)) : null, summons: this.units.filter(u => u.summon && u.alive && !u.decoy && u.sBase).map(u => ({ id: u.id, ...(u.pet ? { pet: true } : {}), sLv: u.sLv ?? 0, sKills: u.sKills ?? 0, base: { ...u.sBase! }, hpR: u.maxHp > 0 ? u.hp / u.maxHp : 1, level: u.level, ...(u.pet ? { def: u.def, mdef: u.mdef } : {}) })), dungeonRuns: JSON.parse(JSON.stringify(this.dungeonRuns)), dungeonFirst: [...this.dungeonFirst]  };
   }
 
   /** 点按一格：滑行中的按键全部排队（同向最多 10 格，反向则替换队列），每次按键都会走一格 */
@@ -1567,7 +1589,7 @@ export class World {
     const h = this.hero;
     const fighting = this.alive('enemy').some(u => u.ai === 'chase');
     if (h) {
-      this.moveHero(h, inp, dt);
+      if (this.stunned(h)) h.moving = false; else this.moveHero(h, inp, dt); // maps-3050：眩晕中不能移动
       h.mp = Math.min(h.maxMp, (h.mp ?? 0) + WORLD.mpRegen * dt);
       h.hp = Math.min(h.maxHp, h.hp + WORLD.hpRegen * (fighting ? 1 : 5) * dt);
     }
@@ -1607,11 +1629,11 @@ export class World {
           const ag = this.summonAggro(u);
           if (ag) { // 仇恨在召唤物：走向召唤物贴身，不占主角排队位
             const sd = Math.sign(u.x - ag.x) || 1; u.facing = -sd as 1 | -1;
-            if (u.id !== 'boss_redmoon' && !this.inMelee(u, ag)) this.toward(u, ag.x + sd * ((u.width + ag.width) / 2 + u.range), h.y, (u.stunUntil && u.stunUntil > this.time ? 0 : 1) * chase * (u.slowUntil && u.slowUntil > this.time ? 0.5 : 1), dt);
+            if (!this.isImmobile(u) && !this.inMelee(u, ag)) this.toward(u, ag.x + sd * ((u.width + ag.width) / 2 + u.range), h.y, (u.stunUntil && u.stunUntil > this.time ? 0 : 1) * chase * (u.slowUntil && u.slowUntil > this.time ? 0.5 : 1), dt);
             continue;
           }
           u.facing = -side as 1 | -1;
-          if (u.id === 'boss_redmoon') { prevDist = Math.abs(u.x - h.x); prev = u; continue; } // R13 赤月恶魔：速度 0，不移动
+          if (this.isImmobile(u)) { prevDist = Math.abs(u.x - h.x); prev = u; continue; } // R13 赤月恶魔：速度 0，不移动
           const sp = (u.stunUntil && u.stunUntil > this.time) ? 0 : chase * (u.slowUntil && u.slowUntil > this.time ? 0.5 : 1);
           const tx = dist > stop ? h.x + side * stop : u.x;
           // 近战怪：玩家后退拉开距离时，跳跃式扑上去补位（短时间 3 倍速，有冷却）
@@ -1643,6 +1665,7 @@ export class World {
     const smSpd = this.heroMoveSpeed(); // 召唤物移动速度 = 英雄当前速度（实时）
     for (const [k, sm] of allies.entries()) if (h) {
       const tg = this.alive('enemy').filter(e => e.ai === 'chase' && Math.abs(e.x - h.x) < (e.aggroUid === sm.uid ? WORLD.leashRange : 700)).sort((a, b) => Math.abs(a.x - sm.x) - Math.abs(b.x - sm.x))[0];
+      if (this.stunned(sm)) { sm.moving = false; continue; } // maps-3050：召唤物被眩晕
       if (tg) {
         const side = Math.sign(tg.x - sm.x) || 1; sm.facing = side as 1 | -1;
         if (!this.inMelee(sm, tg)) this.toward(sm, tg.x - side * ((sm.width + tg.width) / 2), WORLD.summonLane, smSpd, dt);
@@ -1658,7 +1681,7 @@ export class World {
     if (h && h.alive) {
       const side = this.meleeSide();
       // 自动普攻：仅在近战贴脸时打（不追怪）；可由 Input.autoAttack=false 关闭
-      if (inp.autoAttack !== false && side !== null && h.cd <= 0) {
+      if (inp.autoAttack !== false && side !== null && h.cd <= 0 && !this.stunned(h)) {
         const f = this.queue(side)[0]; h.cd = h.atkInterval; if (!h.moving) h.facing = side as 1 | -1;
         this.events.push({ type: 'attack', source: h.uid, target: f.uid });
         let dmg = this.autoDamage(h) * this.roll(0.9, 0.2);
@@ -1678,8 +1701,7 @@ export class World {
         const ag = f.ai === 'chase' && f.cd <= 0 ? this.summonAggro(f) : undefined;
         if (!ag || !this.inMelee(ag, f)) continue;
         f.cd = f.atkInterval * (f.slowUntil && f.slowUntil > this.time ? 1.5 : 1);
-        this.events.push({ type: 'attack', source: f.uid, target: ag.uid });
-        this.damage(ag, f.atk * (0.9 + this.rng() * 0.2), f);
+        this.foeHit(f, ag);
       }
       for (const s of [1, -1]) {
         const f = this.queue(s).find(u => !this.summonAggro(u));
@@ -1688,8 +1710,15 @@ export class World {
         if (!hitSummon && !this.inMelee(h, f)) continue;
         const tgt = hitSummon ? s2! : h;
         f.cd = f.atkInterval * (f.slowUntil && f.slowUntil > this.time ? 1.5 : 1);
-        this.events.push({ type: 'attack', source: f.uid, target: tgt.uid });
-        this.damage(tgt, f.atk * (0.9 + this.rng() * 0.2), f);
+        this.foeHit(f, tgt);
+      }
+      // maps-3050 远程怪（ranged）：不必排队首位，追击中且主角在射程内即可隔着前排攻击
+      for (const f of this.alive('enemy')) {
+        if (!f.ranged || f.ai !== 'chase' || f.cd > 0 || !h.alive || BOSS_MECH.has(f.id) || this.summonAggro(f) || this.stunned(f)) continue;
+        if (this.queue(1)[0] === f || this.queue(-1)[0] === f || !this.inMelee(h, f)) continue;
+        f.facing = (Math.sign(h.x - f.x) || 1) as 1 | -1;
+        f.cd = f.atkInterval * (f.slowUntil && f.slowUntil > this.time ? 1.5 : 1);
+        this.foeHit(f, h);
       }
     }
     for (const d of this.units) if (d.decoy && d.alive && (d.decoyUntil ?? 0) <= this.time) { d.alive = false; this.events.push({ type: 'death', uid: d.uid }, { type: 'log', text: `${d.name}消散` }); }
