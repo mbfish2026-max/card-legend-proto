@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 掉落重新对齐：掉率、图标、H 链调参、阶段2 腰带（feat/drop-realign，未合 main）
+
+- 掉率（魔兽批准）：天尊头盔/项链/戒指/手镯 boss_redmoon 1/40→1/120；烈焰项链/手镯/戒指/靴子 boss_leiyan 1/50→1/40（boss_molong 仍 1/50）。eg-dungeon 通过。
+- 图标：合入 art/h-chain-icons（98351f6），29 件 H 链换正式图标并登记 @2x（item-icons-2x.ts）；36px 截图验收见 docs/shots/drop-realign/。
+- H 链调参 v5（只动本作适配值）：属性 ×2.5，战士专属件 ×2，无职业防御件每点防御 +10 生命。修复 41b5a4c 中 8 件战士专属件误按 ×2.5 写入的问题（8fa1159）。9 seed 结果见 docs/sim-realign-h.md。
+- 阶段2：Slot/EquipSlot 加 'belt'（魔兽确认，仅成员）；7 条腰带 [暂定]（烈焰/光芒 [待核]），暂无掉落、不上商店、不计套装、占位图标；装备面板加腰带栏；存档迁移：衣服位的靴子迁到 boots（不丢装备）；单测 tests/belt-boots.test.ts。
+- 测试夹具：battle.test 戒指用例等级上调（金戒指需求 9→22），断言不变。
+
 ## 掉落重新对齐 H 章过渡链新物品（feat/drop-realign，未合 main）
 
 - 新增 29 件 H 章过渡装备（项链 8 / 手镯 10 / 戒指 7 / 靴子 4）：`src/data/h-chain.ts`。属性按官方区间 [适配]，靴子数值与售价标「暂定」；21cq 编号与官方名写入 EQUIP_META（靴子 1.76 掉落未查到，cq=0）。
