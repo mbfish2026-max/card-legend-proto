@@ -4,7 +4,7 @@
  */
 import { FLOORS, FLOOR_ORDER } from './world';
 import { ENEMIES } from './units';
-import { EXP_PER_LEVEL, EXP_SCALE, FLOOR_EXP_MULT, FLOOR_EXP_CAP as FLOOR_EXP_CAP_REF } from './expCurve';
+import { EXP_PER_LEVEL_BASE as EXP_PER_LEVEL, EXP_SCALE, FLOOR_EXP_MULT, FLOOR_EXP_CAP as FLOOR_EXP_CAP_REF } from './expCurve';
 import { OFFICIAL_MON_EXP } from './monsterExp';
 
 /** [适配] 主线 39 个位置的进入等级（FLOOR_ORDER 顺序），末项 = 目标通关等级 50（文档 §C） */

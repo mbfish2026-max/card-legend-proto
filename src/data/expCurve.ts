@@ -17,8 +17,19 @@ export const EXP_SCALE = 10;
 export const EXP_BEYOND_GROWTH = 1.5;
 export const OFFICIAL_MAX = OFFICIAL_EXP.length - 1;
 /** 新曲线：lv 级升下一级所需经验 */
+/** [适配] feat/balance-4050：40–49 级升级所需 ×EXP_LATE_MUL（官方表 40–49 级已原样使用，更高的官方值 未查到；依据：用户要求 40–49 段升级用时约为 R61 的 1.8–2.5 倍）。
+ *  怪物经验倍率仍按官方表（EXP_PER_LEVEL_BASE）定标，所以每级所需击杀数 ×EXP_LATE_MUL；1–39 级、50 级以上不变 */
+export const EXP_LATE_MUL = 2;
+export const EXP_LATE_LV: readonly [number, number] = [40, 49];
+/** 官方形状曲线（不含 40–49 级加倍），用于怪物/悬赏经验定标 */
+export const EXP_PER_LEVEL_BASE = (lv: number): number => {
+  const l = Math.max(1, Math.floor(lv));
+  if (l <= OFFICIAL_MAX) return Math.round(OFFICIAL_EXP[l] / EXP_SCALE);
+  return Math.round(OFFICIAL_EXP[OFFICIAL_MAX] / EXP_SCALE * EXP_BEYOND_GROWTH ** (l - OFFICIAL_MAX));
+};
 export const EXP_PER_LEVEL = (lv: number): number => {
   const l = Math.max(1, Math.floor(lv));
+  if (l >= EXP_LATE_LV[0] && l <= EXP_LATE_LV[1]) return Math.round(OFFICIAL_EXP[l] / EXP_SCALE * EXP_LATE_MUL);
   if (l <= OFFICIAL_MAX) return Math.round(OFFICIAL_EXP[l] / EXP_SCALE);
   return Math.round(OFFICIAL_EXP[OFFICIAL_MAX] / EXP_SCALE * EXP_BEYOND_GROWTH ** (l - OFFICIAL_MAX));
 };
@@ -34,7 +45,7 @@ export const FLOOR_LEVEL_ANCHORS: readonly number[] = [1, 3, 7, 12, 15, 18, 22, 
 export const HJ_FLOOR_ANCHORS: readonly number[] = [48, 49, 50, 51, 52, 53];
 /** 每层怪物/悬赏经验倍率 = 该层目标等级段的新曲线累计经验 ÷ 旧曲线累计经验（同一比例缩放，保持每层升级节奏） */
 export const floorExpMult = (anchors: readonly number[]): number[] => anchors.slice(0, -1).map((a, i) =>
-  cum(EXP_PER_LEVEL, a, anchors[i + 1]) / cum(EXP_PER_LEVEL_V1, a, anchors[i + 1]));
+  cum(EXP_PER_LEVEL_BASE, a, anchors[i + 1]) / cum(EXP_PER_LEVEL_V1, a, anchors[i + 1]));
 const BASE_MULT = floorExpMult(FLOOR_LEVEL_ANCHORS);
 /** [适配] feat/maps-more 追加层 13–18 的倍率 = 通关顺序中前后两张原有图倍率的几何平均（下标 13–23 依次对应 world.ts 新层） */
 /** [适配] 新层经验衰减：多 6 张图会让角色整体超前升级（模拟 9 种子死亡全 0），故新层经验 ×此值 */
