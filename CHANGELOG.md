@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 网络可达性测试页 feat/net-test
+- 新增 public/net-test.html（部署后 /card-legend-proto/net-test.html）：串行测本站、Supabase REST、Supabase Auth，每项 8 秒超时，有状态码即可达；复制结果、重新测试；验证 tests/e2e/net-test-verify.mjs。
+
 ## 手机版：装备对比面板点外部关闭 feat/mobile-tapclose
 - 手机（IS_MOBILE）角色/背包界面：点装备弹出「身上/查看中」对比面板后，点面板外空白处即关闭并取消选中。
 - 点面板内部不关；点其他装备格切换为对比该装备；按下到抬起移动 >8px（拖动/滚动）不算点击。

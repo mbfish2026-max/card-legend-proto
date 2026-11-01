@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>网络连通性测试</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font:15px/1.5 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:#14110d;color:#eee;padding:12px 12px calc(12px + env(safe-area-inset-bottom))}
+h1{font-size:19px;margin:4px 0 6px;color:#ffd77a}.sub{color:#aaa;font-size:13px;margin-bottom:10px;word-break:break-all}
+.it{background:#221d16;border:1px solid #4a3d28;border-radius:8px;padding:10px;margin:8px 0}
+.row{display:flex;justify-content:space-between;gap:8px;align-items:center}.nm{font-weight:600}
+.st{font-weight:700;white-space:nowrap}.ok{color:#7ddc7d}.bad{color:#ff7a6a}.run{color:#ffd77a}.wait,.gray{color:#888}
+.ds{color:#aaa;font-size:12.5px;word-break:break-all;margin-top:4px}.it.gray{opacity:.6}
+.sum{background:#2b2418;border-radius:8px;padding:10px;margin:12px 0;white-space:pre-wrap;font-size:13px}
+.btns{display:flex;gap:10px;flex-wrap:wrap}button{flex:1;min-width:130px;font-size:16px;padding:12px;border-radius:8px;border:1px solid #a8843f;background:#5a4420;color:#fff}
+button:disabled{opacity:.5}.note{color:#999;font-size:12.5px;margin-top:12px}textarea{width:100%;height:160px;margin-top:8px;font-size:12px;background:#000;color:#ddd}
+</style></head><body>
+<h1>网络连通性测试</h1>
+<div class="sub" id="env"></div>
+<div id="list"></div>
+<div class="sum" id="sum">测试中…</div>
+<div class="btns"><button id="copy" disabled>复制结果</button><button id="again" disabled>重新测试</button></div>
+<div id="fb"></div>
+<div class="note">说明：「通过」表示浏览器收到了服务器的响应（含 HTTP 401/404 等状态码，说明网络能到达对方服务器）；「失败」表示网络错误、被重置或 8 秒超时，即从当前网络无法到达。每项串行测试，互不影响。本页不读取也不上传任何游戏存档。</div>
+<script>
+(function(){
+var T=8000,SB='https://yzhjhyroekrcdqqjrlgm.supabase.co',SBK='sb_publishable_RLRQQmjYDEVhdg2dhAMmEg_qQGh38vh';
+var ITEMS=[
+ {id:'self',nm:'1. 本站（游戏所在站点）',url:function(){return location.pathname+'?nt='+Date.now()}},
+ {id:'sbrest',nm:'2a. Supabase 数据接口 REST',url:function(){return SB+'/rest/v1/'},h:{apikey:SBK}},
+ {id:'sbauth',nm:'2b. Supabase 登录接口 Auth',url:function(){return SB+'/auth/v1/health'},h:{apikey:SBK}}
+];
+var R=[],$=function(i){return document.getElementById(i)};
+function conn(){var c=navigator.connection;return c?[c.effectiveType,c.type,c.downlink!=null?c.downlink+'Mbps':'',c.rtt!=null?'rtt'+c.rtt+'ms':''].filter(Boolean).join(' '):'未知'}
+function envText(){return '域名：'+location.host+'　网络：'+conn()}
+function draw(){$('list').innerHTML=ITEMS.map(function(it,i){var r=R[i]||{s:'wait'};var t={wait:'等待',run:'测试中…',ok:'通过',bad:'失败',gray:'未测'}[r.s];
+ return '<div class="it '+(r.s==='gray'?'gray':'')+'"><div class="row"><span class="nm">'+it.nm+'</span><span class="st '+r.s+'">'+t+(r.ms!=null?' '+r.ms+'ms':'')+'</span></div><div class="ds">'+(r.d||'')+'</div></div>'}).join('')}
+function probe(it){return new Promise(function(res){
+ if(it.skip)return res({s:'gray',d:it.skip});
+ var ac=new AbortController(),t0=performance.now(),to=setTimeout(function(){ac.abort()},T);
+ fetch(it.url(),{cache:'no-store',headers:it.h||{},signal:ac.signal,mode:'cors'}).then(function(r){clearTimeout(to);
+  res({s:'ok',ms:Math.round(performance.now()-t0),d:'收到响应 HTTP '+r.status+(r.ok?'':'（有状态码即网络可达）')})})
+ .catch(function(e){clearTimeout(to);var ms=Math.round(performance.now()-t0);
+  res({s:'bad',ms:ms,d:e&&e.name==='AbortError'?'超时（'+T/1000+' 秒无响应）':(navigator.onLine===false?'设备离线：':'网络错误（被重置/拒绝/DNS 失败/跨域被拦）：')+(e&&e.message||e)})})})}
+function text(){var L=['网络测试 '+new Date().toLocaleString('zh-CN',{hour12:false}),'UA：'+navigator.userAgent,'域名：'+location.host,'网络类型：'+conn()];
+ ITEMS.forEach(function(it,i){var r=R[i]||{};L.push(it.nm+'：'+({ok:'通过',bad:'失败',gray:'未测'}[r.s]||'?')+(r.ms!=null?' '+r.ms+'ms':'')+' '+(r.d||''))});return L.join('\n')}
+function run(){R=[];$('copy').disabled=$('again').disabled=true;$('env').textContent=envText();$('sum').textContent='测试中…';draw();
+ var i=0;(function next(){if(i>=ITEMS.length){var ok=R.filter(function(r){return r.s==='ok'}).length,bad=R.filter(function(r){return r.s==='bad'}).length;
+  $('sum').textContent='汇总：通过 '+ok+' 项，失败 '+bad+' 项，未测 '+(R.length-ok-bad)+' 项\n\n'+text();$('copy').disabled=$('again').disabled=false;window.__ntDone=true;return}
+  R[i]={s:'run'};draw();probe(ITEMS[i]).then(function(r){R[i]=r;i++;draw();next()})})()}
+function fallback(t){$('fb').innerHTML='<textarea id="fbt" readonly></textarea>';var a=$('fbt');a.value=t;a.focus();a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+ $('copy').textContent=ok?'已复制':'请长按下方文字手动复制'}
+$('copy').onclick=function(){var t=text();window.__ntCopied=t;if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(t).then(function(){$('copy').textContent='已复制'},function(){fallback(t)});else fallback(t)};
+$('again').onclick=function(){$('copy').textContent='复制结果';$('fb').innerHTML='';window.__ntDone=false;run()};
+run();
+})();
+</script></body></html>
