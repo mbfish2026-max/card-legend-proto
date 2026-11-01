@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## 灵符商城第一版（feat/lingfu-shop，未合 main）
+- 2026-11-02：fx-manifest、fx-requests 中描述特效来源的「原创」改为「程序化生成」（特效由 Python 脚本渲染），只改文字。
 - 2026-11-02：文档措辞修正，把美术素材来源统一写成「AI 生成」，不再写「原创」（ui-art-plan、art-requests、equip-layers、chuanshi-skills、README、build_lingfu.py docstring、assets-manifest 注释）。音频来源描述未改，代码逻辑未改。
 - 2026-11-01：合入美术2 origin/art/lingfu-icons（75559c6）。商品图标改用 assets/icons/shop_*.png、bloodstone_s/m/l/xl.png（特级 stone_x → bloodstone_xl）。桌面入口用 nineslice lingfu_entry，setSize 88×44，缺帧回退 btn_normal 或纯色。手机 #mh-shop 52×44 用 border-image lingfu_entry@2x（slice 28/36），图加载成功才启用，按下时提亮。图集 47 帧，DOM @2x 18 张，已重跑 sync-ui-atlas。小血石取消等级限制（req 30→1），中/大/特 35/40/45 不变，前期难度评估见 docs/lingfu-shop.md。
 - 灵符：1 元 = 10 灵符（仅显示）；访客本机钱包 `fcl_lingfu_v1`（不进 SaveData、不按存档槽，首次发 5000，删槽/新槽不再发，导入存档不带余额，扣费幂等、发货失败退款）；RemoteWallet 空实现（对齐 wallet Edge Function 形状，返回 not_configured）。充值页置灰「未接入支付」。
