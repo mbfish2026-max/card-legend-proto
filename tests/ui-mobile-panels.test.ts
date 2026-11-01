@@ -13,7 +13,7 @@ for (const css of [390 / 720 * 1.28, 430 / 720 * 1.28]) {
   ok(rowHitHeight(true, 30, 200, css) * css >= MIN_TAP - 1e-6 && rowHitHeight(true, 30, 50, css) <= 50, `行按钮 ≥44 CSS 且封顶行距 @${css.toFixed(2)}`);
 }
 const H = readFileSync('src/ui/MobileHud.ts', 'utf8');
-const pot = Number(/POT_CSS = (\d+)/.exec(H)?.[1]);
+const pot = Number(/POT_CSS = (\d+)/.exec(readFileSync('src/ui/potFrame.ts', 'utf8'))?.[1]); // fix/mobile-potion-clip：常量移到 potFrame.ts
 ok(pot >= 44, `药水按钮 ${pot} ≥ 44 CSS`);
 const pr = /potRight = \(outerR: number\) => outerR \+ ([\d +]+);/.exec(H);
 ok(pr && pr[1].split("+").reduce((s, v) => s + Number(v), 0) >= 75, '药水右偏移越过最左技能键左缘（outerR+75），不重叠');

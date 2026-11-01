@@ -6,6 +6,7 @@
  */
 import { UI_SLICES, domUrl } from './uiSlices';
 import { mapAssetUrl } from '../assetUrlMap';
+import { POT_FRAME } from './potFrame';
 
 const OPT = typeof import.meta !== 'undefined' && !!(import.meta as any).env?.PROD;
 export const domSrc = (name: string, opt = OPT) => mapAssetUrl(domUrl(name), opt);
@@ -19,8 +20,8 @@ export function domSlice(name: string) {
   return { slice: w.map(v => v * 2), width: w, fixed: !!d.fixed };
 }
 /** border-image 声明（fill=中心也画） */
-export function borderImage(name: string, fill = true, opt = OPT, layoutBorder?: string) {
-  const { slice, width } = domSlice(name);
+export function borderImage(name: string, fill = true, opt = OPT, layoutBorder?: string, widthOverride?: readonly number[]) {
+  const { slice } = domSlice(name), width = widthOverride ?? domSlice(name).width;
   // layoutBorder：保持原 CSS 的 border-width（布局/内容区与回退一致），border-image-width 仍按 1x 边距外画到 padding 区
   return `border-style:solid;border-width:${layoutBorder ?? width.map(v => v + 'px').join(' ')};border-image:url("${domSrc(name, opt)}") ${slice.join(' ')}${fill ? ' fill' : ''} / ${width.map(v => v + 'px').join(' ')} stretch`;
 }
@@ -32,7 +33,7 @@ export function skinCss(opt = OPT) {
   return [
     // 通用按钮（顶栏/自动/翻页/合击）：常态 btn_normal，按下/开启 btn_pressed；药水格不用 fill（保留药水图标背景）
     `${B('btn_normal')} .b:not(.sk):not(#mh-act):not(#mh-pots>.b){${btnBox('btn_normal')}}`,
-    `${B('btn_normal')} #mh-pots .b{${borderImage('btn_normal', false, opt, '2px')};border-radius:0;background-color:rgba(20,14,8,.85)}`,
+    `${B('btn_normal')} #mh-pots .b{${borderImage('btn_normal', false, opt, '2px', POT_FRAME)};border-radius:0;background-color:rgba(20,14,8,.85)}`,
     `${B('btn_normal')}${B('btn_pressed').slice(5)} .b:not(.sk):not(#mh-act):not(#mh-pots>.b):active,${B('btn_normal')}${B('btn_pressed').slice(5)} .b:not(.sk):not(#mh-act):not(#mh-pots>.b).on{border-image-source:url("${domSrc('btn_pressed', opt)}");filter:none}`,
     `${B('btn_normal')}${B('btn_pressed').slice(5)} #mh-pots>.b:active{border-image-source:url("${domSrc('btn_pressed', opt)}");filter:none}`,
     // 互动键/摇杆：touch_round（fixed，背景铺满，不用 border-image）

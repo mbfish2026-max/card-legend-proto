@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 修复：手机药水图标/数量被框盖住（fix/mobile-potion-clip，未合 main）
+- 根因 1：B6 皮肤给药水格（56px）套 btn_normal 框时，border-image-width 用了 1x 边距 14/16/14/16 CSS px。布局边框只有 2px，框图向内画到 padding 区，格内只剩 24×28 净空。图标 background-size 88%（≈45.8px）的上下左右边缘和右下角的数字都被框盖住。
+- 根因 2：MobileHud 每帧用 potBtns[i].textContent 写数量，把角标 span 冲掉了。数字变成按钮里的居中文字，角标 CSS（right:3px/bottom:1px）不生效，2/3 位数会压到框上。
+- 修复：新文件 src/ui/potFrame.ts 放 POT_CSS=56、POT_FRAME=[7,8,7,8] 和 POT_ICON=36。药水格的 border-image-width 改为 POT_FRAME（同一张 @2x 图，slice 不变，框画细一半），布局边框仍是 2px（回退外观和点击区不变）。图标固定 36px 居中。数量经 potCount() 写进角标 span，span 改为 12px 粗体 nowrap，right:7px、bottom:5px（算上 2px 边框后都在框内）。其他按钮、战斗/技能逻辑和 1280 桌面都没动。
+- 测试：新单测 tests/potion-clip.test.ts（11 项）；新 e2e tests/e2e/potion-clip-verify.mjs，跑 844×390、932×430、874×402 三种视口，DPR 各 2/3，数量设为 5/99/999/0，断言图标和数字的包围盒都在框内区（边框宽取 max(CSS border, border-image-width)），并检查图标居中、格子 ≥44px、不压技能栏、无 JS 错误。修复前图标和数字的检查在 6 种组合下都不过。截图在 docs/shots/ui-art/potion-clip/（before-/after-<视口>@<DPR>x.png）。
 ## 修复：换图后召唤物留在旧坐标/从远处走过来（fix/summon-mapchange，未合 main）
 - 根因：World.prevFloor（S 返回上一层）先 loadFloor 把召唤物放到本层起点附近，再把英雄挪到上一层终点（出口前），召唤物不跟着挪 → 相距约 8000px，要很久才走过来；enterTown（回城）完全不重置召唤物坐标；loadFloor 本身按 110+60k 排队，第 2/3 只已超 100px。另：读档恢复的召唤物（restoreSummons）不发 summon 事件，BattleScene 不建卡牌，直到换图前都看不见。
 - 修复：新增 World.placeSummonsNearHero()（召唤物含诱惑宠物交替落在英雄身后/身前 50/50/75/75/100px，夹在地图/长街内），在 loadFloor（下一层/传送/副本/出城/上一层按钮）、prevFloor 英雄落位之后、enterTown 调用；BattleScene.snapSummonViews() 换图/进城时卡牌直接跳到新坐标，缺卡牌的召唤物补建（读档后立即可见）。不改任何战斗/平衡数值。

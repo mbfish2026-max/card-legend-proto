@@ -1,6 +1,11 @@
 import { POTIONS } from '../data/skills';
-/** 药水键边长（CSS px，≥44）；技能弧最左键左缘距右安全区 = 外圈半径 + 25 + 50，药水再留 8px，避免挤占技能栏 */
-export const POT_CSS = 56;
+import { POT_CSS, POT_FRAME, POT_ICON } from './potFrame';
+export { POT_CSS, POT_FRAME, POT_ICON };
+/** 写药水数量到角标 span（span 丢失时补建） */
+export function potCount(e: HTMLElement, n: number) {
+  let sp = e.querySelector('span'); if (!sp) { e.textContent = ''; sp = document.createElement('span'); e.appendChild(sp); }
+  const t = String(n); if (sp.textContent !== t) sp.textContent = t;
+}
 export const potRight = (outerR: number) => outerR + 25 + 50 + 8;
 import { fmtInt } from './fmt';
 import { Settings } from '../settings';
@@ -59,8 +64,8 @@ const CSS = `
 #mhud .sk .k{position:absolute;bottom:1px;right:6px;font-size:10px;color:#fff}
 #mhud .sk .cdt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:bold}
 #mh-pots{position:absolute;bottom:calc(var(--sb) + 4px);display:flex;gap:6px}
-#mh-pots .b{width:${POT_CSS}px;height:${POT_CSS}px;position:relative;padding:0;background-size:88%;background-repeat:no-repeat;background-position:center}
-#mh-pots .b span{position:absolute;right:3px;bottom:1px;font-size:13px;color:#fff;text-shadow:0 0 2px #000,0 0 2px #000}
+#mh-pots .b{width:${POT_CSS}px;height:${POT_CSS}px;position:relative;padding:0;background-size:${POT_ICON}px ${POT_ICON}px;background-repeat:no-repeat;background-position:center}
+#mh-pots .b span{position:absolute;right:${POT_FRAME[1] - 1}px;bottom:${POT_FRAME[2] - 2}px;font-size:12px;line-height:12px;font-weight:bold;white-space:nowrap;color:#fff;text-shadow:0 0 2px #000,0 0 2px #000}
 #mh-auto{position:absolute;width:52px;height:44px}
 #mh-page{position:absolute;width:52px;height:44px}
 #mh-comp{position:absolute;display:flex;gap:4px}
@@ -198,7 +203,7 @@ export class MobileHud {
     this.act.classList.toggle('hot', !!en && en !== 'sealed');
     this.auto.innerHTML = `自动<br>${Settings.autoAttack ? '开' : '关'}`; this.auto.classList.toggle('on', Settings.autoAttack);
     this.comp.style.display = w.companion ? 'flex' : 'none';
-    POTIONS.forEach((_, i) => { this.potBtns[i].textContent = String(w.pots[i] ?? 0); });
+    POTIONS.forEach((_, i) => { potCount(this.potBtns[i], w.pots[i] ?? 0); }); // 写进角标 span（原先 textContent 覆盖掉 span，数字成了居中文字压在图标上）
     this.skBtns.forEach(s => {
       const max = w.skills[s.i]?.cooldown ?? 0, c = cds[s.i] ?? 0;
       if (max && c > 0) { const deg = 360 * Math.min(1, c / max); s.cd.style.background = `conic-gradient(from ${360 - deg}deg, rgba(0,0,0,.62) 0 ${deg}deg, transparent ${deg}deg)`; s.t.textContent = c >= 0.5 ? fmtInt(c) : ''; }
