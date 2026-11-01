@@ -50,6 +50,7 @@ export function skinCss(opt = OPT) {
     `${B('btn_normal')} #mh-ovw .wm{${btnBox('btn_normal')}}`,
     // 灵符入口 #mh-shop 52×44：lingfu_entry @2x，slice 28/36（=1x 14/18 ×2）；!important 压过通用 btn_normal（含 3 个 id 选择器）
     `${B('lingfu_entry')} #mh-shop{border-style:solid!important;border-width:2px!important;border-image:url("${domSrc('lingfu_entry', opt)}") 28 36 28 36 fill / 14px 18px 14px 18px stretch!important;background:none!important;border-radius:0!important}`,
+    `${B('lingfu_entry')} #mh-shop:active,${B('lingfu_entry')} #mh-shop.on{filter:brightness(1.25)!important}`, // 入口无按下帧：按下提亮
   ].join('\n');
 }
 /** 逐张预载，成功后加 class；失败不加（回退纯 CSS）。返回 Promise 供测试等待 */

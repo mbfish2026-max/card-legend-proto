@@ -44,7 +44,9 @@ for (const [tag, vp] of runs) for (const blocked of [false, true]) {
   if (!blocked) {
     const ids = await page.evaluate(() => [...document.querySelectorAll('#mhud .b:not(.sk):not(#mh-act):not(#mh-pots>.b)')].filter(e => e.offsetParent).map((e, i) => (e.dataset.pid = 'p' + i)));
     const pr = await page.evaluate(ids => ids.map(id => { const e = document.querySelector(`[data-pid="${id}"]`); const had = e.classList.contains('on'); e.classList.add('on'); const s = getComputedStyle(e).borderImageSource; if (!had) e.classList.remove('on'); return [e.dataset.id || e.id || e.textContent.trim().slice(0, 4), s]; }), ids);
-    ok(pr.length > 0 && pr.every(([, s]) => /btn_pressed@2x/.test(s)), `${name}：${pr.length} 个按钮按下态 = btn_pressed`);
+    const prB = pr.filter(([k]) => k !== 'lingfu'), prL = pr.filter(([k]) => k === 'lingfu'); // 灵符入口用美术2 lingfu_entry（无按下帧，按下提亮）
+    ok(prB.length > 0 && prB.every(([, s]) => /btn_pressed@2x/.test(s)), `${name}：${prB.length} 个按钮按下态 = btn_pressed`);
+    ok(prL.every(([, s]) => /lingfu_entry@2x/.test(s)), `${name}：灵符入口 = lingfu_entry（${prL.length}）`);
     await page.evaluate(() => document.querySelectorAll('#mhud .b:not(.sk):not(#mh-act):not(#mh-pots>.b)').forEach(e => e.classList.add('on')));
     await page.screenshot({ path: `${OUT}${name}-pressed.png` });
     await page.evaluate(() => document.querySelectorAll('#mhud .b').forEach(e => e.classList.remove('on')));
