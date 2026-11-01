@@ -5,4 +5,4 @@ let fail = 0; const ok = (c: boolean, m: string) => { if (!c) { fail++; console.
 for (let l = 1; l <= 39; l++) ok(EXP_PER_LEVEL(l) === MAIN[l], `Lv${l} ${EXP_PER_LEVEL(l)} ≠ main ${MAIN[l]}`);
 for (let l = 40; l <= 49; l++) ok(EXP_PER_LEVEL(l) === Math.round(OFFICIAL_EXP[l] / EXP_SCALE * EXP_LATE_MUL), `Lv${l}`);
 ok(EXP_PER_LEVEL(50) === Math.round(OFFICIAL_EXP[49] / EXP_SCALE * 1.5), 'Lv50+ 不变');
-console.log(fail ? `exp-1-39: ${fail} FAIL` : 'exp-1-39: 1–39 级 39 项与 main 相同 passed'); if (fail) process.exit(1);
+console.log(fail ? `exp-1-39: ${fail} FAIL` : 'exp-1-39: 1–39 级 39 项与 main 相同 passed'); if (fail) (globalThis as any).process.exit(1);
