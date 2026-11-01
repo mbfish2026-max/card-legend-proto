@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## feat/maps-3050-combat（未合 main，待第 4 步回归）
+- 新 UnitDef 字段：`immobile`、`onHit.stun`、`ranged`、`magic`；存档字段 `bossCdId`（按 id 记 BOSS 冷却，兼容旧档）。
+- 主角/召唤物可被眩晕（不能移动、普攻、施法）；赤月恶魔不移动改为走 isImmobile。
+- 新怪：幽影武士、烈焰使、闪电魔(BOSS)、利爪魔(BOSS)；禁地魔王改为不移动。详见 docs/maps-3050-combat.md。
+
 ## 召唤物：脱战回血 / 不叛变 / 继承英雄属性 / 移速=英雄 / 存读档保留（feat/summon-regen，未合 main）
 - 详见 docs/CHANGELOG.md 对应条目；消融表与 9 种子前后对比见 docs/summon-regen-ablation.md。
 - 存档新增可选字段 summons?（旧档无字段 = 无召唤物，兼容）；诱惑宠物同样存档。

@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## feat/maps-3050-combat（未合 main，待第 4 步回归）
+- 新 UnitDef 字段：`immobile`、`onHit.stun`、`ranged`、`magic`；存档字段 `bossCdId`（按 id 记 BOSS 冷却，兼容旧档）。
+- 主角/召唤物可被眩晕（不能移动、普攻、施法）；赤月恶魔不移动改为走 isImmobile。
+- 新怪：幽影武士、烈焰使、闪电魔(BOSS)、利爪魔(BOSS)；禁地魔王改为不移动。详见 docs/maps-3050-combat.md。
+
 ## 神圣战甲术/幽灵盾作用于友方召唤物与合击英雄（feat/ground-aura-ally）
 - 目标由「仅主角」改为主角 + 5×5（TAO_BUFF_RANGE=280px，[适配] 按群疗 3×3=170 等比）内存活召唤物 + 合击英雄；数值/持续/耗魔/冷却不变；同值刷新不叠加。
 - 「持续中」改为范围内全部友方已生效才拒绝（不扣魔不冷却）；自动施法因此只在主角或宠物/英雄缺 buff 时施放。金刚护体仍仅自身。
