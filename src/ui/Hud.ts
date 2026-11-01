@@ -1,4 +1,4 @@
-import { frameBg } from './uiSlices';
+import { frameBg, slotBg } from './uiSlices';
 import { fmtExp } from '../data/expCurve';
 import Phaser from 'phaser';
 import { POTIONS, SkillDef } from '../data/skills';
@@ -116,7 +116,7 @@ export class Hud {
     const x0 = three ? 420 : two ? 410 : skills.length > 4 ? 400 : 420;
     skills.forEach((k, i) => {
       const x = three ? x0 + (i % 6) * gap : x0 + (two ? i % 5 : i) * gap, y = three ? 604 + Math.floor(i / 6) * 38 : two ? (i < 5 ? 628 : 673) : 646; this.skillPos.push({ x, y });
-      s.add.rectangle(x, y, SK, SK, 0x1a1a1a).setStrokeStyle(2, 0xbbaa77).setDepth(20);
+      slotBg(s, x, y, SK, false, { fill: 0x1a1a1a, stroke: 0xbbaa77, sw: 2 }).setDepth(20); // B4 快捷栏格：slot 九宫格，无图集回退原矩形
       if (s.textures.exists('sk_' + k.id)) s.add.image(x, y, 'sk_' + k.id).setDisplaySize(SK - 4, SK - 4).setDepth(20);
       else if (k.name) txt(s, x, y, k.name, 12).setOrigin(0.5).setDepth(20);
       txt(s, x - SK / 2 + 2, y - SK / 2 + 1, k.key, 11, '#ffff66').setDepth(24);
@@ -130,7 +130,7 @@ export class Hud {
     (this as any)._skSize = SK;
     POTIONS.forEach((p, i) => {
       const x = 684 + i * 52, y = 646;
-      s.add.rectangle(x, y, 44, 44, 0x1a1a1a).setStrokeStyle(2, 0x8a7a55).setDepth(20);
+      slotBg(s, x, y, 44, false, { fill: 0x1a1a1a, stroke: 0x8a7a55, sw: 2 }).setDepth(20);
       if (s.textures.exists('potion_' + i)) s.add.image(x, y, 'potion_' + i).setDisplaySize(38, 38).setDepth(20);
       txt(s, x - 18, y - 21, p.key, 11, '#ffff66').setDepth(22);
       this.potT.push(txt(s, x + 19, y + 20, '', 12).setOrigin(1, 1).setDepth(22));

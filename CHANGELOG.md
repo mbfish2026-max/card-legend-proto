@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## UI 美术 B4 装备槽、品质框、血石空槽 feat/ui-art-b04（基于 feat/ui-art-b03 1a53fc2；docs/ui-art-integration.md §1 B4）
+- `src/ui/uiSlices.ts`：新增 `slotBg()`（slot / slot_sel 九宫格）、`qualityFrame()`（qframe_common/magic/rare）、`bloodstoneSlot()`、`slotHitSize()`、`rowTint()` 和 `SKILL_ROW_TINT`。只用 setSize，边距从切片表读；图集被拦或缺帧时退回代码绘制。
+- Panel.ts：背包、装备槽、仓库槽和装备对比图标改用切片槽底和品质框；有图集时用 slot_sel 表示选中，没有图集时仍用描边。手机上槽位点击区不低于 36 CSS px，但不超过槽距。技能行在有图集时恢复按状态着色的半透明叠层（已学、未解锁、可学），没有图集时不变。
+- Hud.ts：桌面热键栏的技能格和药水格改用 slotBg，没有图集时退回原样。
+- 血石空槽：游戏里还没有血石功能。为了不误导玩家，只接好帧和单元测试，`BLOODSTONE_SLOT_VISIBLE=false`，不显示。存档结构不变。
+- 测试：新增 tests/ui-slots.test.ts（39 项，已加入 npm test）；新增 e2e tests/e2e/ui-slots-verify.mjs（33 项）。截图在 docs/shots/ui-art/b04/。
+- 9-seed：sim-band 的 esbuild metafile 共 31 个输入，没有一个是本批改动的文件。
+
 ## UI 美术 B3 列表、页签与滚动条 feat/ui-art-b03（基于 feat/ui-art-b02 e948742；docs/ui-art-integration.md §1 B3）
 - `src/ui/uiSlices.ts`：新增 `rowBg()`（list_row / list_row_sel 九宫格）和 `scrollBar()`（scroll_track + scroll_thumb，宽 8）。只用 setSize，边距从切片表读；图集被拦、缺帧或高度小于边距和时退回原矩形。
 - `tabButton()`（TitleScene，mtext 带手机最小字号）：页签用 tab_on / tab_off，只有未选中的页签可点，点击区不低于最小点击高度；没有图集时退回 button()，当前页签前加 ▶。

@@ -80,3 +80,31 @@ export function scrollBar(s: Phaser.Scene, x: number, trackY: number, trackH: nu
   const thumb = frameBg(s, 'scroll_thumb', x, trackY + th.y + th.h / 2, w, th.h, { fill: 0xd4a64a }).setName('scrollThumb');
   return [track, thumb] as const;
 }
+
+/** B4 物品格底：slot / slot_sel 九宫格（边距 14），不可用或 size < 28 时退回原矩形 fb */
+export function slotBg(s: Phaser.Scene, x: number, y: number, size: number, sel: boolean, fb: RectFallback) {
+  return frameBg(s, sel ? 'slot_sel' : 'slot', x, y, size, size, fb).setName(sel ? 'slotSel' : 'slotBg');
+}
+/** B4 品质框：qframe_common/magic/rare（边距 5，中心透明）叠在图标之上；无图集/缺帧/未知品质返回 null（由调用方保留原彩色描边） */
+export const QFRAME: Record<string, string> = { common: 'qframe_common', magic: 'qframe_magic', rare: 'qframe_rare' };
+export function qualityFrame(s: Phaser.Scene, x: number, y: number, size: number, rarity: string | undefined) {
+  const f = rarity ? QFRAME[rarity] : undefined, d = f ? UI_SLICES[f] : undefined;
+  if (!f || !d || size < d.left + d.right) return null;
+  return ns(s, f, x, y, size, size)?.setName('qframe:' + rarity) ?? null;
+}
+/** B4 血石空槽：固定帧（不走九宫格），只按显示尺寸等比放；血石装备槽（stone）尚未实现，故 BLOODSTONE_SLOT_VISIBLE=false，界面不显示 */
+export const BLOODSTONE_SLOT_VISIBLE = false;
+export function bloodstoneSlot(s: Phaser.Scene, x: number, y: number, size: number) {
+  if (!atlasReady(s, 'slot_bloodstone')) return null;
+  return s.add.image(x, y, UI_ATLAS, 'slot_bloodstone').setDisplaySize(size, size).setName('slotBloodstone');
+}
+/** B4 格子点击区：手机不低于 36 CSS px 但不超过格距（不与相邻格重叠）；桌面保持格子尺寸 */
+export function slotHitSize(mobile: boolean, size: number, pitch: number, cssPerUnit: number): number {
+  return mobile ? Math.min(Math.max(size, MIN_TAP_MOBILE_PHYS / Math.max(cssPerUnit, 0.01)), Math.max(pitch, size)) : size;
+}
+/** B4 技能行状态着色：九宫格无 tint 组件，有图集时在行上叠一层半透明状态色（无图集时原底色已表达状态，返回 null） */
+export const SKILL_ROW_TINT: Record<string, number> = { learned: 0x3a8a3a, locked: 0x8a5a20, learnable: 0x8a7410 };
+export function rowTint(s: Phaser.Scene, row: Phaser.GameObjects.GameObject, x: number, y: number, w: number, h: number, color: number | undefined, alpha = 0.22) {
+  if (color === undefined || row.type !== 'NineSlice') return null;
+  return s.add.rectangle(x, y, w - 8, h - 8, color, alpha).setName('rowTint');
+}

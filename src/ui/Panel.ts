@@ -5,7 +5,7 @@ import { fmtInt, fmtText, bookEntry } from './fmt';
 import { SKILL_BOOK_DROPS } from '../data/skillBookDrops';
 import { COMPANION_UNLOCK_LEVEL, comboFor, BOOK_PAGE, BRM_BOOK, GOLD_BAR, PAGES_PER_BOOK, COMBO_LEVEL, heartFeedValue, RAGE_MAX, HEART_STORE_MAX, RECRUIT_DIALOG } from '../data/companion';
 import { toLogic, toLogicX, MAX_LW, Render } from '../render';
-import { frameBg, atlasReady, listRowPitch, rowHitHeight, viewCss, rowBg, scrollBar } from './uiSlices';
+import { frameBg, atlasReady, listRowPitch, rowHitHeight, viewCss, rowBg, scrollBar, slotBg, qualityFrame, slotHitSize, rowTint, SKILL_ROW_TINT, UI_SLICES } from './uiSlices';
 import { compareRows, diffText, CmpData } from './equipCompare';
 import { shouldTapClose } from './tapClose';
 import { RING_MIN_LEVEL, IDENT_PRICE, IDENT_MIN_LEVEL } from '../data/r14b';
@@ -109,23 +109,31 @@ export class Panel {
     if (this.mode === 'bag') this.renderEquip(R, top); else this.renderShop(R, top);
     this.renderBag(R, top);
   }
-  private slotBox(R: Phaser.GameObjects.Container, x: number, y: number, size: number, it: InvItem | undefined, label: string, onClick: (right: boolean) => void, key = '') {
+  private slotBox(R: Phaser.GameObjects.Container, x: number, y: number, size: number, it: InvItem | undefined, label: string, onClick: (right: boolean) => void, key = '', pitch = size) {
     const s = this.s;
     const selected = IS_MOBILE && !!it && this.sel === key;
-    const r = s.add.rectangle(x, y, size, size, 0x0a0806).setStrokeStyle(2, it ? RARITY_NUM[it.rarity] : 0x4a3a28);
+    // B4：有图集时格底用 slot/slot_sel 九宫格、品质用 qframe_* 叠框，原矩形只作透明点击/悬停层；无图集保持原绘制
+    const atl = atlasReady(s, 'slot') && size >= UI_SLICES.slot.left + UI_SLICES.slot.right;
+    if (atl) R.add(slotBg(s, x, y, size, selected, { fill: 0x0a0806 }));
+    const r = s.add.rectangle(x, y, size, size, 0x0a0806, atl ? 0.001 : 1);
+    if (!atl) r.setStrokeStyle(2, it ? RARITY_NUM[it.rarity] : 0x4a3a28);
     R.add(r);
     if (it && s.textures.exists('item_' + it.item)) R.add(s.add.image(x, y, 'item_' + it.item).setDisplaySize(size - 8, size - 8));
     else if (label) R.add(txt(s, x, y, label, 12, '#6a5a40', { strokeThickness: 0 }).setOrigin(0.5));
     if (it?.enhance) R.add(txt(s, x + size / 2 - 4, y + size / 2 - 10, '+' + it.enhance, 12, '#c8f0ff', { fontStyle: 'bold', strokeThickness: 3 }).setOrigin(1, 0.5));
     if (it?.item === 'black_iron') { R.add(txt(s, x + size / 2 - 2, y + size / 2 - 8, '+' + (it.purity ?? 1), 11, '#aaf', { fontStyle: 'bold', strokeThickness: 2 }).setOrigin(1, 0.5)); if ((it.qty ?? 1) > 1) R.add(txt(s, x - size / 2 + 4, y + size / 2 - 8, '×' + (it.qty ?? 1), 11, '#ffe8a0', { fontStyle: 'bold', strokeThickness: 2 }).setOrigin(0, 0.5)); }
+    if (it && atl) { const q = qualityFrame(s, x, y, size - 4, it.rarity); if (q) R.add(q); else r.setStrokeStyle(2, RARITY_NUM[it.rarity]); }
     // 套装激活角标：已装备且该套装至少触发一档加成
     const setId = it && key.startsWith('eq_') ? ITEMS[it.item]?.set : undefined;
     if (setId && SETS[setId] && (this.world().setCounts()[setId] ?? 0) >= Math.min(...SETS[setId].bonus.map(b => b.n)) && s.textures.exists('set_badge'))
       R.add(s.add.image(x + size / 2 - 10, y - size / 2 + 10, 'set_badge').setDisplaySize(22, 22));
-    if (selected) { r.setStrokeStyle(4, 0xffe080); s.time.delayedCall(0, () => it && this.root && this.showTip(it, this.root.x + (x + size / 2 + 6) * this.mscale, this.root.y + (y - size / 2) * this.mscale, true)); }
-    r.setInteractive({ useHandCursor: !!it }); r.setData('slot', true);
-    if (!IS_MOBILE) r.on('pointerover', () => { r.setFillStyle(0x2a2016); if (it) this.showTip(it, x + size / 2 + 6, y - size / 2); });
-    if (!IS_MOBILE) r.on('pointerout', () => { r.setFillStyle(0x0a0806); this.hideTip(); });
+    if (selected) { if (!atl) r.setStrokeStyle(4, 0xffe080); s.time.delayedCall(0, () => it && this.root && this.showTip(it, this.root.x + (x + size / 2 + 6) * this.mscale, this.root.y + (y - size / 2) * this.mscale, true)); }
+    const hit = slotHitSize(IS_MOBILE, size, pitch, this.cssU());
+    if (hit > size) r.setInteractive({ hitArea: new Phaser.Geom.Rectangle((size - hit) / 2, (size - hit) / 2, hit, hit), hitAreaCallback: Phaser.Geom.Rectangle.Contains, useHandCursor: !!it });
+    else r.setInteractive({ useHandCursor: !!it });
+    r.setData('slot', true).setData('slotHit', hit).setData('slotPitch', pitch).setData('slotSize', size);
+    if (!IS_MOBILE) r.on('pointerover', () => { if (atl) r.setFillStyle(0xffe8a0, 0.12); else r.setFillStyle(0x2a2016); if (it) this.showTip(it, x + size / 2 + 6, y - size / 2); });
+    if (!IS_MOBILE) r.on('pointerout', () => { r.setFillStyle(0x0a0806, atl ? 0.001 : 1); this.hideTip(); });
     // 触屏：点一次选中并显示属性，再点一次执行（装备/卸下/出售）
     r.on('pointerdown', (p: Phaser.Input.Pointer) => {
       if (!it) return;
@@ -152,7 +160,7 @@ export class Panel {
           sfx(s, 'loot', 0.5); this.onChange(m, m.includes('成功')); this.render(); return;
         }
         const e = w.unequip(sl); this.onChange(e ?? `卸下 ${EQUIP_SLOT_NAMES[sl]}`); sfx(s, 'loot', 0.4); this.render();
-      }, 'eq_' + sl);
+      }, 'eq_' + sl, dy);
     }
     const st = w.stats(), h = w.hero;
     const title = w.title(); const lines = [`${c.name}  Lv${w.level}${title ? '  「' + title + '」' : ''}`, `经验 ${fmtExp(w.exp)}/${fmtExp(w.expNext)}   金币 ${w.gold}   击杀 ${w.kills}`, `生命 ${h ? Math.ceil(h.hp) : 0}/${st.hp}   魔法 ${h ? Math.floor(h.mp ?? 0) : 0}/${st.mp}`,
@@ -256,7 +264,7 @@ export class Panel {
         }
         else this.onChange(`${it!.name} 不能装备（可在商人处出售）`);
         this.render();
-      }, 'bag_' + i);
+      }, 'bag_' + i, size + 6);
     }
     if (IS_MOBILE && this.mode === 'bag' && this.sel?.startsWith('bag_')) { const i = Number(this.sel.slice(4)), it = w.bag[i]; if (it) R.add([...button(s, x0 + 5 * (size + 6), top + 470, 80, 34, '丢弃', () => { w.dropItem(i); this.sel = null; this.onChange(`丢弃 ${it.name}`); this.render(); }, 16)]); }
     R.add(txt(s, x0 - size / 2, top + 452, this.ironIdx != null ? '黑铁已选：点击左侧武器/头盔/衣服/靴子强化；再点同纯度矿提纯' : IS_MOBILE ? (this.mode === 'shop' ? '点一下查看属性，再点一下出售' : '点一下查看属性，再点一下装备；选中后可「丢弃」') : this.mode === 'shop' ? '左键出售' : '左键装备   右键丢弃   悬停查看属性', 12, this.ironIdx != null ? '#9fd' : '#999'));
@@ -281,7 +289,9 @@ export class Panel {
       const y = y0 + i * rowH, inBar = barIdx.has(k.id);
       const need = w.needLevel(k), lv = w.skillLevel(k), locked = lv < 0, pts = w.skillTrain[k.id] ?? 0, learned = w.learned.has(k.id), bk = BOOKS[k.id];
       const st = learned ? (locked ? { t: '已学·等级不足', c: '#c96', bg: 0x1a1208 } : { t: '已学会', c: '#7f7', bg: 0x0c1a0c }) : w.level >= need ? { t: '可学习', c: '#ffd24a', bg: 0x1a1606 } : { t: '未学', c: '#aaa', bg: 0x0a0806 };
-      R.add(rowBg(s, 560, y, 820, rowH - 4, learned && !locked, { fill: st.bg, alpha: 0.92, stroke: learned ? 0x3a6a3a : 0x3a2a18 }));
+      { const row = rowBg(s, 560, y, 820, rowH - 4, learned && !locked, { fill: st.bg, alpha: 0.92, stroke: learned ? 0x3a6a3a : 0x3a2a18 }); R.add(row);
+        // B4：九宫格行恢复状态着色（已学会绿 / 等级不足褐 / 可学习金 / 未学不叠）
+        const tn = rowTint(s, row, 560, y, 820, rowH - 4, SKILL_ROW_TINT[learned ? (locked ? 'locked' : 'learned') : w.level >= need ? 'learnable' : '']); if (tn) R.add(tn.setData('tint', learned ? (locked ? 'locked' : 'learned') : 'learnable')); }
       if (s.textures.exists('sk_' + k.id)) R.add(s.add.image(178, y, 'sk_' + k.id).setDisplaySize(rowH - 14, rowH - 14).setAlpha(learned ? 1 : 0.55));
       const tag = inBar ? `[F${barIdx.get(k.id)! + 1}]` : k.passive ? '[被动]' : '';
       // 第 1 行：名称 + 当前等级/需求等级 + 状态（颜色区分）+ 快捷栏标签
@@ -397,7 +407,7 @@ export class Panel {
     if (n.kind === 'storage') {
       R.add(txt(s, X, top + 74, `仓库 ${w.storage.length}/${STORAGE_SIZE}：点仓库取回，点背包存入`, 13, '#9fd'));
       for (let i = 0; i < STORAGE_SIZE; i++) { const it = w.storage[i], x = X + 20 + (i % 5) * 46, y = top + 116 + Math.floor(i / 5) * 46;
-        this.slotBox(R, x, y, 42, it, '', () => { const e = w.withdraw(i); this.onChange(e ?? `取回 ${it!.name}`, !e); }, 'st_' + i); }
+        this.slotBox(R, x, y, 42, it, '', () => { const e = w.withdraw(i); this.onChange(e ?? `取回 ${it!.name}`, !e); }, 'st_' + i, 46); }
     } else if (this.npcNeedsBag()) R.add(txt(s, X, top + 420, '点右侧背包物品\n→ 卖给该 NPC', 13, '#9fd'));
   }
   /** NPC 面板长列表：每列滚动偏移（行）、拖动状态、待触发按钮、当前可滚动列信息（测试/e2e 读） */
@@ -506,7 +516,7 @@ export class Panel {
     c.add(frameBg(s, 'tooltip_frame', 0, 0, W, H, { fill: 0x05060c, alpha: 0.96, stroke: 0x9a9aa8, sw: 2 }, 0, 0).setName('cmpBg'));
     const col = (cx: number, item: InvItem | null, title: string) => {
       c.add(txt(s, cx, pad, title, fs - 2, '#9fd', { strokeThickness: 2 }));
-      const iy = pad + lh; c.add(s.add.rectangle(cx + icon / 2, iy + icon / 2, icon, icon, 0x0a0806).setStrokeStyle(2, item ? RARITY_NUM[item.rarity] : 0x4a3a28));
+      const iy = pad + lh; { const q = item && atlasReady(s, 'slot') ? qualityFrame(s, cx + icon / 2, iy + icon / 2, icon, item.rarity) : null; c.add(s.add.rectangle(cx + icon / 2, iy + icon / 2, icon, icon, 0x0a0806).setStrokeStyle(q ? 0 : 2, item ? RARITY_NUM[item.rarity] : 0x4a3a28)); if (q) c.add(q); }
       if (item && s.textures.exists('item_' + item.item)) c.add(s.add.image(cx + icon / 2, iy + icon / 2, 'item_' + item.item).setDisplaySize(icon - 6, icon - 6));
       const nm = item ? item.name + (item.enhance ? ` +${item.enhance}` : '') : '空';
       c.add(txt(s, cx + icon + 8, iy, nm, fs, item ? RARITY_HEX[item.rarity] : '#888', { strokeThickness: 2, fontStyle: 'bold' }).setName(title === '身上' ? 'cmpLeftName' : 'cmpRightName'));
