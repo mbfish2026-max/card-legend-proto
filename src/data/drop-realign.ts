@@ -4,6 +4,7 @@
  * 机制源不动：setDrop（套装抽签）、副本补正（DUNGEON_SET_CHANCE）、DUNGEON_ITEM_SCALE。
  * 首杀加成不做（G1），精英层级不加（G3）。
  */
+import { H_PLAN } from './h-chain';
 import { ENEMIES } from './units';
 import { ITEMS } from './items';
 import { REALIGN_PLAN } from './drop-realign-table';
@@ -26,12 +27,14 @@ export const REALIGN_BEFORE: Record<string, { item: string; chance: number }[]> 
 export function applyRealign(): void {
   for (const [id, u] of Object.entries(ENEMIES)) {
     REALIGN_BEFORE[id] = (u.drops ?? []).filter(d => d.item in REALIGN_PLAN).map(d => ({ ...d }));
-    if (u.drops) u.drops = u.drops.filter(d => !(d.item in REALIGN_PLAN));
+    if (u.drops) u.drops = u.drops.filter(d => !(d.item in REALIGN_PLAN) && !(d.item in H_PLAN));
   }
   for (const [item, src] of Object.entries(REALIGN_PLAN)) {
     if (!ITEMS[item]) continue;
     for (const [uid, n] of src) { const u = ENEMIES[uid]; if (!u) continue; (u.drops ??= []).push({ item, chance: 1 / n }); }
   }
+  // H 章过渡链新物品（只掉落，G9 不上商店）
+  for (const [item, src] of Object.entries(H_PLAN)) for (const [uid, n] of src) { const u = ENEMIES[uid]; if (u) (u.drops ??= []).push({ item, chance: 1 / n }); }
 }
 /** D5 改名（只改显示名，id 不变）：旧名 → 新名 */
 export const RENAMED: Record<string, [string, string]> = { tao_sword: ['银蛇剑', '银蛇'], dragon_sword: ['屠龙刀', '屠龙'] };

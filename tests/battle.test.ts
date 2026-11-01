@@ -892,7 +892,7 @@ const free = (w: World) => w.skills.map(() => 0);
 }
 
 { // 5.1 双戒双镯 + 存档迁移
-  const w = mk([], [], 'warrior', 20); const base = w.stats();
+  const w = mk([], [], 'warrior', 30) /* 金戒指需求经重新对齐 9→22，夹具等级 20→30，断言不变 */; const base = w.stats();
   const wear = (id: string) => { w.bag.push(w.makeItem(id)); return w.equipItem(w.bag.length - 1); };
   wear('gold_ring'); const r1 = w.equip.ring1!; ok(!!r1 && !w.equip.ring2, '第一枚戒指 → ring1');
   wear('gold_ring'); const r2 = w.equip.ring2!; ok(!!r2 && w.equip.ring1 === r1, '第二枚戒指 → 空位 ring2');

@@ -1809,3 +1809,39 @@ public/assets/ui/UI-Tooltip-Border.png
 | 35 | 烈焰腰带 | belt | 45 | AI 生成 |
 | 36 | 光芒腰带 | belt | 45 | AI 生成 |
 | 37 | 腰带空栏底图（slot_belt_empty） | ui | - | AI 生成 |
+
+### H 章过渡链占位图标（阶段3 前移，已入库 29 件，占位中）
+
+当前复用同槽图标，美术2 出图后替换 `icon` 为目标文件名即可。
+
+| 名称 | 需求等级 | 用途（槽位/职业） | 当前占位 | 目标文件名 |
+|---|---|---|---|---|
+| 金项链 | 2 | 项链/通用 | gen_necklace.png | items/h_gold_necklace.png |
+| 黑色水晶项链 | 13 | 项链/战 | gen_necklace.png | items/h_black_crystal_necklace.png |
+| 黑檀项链 | 13 | 项链/法 | gen_necklace.png | items/h_ebony_necklace.png |
+| 黄色水晶项链 | 13 | 项链/道 | gen_necklace.png | items/h_yellow_crystal_necklace.png |
+| 魔鬼项链 | 17 | 项链/战 | gen_necklace.png | items/h_devil_necklace.png |
+| 琥珀项链 | 17 | 项链/法 | gen_necklace.png | items/h_amber_necklace.png |
+| 凤凰明珠 | 17 | 项链/道 | gen_necklace.png | items/h_phoenix_pearl.png |
+| 蓝翡翠项链 | 23 | 项链/战 | gen_necklace.png | items/h_blue_jade_necklace.png |
+| 皮制手套 | 7 | 手镯/通用 | gen_bracelet.png | items/h_leather_glove.png |
+| 钢手镯 | 8 | 手镯/通用 | gen_bracelet.png | items/h_steel_bracelet.png |
+| 大手镯 | 9 | 手镯/通用 | gen_bracelet.png | items/h_big_bracelet.png |
+| 魔法手镯 | 18 | 手镯/通用 | gen_bracelet.png | items/h_magic_bracelet.png |
+| 坚固手套 | 18 | 手镯/通用 | gen_bracelet.png | items/h_sturdy_glove.png |
+| 黑檀手镯 | 19 | 手镯/法 | gen_bracelet.png | items/h_ebony_bracelet.png |
+| 道士手镯 | 19 | 手镯/道 | gen_bracelet.png | items/h_tao_bracelet.png |
+| 魔力手镯 | 20 | 手镯/战 | gen_bracelet.png | items/h_power_bracelet.png |
+| 死神手套 | 22 | 手镯/战 | gen_bracelet.png | items/h_death_glove.png |
+| 金手镯 | 23 | 手镯/通用 | gen_bracelet.png | items/h_gold_bracelet.png |
+| 六角戒指 | 7 | 戒指/法 | eq_iron_ring.png | items/h_hex_ring.png |
+| 玻璃戒指 | 7 | 戒指/道 | eq_iron_ring.png | items/h_glass_ring.png |
+| 牛角戒指 | 9 | 戒指/战 | eq_iron_ring.png | items/h_horn_ring.png |
+| 蓝色水晶戒指 | 16 | 戒指/战 | eq_iron_ring.png | items/h_blue_crystal_ring.png |
+| 黑色水晶戒指 | 20 | 戒指/战 | eq_iron_ring.png | items/h_black_crystal_ring.png |
+| 蛇眼戒指 | 20 | 戒指/法 | eq_iron_ring.png | items/h_snake_eye_ring.png |
+| 珍珠戒指 | 20 | 戒指/道 | eq_iron_ring.png | items/h_pearl_ring.png |
+| 布鞋 | 15 | 靴子/通用 | gen_boots.png | items/h_cloth_shoes.png |
+| 鹿皮靴 | 22 | 靴子/通用 | gen_boots.png | items/h_deer_boots.png |
+| 紫绸靴 | 30 | 靴子/通用 | gen_boots.png | items/h_silk_boots.png |
+| 避魂靴 | 35 | 靴子/通用 | gen_boots.png | items/h_soul_boots.png |

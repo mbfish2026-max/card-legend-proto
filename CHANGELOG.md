@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 掉落重新对齐 H 章过渡链新物品（feat/drop-realign，未合 main）
+
+- 新增 29 件 H 章过渡装备（项链 8 / 手镯 10 / 戒指 7 / 靴子 4）：`src/data/h-chain.ts`。属性按官方区间 [适配]，靴子数值与售价标「暂定」；21cq 编号与官方名写入 EQUIP_META（靴子 1.76 掉落未查到，cq=0）。
+- 来源按需求曲线走怪物掉落（req ≤ 怪等级 + 6，Boss +8），不上商店；`applyRealign` 先剔除再按 H_PLAN 写入，避免自动掉落规划重复挂源。
+- 图标暂复用同槽图标（程序内占位），目标文件名清单见 docs/art-requests.md，待美术2 出图（AI 生成）。
+- 老存档兼容：新增 id 不影响旧 id；已穿戴物品不变。
+- 修复：tests/drop-plan.test.ts 阶段1 引入的注释吞掉断言的问题；该测试改为与 gen:drops 一致加载运行时掉落表。
+- 单测：drop-realign 新增 H 链校验（件数、注册、来源、需求≤怪等级+X、职业、存档往返）。
+
 ## 掉落重新对齐 阶段 1：数据层（feat/drop-realign，未合 main）
 - 10 件装备的需求改为官方值。银蛇/屠龙只改显示名，id 不变。124 件按方案表重设来源和爆率（新曲线）。撤掉尸王搬迁。铁靴降数值。老存档读档时刷新名称和需求，已穿戴的保留。
 - 新增 tests/drop-realign.test.ts。9 种子有回退（道士死亡中位 11→22，战士有 1 个种子只到 47 级）；battle 和 eg-dungeon 两个断言不过，没有放宽。详见 docs/drop-realign.md「实施记录」。

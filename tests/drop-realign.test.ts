@@ -40,4 +40,14 @@ ok(w.equip.weapon?.item === 'tao_sword', '旧档已穿戴银蛇保留（不强�
 ok(w.equip.weapon?.name === '银蛇[精良]', `旧名刷新为 银蛇[精良]（实际 ${w.equip.weapon?.name}）`);
 ok(w.bag.find(b => b.item === 'dragon_sword')?.name === '屠龙', '背包旧名 屠龙刀→屠龙');
 const bi = w.bag.findIndex(b => b.item === 'magic_staff'); ok(w.bag[bi].req === 26 && w.equipItem(bi) === '需要等级 26', '新穿魔杖按新需求 26');
+// 6) H 章过渡链：25 件首饰 + 4 双靴子，来源=方案、需求≤怪物等级+X、老存档无此 id 也不报错
+{ const { H_ITEMS, H_PLAN } = await import('../src/data/h-chain');
+  ok(Object.keys(H_ITEMS).length === 29 && Object.values(H_ITEMS).filter(i => i.slot === 'boots').length === 4, 'H 链 29 件（含靴子 4）');
+  for (const [item, src] of Object.entries(H_PLAN)) { ok(ITEMS[item] === H_ITEMS[item], `${item} 已注册`);
+    const got = Object.entries(ENEMIES).filter(([, u]) => (u.drops ?? []).some(d => d.item === item)).map(([id, u]) => `${id}:${Math.round(1 / u.drops!.find(d => d.item === item)!.chance)}`).sort();
+    ok(got.join() === src.map(([u, d]) => `${u}:${d}`).sort().join(), `${ITEMS[item].name} 来源=方案（${got.join()}）`);
+    for (const [u] of src) { const L = minFloorLv(u), boss = ENEMIES[u]?.tier === 'boss'; if (L !== undefined) ok(ITEMS[item].req! <= L + (boss ? REALIGN_X_BOSS : REALIGN_X_NORMAL), `${ITEMS[item].name} 需求 ${ITEMS[item].req} ≤ ${ENEMIES[u].name} L${L}+X`); } }
+  ok(['h_ebony_necklace', 'h_hex_ring', 'h_snake_eye_ring'].every(i => ITEMS[i].cls?.[0] === 'mage') && ['h_yellow_crystal_necklace', 'h_glass_ring', 'h_pearl_ring'].every(i => ITEMS[i].cls?.[0] === 'taoist'), '法/道专属件职业限制');
+  const w3 = new World(() => 0.5, 20, FLOORS, 'mage'); w3.bag.push(w3.makeItem('h_amber_necklace')); const w4 = new World(() => 0.5, 20, FLOORS, 'mage', JSON.parse(JSON.stringify(w3.toSave())));
+  ok(w4.bag.some(b => b.item === 'h_amber_necklace' && b.name === '琥珀项链'), '新物品存档往返'); }
 console.log(`drop-realign: ${n - fail}/${n} passed`); if (fail) (globalThis as any).process.exit(1);

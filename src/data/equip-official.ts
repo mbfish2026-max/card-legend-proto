@@ -3,6 +3,7 @@
 // 沃玛/祖玛/赤月 各职业归属：https://www.21cq.com/mir/Suit.aspx 、https://zhidao.baidu.com/question/56230124.html
 // 赤月（圣战/法神/天尊）数值互证：https://games.sina.com.cn/z/woool/2003-10-17/56400.shtml
 // 本文件不依赖 items.ts（避免循环引用）；items.ts 合并 NEW_EQUIP 并给每件挂 EQUIP_META。
+import { H_META } from './h-chain';
 import type { ItemDef } from '../combat/types';
 
 import { EG_META } from './eg-equip';
@@ -27,7 +28,7 @@ export interface EquipMeta {
   cls?: Cls[];
   tier?: Tier;
   /** 'r18' = 沿用存量数值；'v1' = 本表按 [适配] 系数生成 */
-  origin: 'r18' | 'v1' | 'eg';
+  origin: 'r18' | 'v1' | 'eg' | 'realign';
   note?: string;
 }
 export const CQ = (n: number) => `https://www.21cq.com/mir/View.aspx?id=${n}`;
@@ -160,6 +161,7 @@ export const EQUIP_META: Record<string, EquipMeta> = {
   ...Object.fromEntries(Object.entries(OLD).map(([id, m]) => [id, { ...m, cls: m.cls ?? clsOf(m.need), origin: 'r18' as const }])),
   ...Object.fromEntries(NEW.map(s => [s.id, { official: s.name, cq: s.cq, need: s.need, off: s.off, cls: clsOf(s.need), tier: s.tier, origin: 'v1' as const }])),
   ...EG_META,
+  ...(H_META as Record<string, EquipMeta>),
 };
 /** 存量（R18 及以前）装备 id —— 旧存档里可能出现，必须永远有效 */
 export const LEGACY_EQUIP_IDS = Object.keys(OLD);

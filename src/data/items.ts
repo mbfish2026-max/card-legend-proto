@@ -4,6 +4,7 @@ import { BOOKS, bookItemId } from './books';
 import { TOWN_ITEMS } from './items-town';
 import { NEW_EQUIP, EQUIP_META, adaptMdef } from './equip-official';
 import { EG_EQUIP } from './eg-equip';
+import { H_ITEMS } from './h-chain';
 // 物品表：中文名 + 图标。equip=基础属性；req=需求等级；price=出售价（商人收购价）
 const I = 'assets/items/';
 export const SLOTS: Slot[] = ['weapon', 'helmet', 'armor', 'necklace', 'ring', 'bracelet', 'boots'];
@@ -95,6 +96,8 @@ export const ITEMS: Record<string, ItemDef> = {
   ...NEW_EQUIP,
   // P2 eg-sets：40–50 级 40 件（src/data/eg-equip.ts）
   ...EG_EQUIP,
+  // drop-realign H 章过渡链：25 件首饰 + 4 双靴子（src/data/h-chain.ts）
+  ...H_ITEMS,
 };
 // 存量装备挂官方职业限制（按官方需求类型推导）
 for (const [id, m] of Object.entries(EQUIP_META)) if (m.cls && ITEMS[id] && !ITEMS[id].cls) ITEMS[id].cls = m.cls;
