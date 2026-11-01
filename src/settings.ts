@@ -157,9 +157,13 @@ export const Slots = {
   list() { const m = this.meta(); return Array.from({ length: m.count }, (_, k) => { const i = k + 1, sm = m.slots[i] ?? {}; return { i, active: i === m.active, name: sm.name || `存档 ${i}`, lastAt: sm.lastAt ?? null, playMs: sm.playMs ?? 0, data: this.read(i) }; }); },
   firstEmpty() { return this.list().find(x => !x.data)?.i ?? null; },
   rename(i: number, name: string) { const m = this.meta(); if (i < 1 || i > m.count) return false; const n = name.trim().slice(0, 16); m.slots[i] = { ...m.slots[i], name: n || undefined }; this.put(m); return true; },
+  /** 云端下载/冲突选择写入某槽：SaveData 原样写，不改格式，不触发上传钩子 */
+  writeRaw(i: number, d: SaveData) { const m = this.meta(); if (i < 1 || i > m.count) return false; ls()?.setItem(slotKey(i), JSON.stringify(d)); return true; },
   /** 删除需 UI 二次确认；只清本槽存档与元数据，备份键不动 */
   remove(i: number) { const m = this.meta(); if (i < 1 || i > m.count) return false; ls()?.removeItem(slotKey(i)); delete m.slots[i]; this.put(m); if (i === m.active) lastWrite = 0; return true; },
 };
+/** 写档钩子：云同步标脏用（未配置云时为空，不影响本地行为） */
+export const saveHooks: { onWrite?: (slot: number) => void } = {};
 export const SaveStore = {
   has() { return !!ls()?.getItem(slotKey(Slots.active())); },
   load(): SaveData | null { return Slots.read(Slots.active()); },
@@ -167,7 +171,7 @@ export const SaveStore = {
     const m = Slots.meta(), i = m.active, sm = { ...m.slots[i] };
     if (lastWrite && now - lastWrite > 0 && now - lastWrite < PLAY_GAP) sm.playMs = (sm.playMs ?? 0) + (now - lastWrite);
     lastWrite = now; sm.lastAt = now; m.slots[i] = sm;
-    ls()?.setItem(slotKey(i), JSON.stringify(d)); Slots.put(m);
+    ls()?.setItem(slotKey(i), JSON.stringify(d)); Slots.put(m); saveHooks.onWrite?.(i);
   },
   /** 清当前槽（新游戏/通关）；名称保留，时长清零 */
   clear() { const m = Slots.meta(); ls()?.removeItem(slotKey(m.active)); m.slots[m.active] = { name: m.slots[m.active]?.name }; Slots.put(m); lastWrite = 0; },
