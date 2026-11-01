@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## UI 美术 B3 列表、页签与滚动条 feat/ui-art-b03（基于 feat/ui-art-b02 e948742；docs/ui-art-integration.md §1 B3）
+- `src/ui/uiSlices.ts`：新增 `rowBg()`（list_row / list_row_sel 九宫格）和 `scrollBar()`（scroll_track + scroll_thumb，宽 8）。只用 setSize，边距从切片表读；图集被拦、缺帧或高度小于边距和时退回原矩形。
+- `tabButton()`（TitleScene，mtext 带手机最小字号）：页签用 tab_on / tab_off，只有未选中的页签可点，点击区不低于最小点击高度；没有图集时退回 button()，当前页签前加 ▶。
+- Panel.ts：商店页签改用 tabButton；杂货、书店、技能、城镇 NPC、任务、成就各行改用 rowBg，NPC 长列表滚动条改用 scrollBar。新增 `fitRow()`：把行内按钮点击区限制在行距内（手机 ≥36 CSS px），相邻行不重叠。手机上杂货和任务行距不低于 44 CSS px；书店在手机上按行高分页（◀ ▶）。技能行有图集时不再显示按状态着色的底色，改用 list_row / list_row_sel 区分。
+- 多存档界面（844×390）：「返回」贴到屏幕底边、副标题太小，这两个问题在 B1 截图里已经有，不是 B2 引入的（B1→B2 的 TitleScene 改动只换了两处背景）。这次把面板上移到 60~700，「返回」放进面板内（底边约 369/390 CSS px）；手机上存档名改为 24、副标题改为 22 逻辑 px（约 12 CSS px），颜色调亮，最后游玩时间挪到第一行。
+- tests/e2e/tapclose-verify.mjs：修正第 22 行 `sl` 未定义，加断言和失败退出码，12 项全过。
+- 测试：新增 tests/ui-lists.test.ts（28 项，已加入 npm test）；新增 e2e tests/e2e/ui-lists-verify.mjs（1280×720 和 844×390 触屏，各跑有图集/图集被拦两遍，84 项）。覆盖页签切换、行点击区、背包 200 件翻到末页再翻回、传送员长列表真实拖动滚动且拖动不触发按钮或提示。截图在 docs/shots/ui-art/b03/。
+- 9-seed：sim-band 的 esbuild metafile 共 31 个输入，没有一个是本批改动的文件，战斗结果不受影响。
+
 ## UI 美术 B2 面板与对话框 feat/ui-art-b02（基于 feat/ui-art-b01 9e8f363；docs/ui-art-integration.md §1 B2）
 - `src/ui/uiSlices.ts`：新增 `frameBg()`。有图集且帧存在时画九宫格（只 setSize，边距从切片表读）；图集被拦、缺帧或尺寸小于边距和时退回原矩形（含描边）。另加 `listRowPitch()` / `rowHitHeight()` / `viewCss()`。
 - Panel.ts：面板底改用 panel_frame，标题用 title_plate（仅有图集时画），角色卡与 NPC 立绘占位用 inset_frame，提示框与装备对比框用 tooltip_frame，对比框分隔线用 divider_v（高度不足时仍用 1px 线）。

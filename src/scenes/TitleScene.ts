@@ -44,6 +44,19 @@ export function button(s: Phaser.Scene, x: number, y: number, w: number, h: numb
   }
   return [r, t] as const;
 }
+/** B3 页签：有图集用 tab_on / tab_off 九宫格（当前页不可点）；否则退回 button()（当前页加 ▶ 前缀，与原样一致）。点击区高度同 button() */
+export function tabButton(s: Phaser.Scene, x: number, y: number, w: number, h: number, label: string, on: boolean, onClick: () => void, size = 22) {
+  const bg = ns(s, on ? 'tab_on' : 'tab_off', x, y, w, h);
+  if (!bg) return button(s, x, y, w, h, `${on ? '▶' : ''}${label}`, onClick, size);
+  const t = txt(s, x, y + 2, label, size, on ? '#ffe8a0' : '#b8a888', { fontStyle: 'bold' }).setOrigin(0.5);
+  const css = typeof window !== 'undefined' ? Math.min(window.innerHeight / 720, window.innerWidth / (Render.lw || 1280)) : 1;
+  const hitH = Math.max(h, minTapHeight(IS_MOBILE, css || 1));
+  bg.setName(on ? 'tabOn' : 'tabOff');
+  if (!on) bg.setInteractive({ hitArea: new Phaser.Geom.Rectangle(0, (h - hitH) / 2, w, hitH), hitAreaCallback: Phaser.Geom.Rectangle.Contains, useHandCursor: true })
+    .on('pointerdown', () => { sfx(s, 'click'); onClick(); });
+  s.children.bringToTop(t);
+  return [bg, t] as const;
+}
 export function sfx(s: Phaser.Scene, id: string, volume = 0.6) { try { if (s.cache.audio.exists('sfx_' + id)) s.sound.play('sfx_' + id, { volume }); } catch { /* ignore */ } }
 
 /** 标题：新游戏 / 继续 / 设置；新游戏后进入职业选择 */
@@ -116,22 +129,24 @@ export class TitleScene extends Phaser.Scene {
   }
   /** 多存档位：选择/新建/删除（二次确认）/改名；每格显示职业、等级、层数、最后游玩、游玩时长 */
   slotsScreen(note = '', armDel = 0) {
-    const L = this.clear(), list = Slots.list(), rowH = Math.min(84, 520 / list.length), top = 110;
-    L.add(frameBg(this, 'panel_frame', 640, 395, 1000, 640, { fill: 0x15100b, alpha: 0.96, stroke: 0xd4a64a, sw: 3 }).setName('panelBg'));
-    L.add(txt(this, 640, 98, '存 档 位', 26, '#ffd24a', { fontStyle: 'bold' }).setOrigin(0.5).setName('slots-title'));
+    const L = this.clear(), list = Slots.list(), rowH = Math.min(84, 520 / list.length), top = 100;
+    // B3：面板上移 15（60~700），「返回」完整落在面板与屏幕内；手机（标题页不放大，1 逻辑 px≈0.54 CSS px）字号提到 ≥12 CSS px 并提高对比度
+    const fN = IS_MOBILE ? 24 : 18, fS = IS_MOBILE ? 22 : 14;
+    L.add(frameBg(this, 'panel_frame', 640, 380, 1000, 640, { fill: 0x15100b, alpha: 0.96, stroke: 0xd4a64a, sw: 3 }).setName('panelBg'));
+    L.add(txt(this, 640, 90, '存 档 位', 26, '#ffd24a', { fontStyle: 'bold' }).setOrigin(0.5).setName('slots-title'));
     list.forEach((sl, k) => {
       const y = top + 40 + k * rowH + rowH / 2, d = sl.data;
       L.add(this.add.rectangle(640, y, 960, rowH - 8, sl.active ? 0x3a2c14 : 0x221a10).setStrokeStyle(2, sl.active ? 0xffd24a : 0x6a5a3a).setName('slot:' + sl.i));
-      L.add(txt(this, 180, y - 12, `${sl.i}. ${sl.name}${sl.active ? '（当前）' : ''}`, 18, sl.active ? '#ffe8a0' : '#e8d8b0').setOrigin(0, 0.5));
-      L.add(txt(this, 180, y + 14, d ? `${CLASSES[d.cls]?.name ?? d.cls}  Lv${d.level}  第 ${floorNo(d.floorIndex)} 层  ·  最后游玩 ${fmtDate(sl.lastAt)}  ·  时长 ${fmtPlay(sl.playMs)}` : '空', 14, d ? '#cfc0a0' : '#8a7a5a').setOrigin(0, 0.5));
+      L.add(txt(this, 180, y - (IS_MOBILE ? 15 : 12), `${sl.i}. ${sl.name}${sl.active ? '（当前）' : ''}${IS_MOBILE && d ? `  ${fmtDate(sl.lastAt)}` : ''}`, fN, sl.active ? '#ffe8a0' : '#e8d8b0').setOrigin(0, 0.5));
+      L.add(txt(this, 180, y + (IS_MOBILE ? 17 : 14), d ? (IS_MOBILE ? `${CLASSES[d.cls]?.name ?? d.cls} Lv${d.level} 第${floorNo(d.floorIndex)}层 · 时长 ${fmtPlay(sl.playMs)}` : `${CLASSES[d.cls]?.name ?? d.cls}  Lv${d.level}  第 ${floorNo(d.floorIndex)} 层  ·  最后游玩 ${fmtDate(sl.lastAt)}  ·  时长 ${fmtPlay(sl.playMs)}`) : '空', fS, d ? '#e0d0b0' : '#b0a080').setOrigin(0, 0.5).setName('slot-sub'));
       let x = 1070;
       const btn = (w: number, label: string, fn: () => void) => { L.add([...button(this, x - w / 2, y, w, Math.min(44, rowH - 16), label, fn, 15)]); x -= w + 10; };
       if (d) btn(90, armDel === sl.i ? '确认删除' : '删除', () => armDel === sl.i ? (Slots.remove(sl.i), this.slotsScreen(`已删除 ${sl.name}`)) : this.slotsScreen(`再点一次「确认删除」删除 ${sl.name}，不可恢复`, sl.i));
       btn(80, '改名', () => { const n = globalThis.prompt?.('存档名称（最多 16 字）', sl.name); if (n != null) { Slots.rename(sl.i, n); this.slotsScreen(); } });
       btn(90, d ? '选择' : '新建', () => { Slots.select(sl.i); if (d) this.mainMenu(); else this.classSelect(); });
     });
-    if (note) L.add(txt(this, 640, 676, note, 15, armDel ? '#ff9a7a' : '#cfc0a0').setOrigin(0.5).setName('slots-note'));
-    L.add([...button(this, 640, 712 - 10, 160, 36, '返回', () => this.mainMenu(), 16)]);
+    if (note) L.add(txt(this, 640, 632, note, 15, armDel ? '#ff9a7a' : '#cfc0a0').setOrigin(0.5).setName('slots-note'));
+    L.add([...button(this, 640, 668, 160, 40, '返回', () => this.mainMenu(), IS_MOBILE ? 22 : 16)]);
   }
   classSelect() {
     const L = this.clear();

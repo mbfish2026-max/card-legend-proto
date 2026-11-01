@@ -68,3 +68,15 @@ export function rowHitHeight(mobile: boolean, btnH: number, pitch: number, cssPe
 export function viewCss(lw: number): number {
   return typeof window !== 'undefined' ? Math.min(window.innerHeight / 720, window.innerWidth / (lw || 1280)) || 1 : 1;
 }
+
+/** B3 列表行底：list_row / list_row_sel 九宫格（高度 < 20 或无图集时退回原矩形 fb） */
+export function rowBg(s: Phaser.Scene, x: number, y: number, w: number, h: number, sel: boolean, fb: RectFallback) {
+  return frameBg(s, sel ? 'list_row_sel' : 'list_row', x, y, w, h, fb);
+}
+/** B3 滚动条：轨道 scroll_track + 滑块 scroll_thumb（宽 w，上下边距 8；滑块太短或无图集时退回原矩形）。trackY 为轨道顶，th 为 thumb() 结果 */
+export const SCROLL_W = 8;
+export function scrollBar(s: Phaser.Scene, x: number, trackY: number, trackH: number, th: { y: number; h: number }, w = SCROLL_W) {
+  const track = frameBg(s, 'scroll_track', x, trackY + trackH / 2, w, trackH, { fill: 0x332a1c }).setName('scrollTrack');
+  const thumb = frameBg(s, 'scroll_thumb', x, trackY + th.y + th.h / 2, w, th.h, { fill: 0xd4a64a }).setName('scrollThumb');
+  return [track, thumb] as const;
+}

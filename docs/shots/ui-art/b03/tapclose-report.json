@@ -1,0 +1,60 @@
+{
+ "844x390": {
+  "steps": [
+   {
+    "name": "1-open",
+    "sel": "bag_0",
+    "tip": true,
+    "cmp": "equipCompare"
+   },
+   {
+    "name": "2-inside",
+    "sel": "bag_0",
+    "tip": true,
+    "cmp": "equipCompare"
+   },
+   {
+    "name": "3-switch",
+    "sel": "bag_1",
+    "tip": true,
+    "cmp": "equipCompare"
+   },
+   {
+    "name": "4-drag",
+    "sel": "bag_1",
+    "tip": true,
+    "cmp": "equipCompare"
+   },
+   {
+    "name": "5-blank",
+    "sel": null,
+    "tip": false,
+    "cmp": null
+   }
+  ],
+  "errs": []
+ },
+ "1280x720": {
+  "steps": [
+   {
+    "name": "1-hover",
+    "sel": null,
+    "tip": true,
+    "cmp": "equipCompare"
+   },
+   {
+    "name": "2-blank-click",
+    "sel": null,
+    "tip": false,
+    "cmp": null
+   },
+   {
+    "name": "3-hoverout",
+    "sel": null,
+    "tip": false,
+    "cmp": null
+   }
+  ],
+  "errs": []
+ }
+}
