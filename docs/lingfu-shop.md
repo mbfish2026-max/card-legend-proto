@@ -35,7 +35,7 @@
 ### 1.2 默认 5000 与旧档迁移、防重复赠送
 | 场景 | 处理 |
 |---|---|
-| 新账号注册 | 服务端 on_signup 触发器写 `wallet.balance=5000` + `ledger(reason='signup_gift')`，`account_id` 唯一键保证只发一次（已在 account-p1 的 SQL 草案里） |
+| 新账号注册 | 服务端 on_signup 触发器写 `wallet.balance=5000` + `ledger(reason='signup_grant')`，`account_id` 唯一键保证只发一次（已在 account-p1 的 SQL 草案里） |
 | 游客首次打开（无 `fcl_lingfu_v1`） | 建钱包并发 5000，`granted:true` |
 | 旧存档玩家（升级后首次打开） | 视同游客首次：发一次 5000（旧档不按槽补发） |
 | 删除存档槽 / 新建存档槽 | 不影响钱包，**不再发** |
