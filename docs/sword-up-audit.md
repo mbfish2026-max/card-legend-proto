@@ -40,3 +40,11 @@
 - warrior_full.png：以原图 + 法师立绘为参考重绘，只改持剑手：剑改竖握、剑尖朝上、贴在身体左侧（画面左），不遮脸；proc.py 抠图后缩回 856×857 RGBA。注意：持剑手由画面右侧换到了画面左侧。
 - 三把战士武器层：为保持与 body.png 手位对齐，未重绘，而是以拳心为轴把剑身旋转为近竖直（向外倾约 12°）、拳头像素保留原样，剑柄从拳中穿过、剑首在拳下。手臂仍是 body.png 的前伸姿势（body 层未改）。
 - 旧图备份：docs/sword-up-preview/old/；对比图：docs/sword-up-preview/*_compare.png。
+
+### 武器层重新生成（替代旋转方案）
+- 用户反馈战士木剑旋转版「手的细节有问题」，旋转补丁方案作废（aa8b8d1 中的战士旋转版已被覆盖）。
+- 10 个武器层全部重新生成：战士 wood/iron/dragon、法师 wood/iron/dragon、道士 wood/iron/dragon/tao。做法：以 body.png + 原武器层为参考整图重绘，只改右手和剑（剑竖握、剑尖朝上略向外倾、手指包住握把、剑首在拳下、不遮脸），再与 body.png 逐像素比对抠出「手+剑」为一体的新武器层，1024×1024 RGBA，对齐偏移 0,0，同名替换。先出战士木剑样张自检通过后再批量。
+- body.png 与护甲层未改（单独重画武器层已能对齐，无需重绘整套 body）；手臂仍是原前伸姿势。
+- 法师批 3 张、道士批 4 张已完成。fx/summon_skeleton_atk.png 按用户要求不改；战士 body 不重画（等用户决定）。
+- 旧图备份：docs/sword-up-preview/old/equip_{warrior,mage,taoist}/（战士为最初原图，旋转版不再保留）；对比图（上旧下新）：docs/sword-up-preview/{warrior,mage,taoist}_equip_compare.png。
+- 注意：各剑倾角略有差异（约 10–25°）；法师木剑首版拳边有杂线，已重新生成。
