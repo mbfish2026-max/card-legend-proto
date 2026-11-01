@@ -104,6 +104,8 @@ export const SUMMON_LV_KILLS = [0, 10, 25, 45, 75, 115, 165, 225];
 export { SUMMON_NAME_COLORS } from './summonLabel';
 /** [适配] 治愈术主角满血时治疗召唤物的范围：官方未查到，沿用群体治愈术 170px */
 export const HEAL_SUMMON_RANGE = 170;
+/** #12 幽灵盾/神圣战甲术官方「5×5 友方」：像素未查到 → [适配] 按群疗 3×3=170 等比 ≈280（施法者为中心） */
+export const TAO_BUFF_RANGE = 280;
 /** [适配] 自动施放召唤技能：已有召唤物且血量 ≥ 该比例时跳过（不耗魔、不占公共间隔）；低于则自动重召（= 回满血/替换）。手动不受限 */
 export const AUTO_RESUMMON_HP = 0.5;
 export const BOSS_MECH = new Set(['boss_woma', 'boss_zuma', 'boss_redmoon', 'boss_molong', 'boss_huangquan', 'boss_twinhead_kong', 'boss_twinhead_blood']);
@@ -1019,7 +1021,11 @@ export class World {
       if (opts.auto && targets.every(e => (e.stunUntil ?? 0) > this.time)) return { ok: false, reason: '目标已被困住' };
     }
     if (s.kind === 'buff' && s.reduce && (h.armorUntil ?? 0) > this.time) return { ok: false, reason: `${s.name}持续中（官方：持续期间重复开启无效）` };
-    if (s.buffStat && ((s.buffStat === 'def' ? h.defUpUntil : h.mdefUpUntil) ?? 0) > this.time) return { ok: false, reason: `${s.name}持续中（沿用魔法盾：持续期间重复开启无效）` };
+    if (s.buffStat) {
+      // 目标 = 主角 + 范围内存活召唤物/合击英雄；全部已有该 buff 才拒绝（不扣魔/不冷却），否则施放并刷新（不叠加）
+      targets = this.buffAllies(TAO_BUFF_RANGE);
+      if (targets.every(u => this.hasStatBuff(u, s.buffStat!))) return { ok: false, reason: `${s.name}持续中（范围内友方均已生效）` };
+    }
     if (s.heal && !s.area) {
       // 治愈术：主角未满血 → 主角；主角满血 → 范围内血量比例最低的召唤物（[适配] 范围同群疗 170px，官方未查到）；都满 → 不施放、不耗蓝、不触发公共间隔
       if (h.hp < h.maxHp) targets = [h];
@@ -1041,10 +1047,10 @@ export class World {
         this.events.push({ type: 'log', text: `${s.name}：受到伤害降低 ${Math.round(h.armorReduce * 100)}%，持续 ${dur} 秒` });
       }
       if (s.buffStat) {
-        // #12 官方说明「5×5 友方」；21cq 资料称宝宝不受益 → 只作用于主角
+        // #12 官方说明「5×5 友方」（21cq 600 称宝宝不受益，与需求冲突，见 docs/ground-aura-ally.md）→ 主角+召唤物+合击英雄；同值刷新不叠加
         const v = taoBuffValue(this.level), d = this.buffDuration(s);
-        if (s.buffStat === 'def') { h.defUpUntil = this.time + d; h.defUp = v; } else { h.mdefUpUntil = this.time + d; h.mdefUp = v; } h.auraSkill = s.id;
-        this.events.push({ type: 'log', text: `${s.name}：${s.buffStat === 'def' ? '防御' : '魔御'} +${v}，持续 ${d} 秒` });
+        for (const u of targets) { if (s.buffStat === 'def') { u.defUpUntil = this.time + d; u.defUp = v; } else { u.mdefUpUntil = this.time + d; u.mdefUp = v; } u.auraSkill = s.id; }
+        this.events.push({ type: 'log', text: `${s.name}：${s.buffStat === 'def' ? '防御' : '魔御'} +${v}，持续 ${d} 秒（${targets.length} 名友方）` });
       }
       if (s.buffBoth) {
         // 金刚护体：官方「大幅度提高防御和魔御」数值 未查到 → [适配] 防御/魔御各 +2×神圣战甲术增益值
@@ -1215,6 +1221,9 @@ export class World {
   // ===== 合击版阶段 A：英雄战斗（A1 生成/AI、A2 召回、A3 用药、A4 怒气/合击） =====
   companionTarget: number | null = null;
   heroTargetUid: number | null = null;
+  /** 主角 + 横向 range 内存活的召唤物与合击英雄（主角在首位） */
+  buffAllies(range: number) { const h = this.hero!; return [h, ...this.units.filter(u => u !== h && u.alive && (u.summon || u.companion) && Math.abs(u.x - h.x) <= range)]; }
+  hasStatBuff(u: Unit, st: 'def' | 'mdef') { return st === 'def' ? (u.defUp ?? 0) > 0 && (u.defUpUntil ?? 0) > this.time : (u.mdefUp ?? 0) > 0 && (u.mdefUpUntil ?? 0) > this.time; }
   get companionUnit() { return this.units.find(u => u.companion && u.alive); }
   /** 官方：收回后 1 分钟内无法再次召唤（怀旧版专题 detail02）。剩余秒数（0 = 可召唤） */
   companionCooldown() { const c = this.companion; return c ? Math.max(0, Math.ceil(c.recallAt + COMPANION_RECALL_CD - this.time)) : 0; }

@@ -1,5 +1,5 @@
 /** 增益脚下光环：映射表 + 状态驱动逻辑（无 Phaser） */
-import { World } from '../src/combat/World';
+import { World, TAO_BUFF_RANGE } from '../src/combat/World';
 import { BUFF_FX, GROUND_AURA_SKILLS, auraKeys, wantAura, auraScale, isBodyShieldKey, AURA_DEPTH } from '../src/ui/groundAuraPlan';
 // @ts-ignore node
 import { existsSync, readFileSync } from 'node:fs';
@@ -37,4 +37,44 @@ ok(wantAura({ uid: 2, defUp: 5, defUpUntil: 10 }, 1) === null, '非光环来源�
 const w = new World(() => 0.5, 41, [{ name: 't', spawns: [] }], 'taoist' as any); w.step(0.05); w.drainEvents();
 for (const s of w.skillPool) { w.learned.add(s.id); w.skillTrain[s.id] = 99999; }
 for (const id of ['holy_armor', 'ghost_shield']) { const i = w.skills.findIndex(s => s.id === id); w.hero!.mp = 99999; const r = w.cast(i, w.skills.map(() => 0)); ok(i >= 0 && r.ok && w.hero!.auraSkill === id && wantAura(w.hero as any, w.time) === id, `${id} 施放 → 英雄显示 ${id} 光环`); }
+
+// feat/ground-aura-ally：目标 = 主角 + 5×5（TAO_BUFF_RANGE）内召唤物 + 合击英雄；不叠加；全员已有才拒绝
+{
+  const mkW = () => { const w = new World(() => 0.5, 45, [{ name: 'a', spawns: [] }, { name: 'b', spawns: [] }], 'taoist' as any); w.step(0.05);
+    for (const s of w.skillPool) { w.learned.add(s.id); w.skillTrain[s.id] = 99999; } w.hero!.mp = w.hero!.maxMp = 99999; return w; };
+  const w = mkW(), h = w.hero!, cds = () => w.skills.map(() => 0), idx = (id: string) => w.skills.findIndex(s => s.id === id);
+  ok(w.cast(idx('summon_skeleton'), cds()).ok, '召唤骷髅');
+  ok(w.recruitCompanion('taoist' as any, '英雄') === null, '领取合击英雄');
+  for (let k = 0; k < 4 && !w.companionUnit; k++) w.step(0.05);
+  if (!w.companionUnit) w.loadFloor(w.floorIndex);
+  const sm = w.units.find(u => u.summon && u.alive)!, cp = w.companionUnit!;
+  ok(!!sm && !!cp, '场上有召唤物与合击英雄');
+  sm.x = h.x + 100; cp.x = h.x - 150;
+  const far: any = w.units.find(u => u.summon && u !== sm && u.alive); if (far) far.x = h.x + TAO_BUFF_RANGE + 50;
+  w.drainEvents();
+  const r = w.cast(idx('holy_armor'), cds());
+  ok(r.ok && [h, sm, cp].every(u => (u.defUp ?? 0) > 0 && (u.defUpUntil ?? 0) > w.time && u.auraSkill === 'holy_armor'), '神圣战甲术：主角/召唤物/合击英雄均获得防御+光环');
+  ok([h, sm, cp].every(u => wantAura(u as any, w.time) === 'holy_armor'), '三者都显示神甲光环');
+  if (far) ok(!(far.defUp > 0), '范围外召唤物不受益');
+  const v0 = sm.defUp!, mp0 = h.mp!;
+  const r2 = w.cast(idx('holy_armor'), cds());
+  ok(!r2.ok && h.mp === mp0 && sm.defUp === v0, '全员已有 → 拒绝、不扣魔、数值不叠加');
+  sm.defUpUntil = 0; const r3 = w.cast(idx('holy_armor'), cds());
+  ok(r3.ok && sm.defUp === v0 && h.defUp === v0 && (sm.defUpUntil ?? 0) > w.time, '宠物缺 buff → 施放刷新，数值不叠加');
+  ok(w.cast(idx('ghost_shield'), cds()).ok && [h, sm, cp].every(u => (u.mdefUp ?? 0) > 0 && u.auraSkill === 'ghost_shield'), '幽灵盾：三者均获得魔御+光环');
+  // 自动施法：全员有 → 不施；不刷屏
+  let n = 0; for (let k = 0; k < 20; k++) { const rr = w.cast(idx('holy_armor'), cds(), { auto: true }); if (rr.ok) n++; }
+  ok(n === 0, '自动施法：全员已生效时 0 次施放（不浪费魔）');
+  // 换图：buff 未过期 → 新图仍应显示光环
+  const until = h.defUpUntil!; w.loadFloor(1);
+  const sm2 = w.units.find(u => u.uid === sm.uid), cp2 = w.companionUnit;
+  ok(h.defUpUntil === until && wantAura(h as any, w.time) !== null, '换图后主角未过期 buff 保留 → 光环重新显示');
+  if (sm2) ok(wantAura(sm2 as any, w.time) !== null, '换图后召唤物光环重新显示');
+  if (cp2) ok(wantAura(cp2 as any, w.time) !== null, '换图后合击英雄光环重新显示');
+  ok(!/suppress/.test(readFileSync('src/ui/groundAura.ts', 'utf8')), '源码：GroundAuras 不再换图抑制');
+  // 金刚护体保持仅自身（官方自身增益）
+  const ww = new World(() => 0.5, 45, [{ name: 'a', spawns: [] }], 'warrior' as any); ww.step(0.05); for (const s of ww.skillPool) { ww.learned.add(s.id); ww.skillTrain[s.id] = 99999; }
+  ww.hero!.mp = 99999; const vi = ww.skills.findIndex(s => s.id === 'vajra_body');
+  if (vi >= 0) ok(ww.cast(vi, ww.skills.map(() => 0)).ok && ww.units.filter(u => u !== ww.hero && (u.defUp ?? 0) > 0).length === 0, '金刚护体仅自身');
+}
 console.log(`ground-aura: ${pass} 项通过`);
