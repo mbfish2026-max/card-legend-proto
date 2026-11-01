@@ -110,6 +110,9 @@
 | goods_slot_sel.png | 80×80 | 18/18/18/18 | 灵符商城商品格底（选中）；卷轴/项链/血石等商品图标由代码叠加 |
 | goods_slot_soldout.png | 80×80 | 18/18/18/18 | 灵符商城商品格底（售罄灰态）；卷轴/项链/血石等商品图标由代码叠加 |
 | slot_bloodstone.png | 64×64 | 0/0/0/0 | 装备栏血石位空槽（与 slot 同 64 体系；中央暗纹宝石，等比缩放，不走九宫格） |
+| qframe_common.png | 32×32 | 5/5/5/5 | 品质框·普通（rarity=common）；细边 3px+内光，中心透明，叠在 slot/goods_slot 或图标之上，任意尺寸 nineslice |
+| qframe_magic.png | 32×32 | 5/5/5/5 | 品质框·精良（rarity=magic）；细边 3px+内光，中心透明，叠在 slot/goods_slot 或图标之上，任意尺寸 nineslice |
+| qframe_rare.png | 32×32 | 5/5/5/5 | 品质框·极品（rarity=rare）；细边 3px+内光，中心透明，叠在 slot/goods_slot 或图标之上，任意尺寸 nineslice |
 
 说明：
 - 边距 0/0/0/0 的是固定比例图，用 Image + setDisplaySize 等比缩放，不走九宫格。
@@ -144,6 +147,48 @@
 
 商城接入：充值档位和商品格都是九宫格 nineslice，内容（图标、名称、价格）放在同一个 Container 里叠加。长列表沿用 scrollList 加 mask 滚动。示意图是 `preview_extra.jpg` 的上半部分。商品价格、档位金额都是示意数字，不是需求。
 
+### 3.3 品质框（第三轮）
+
+**现有品质等级（以代码为准，共 3 档，没有自造等级）**
+
+- 类型定义：`src/combat/types.ts:54` 中 `type Rarity = 'common' | 'magic' | 'rare'`。
+- 后缀：`World.ts:586/607` 生成名字后缀 [精良]/[极品]。
+- 排序：`bagSort.ts:3` 中 RARITY_RANK 为 rare 2 > magic 1 > common 0。
+
+| key | 中文（Panel.ts:43 RARITY_CN） | 格子描边 Panel.ts:42 RARITY_NUM | 名字文字 Panel.ts:41 RARITY_HEX | 地面光柱 BattleScene.ts:32 RARITY_COLOR / :33 RARITY_TEXT |
+|---|---|---|---|---|
+| common | 普通 | 0x8a8a8a | #ffffff | 0xf0e6c0 / #f0e6c0 |
+| magic | 精良 | 0x3a7aff | #5aa8ff | 0x3d9bff / #3d9bff |
+| rare | 极品 | 0xffa020 | #ffb020 | 0xffa020 / #ffa020 |
+
+- 无物品的空格描边是 0x4a3a28（Panel.ts:113/489）。
+- data/fx.ts:24 中的 pillarCommon 0xffff00、pillarRare 0xff0000、pillarMagic 0x3388ff 是按物品 id 指定的特效光柱色（fx.ts:31 RARITY 表），不是 Rarity 品质色，品质框不采用。
+- **套装**（items.ts 的 `set: 'woma'` 等，以及 SETS / r14b CLASS_SETS）是独立字段，不属于品质档。代码里没有「传说」「史诗」这类等级。所以本轮只出 3 个框；套装标识如果需要，建议另出角标，待定。
+
+**切片**：qframe_common / qframe_magic / qframe_rare，尺寸 32×32，边距 5/5/5/5，中心透明。
+
+- 结构：1px 黑外描 → 2px 主色斜面（左上亮、右下暗）→ 1px 暗内线 → 1px 主色半透明内光。
+- 主色直接取 RARITY_NUM。
+- 各档只差颜色和高光强度：rare 左上高光略强。没有雕花，也没有厚角饰。
+
+**为什么只出一个尺寸**：边框只有约 3px，九宫格拉伸时边宽保持不变，32~96px 都能用同一张：
+
+- 小格 32/40/48（列表行、手机）用 setSize 缩小；
+- 标准格 54/64（背包、装备栏）；
+- 商品格 80（商城）。
+
+预览图里各尺寸都清晰，再出一档小图收益不大。
+
+**叠放与接入**（只写文档，代码由系统开发改）：
+
+1. 叠放顺序：底格（slot / goods_slot_* / slot_bloodstone）→ 物品图标（约占格宽 78%）→ `scene.add.nineslice(x, y, 'ui', 'qframe_' + item.rarity, size, size, 5, 5, 5, 5)`。
+2. 帧名直接用 `item.rarity` 拼接，和 RARITY_NUM / RARITY_HEX 用同一个 key，新增等级时三处同步加。
+3. 替换点：Panel.ts:113（slotBox）和 Panel.ts:489（对比面板图标格）中的 `rectangle(...).setStrokeStyle(2, RARITY_NUM[rarity])`，改成「底格 + qframe」。空格不叠 qframe，保留底格原样。
+4. 名字文字色继续用 RARITY_HEX；售罄格同样叠 qframe，统一 alpha 0.5。
+5. 商城价格标签旁的品质文字也用 RARITY_HEX。
+
+预览图：`docs/ui-preview/preview_quality.jpg`，生成脚本 `build_quality.py`（追加到 slices.json）和 `compose_quality.py`。重建顺序：build_extra.py → build_quality.py → pack_atlas.py。
+
 ## 4. 接入建议（给系统开发）
 
 1. **加载**：在 assets-manifest 里加 atlas `ui_atlas`（png/webp + json），帧名就是切片文件名去掉 .png。样例见 `docs/ui-preview/atlas_ui_preview.png/.json`，这是 512×356 的简易 shelf 打包，正式打包建议用 TexturePacker 或 free-tex-packer，padding 2、extrude 1，防止 NineSlice 采样渗色。
@@ -162,23 +207,23 @@
 - MobileHud 是 DOM/CSS 写的，可以直接用同一批 PNG 做 `border-image`，例如 `border-image: url(btn_normal.png) 14 16 fill / 14px 16px`，这里的数字就是 §3 的边距。血条用 bar_frame 做 border-image，内层 div 用 bar_fill_* 作背景，并设 background-size: 100% 100%。
 - 预览 `preview_844x390.jpg` 是把 1280 的布局等比缩到 0.54 后合成的，用来看拉伸效果，不代表最终的手机排版。
 
-## 6. 包体积与加载评估（实测，第二轮更新）
+## 6. 包体积与加载评估（实测，第三轮更新）
 
 | 项 | 实测 |
 |---|---|
-| 40 个切片 PNG 合计 | **320,146 B**（第一轮 25 个 160,299 B，第二轮新增 15 个 159,847 B） |
+| 43 个切片 PNG 合计 | **320,835 B**（第一轮 25 个 160,299 B；第二轮 15 个 159,847 B；第三轮品质框 3 个 689 B） |
 | 其中最大 | panel_frame 62,460 B；recharge_card_* 三张约 28.7~29.1 KB；dialog_frame 28,301 B；panel_frame_s 15,031 B |
-| 合并 atlas（512×738 PNG，PIL optimize） | **304,576 B**（docs/ui-preview/atlas_ui_preview.png，帧表 .json） |
-| 同 atlas WebP 无损 | **209,266 B**（atlas_ui_preview_lossless.webp） |
-| 同 atlas WebP q90 / alpha95 | **75,524 B**（atlas_ui_preview_q90.webp） |
-| atlas 显存（RGBA） | 512×738×4 = **1,511,424 B（约 1.44 MB）** |
+| 合并 atlas（512×746 PNG，PIL optimize） | **305,077 B**（docs/ui-preview/atlas_ui_preview.png，帧表 .json） |
+| 同 atlas WebP 无损 | **210,322 B**（atlas_ui_preview_lossless.webp） |
+| 同 atlas WebP q90 / alpha95 | **76,022 B**（atlas_ui_preview_q90.webp） |
+| atlas 显存（RGBA） | 512×746×4 = **1,527,808 B（约 1.46 MB）** |
 | 对比：现有 public/assets/ui | 564,581 B；整个 public/assets 约 314 MB（第一轮 du -sh） |
 | 生成源材质 docs/ui-preview/src | 461,604 B（只在 docs，不进 public/dist） |
 
 compress-assets（vite.config.ts 里的 `compressAssets`）现在只处理 portraits/bg/map 和 ui/bg_dungeon.jpg，**ui 目录不在范围内**。
 
 建议（需要系统开发改代码，本分支不改）：
-1. 正式打包成 `assets/ui/ui_atlas.png` + json，40 个文件变成 1 次请求。预览 atlas 用的是简易 shelf 打包，有空隙；正式打包建议用 TexturePacker 或 free-tex-packer，padding 2、extrude 1，可以压到 512×512 左右。
-2. **只用无损或 q≥90**：在 compressAssets 的 targets 里加 ui_atlas，用 `{ lossless: true }`（实测 209 KB）或 `{ quality: 90, alphaQuality: 95 }`（实测 76 KB）。不要套用立绘的 80/85 或背景的 72，金边细线会出现色带。同时要改 loader.ts `assetUrl()` 的正则，让 `assets/ui/ui_atlas.png` 映射到 .webp。
+1. 正式打包成 `assets/ui/ui_atlas.png` + json，43 个文件变成 1 次请求。预览 atlas 用的是简易 shelf 打包，有空隙；正式打包建议用 TexturePacker 或 free-tex-packer，padding 2、extrude 1，可以压到 512×512 左右。
+2. **只用无损或 q≥90**：在 compressAssets 的 targets 里加 ui_atlas，用 `{ lossless: true }`（实测 210 KB）或 `{ quality: 90, alphaQuality: 95 }`（实测 76 KB）。不要套用立绘的 80/85 或背景的 72，金边细线会出现色带。同时要改 loader.ts `assetUrl()` 的正则，让 `assets/ui/ui_atlas.png` 映射到 .webp。
 3. **加载时机**：ui_atlas 放在 Boot/Title 预加载，一次加载，开始界面就要用。商城切片已经并进同一张 atlas，额外只有约 +160 KB PNG，不单独懒加载。以后商城如果有大 banner 或活动图，再单独打 atlas，打开商城时懒加载。
-4. 增量：WebP 无损约 +209 KB，q90 约 +76 KB，相对 314 MB 的资源可以忽略。显存 1.44 MB，手机端也可以接受。
+4. 增量：WebP 无损约 +210 KB，q90 约 +76 KB，相对 314 MB 的资源可以忽略。显存 1.46 MB，手机端也可以接受。

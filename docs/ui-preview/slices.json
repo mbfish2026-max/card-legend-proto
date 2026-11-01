@@ -358,5 +358,32 @@
   "top": 0,
   "bottom": 0,
   "use": "装备栏血石位空槽（与 slot 同 64 体系；中央暗纹宝石，等比缩放，不走九宫格）"
+ },
+ "qframe_common": {
+  "w": 32,
+  "h": 32,
+  "left": 5,
+  "right": 5,
+  "top": 5,
+  "bottom": 5,
+  "use": "品质框·普通（rarity=common）；细边 3px+内光，中心透明，叠在 slot/goods_slot 或图标之上，任意尺寸 nineslice"
+ },
+ "qframe_magic": {
+  "w": 32,
+  "h": 32,
+  "left": 5,
+  "right": 5,
+  "top": 5,
+  "bottom": 5,
+  "use": "品质框·精良（rarity=magic）；细边 3px+内光，中心透明，叠在 slot/goods_slot 或图标之上，任意尺寸 nineslice"
+ },
+ "qframe_rare": {
+  "w": 32,
+  "h": 32,
+  "left": 5,
+  "right": 5,
+  "top": 5,
+  "bottom": 5,
+  "use": "品质框·极品（rarity=rare）；细边 3px+内光，中心透明，叠在 slot/goods_slot 或图标之上，任意尺寸 nineslice"
  }
 }
