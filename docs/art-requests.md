@@ -1808,7 +1808,7 @@ public/assets/ui/UI-Tooltip-Border.png
 | 34 | 雷霆腰带 | belt | 45 | AI 生成 |
 | 35 | 烈焰腰带 | belt | 45 | AI 生成 |
 | 36 | 光芒腰带 | belt | 45 | AI 生成 |
-| 37 | 腰带空栏底图（slot_belt_empty） | ui | - | AI 生成 |
+| 37 | 腰带空栏底图（实际交付名 slot_empty_belt，另加 slot_empty_boots） | ui | - | AI 生成 ✅ 已交付 |
 
 ### H 章过渡链图标（29 件）——✅ 已交付（art/h-chain-icons 98351f6，已接入 feat/drop-realign，含 @2x）
 
@@ -1855,8 +1855,8 @@ public/assets/ui/UI-Tooltip-Border.png
 脚本 `docs/ui-preview/build_h_chain.py`、`compose_h_chain.py`；源图 `docs/ui-preview/src/h_*_src.jpg`；预览 `docs/ui-preview/preview_h_chain_icons.jpg`。**v2（主Bot 审后修正）**：①暗色提亮+左上轮廓高光：h_black_crystal_necklace/h_black_crystal_ring（紫青）、h_ebony_necklace/h_ebony_bracelet（暖棕）、h_death_glove（紫）；②8 条项链裁短链条放大吊坠，占比对齐 eq_* 项链；③h_steel_bracelet 改为带铰链锁扣铆钉的扁平宽钢箍，h_ebony_bracelet 改为雕纹粗圆木镯（源图 src/h_br_v2_src.jpg）。64 与 @2x 同步重出，预览底部加修正前后对比。
 待系统开发把对应物品 icon 从 gen_necklace/gen_bracelet/eq_iron_ring/gen_boots 换为上述文件。
 
-## 阶段2 腰带 7 条 + 空栏底图——已出图（art/belt-icons）
-图标现用 gen_bracelet 占位；规格同 H 链首饰（64px + @2x，透明底）。
+## 阶段2 腰带 7 条 + 空栏底图——✅ 已交付（art/belt-icons d581c18，含 @2x，AI 生成）
+已接入：belts.ts 用 items/belt_*.png 并登记 @2x（28c85e1）；规格 64px + @2x，透明底。
 | id | 名称 | 需求 | 备注 |
 |---|---|---|---|
 | belt_hide | 兽皮腰带 | 15 | |
@@ -1869,7 +1869,7 @@ public/assets/ui/UI-Tooltip-Border.png
 
 空栏底图（装备面板空槽剪影，60px + @2x）：slot_empty_belt（腰带）、slot_empty_boots（靴子）。血石空槽由灵符分支提供，不在此列。
 
-**状态：已出图（art/belt-icons）**
+**状态：✅ 已交付并接入（28c85e1）**
 - 腰带（`public/assets/items/`，64×64 RGBA + 同名 @2x 128×128）：belt_hide 兽皮腰带（毛边兽皮+骨扣）/ belt_iron 铁腰带（铆钉皮带+方铁扣，已提亮加冷色边缘高光）/ belt_bronze 青铜腰带（铜片+卷纹椭圆扣）/ belt_steel 钢铁腰带（钢片+盾形扣嵌蓝宝石）/ belt_leiting 雷霆腰带（蓝紫金属+闪电盾扣+电光）/ belt_lieyan 烈焰腰带（红皮金饰+火焰扣+火光）/ belt_guangmang 光芒腰带（白金片+日芒扣白宝石+金白圣光）
 - 空栏底图（`public/assets/ui/`，60×60 + @2x 120×120，透明底暗纹剪影，叠在 slot 空格中央）：slot_empty_belt、slot_empty_boots
 - 未进 ui_atlas：图集 512×512 已用高度 509，放不下，改单图交付；如需进图集要先扩图集或重排（由主Bot决定）。

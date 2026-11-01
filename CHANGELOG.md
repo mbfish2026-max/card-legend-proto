@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 阶段2 腰带图标与空栏底图（feat/drop-realign，未合 main）
+
+- 合入 art/belt-icons（d581c18）：7 条腰带正式图标（AI 生成，64px + @2x），替换手镯占位；@2x 登记到 item-icons-2x。
+- 装备面板腰带/靴子空栏接入 slot_empty_belt、slot_empty_boots（AI 生成，单图加载、不进图集，高清屏用 @2x），叠在格子中央；有装备时不显示。
+- art-requests 腰带与空栏底图标为已交付。
+
 ## 掉落重新对齐：掉率、图标、H 链调参、阶段2 腰带（feat/drop-realign，未合 main）
 
 - 掉率（魔兽批准）：天尊头盔/项链/戒指/手镯 boss_redmoon 1/40→1/120；烈焰项链/手镯/戒指/靴子 boss_leiyan 1/50→1/40（boss_molong 仍 1/50）。eg-dungeon 通过。
