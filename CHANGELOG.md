@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 手机版：装备对比面板点外部关闭 feat/mobile-tapclose
+- 手机（IS_MOBILE）角色/背包界面：点装备弹出「身上/查看中」对比面板后，点面板外空白处即关闭并取消选中。
+- 点面板内部不关；点其他装备格切换为对比该装备；按下到抬起移动 >8px（拖动/滚动）不算点击。
+- 桌面行为不变（不挂监听，仍是悬停显示、移出隐藏）。
+- 逻辑 src/ui/tapClose.ts，接线 Panel.tapOutside；测试 tests/tap-close.test.ts、tests/e2e/tapclose-verify.mjs。
+
 
 ## 战斗平衡 balance-battle2 第三轮 [适配]
 ### 最终（r3-5；9 个 seed 跑 sim-bands，日志 r3-5-*）

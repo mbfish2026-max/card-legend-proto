@@ -6,6 +6,7 @@ import { SKILL_BOOK_DROPS } from '../data/skillBookDrops';
 import { COMPANION_UNLOCK_LEVEL, comboFor, BOOK_PAGE, BRM_BOOK, GOLD_BAR, PAGES_PER_BOOK, COMBO_LEVEL, heartFeedValue, RAGE_MAX, HEART_STORE_MAX, RECRUIT_DIALOG } from '../data/companion';
 import { toLogic, toLogicX, MAX_LW } from '../render';
 import { compareRows, diffText, CmpData } from './equipCompare';
+import { shouldTapClose } from './tapClose';
 import { RING_MIN_LEVEL, IDENT_PRICE, IDENT_MIN_LEVEL } from '../data/r14b';
 import { fmtExp, scaledExp } from '../data/expCurve';
 import Phaser from 'phaser';
@@ -55,7 +56,17 @@ export class Panel {
   onTeleport?: () => void;
   /** R14 城镇：当前选中的 NPC id */
   npc: string | null = null;
-  constructor(public s: Phaser.Scene, public world: () => World, public onChange: (msg?: string, green?: boolean) => void, public onTitle: () => void) {}
+  constructor(public s: Phaser.Scene, public world: () => World, public onChange: (msg?: string, green?: boolean) => void, public onTitle: () => void) {
+    // 手机版：对比面板打开时，点面板外空白处关闭（拖动 >8px、点面板内、点装备格不关）；桌面不挂
+    if (IS_MOBILE) s.input?.on('pointerup', (p: Phaser.Input.Pointer, objs: Phaser.GameObjects.GameObject[]) => this.tapOutside({ downX: p.downX, downY: p.downY, upX: p.upX, upY: p.upY, x: p.worldX, y: p.worldY }, objs as any));
+  }
+  /** 返回是否关闭（供测试） */
+  tapOutside(p: { downX: number; downY: number; upX: number; upY: number; x: number; y: number }, objs: { getData?: (k: string) => unknown }[] = []): boolean {
+    const t = this.tip; if (!t || !this.sel) return false;
+    const b = t.getBounds(), insidePanel = b.contains(p.x, p.y), onSlot = objs.some(o => !!o.getData?.('slot'));
+    if (!shouldTapClose({ downX: p.downX, downY: p.downY, upX: p.upX, upY: p.upY, insidePanel, onSlot }, IS_MOBILE, true)) return false;
+    this.sel = null; this.hideTip(); this.render(); return true;
+  }
   /** 长街门口进店：打开该 NPC 的商店/功能界面 */
   openNpc(id: string) { this.mode = 'town'; this.npc = id; this.sel = null; this.region = null; this.render(); }
   get open() { return this.mode !== null; }
@@ -110,7 +121,7 @@ export class Panel {
     if (setId && SETS[setId] && (this.world().setCounts()[setId] ?? 0) >= Math.min(...SETS[setId].bonus.map(b => b.n)) && s.textures.exists('set_badge'))
       R.add(s.add.image(x + size / 2 - 10, y - size / 2 + 10, 'set_badge').setDisplaySize(22, 22));
     if (selected) { r.setStrokeStyle(4, 0xffe080); s.time.delayedCall(0, () => it && this.root && this.showTip(it, this.root.x + (x + size / 2 + 6) * this.mscale, this.root.y + (y - size / 2) * this.mscale, true)); }
-    r.setInteractive({ useHandCursor: !!it });
+    r.setInteractive({ useHandCursor: !!it }); r.setData('slot', true);
     if (!IS_MOBILE) r.on('pointerover', () => { r.setFillStyle(0x2a2016); if (it) this.showTip(it, x + size / 2 + 6, y - size / 2); });
     if (!IS_MOBILE) r.on('pointerout', () => { r.setFillStyle(0x0a0806); this.hideTip(); });
     // 触屏：点一次选中并显示属性，再点一次执行（装备/卸下/出售）
