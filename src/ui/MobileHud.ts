@@ -13,6 +13,7 @@ import { fmtExp } from '../data/expCurve';
 import type { BattleScene } from '../scenes/BattleScene';
 import type { Hud } from './Hud';
 import { applyDomSkin } from './domSkin';
+import { PotBarDom, POT_POP_CSS } from './potBar';
 /**
  * 手机专用 HUD（DOM 层，CSS 像素 + safe-area）：只替换显示/输入层，所有动作都转发给 BattleScene.onKey / dx,dy，
  * 不复制任何游戏逻辑。电脑端不创建本类（见 UIScene）。docs/mobile-ui.md 有「桌面功能 → 手机入口」对照表。
@@ -75,10 +76,10 @@ type Btn = HTMLDivElement;
 export class MobileHud {
   root: HTMLDivElement; dx = 0; dy = 0; onStep?: (d: number) => void;
   private bars: Record<string, [HTMLElement, HTMLElement]> = {}; private info!: HTMLElement; private log!: HTMLElement; private floor!: HTMLElement;
-  private skBtns: { el: Btn; cd: HTMLElement; t: HTMLElement; i: number }[] = []; private potBtns: HTMLElement[] = [];
+  private skBtns: { el: Btn; cd: HTMLElement; t: HTMLElement; i: number }[] = []; private potBtns: HTMLElement[] = []; potBar!: PotBarDom;
   private act!: Btn; private auto!: Btn; private page!: Btn; skPage = 0; private comp!: HTMLElement; private skSig = ''; private logSig = '';
   constructor(private b: BattleScene, private hud: Hud) {
-    if (!document.getElementById('mhud-css')) { const st = document.createElement('style'); st.id = 'mhud-css'; st.textContent = CSS; document.head.appendChild(st); }
+    if (!document.getElementById('mhud-css')) { const st = document.createElement('style'); st.id = 'mhud-css'; st.textContent = CSS + POT_POP_CSS; document.head.appendChild(st); }
     document.getElementById('mhud')?.remove();
     const r = this.root = document.createElement('div'); r.id = 'mhud'; document.body.appendChild(r);
     (window as any).__mhudSkin = applyDomSkin(r); // B6：@2x 图逐张 onload 后才启用 border-image，失败回退纯 CSS
@@ -120,7 +121,7 @@ export class MobileHud {
     // 技能多于 10 个（传世技能等）：弧形翻页，每页 10 个（内 4 外 6）
     this.page = this.btn(r, '', () => { this.skPage++; this.layoutSkills(); }); this.page.id = 'mh-page'; this.page.classList.add('ctl');
     const pots = this.el('div', r, 'ctl'); pots.id = 'mh-pots';
-    POTIONS.forEach((p, i) => { const e = this.btn(pots, '<span></span>', () => b.onKey(p.key)); e.dataset.id = 'pot' + i; e.style.backgroundImage = this.texUrl('potion_' + i); this.potBtns.push(e.firstChild as HTMLElement); });
+    this.potBar = new PotBarDom(pots, () => b.world, k => b.onKey(k), k => this.texUrl(k)); // feat/potion-expand：3 格 + 长按换药
     this.comp = this.el('div', r, 'ctl'); this.comp.id = 'mh-comp';
     [['召唤', 'R'], ['状态', 'E'], ['合击', 'G']].forEach(([l, k]) => { const e = this.btn(this.comp, l, () => b.onKey(k)); e.dataset.id = 'comp' + k; });
     // 禁止页面缩放/下拉刷新/长按菜单（body.mobile 已 touch-action:none，这里再兜底）
@@ -203,7 +204,7 @@ export class MobileHud {
     this.act.classList.toggle('hot', !!en && en !== 'sealed');
     this.auto.innerHTML = `自动<br>${Settings.autoAttack ? '开' : '关'}`; this.auto.classList.toggle('on', Settings.autoAttack);
     this.comp.style.display = w.companion ? 'flex' : 'none';
-    POTIONS.forEach((_, i) => { potCount(this.potBtns[i], w.pots[i] ?? 0); }); // 写进角标 span（原先 textContent 覆盖掉 span，数字成了居中文字压在图标上）
+    this.potBar.refresh(); // 写进角标 span（原先 textContent 覆盖掉 span，数字成了居中文字压在图标上）
     this.skBtns.forEach(s => {
       const max = w.skills[s.i]?.cooldown ?? 0, c = cds[s.i] ?? 0;
       if (max && c > 0) { const deg = 360 * Math.min(1, c / max); s.cd.style.background = `conic-gradient(from ${360 - deg}deg, rgba(0,0,0,.62) 0 ${deg}deg, transparent ${deg}deg)`; s.t.textContent = c >= 0.5 ? fmtInt(c) : ''; }
@@ -216,5 +217,5 @@ export class MobileHud {
   }
   /** 测试用：所有可点控件 */
   hits() { return Array.from(this.root.querySelectorAll<HTMLElement>('.b, #mh-log, #mh-joy .hint, #mh-floor, #mh-pos, #mh-posT')); }
-  destroy() { this.root.remove(); }
+  destroy() { this.potBar?.close(); this.root.remove(); }
 }

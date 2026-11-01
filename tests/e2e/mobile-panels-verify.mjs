@@ -27,7 +27,7 @@ try {
       const pots = [...document.querySelectorAll('#mh-pots .b')].map(r), sk = [...document.querySelectorAll('#mhud .sk, #mhud [data-id^="sk"], #mh-page')].filter(e => getComputedStyle(e).display !== 'none').map(r);
       return { pots, sk, vw: innerWidth, vh: innerHeight }; });
     const ov = (a, c) => a.l < c.r && c.l < a.r && a.t < c.b && c.t < a.b;
-    chk(geo.pots.length === 4 && geo.pots.every(q => q.w >= 44 && q.h >= 44), `${tag} 药水点击区 ≥44px ${geo.pots.map(q => q.w.toFixed(0) + '×' + q.h.toFixed(0)).join(' ')}`);
+    chk(geo.pots.length === 3 && geo.pots.every(q => q.w >= 44 && q.h >= 44), `${tag} 药水点击区 ≥44px ${geo.pots.map(q => q.w.toFixed(0) + '×' + q.h.toFixed(0)).join(' ')}`);
     chk(geo.pots.every(q => q.l >= 0 && q.t >= 0 && q.r <= geo.vw && q.b <= geo.vh), `${tag} 药水不出屏`);
     chk(geo.pots.every((q, i) => geo.pots.every((o, j) => i === j || !ov(q, o))), `${tag} 药水之间不重叠`);
     chk(geo.sk.length > 0 && geo.pots.every(q => geo.sk.every(o => !ov(q, o))), `${tag} 药水不挤占技能栏（${geo.sk.length} 个技能键）`);

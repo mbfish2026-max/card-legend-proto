@@ -1,4 +1,6 @@
-# 药水扩展方案：强效/超级药水、太阳水、强效太阳水、药水捆（feat/potion-doc，只出文档，未实现）
+# 药水扩展方案：强效/超级药水、太阳水、强效太阳水、药水捆
+
+> feat/potion-doc 出方案；**feat/potion-expand 已实现 P1 数据 / P2 解包 / P3 药店 / P5 UI**，P4 用药与 P6 掉落平衡留给战斗开发（见 §8）。§1.1 的数值和 §2 的捆规格已拍板，按表实现。
 
 标记说明：**[官方]** 指资料站上的 1.76 版数据，附链接；**[适配]** 指本作为了玩法做的改动；**[未查到]** 指没找到可靠出处，没有编数。
 
@@ -39,7 +41,7 @@
 - https://www.thelegendofmir2.com/item/ （各物品页：强效金创药 …/42c3409a92099c570dceff68a47a6502.html、超级金创药 …/c62296ff483829ab71648224f982ef41.html、太阳水 …/3496fec7b48a3df3654f78ad999cd788.html、强效太阳水 …/ac0cfa5a9cde349c808fe989565b46e1.html、强效太阳水包 …/221a66a4f519352d9fe4f9feb43104e5.html、金创药(小)包 …/71bbd73a649edaa83e1569bd17c0819a.html、金创药(中)包 …/327f0ddf7c908c2ffdcab214097dd232.html）
 - 6 瓶旁证：https://games.sina.com.cn/z/woool/2003-11-11/66888.shtml 、https://www.tayewan.com/article-1123-1.html
 
-### 1.1 本作数值建议（[适配]，全部待拍板）
+### 1.1 本作数值（[适配]，已拍板并实现）
 倍率按现有药的放大系数算：小红 20→120（×6），中红 50→320（约 ×6.4）。
 | key | 名称 | 回复 | 方式 | 冷却 | 价格（金） | 等级需求 | 卖店 |
 |---|---|---|---|---|---|---|---|
@@ -74,8 +76,9 @@
   5. sim-lib 是否需要模拟「拆捆」（建议不需要，直接把买捆当成 +6 瓶）。
 
 ## 5. 与其它系统的关系
-- **药水栏 UI**：桌面热键目前 1–4。建议扩成 1–6，加强效红和太阳水，或者「每格可配置药种」[待拍板]。手机 `#mh-pots` 每格 56px，4 格已经占满技能弧左侧，加格会挤占技能栏（potFrame.ts 注释写过「药水再留 8px」）。建议手机仍然 4 格，长按换药种 [适配]。不改 `POT_CSS/POT_ICON`，图标仍按 36px 显示。
-- **灵符商城**：建议不上架普通药，避免付费药影响平衡。可以考虑上架「超级金创药/超级魔法药」，作为只用金币兑换的便利项，或者干脆不上架 [待拍板，推荐不上架]。
+- **药水栏 UI（已拍板，feat/potion-expand 实现）**：桌面和手机都只有 **3 格：红 / 蓝 / 太阳水**，不扩到 1–6。每格显示当前选中药的图标和数量；**长按（≥450ms，桌面也可右键）弹层换本类的药**（红：小/中/强效；蓝：小/中/强效；太阳水：太阳水/强效太阳水），点弹层外关闭。手机格仍 `POT_CSS=56`、图标 36px 居中、数量在右下角 span（沿用 potFrame.ts），弹层选项 52×52。选择存档 `save.potSel`（3 个 key），默认选每类有货的最低级。代码：src/ui/potBar.ts（PotBarDesk / PotBarDom），Hud.ts / MobileHud.ts 只各换了一处调用。
+- **key 合并（已实现）**：旧物品 `hp_strong / mp_strong / sun_water`（items-town 时期的背包消耗品）并入 `hp_big / mp_big / sun`，全游戏只有一种强效金创药。读档 `migratePots`（src/data/potions.ts）：主角背包/仓库里的旧 key 物品和散装药物品折进 `pots`（单种上限 999，溢出部分保留为新 key 物品），英雄包裹里的旧 key 改名；数量不丢。单测 tests/potion-expand.test.ts。
+- **灵符商城**：不卖药（已拍板）。
 - **血石 tickStone**：血石是持续自动回复，和药水冷却互不占用。两者叠加的上限需要战斗开发确认（见 §4 Q3）。
 - **存档兼容**：`save.pots` 是按下标的数组，**新药只能追加到 POTIONS 末尾**（下标 4、5、6、7），旧档长度短，读档时补 0（`pots[i] ??= 0`）。捆进 `save.bag`（物品 id），旧档没有就不用迁移。不要改现有 4 种的下标和 key。加 `saveVersion` 校验单测：旧档读入 → pots 长度为 8 → 原 4 项数值不变。
 
@@ -90,3 +93,20 @@
 | P4 用药（战斗开发） | 太阳水立刻回复、冷却位、自动用药优先级 | World.usePotion / 英雄 AI | 冷却独立；HoT 回归；town-hot 回归 |
 | P5 UI | 热键 1–6 / 手机长按换药 | potFrame.ts、MobileHud、domSkin.ts | e2e 手机 56px 不遮数量；桌面热键 |
 | P6 掉落 + 平衡 | 接掉落表，跑 9 seed 对比 | drops 数据、tests/sim-band.ts | 死亡数和基线对比表 |
+
+## 8. 实现状态与战斗接入点（feat/potion-expand）
+已实现：
+- P1：POTIONS 下标 4–7 = hp_big / mp_big / sun / sun_big（key `P4`–`P7`，`lv`、`instant`、`bundleOnly` 字段）；ITEMS 加 4 种药和 8 种捆（`bundle:{pot,n:6}`）；旧 key 迁移。
+- P2：背包里捆显示数量；桌面 450ms 内双击、手机「点一下选中，再点一下」解开 1 捆，散装 +6；超过 999 拒绝且不扣捆。`World.unbundle(bagIdx)`。
+- P3：药店散装和捆同列（捆在下方），等级不够灰显「需LvX」；强效太阳水只卖捆（Lv35）。`World.buyPotion / buyBundle`。旧「商店」面板只列原 4 种。
+- P5：3 格药水栏 + 长按换药（见 §5）。
+- API：`World.getSelectedPotion(slot)` → key；`selectedPotionIndex(slot)` → POTIONS 下标；`setSelectedPotion(slot, key)` 只接受本类的药。
+
+**当前行为（未改战斗代码）**：点药水格 = `BattleScene.onKey(POTIONS[选中].key)` → `World.usePotion(i)`。所以新药现在走的是**旧规则**：强效药按 HoT 0.5s；**太阳水也是 HoT，不是立刻**，而且同时占用 HP 和 MP 两个冷却位。键盘 1–4 仍对应原 4 种药，**没有改成 1–3 = 三格**。
+
+留给战斗开发（P4 / P6）：
+1. 热键 1–3 → `usePotion(world.selectedPotionIndex(slot))`（BattleScene.onKey），并决定原 4 键是否保留。
+2. `instant` 药（sun / sun_big）立刻回复 + 单独冷却位（建议 `hero.sunReady`），不占红蓝冷却。
+3. 自动用药 / 英雄 AI / sim-lib 的选药优先级（英雄的 POT_TABLE 已含强效药与太阳水，数值随 §1.1 改了：强效 600→560，太阳水 300/200→180/240）。
+4. 拾取掉落药不检查 999 上限（掉落逻辑未改）。
+5. P6：接官方掉落表、9 seed 平衡对比。drops-s9 的强效药/太阳水掉落现在进 `pots`（原来进背包）。
