@@ -398,7 +398,7 @@ const free = (w: World) => w.skills.map(() => 0);
   const runAnim = (kind: 'summon_skeleton' | 'summon_beast' | 'pet') => {
     const w = mk([{ id: 'zombie', x: 900 }, { id: 'deer', x: 3000 }], [], 'taoist', 45); const h = w.hero!; h.hp = h.maxHp = 1e9; h.mp = h.maxMp = 1e9;
     let sm: any;
-    if (kind === 'pet') { sm = w.alive('enemy').find(e => e.id === 'deer')!; Object.assign(sm, { team: 'ally', summon: true, pet: true, petUntil: 1e9, ai: 'chase', y: WORLD.summonLane, x: 700, facing: 1 }); }
+    if (kind === 'pet') { sm = w.alive('enemy').find(e => e.id === 'deer')!; Object.assign(sm, { team: 'ally', summon: true, pet: true, ai: 'chase', y: WORLD.summonLane, x: 700, facing: 1 }); }
     else { ok(w.cast(idx(w, kind), free(w)).ok, `${kind} 召唤`); sm = w.units.find(u => u.summon && u.alive); }
     const z = w.alive('enemy').find(e => e.id === 'zombie')!; z.hp = z.maxHp = 1e9; z.ai = 'chase'; sm.hp = sm.maxHp = 1e9;
     const calls: Record<string, string[]> = {}; const views = new Map<number, AnimView>();
@@ -1107,8 +1107,8 @@ console.log('# 诱惑之光');
   { const { w, e, i } = setup('deer'); w.rng = () => 0; const mp = w.hero!.mp!; const r = w.cast(i, cds());
     ok(r.ok && e.team === 'ally' && !!e.pet && !!e.summon && w.pets.length === 1 && w.summon === undefined, '成功：转为宠物，不占骷髅位');
     ok(e.hp === 100 && w.hero!.mp! < mp, '无伤害，扣魔');
-    ok(!JSON.stringify(w.toSave()).includes('petUntil'), '宠物不存档');
-    w.time = (e.petUntil ?? 0) + 1; run(w, 0.1); ok(e.team === 'enemy' && !e.pet && e.ai === 'chase', '超时叛变为敌人'); }
+    ok(!JSON.stringify(w.toSave()).includes('"pet"'), '宠物不存档');
+    const nm = e.name, col = e.nameColor, hp = e.maxHp, atk = e.atk; w.time += 1e5; run(w, 2); ok(e.alive && e.team === 'ally' && !!e.pet && !!e.summon && e.name === nm && e.nameColor === col && e.maxHp === hp && e.atk === atk && !w.drainEvents().some((v: any) => v.type === 'charm'), '不叛变：快进 10 万秒后仍为宠物，名字/颜色/属性不变'); }
   { const { w, e, i } = setup('deer'); w.rng = () => 0.99; const r = w.cast(i, cds()); const evs = w.drainEvents();
     ok(r.ok && e.team === 'enemy' && evs.some(v => v.type === 'charm' && v.result === 'fail'), '失败：诱惑失败事件，仍为敌'); }
   { const { w, e, i } = setup('skeleton'); w.rng = () => 0; w.cast(i, cds()); const evs = w.drainEvents();

@@ -1,5 +1,5 @@
 // 召唤物脱战快速回血 + 雷电术冷却 = 火球术冷却 + 诱惑宠物不叛变
-import { World } from '../src/combat/World';
+import { World, CHARM } from '../src/combat/World';
 import { FLOORS, WORLD } from '../src/data/world';
 import { CLASSES } from '../src/data/classes';
 let n = 0; const ok = (c: boolean, m: string) => { if (!c) throw new Error('FAIL ' + m); n++; console.log('ok', m); };
@@ -41,4 +41,11 @@ for (const [name, mk] of cases) {
   foe.alive = false;
   u.hp = u.maxHp * 0.5; run(w, 60); ok(u.hp === u.maxHp && u.alive, `${name}：脱战 60s 回满且不超上限`);
 }
+// 诱惑宠物不叛变；成功率 / 上限 / 等级名字逻辑不变
+{ const [, mk] = cases[cases.length - 1]; const { w, u } = mk(); const lv = u.sLv, nm = u.name, col = u.nameColor, hp = u.maxHp, atk = u.atk;
+  ok(lv === Math.min(3, w.skillLevel(w.skills.find(s => s.id === 'charm')!)) && /·\d级/.test(nm), `宠物等级/名字：${nm}`);
+  w.drainEvents(); w.time += 1e6; run(w, 3); const evs = w.drainEvents();
+  ok(u.alive && u.team === 'ally' && u.pet && u.summon && u.name === nm && u.nameColor === col && u.maxHp === hp && u.atk === atk && w.pets.includes(u) && !evs.some((e: any) => e.type === 'charm'), '快进 100 万秒：仍跟随英雄、阵营/名字/颜色/属性不变');
+  ok(!('duration' in CHARM) && CHARM.maxPets.join() === '2,3,4,5' && CHARM.levelGap === 2 && Math.abs(CHARM.chance(3, 40, { level: 30, maxHp: 400 }) - 0.85) < 1e-9 && Math.abs(CHARM.chance(0, 20, { level: 20, maxHp: 800 }) - 0.1) < 1e-9, '无叛变时长；上限/等级差/成功率公式不变');
+  u.hp = 0; w.kill(u); ok(!u.alive && !w.pets.includes(u), '宠物死亡照常移除'); }
 console.log(`summon-regen: ${n} ok`);

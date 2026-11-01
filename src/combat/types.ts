@@ -25,8 +25,8 @@ export interface Unit extends UnitDef {
   alive: boolean; isHero?: boolean; summon?: boolean;
   /** 合击版阶段 A：英雄（伙伴）战斗单位，id = COMPANION_UNIT_ID；不是 summon（不走召唤物逻辑），仇恨/挨打规则同召唤物 */
   companion?: boolean;
-  /** 诱惑之光宠物（summon=true 且 pet=true）；petUntil = 叛变时间。不存档 */
-  pet?: boolean; petUntil?: number;
+  /** 诱惑之光宠物（summon=true 且 pet=true）；不叛变（用户要求）。不存档 */
+  pet?: boolean;
   /** 召唤物最近一次攻击/被攻击的 World.time（脱战回血判定，不存档） */
   combatT?: number;
   /** 召唤物仇恨：被召唤物打过一次后记录其 uid；主角离怪 > WORLD.summonAggroNear 时只追打该召唤物（召唤物死亡自动失效） */
@@ -77,7 +77,7 @@ export type BattleEvent =
   | { type: 'levelup'; level: number }
   | { type: 'summon'; uid: number }
   | { type: 'combo'; id: string; name: string; source: number; partner: number; target: number; amount: number; hits?: number; /** 表现层：被施加毒/麻痹的目标 uid */ affected?: number[]; /** 表现层：该合击持续状态结束的 world.time */ statusUntil?: number }
-  | { type: 'charm'; uid: number; result: 'ok' | 'fail' | 'immune' | 'high' | 'betray' }
+  | { type: 'charm'; uid: number; result: 'ok' | 'fail' | 'immune' | 'high' }
   | { type: 'respawn' }
   | { type: 'inventory' }
   | { type: 'bossfx'; uid: number; kind: 'spark' | 'fireball' | 'spike_warn' | 'spike' | 'daze' | 'crazy' | 'fly' | 'call' | 'enrage' | 'aoe_warn' | 'aoe'; x: number; target?: number }

@@ -526,7 +526,7 @@ export class BattleScene extends Phaser.Scene {
         if (e.source !== undefined) this.sfx(v.unit.isHero ? 'hit_hero' : e.crit ? 'swing_crit' : 'hit', 0.35);
       } else if (e.type === 'charm') {
         const v = this.views.get(e.uid); if (!v) continue;
-        const t = { ok: ['诱惑成功', '#ff9ad5'], fail: ['诱惑失败', '#cccccc'], immune: ['免疫', '#cccccc'], high: ['诱惑失败', '#cccccc'], betray: ['叛变', '#ff5a5a'] }[e.result];
+        const t = { ok: ['诱惑成功', '#ff9ad5'], fail: ['诱惑失败', '#cccccc'], immune: ['免疫', '#cccccc'], high: ['诱惑失败', '#cccccc']}[e.result];
         fx.floatNumber(this, v.cx, v.cy - v.h * 0.3, v.h, t[0], t[1], 0.7); v.sync();
       } else if (e.type === 'death') {
         const v = this.views.get(e.uid); if (!v) continue;

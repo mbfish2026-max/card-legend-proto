@@ -36,7 +36,7 @@ try {
     for (const L of [0, 3, 5, 7]) {
       const info = await p.evaluate(L => {
         const B = window.__game.scene.getScene('Battle'), W = B.world, h = W.hero, sm = W.units.find(u => u.summon && u.alive && u.sBase);
-        sm.sLv = L; W.applySummonLv(sm); sm.x = h.x - h.facing * 150; sm.petUntil = W.time + 9999; sm.hp = sm.maxHp;
+        sm.sLv = L; W.applySummonLv(sm); sm.x = h.x - h.facing * 150; sm.hp = sm.maxHp;
         const v = B.views.get(sm.uid); v.sync(); for (let i = 0; i < 30; i++) v.sync();
         const t = v.nameText, nb = t.getBounds(), cam = B.cameras.main.worldView, hp = v.hpFill.getBounds(), cardL = v.x - v.w / 2, cardR = v.x + v.w / 2;
         const cv = window.__game.canvas.getBoundingClientRect(), sx = cv.width / cam.width, sy = cv.height / cam.height;

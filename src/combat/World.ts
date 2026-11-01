@@ -113,14 +113,13 @@ export const MECH_MINIONS: Record<string, string[]> = { boss_zuma: ['zuma_statue
 /**
  * 诱惑之光（docs/skills-official.md「诱惑之光」）
  * 官方 C：可驯服等级 ≤ 法师等级+2 的生物系怪物；A：对高智商对手无效。资料站（17173）：宠物上限 Lv0..3 = 2/3/4/5。
- * [适配]：免疫名单（BOSS + 不死系/石像 + 沃玛/祖玛/赤月/虹魔系 + 人形法师）、成功率公式、叛变时间（资料站 6 小时 → 卡牌节奏 90+30×技能等级 秒）。
+ * [适配]：免疫名单（BOSS + 不死系/石像 + 沃玛/祖玛/赤月/虹魔系 + 人形法师）、成功率公式；不叛变（用户要求取消叛变；资料站约 6 小时随机叛变）。
  */
 export const CHARM = {
   levelGap: 2, maxPets: [2, 3, 4, 5],
   immune: new Set(['skeleton', 'zombie', 'blood_zombie', 'zuma_statue', 'zuma_guard', 'woma_warrior', 'woma_guard', 'darkmage', 'bull_mage', 'redmoon_spider', 'hongmo_pig', 'hongmo_scorpion']),
   /** [适配] 成功率：技能等级、人物与怪物等级差、怪物最大血量（因素来自资料站 21cq 文章，公式本作自拟） */
   chance: (slv: number, heroLv: number, mon: { level: number; maxHp: number }) => Math.max(0.05, Math.min(0.85, 0.3 + 0.1 * slv + 0.05 * (heroLv - mon.level) - Math.min(0.3, mon.maxHp / 4000))),
-  duration: (slv: number) => 90 + 30 * slv,
 };
 /** R13 官方参数 */
 export const OFFICIAL = {
@@ -1080,10 +1079,10 @@ export class World {
       if (c.res === 'immune') { this.events.push({ type: 'charm', uid: t.uid, result: 'immune' }, { type: 'log', text: `${t.name}免疫诱惑之光` }); }
       else if (c.res === 'high') { this.events.push({ type: 'charm', uid: t.uid, result: 'high' }, { type: 'log', text: `诱惑失败：${t.name}等级高于自身 ${CHARM.levelGap} 级以上` }); }
       else if (this.rng() < c.p) {
-        Object.assign(t, { team: 'ally', summon: true, pet: true, petUntil: this.time + CHARM.duration(slv), ai: 'chase', y: WORLD.summonLane, boss: undefined, poisonUntil: 0, redUntil: 0, slowUntil: 0, facing: h.facing });
+        Object.assign(t, { team: 'ally', summon: true, pet: true, ai: 'chase', y: WORLD.summonLane, boss: undefined, poisonUntil: 0, redUntil: 0, slowUntil: 0, facing: h.facing });
         // 法师宠物升级同道士召唤物：初始 = 技能等级（最高 3），杀怪升级、名字带等级与蓝色
         const L = Math.min(3, slv); t.sLv = L; t.sKills = 0; t.sBase = { hp: t.maxHp, atk: t.atk, start: L, name: t.name }; this.applySummonLv(t);
-        this.events.push({ type: 'charm', uid: t.uid, result: 'ok' }, { type: 'log', text: `诱惑成功：${t.name}成为宠物（${CHARM.duration(slv)} 秒后叛变）`, color: 'green' });
+        this.events.push({ type: 'charm', uid: t.uid, result: 'ok' }, { type: 'log', text: `诱惑成功：${t.name}成为宠物`, color: 'green' });
       } else {
         if (t.ai !== 'chase') { t.ai = 'chase'; this.events.push({ type: 'aggro', uid: t.uid }); }
         this.events.push({ type: 'charm', uid: t.uid, result: 'fail' }, { type: 'log', text: `诱惑失败（成功率 ${Math.round(c.p * 100)}%）` });
@@ -1526,13 +1525,7 @@ export class World {
 
     for (const u of this.units) if (u.alive) u.cd = Math.max(0, u.cd - dt);
     // 召唤骷髅/神兽 + 诱惑之光宠物：跟随主角；有交战中的敌人则冲上去近战
-    for (const p of this.pets) if ((p.petUntil ?? 0) <= this.time) {
-      // 叛变（资料站：到时变回敌人）[适配] 城镇内直接离开
-      if (this.town) { p.alive = false; this.events.push({ type: 'death', uid: p.uid }, { type: 'log', text: `${p.name}离开了` }); continue; }
-      if (p.sBase) { const r = p.hp / p.maxHp; Object.assign(p, { name: p.sBase.name, maxHp: p.sBase.hp, atk: p.sBase.atk, nameColor: undefined, sBase: undefined, sLv: undefined, sKills: undefined }); p.hp = Math.max(1, Math.round(p.maxHp * r)); }
-      Object.assign(p, { team: 'enemy', summon: false, pet: false, petUntil: undefined, ai: 'chase', y: 0, homeX: p.x });
-      this.events.push({ type: 'charm', uid: p.uid, result: 'betray' }, { type: 'aggro', uid: p.uid }, { type: 'log', text: `${p.name}叛变了！` });
-    }
+    // 诱惑宠物不叛变（用户要求取消叛变 [适配]）：一直跟随，直到死亡或按原规则被移除
     const allies = this.units.filter(u => u.summon && u.alive);
     for (const sm of allies) this.summonRegen(sm, dt);
     for (const [k, sm] of allies.entries()) if (h) {
