@@ -25,7 +25,7 @@ def shop(W,Hh,k):
     fr='panel_frame_s' if small else 'panel_frame'
     pw,ph=(int(W*0.70),int(Hh*0.80)) if small else (S(940),S(520)); px,py=(W-pw)//2,S(30) if not small else 6
     put(c,fr,px,py,pw,ph); put(c,'title_plate',px+pw//2-S(110),py-S(4),S(220),S(40)); text(c,px+pw//2,py+S(16),'灵符商城',max(13,S(22)),(255,210,74))
-    lf=img('lingfu_icon_s'); c.alpha_composite(lf.resize((S(28),S(28))),(px+pw-S(220),py+S(56))); text(c,px+pw-S(186),py+S(70),'灵符 12,800',max(11,S(16)),anchor='lm')
+    lf=img('lingfu_icon_xs'); c.alpha_composite(img('lingfu_icon_s').resize((S(28),S(28))),(px+pw-S(220),py+S(56))); text(c,px+pw-S(186),py+S(70),'灵符 12,800',max(11,S(16)),anchor='lm')
     # 左：充值档位
     cw,ch=S(150),S(190); x0=px+S(28); y0=py+S(100)
     for i,st in enumerate(['normal','sel','rec']):

@@ -288,13 +288,13 @@
   "use": "限时/热卖丝带（横向拉伸，燕尾两端 24px 不拉伸；文字代码渲染）"
  },
  "badge_corner": {
-  "w": 64,
-  "h": 64,
+  "w": 40,
+  "h": 40,
   "left": 0,
   "right": 0,
   "top": 0,
   "bottom": 0,
-  "use": "商品/档位卡右上角斜角标（固定尺寸，贴右上角；文字旋转 45° 由代码渲染）"
+  "use": "商品格右上红色斜角丝带（不含文字），按 80 格原尺寸设计；setOrigin(1,0) 贴格子右上角，随格子等比 setDisplaySize(size/2)"
  },
  "recharge_card_normal": {
   "w": 128,
@@ -326,29 +326,29 @@
  "goods_slot_normal": {
   "w": 80,
   "h": 80,
-  "left": 18,
-  "right": 18,
-  "top": 18,
-  "bottom": 18,
-  "use": "灵符商城商品格底（常态）；卷轴/项链/血石等商品图标由代码叠加"
+  "left": 20,
+  "right": 20,
+  "top": 20,
+  "bottom": 20,
+  "use": "灵符商城/商店商品格（常态）：7px 铜金粗边+四角金三角角饰（10px）+不透明深色内底；对齐用户参考图；图标居中叠加"
  },
  "goods_slot_sel": {
   "w": 80,
   "h": 80,
-  "left": 18,
-  "right": 18,
-  "top": 18,
-  "bottom": 18,
-  "use": "灵符商城商品格底（选中）；卷轴/项链/血石等商品图标由代码叠加"
+  "left": 20,
+  "right": 20,
+  "top": 20,
+  "bottom": 20,
+  "use": "灵符商城/商店商品格（选中）：7px 铜金粗边+四角金三角角饰（10px）+不透明深色内底；对齐用户参考图；图标居中叠加"
  },
  "goods_slot_soldout": {
   "w": 80,
   "h": 80,
-  "left": 18,
-  "right": 18,
-  "top": 18,
-  "bottom": 18,
-  "use": "灵符商城商品格底（售罄灰态）；卷轴/项链/血石等商品图标由代码叠加"
+  "left": 20,
+  "right": 20,
+  "top": 20,
+  "bottom": 20,
+  "use": "灵符商城/商店商品格（售罄）：7px 铜金粗边+四角金三角角饰（10px）+不透明深色内底；对齐用户参考图；图标居中叠加"
  },
  "slot_bloodstone": {
   "w": 64,
@@ -358,5 +358,41 @@
   "top": 0,
   "bottom": 0,
   "use": "装备栏血石位空槽（与 slot 同 64 体系；中央暗纹宝石，等比缩放，不走九宫格）"
+ },
+ "qframe_common": {
+  "w": 32,
+  "h": 32,
+  "left": 5,
+  "right": 5,
+  "top": 5,
+  "bottom": 5,
+  "use": "品质框·普通（rarity=common）；细边 3px+内光，中心透明，叠在 slot/goods_slot 或图标之上，任意尺寸 nineslice"
+ },
+ "qframe_magic": {
+  "w": 32,
+  "h": 32,
+  "left": 5,
+  "right": 5,
+  "top": 5,
+  "bottom": 5,
+  "use": "品质框·精良（rarity=magic）；细边 3px+内光，中心透明，叠在 slot/goods_slot 或图标之上，任意尺寸 nineslice"
+ },
+ "qframe_rare": {
+  "w": 32,
+  "h": 32,
+  "left": 5,
+  "right": 5,
+  "top": 5,
+  "bottom": 5,
+  "use": "品质框·极品（rarity=rare）；细边 3px+内光，中心透明，叠在 slot/goods_slot 或图标之上，任意尺寸 nineslice"
+ },
+ "lingfu_icon_xs": {
+  "w": 16,
+  "h": 16,
+  "left": 0,
+  "right": 0,
+  "top": 0,
+  "bottom": 0,
+  "use": "价格前小灵符（显示 16~20px，与 12~16px 价格字等高）"
  }
 }
