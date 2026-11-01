@@ -1058,13 +1058,13 @@ export class World {
       if (s.buffStat) {
         // #12 官方说明「5×5 友方」；21cq 资料称宝宝不受益 → 只作用于主角
         const v = taoBuffValue(this.level), d = this.buffDuration(s);
-        if (s.buffStat === 'def') { h.defUpUntil = this.time + d; h.defUp = v; } else { h.mdefUpUntil = this.time + d; h.mdefUp = v; }
+        if (s.buffStat === 'def') { h.defUpUntil = this.time + d; h.defUp = v; } else { h.mdefUpUntil = this.time + d; h.mdefUp = v; } h.auraSkill = s.id;
         this.events.push({ type: 'log', text: `${s.name}：${s.buffStat === 'def' ? '防御' : '魔御'} +${v}，持续 ${d} 秒` });
       }
       if (s.buffBoth) {
         // 金刚护体：官方「大幅度提高防御和魔御」数值 未查到 → [适配] 防御/魔御各 +2×神圣战甲术增益值
         const v = 2 * taoBuffValue(this.level), d = this.buffDuration(s);
-        h.defUpUntil = h.mdefUpUntil = this.time + d; h.defUp = h.mdefUp = v;
+        h.defUpUntil = h.mdefUpUntil = this.time + d; h.defUp = h.mdefUp = v; h.auraSkill = s.id;
         this.events.push({ type: 'log', text: `${s.name}：防御/魔御 +${v}，持续 ${d} 秒` });
       }
       if (s.cleanse) this.cleanseAllies(s, slv, targets);
