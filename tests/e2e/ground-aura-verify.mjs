@@ -68,9 +68,9 @@ try {
       chk(su && sa && sa.d < 1 && sa.n === 'aura:holy_armor:loop', `${L} 召唤物脚下光环 ${JSON.stringify(sa)}`);
       await p.evaluate(uid => { const W = window.__game.scene.getScene('Battle').world, s = W.units.find(u => u.uid === uid); s.hp = 0; s.alive = false; }, su);
       await sleep(1500); chk(await p.evaluate(uid => !window.__game.scene.getScene('Battle').children.list.some(o => /^aura:/.test(o.name) && o.getData('uid') === uid), su), `${L} 召唤物死亡 → 光环销毁`);
-      // 换图 → end 并销毁，且不会在新图重新出现
+      // 换图：未过期 buff → 新图重新显示（feat/ground-aura-ally 取消抑制）
       await cast(); await sleep(700); await p.evaluate(() => { const B = window.__game.scene.getScene('Battle'), W = B.world; W.loadFloor(W.floorIndex + 1); B.handle(W.drainEvents()); });
-      await sleep(1500); chk((await p.evaluate(SAMPLE)).sps.length === 0, `${L} 换图 → 光环 end 后销毁`);
+      await sleep(1500); { const sm = await p.evaluate(SAMPLE), me = sm.sps.filter(o => o.uid === undefined || true).find(o => Math.abs(o.x - sm.hx) < 1); chk(!!me && me.n === 'aura:holy_armor:loop', `${L} 换图 → 英雄光环在新图重现（${sm.sps.map(o => o.n)}）`); }
       // 魔法盾仍为身体罩（法师验证见下）
     }
     chk(w.errs.length === 0, `${L} 控制台 0 报错 ${w.errs.slice(0, 3).join(' | ')}`);
