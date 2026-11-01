@@ -42,7 +42,7 @@ for (const [size, pitch, what] of [[56, 62, '背包'], [60, 58, '装备'], [42, 
   ok(h >= size && h <= Math.max(size, pitch), `${what} 格 ${size}/距 ${pitch}：手机点击区 ${h.toFixed(1)}（${(h * css).toFixed(1)} CSS）不小于格、不超格距`);
   ok(slotHitSize(false, size, pitch, 1) === size, `${what} 桌面点击区 = 格子尺寸`);
 }
-ok(slotHitSize(true, 20, 60, 0.5) === 60 && slotHitSize(true, 20, 100, 0.5) === 72, 'slotHitSize：扩到 36 CSS，封顶格距');
+ok(slotHitSize(true, 20, 60, 0.5) === 60 && slotHitSize(true, 20, 100, 0.5) === 88, 'slotHitSize：扩到 44 CSS，封顶格距');
 // 技能行着色
 { const row: any = { type: 'NineSlice' }; const t: any = rowTint(mk(true), row, 560, 100, 820, 60, SKILL_ROW_TINT.learned);
   ok(t && t.kind === 'rect' && t.fill === SKILL_ROW_TINT.learned && t.name === 'rowTint', '技能行（九宫格）叠状态色');

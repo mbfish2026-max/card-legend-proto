@@ -18,6 +18,13 @@
 - SIM_SET4 只在 Lv≥40 生效。开启时 41–50 段死亡 战 5→1、道 2→1，1–39 与关相同。
 - 不动 FOE_BAND，也不动任何游戏数值；战士专属压难度不做。详见 docs/sim-baseline.md。
 
+## 手机角色/背包/技能面板图集化 + 药水放大（feat/ui-mobile-panels，未合 main）
+- 手机面板框改用 `panel_frame_s`（ui-art-plan §4.7），缺帧时回退 `panel_frame`，再缺就回退旧矩形；新增手机「角色背包 / 技能」页签（tab_on/tab_off 九宫格），点击层是透明矩形。
+- 手机点击区：格子和行按钮的目标从 36 改为 44 CSS px，但不超过格距/行距；背包翻页按钮加宽；技能 ↑↓ 按钮宽度 56→60。只用 setSize。
+- 修复：战斗中经验、熟练度几乎每帧变化，refreshIfStale 也就几乎每帧重建面板，新建的点击对象一直排在 Phaser 待插入队列里，导致触屏点击失效。现在限制为 800ms 内最多重绘一次。
+- 药水 56 CSS px（原来更小，且压在最左技能键上）。右偏移改为 outerR+83，避开技能弧；面板打开时隐藏楼层进度条。
+- 测试：新增 tests/ui-mobile-panels.test.ts 和 tests/e2e/mobile-panels-verify.mjs（NOATLAS=1 测回退）。对比截图在 docs/shots/ui-art/mobile-panels/。
+
 ## 召唤物：脱战回血 / 不叛变 / 继承英雄属性 / 移速=英雄 / 存读档保留（feat/summon-regen，未合 main）
 - 详见 docs/CHANGELOG.md 对应条目；消融表与 9 种子前后对比见 docs/summon-regen-ablation.md。
 - 存档新增可选字段 summons?（旧档无字段 = 无召唤物，兼容）；诱惑宠物同样存档。
