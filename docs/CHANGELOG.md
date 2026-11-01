@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 召唤物存读档保留（feat/summon-regen）
+- 存档新增可选字段 `summons?: SummonSave[]`（不改版本号/既有字段）：`{ id: UnitDef id, pet?: true, sLv, sKills, base: {hp, atk, def?, start, name}（sBase 原公式属性）, hpR: 当前血/最大血, level, def?/mdef?（仅宠物） }`；诱惑之光替身（decoy）不存。
+- 读档（关闭重开/手动读档/切换槽）在英雄身后恢复，脱战状态，名字/颜色按等级重算，属性按 sBase+当前英雄继承重算，血量按 hpR 恢复；已在场则不叠加；宠物计数/上限照旧。
+- 旧档无该字段 = 无召唤物（原行为）；坏条目跳过不报错。测试：tests/summon-save.test.ts、e2e tests/e2e/summon-save-verify.mjs。
+
 ## 召唤物移动速度 = 英雄速度（feat/summon-regen）
 - 所有召唤物/诱惑宠物的跟随与追击速度改为实时读取 World.heroMoveSpeed()（= WORLD.heroSpeed × 英雄 spdMul，加速/减速挂 spdMul），原为 WORLD.baseSpeed×1.1。跟随距离逻辑不变。
 - 测试：tests/summon-speed.test.ts。

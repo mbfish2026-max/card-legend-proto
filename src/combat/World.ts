@@ -27,6 +27,8 @@ import { summonDisplayName, summonNameColor, summonOwnerLabel } from './summonLa
 
 export const CRIT_CHANCE = 0.15, CRIT_MULT = 1.8;
 export interface Input { dx: number; dy: number; use?: boolean; step?: number; /** false 时关闭自动普攻；缺省/true 保持原行为 */ autoAttack?: boolean }
+/** 召唤物存档：id = 召唤物/原怪 UnitDef id；pet = 诱惑宠物；base = sBase（未继承的原公式属性）；hpR = 当前血量比例 */
+export interface SummonSave { id: string; pet?: boolean; sLv: number; sKills: number; base: { hp: number; atk: number; def?: number; start: number; name: string }; hpR: number; level?: number; def?: number; mdef?: number }
 export interface SaveData {
   v: 1; cls: ClassId; level: number; exp: number; gold: number; pots: number[];
   equip: Partial<Record<EquipSlot, InvItem>>; bag: InvItem[]; floorIndex: number; kills: number; nextUid: number;
@@ -46,6 +48,8 @@ export interface SaveData {
   storage?: InvItem[]; skillOrder?: string[]; ringQ?: RingQuest | null; ringDone?: number;
   /** 合击版 #1 英雄（伙伴）；缺省 = 旧档/未领取 */
   companion?: CompanionState | null;
+  /** feat/summon-regen：在场召唤物/诱惑宠物（可选；旧档缺省 = 无，按现状）。不改其它字段含义 */
+  summons?: SummonSave[];
   /** 装备结构版本：缺省/1 = 单戒单镯旧档，2 = 双戒双镯 */
   eqV?: number;
   /** R22 经验曲线版本：缺省=1（旧线性），2=官方形状 */
@@ -222,6 +226,21 @@ export class World {
     this.spawnHero();
     this.loadFloor(save ? Math.min(save.floorIndex, this.floors.length - 1) : 0);
     if (save?.town && TOWNS[save.town]) this.enterTown(save.town, true);
+    if (save) this.restoreSummons(save.summons);
+  }
+  /** 读档恢复召唤物：英雄身后、脱战、名字/颜色按等级重算；非法/未知条目跳过；已在场的不叠加 */
+  restoreSummons(list: unknown) {
+    const h = this.hero; if (!h || !Array.isArray(list) || this.units.some(u => u.summon && u.alive && !u.decoy)) return;
+    for (const [k, r] of (list as SummonSave[]).entries()) try {
+      if (!r || typeof r.id !== 'string' || !r.base || !(r.base.hp > 0)) continue;
+      const d = r.pet ? ENEMIES[r.id] : this.summonDefs.find(x => x.id === r.id); if (!d) continue;
+      const u = this.spawn({ ...d, level: r.level ?? d.level }, 'ally', h.x - h.facing * (110 + k * 60), WORLD.summonLane);
+      Object.assign(u, { summon: true, ai: 'chase', facing: h.facing, combatT: -1e9 });
+      if (r.pet) Object.assign(u, { pet: true, boss: undefined });
+      if (r.def !== undefined) u.def = r.def; if (r.mdef !== undefined) u.mdef = r.mdef;
+      u.sLv = Math.max(0, Math.min(SUMMON_MAX_LV, r.sLv | 0)); u.sKills = r.sKills | 0; u.sBase = { ...r.base };
+      u.hp = u.maxHp = 1; this.applySummonLv(u); u.hp = Math.max(1, Math.round(u.maxHp * Math.min(1, Math.max(0, r.hpR ?? 1))));
+    } catch { /* 坏条目忽略，不影响其它存档数据 */ }
   }
   /** 新档：出生在新手村（银杏村） */
   startInVillage() { this.enterTown('xinshou', true); }
@@ -1355,7 +1374,7 @@ export class World {
     this.events.push({ type: 'combo', id: cb?.id ?? 'placeholder', name: cb?.name ?? '合击', source: h.uid, partner: u.uid, target: t.uid, amount: dealt, hits: targets.length, affected, statusUntil }, { type: 'log', text: `合击「${cb?.name ?? '合击'}」造成 ${dealt} 伤害`, color: 'green' });
   }
   toSave(): SaveData {
-    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, town: this.town, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, townsSeen: [...this.townsSeen], reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], ringQ: this.ringQ, ringDone: this.ringDone, eqV: EQUIP_VERSION, expV: EXP_VERSION, bossCd: Object.fromEntries(Object.keys(this.bossCdUntil).map(k => [k, this.bossCdLeft(+k)]).filter(e => (e[1] as number) > 0)), mineCd: Object.fromEntries(Object.keys(this.mineCdUntil).map(k => [k, this.mineCdLeft(+k)]).filter(e => (e[1] as number) > 0)), companion: this.companion ? JSON.parse(JSON.stringify(this.companion)) : null  };
+    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, town: this.town, kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, townsSeen: [...this.townsSeen], reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], ringQ: this.ringQ, ringDone: this.ringDone, eqV: EQUIP_VERSION, expV: EXP_VERSION, bossCd: Object.fromEntries(Object.keys(this.bossCdUntil).map(k => [k, this.bossCdLeft(+k)]).filter(e => (e[1] as number) > 0)), mineCd: Object.fromEntries(Object.keys(this.mineCdUntil).map(k => [k, this.mineCdLeft(+k)]).filter(e => (e[1] as number) > 0)), companion: this.companion ? JSON.parse(JSON.stringify(this.companion)) : null, summons: this.units.filter(u => u.summon && u.alive && !u.decoy && u.sBase).map(u => ({ id: u.id, ...(u.pet ? { pet: true } : {}), sLv: u.sLv ?? 0, sKills: u.sKills ?? 0, base: { ...u.sBase! }, hpR: u.maxHp > 0 ? u.hp / u.maxHp : 1, level: u.level, ...(u.pet ? { def: u.def, mdef: u.mdef } : {}) }))  };
   }
 
   /** 点按一格：滑行中的按键全部排队（同向最多 10 格，反向则替换队列），每次按键都会走一格 */
