@@ -34,3 +34,6 @@
 | 道士 | 继承+移速 | 11 | 22 | 5 | 9/9 |
 
 道士最差种子 34→22、单层 7→5，达到单层 ≤5 门槛；战士不受影响（无召唤）。
+
+## 3. 验证（合并 origin/main e7f96bd 之后）
+tsc 0；npm test 全过（2515 ok）；build 0；e2e balance-battle / hj-battle / chuanshi / mobile-skills / summon-regen / summon-save / card-scale / ground-aura 全过，控制台报错 0。
