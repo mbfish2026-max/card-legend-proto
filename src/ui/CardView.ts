@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { Unit } from '../combat/types';
 import { FX, FONT, GROUND_Y } from '../data/fx';
 import { equipLook } from './EquipLayers';
+import { fitSummonName, summonNameParts } from '../combat/summonLabel';
 import { SWING_SCALE, WINDUP_SCALE, HIT_SCALE, breathScaleY } from './cardMotion';
 
 const FALLBACK: Record<string, number> = { hero: 0x3366cc, deer: 0x887744, wolf: 0x777766, skeleton: 0xcccccc, zombie: 0x557744, boss_lich: 0x442255 };
@@ -37,7 +38,7 @@ export class CardView extends Phaser.GameObjects.Container {
   constructor(scene: Phaser.Scene, public unit: Unit) {
     super(scene, unit.x, GROUND_Y);
     const c = { ...DEFAULT_CARD, ...(unit.card ?? {}) };
-    const w = this.w = c.w, ch = this.cardH = c.h, barH = Math.round(ch * 0.22);
+    const w = this.w = c.w, ch = this.cardH = c.h, barH = this.barH = Math.round(ch * 0.22);
     this.artFacing = c.artFacing; this.baseTint = (c as any).tint;
     // 合击版 A1：点击/触屏点怪物卡 = 指定英雄攻击目标（官方 Ctrl+W）。只发场景事件，不触发走位
     if (unit.team === 'enemy') this.setSize(w, ch).setInteractive(new Phaser.Geom.Rectangle(0, 0, w, ch), Phaser.Geom.Rectangle.Contains)
@@ -141,10 +142,21 @@ export class CardView extends Phaser.GameObjects.Container {
     if (this.art instanceof Phaser.GameObjects.Image) this.art.setFlipX(this.unit.facing !== this.artFacing);
     this.lvlText.setText(String(this.unit.level));
     // 召唤物升级：名字带等级、颜色蓝色逐级加深
-    if (this.unit.summon && this.nameText.text !== this.unit.name) this.nameText.setText(this.unit.name).setColor(this.unit.nameColor ?? '#fff');
+    if (this.nameKey !== this.unit.name + '|' + !!this.unit.sBase) this.relabel();
     this.statusTint();
     this.hpText.setText(`${Math.max(0, Math.ceil(this.unit.hp))}/${this.unit.maxHp}`);
     this.hpFill.width = Math.max(0, this.barW * Math.max(0, this.unit.hp) / this.unit.maxHp);
+  }
+  private nameKey = ''; private barH = 0;
+  /** 名字：召唤物「骷髅·3级（道士）的宠物」按卡宽自适应（缩字号→两行→截断），底边贴血条上沿向上排，不压血条/等级圆标 */
+  private relabel() {
+    const u = this.unit, t = this.nameText; this.nameKey = u.name + '|' + !!u.sBase;
+    t.setColor(u.nameColor ?? '#fff');
+    if (!u.sBase) { t.setFontSize(12).setOrigin(1, 0).setPosition(this.w / 2 - 4, -this.barH + 3).setText(u.name); return; }
+    const own = u.name.startsWith(u.sBase.name + '·') ? u.name.slice(u.sBase.name.length + 1) : '';
+    const m = /^(\d+)级（(.*)）的宠物$/.exec(own), parts = m ? summonNameParts(u.sBase.name, +m[1], m[2]) : [u.name, ''] as [string, string];
+    const f = fitSummonName(parts, (x, sz) => t.setFontSize(sz).setText(x).width, { max: 12, min: 10, maxW: this.barW - 2 });
+    t.setFontSize(f.size).setAlign('right').setOrigin(1, 1).setPosition(this.w / 2 - 3, -12).setText(f.lines.filter(Boolean).join('\n'));
   }
   /** 移动时上下起伏，停下时立绘待机呼吸（只缩放立绘，不动卡框） */
   anim(t: number) {

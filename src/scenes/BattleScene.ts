@@ -23,7 +23,7 @@ import { PanelMode } from '../ui/Panel';
 import { TOWNS, TOWN_GATE_X, NPC_ART, STREET_ART_K, streetDoors, TOWN_LAYOUT, townWidth, NPC_SCALE } from '../data/towns';
 import { TOWN_ASSETS } from '../assets-manifest';
 import * as fx from '../ui/Fx';
-import { Settings, SaveStore } from '../settings';
+import { Settings, SaveStore, Slots } from '../settings';
 import type { UIScene } from './UIScene';
 import { playMusic } from '../music';
 import { FxQuality } from '../ui/Fx';
@@ -78,6 +78,7 @@ export class BattleScene extends Phaser.Scene {
     this.add.rectangle(6, 300, 12, 600, 0x000000, 0.8); this.rightWall = this.add.rectangle(W - 6, 300, 12, 600, 0x000000, 0.8);
     const lv = Number(qs.get('lv')) || 1;
     this.world = new World(Math.random, lv, FLOORS, data?.cls ?? 'warrior', data?.save);
+    try { this.world.ownerName = Slots.meta().slots[Slots.active()]?.name; } catch { /* 只读：读不到存档槽名 → 召唤物名字用职业名 */ }
     if (!data?.save) this.world.grantStarterKit(); // 任务C：新角色 3 张回城卷 [适配]
     this.world.requireUse = true;
     if (!data?.save && !qs.get('floor')) this.world.startInVillage(); // 新档出生在新手村

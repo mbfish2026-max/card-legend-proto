@@ -23,6 +23,7 @@ import { TOWNS, townFloors, townOfFloor, returnTownOf, STORAGE_SIZE, townWidth, 
 import { CONSUMABLE } from '../data/items-town';
 import { WOMA_FLOOR_NAME, WOMA_SECTIONS, WOMA_DOOR_X, HORN_MOB_CHANCE, HORN_MOBS, RING_MIN_LEVEL, RingQuest, ringReward, IDENT_MIN_LEVEL, IDENT_PRICE, IDENT_POOL, identValue } from '../data/r14b';
 import { QUESTS, ACHIEVES, QuestDef, AchieveDef } from '../data/quests';
+import { summonDisplayName, summonNameColor, summonOwnerLabel } from './summonLabel';
 
 export const CRIT_CHANCE = 0.15, CRIT_MULT = 1.8;
 export interface Input { dx: number; dy: number; use?: boolean; step?: number; /** false 时关闭自动普攻；缺省/true 保持原行为 */ autoAttack?: boolean }
@@ -98,8 +99,8 @@ export const SKELETON_OFFICIAL = { hp: [60, 84, 120, 168, 228, 300, 384, 480], a
  *  [适配] 升级按「召出后主角+召唤物总击杀数」（官方按击杀怪物等级总和，神兽 0→1 级需 600，各级阈值 未查到）；累计阈值见 SUMMON_LV_KILLS。 */
 export const SUMMON_MAX_LV = 7;
 export const SUMMON_LV_KILLS = [0, 10, 25, 45, 75, 115, 165, 225];
-/** [适配] 名字颜色：0 级白（官方白名），1–7 级蓝色逐级加深 */
-export const SUMMON_NAME_COLORS = ['#ffffff', '#a8d8ff', '#7cc0ff', '#4fa3ff', '#2f86f5', '#1f68e0', '#1a4cc4', '#1a33a6'];
+/** [适配] 名字颜色：0 级白（官方白名），1–7 级蓝色逐级加深（道士/法师共用，见 summonLabel.ts） */
+export { SUMMON_NAME_COLORS } from './summonLabel';
 /** [适配] 治愈术主角满血时治疗召唤物的范围：官方未查到，沿用群体治愈术 170px */
 export const HEAL_SUMMON_RANGE = 170;
 /** [适配] 自动施放召唤技能：已有召唤物且血量 ≥ 该比例时跳过（不耗魔、不占公共间隔）；低于则自动重召（= 回满血/替换）。手动不受限 */
@@ -228,6 +229,9 @@ export class World {
   /** 兼容旧接口：已拾取的装备（背包+身上） */
   get inventory() { return [...Object.values(this.equip), ...this.bag].filter((x): x is InvItem => !!x && !!x.slot); }
   get classDef() { return CLASSES[this.cls]; }
+  /** 存档槽角色名（表现层只读注入，不入存档）；空 → 召唤物名字用职业名 */
+  ownerName?: string;
+  get ownerLabel() { return summonOwnerLabel(this.ownerName, this.cls); }
   /** 职业全部技能（含被动） */
   get skillPool(): SkillDef[] { return this.classDef.skills; }
   /** 快捷栏主动技能：去掉被动后按顺序重标 F1..Fn */
@@ -612,9 +616,10 @@ export class World {
   }
   /** 召唤物等级 → 属性（相对初始等级按官方 HP/攻击上限比例放大）、名字「骷髅·3级」、名字颜色 */
   applySummonLv(u: Unit) {
-    const b = u.sBase!, L = u.sLv ?? 0, O = SKELETON_OFFICIAL, hm = summonMulAt(this.level, WORLD.summonHpMul), am = summonMulAt(this.level, WORLD.summonAtkMul), r = u.maxHp > 0 ? u.hp / u.maxHp : 1;
+    // 诱惑之光宠物：不吃骷髅的召唤物整体倍率（只按等级比例成长）
+    const b = u.sBase!, L = u.sLv ?? 0, O = SKELETON_OFFICIAL, hm = u.pet ? 1 : summonMulAt(this.level, WORLD.summonHpMul), am = u.pet ? 1 : summonMulAt(this.level, WORLD.summonAtkMul), r = u.maxHp > 0 ? u.hp / u.maxHp : 1;
     u.maxHp = u.hp = Math.round(hm * b.hp * O.hp[L] / O.hp[b.start]); u.hp = Math.round(u.maxHp * r); u.atk = Math.round(am * b.atk * O.atkMax[L] / O.atkMax[b.start]);
-    u.name = `${b.name}·${L}级`; u.nameColor = SUMMON_NAME_COLORS[L];
+    u.name = summonDisplayName(b.name, L, this.ownerLabel); u.nameColor = summonNameColor(L);
   }
   private summonKill() {
     for (const sm of this.units) if (sm.summon && sm.alive && sm.sBase) {
@@ -1066,6 +1071,8 @@ export class World {
       else if (c.res === 'high') { this.events.push({ type: 'charm', uid: t.uid, result: 'high' }, { type: 'log', text: `诱惑失败：${t.name}等级高于自身 ${CHARM.levelGap} 级以上` }); }
       else if (this.rng() < c.p) {
         Object.assign(t, { team: 'ally', summon: true, pet: true, petUntil: this.time + CHARM.duration(slv), ai: 'chase', y: WORLD.summonLane, boss: undefined, poisonUntil: 0, redUntil: 0, slowUntil: 0, facing: h.facing });
+        // 法师宠物升级同道士召唤物：初始 = 技能等级（最高 3），杀怪升级、名字带等级与蓝色
+        const L = Math.min(3, slv); t.sLv = L; t.sKills = 0; t.sBase = { hp: t.maxHp, atk: t.atk, start: L, name: t.name }; this.applySummonLv(t);
         this.events.push({ type: 'charm', uid: t.uid, result: 'ok' }, { type: 'log', text: `诱惑成功：${t.name}成为宠物（${CHARM.duration(slv)} 秒后叛变）`, color: 'green' });
       } else {
         if (t.ai !== 'chase') { t.ai = 'chase'; this.events.push({ type: 'aggro', uid: t.uid }); }
@@ -1512,6 +1519,7 @@ export class World {
     for (const p of this.pets) if ((p.petUntil ?? 0) <= this.time) {
       // 叛变（资料站：到时变回敌人）[适配] 城镇内直接离开
       if (this.town) { p.alive = false; this.events.push({ type: 'death', uid: p.uid }, { type: 'log', text: `${p.name}离开了` }); continue; }
+      if (p.sBase) { const r = p.hp / p.maxHp; Object.assign(p, { name: p.sBase.name, maxHp: p.sBase.hp, atk: p.sBase.atk, nameColor: undefined, sBase: undefined, sLv: undefined, sKills: undefined }); p.hp = Math.max(1, Math.round(p.maxHp * r)); }
       Object.assign(p, { team: 'enemy', summon: false, pet: false, petUntil: undefined, ai: 'chase', y: 0, homeX: p.x });
       this.events.push({ type: 'charm', uid: p.uid, result: 'betray' }, { type: 'aggro', uid: p.uid }, { type: 'log', text: `${p.name}叛变了！` });
     }
