@@ -318,7 +318,7 @@ const free = (w: World) => w.skills.map(() => 0);
 { // 治愈术：主角未满血治主角；满血治 170px 内最残召唤物；都满不施放（不耗蓝、不占公共间隔）
   const w = mk([{ id: 'orc', x: 3000 }], [], 'taoist', 30); const h = w.hero!; w.cast(idx(w, 'summon_skeleton'), free(w)); const sm = w.summon!; sm.x = h.x + 100;
   const hi = idx(w, 'heal'); h.mp = h.maxMp = 9999;
-  h.hp = h.maxHp - 50; sm.hp = 10; let cds = free(w); ok(w.cast(hi, cds).ok, '主角未满血：治愈术可施放'); run(w, 3); ok(h.hp === h.maxHp && sm.hp === 10, '主角未满血优先治主角（召唤物不回血）');
+  h.hp = h.maxHp - 50; sm.hp = 10; let cds = free(w); ok(w.cast(hi, cds).ok, '主角未满血：治愈术可施放'); run(w, 3); ok(h.hp === h.maxHp && sm.hp <= 10 + sm.maxHp * WORLD.summonRegen * WORLD.summonOocMul * 3 + 1, '主角未满血优先治主角（召唤物未被治疗，只有自身脱战回血）');
   h.hp = h.maxHp; sm.hp = 10; cds = free(w); const mp0 = h.mp; ok(w.cast(hi, cds).ok, '主角满血：治愈术施放到召唤物'); run(w, 3); ok(sm.hp > 10 && h.mp < mp0, `召唤物回血 10→${Math.round(sm.hp)}`);
   h.hp = h.maxHp; sm.hp = 10; sm.x = h.x + 400; cds = free(w); const r0 = w.cast(hi, cds) as any; ok(!r0.ok, '召唤物超出 170px：不施放');
   sm.x = h.x + 100; sm.hp = sm.maxHp; h.hp = h.maxHp; cds = free(w); const mp1 = h.mp; const r = w.cast(hi, cds) as any;
@@ -1108,7 +1108,7 @@ console.log('# 诱惑之光');
     ok(r.ok && e.team === 'ally' && !!e.pet && !!e.summon && w.pets.length === 1 && w.summon === undefined, '成功：转为宠物，不占骷髅位');
     ok(e.hp === 100 && w.hero!.mp! < mp, '无伤害，扣魔');
     ok(!JSON.stringify(w.toSave()).includes('"pet"'), '宠物不存档');
-    const nm = e.name, col = e.nameColor, hp = e.maxHp, atk = e.atk; w.time += 1e5; run(w, 2); ok(e.alive && e.team === 'ally' && !!e.pet && !!e.summon && e.name === nm && e.nameColor === col && e.maxHp === hp && e.atk === atk && !w.drainEvents().some((v: any) => v.type === 'charm'), '不叛变：快进 10 万秒后仍为宠物，名字/颜色/属性不变'); }
+    w.drainEvents(); const nm = e.name, col = e.nameColor, hp = e.maxHp, atk = e.atk; w.time += 1e5; run(w, 2); ok(e.alive && e.team === 'ally' && !!e.pet && !!e.summon && e.name === nm && e.nameColor === col && e.maxHp === hp && e.atk === atk && !w.drainEvents().some((v: any) => v.type === 'charm'), '不叛变：快进 10 万秒后仍为宠物，名字/颜色/属性不变'); }
   { const { w, e, i } = setup('deer'); w.rng = () => 0.99; const r = w.cast(i, cds()); const evs = w.drainEvents();
     ok(r.ok && e.team === 'enemy' && evs.some(v => v.type === 'charm' && v.result === 'fail'), '失败：诱惑失败事件，仍为敌'); }
   { const { w, e, i } = setup('skeleton'); w.rng = () => 0; w.cast(i, cds()); const evs = w.drainEvents();
