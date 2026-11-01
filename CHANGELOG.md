@@ -1,5 +1,11 @@
 # CHANGELOG
 
+
+## feat/no-death-drop 死亡无损失
+
+- 用户要求「死亡不再掉落任何东西」。全仓排查：唯一死亡惩罚是 World.respawn 扣 10% 金币（WORLD.deathGoldLoss=0.1，BattleScene 死亡提示文案）；无掉装备/背包/经验/耐久惩罚（本作无耐久）。已删除扣金币与该常量，提示改为「无损失」，README 同步。复活流程保留，deaths 计数口径不变。
+- tests/no-death-drop.test.ts（3 职业：金币/经验/等级/背包/装备/药水/层/技能不变，死亡数 +1，读档一致）；battle.test 复活断言改为金币不变。
+
 ## 手机版：装备对比面板点外部关闭 feat/mobile-tapclose
 - 手机（IS_MOBILE）角色/背包界面：点装备弹出「身上/查看中」对比面板后，点面板外空白处即关闭并取消选中。
 - 点面板内部不关；点其他装备格切换为对比该装备；按下到抬起移动 >8px（拖动/滚动）不算点击。

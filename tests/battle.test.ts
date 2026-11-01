@@ -202,7 +202,7 @@ const free = (w: World) => w.skills.map(() => 0);
 }
 { // 死亡复活 + 存档读档
   const w = mk([{ id: 'wolf', x: 3000 }], [], 'mage', 5); w.gold = 100; w.kill(w.hero!); ok(!w.hero, '主角死亡');
-  w.respawn(); ok(!!w.hero && w.hero.hp === w.hero.maxHp && w.gold === 90 && w.deaths === 1, '本层起点满血复活，损失 10% 金币');
+  w.respawn(); ok(!!w.hero && w.hero.hp === w.hero.maxHp && w.gold === 100 && w.deaths === 1, '本层起点满血复活，金币不损失');
   const w1 = new World(seeded(5), 7, FLOORS, 'taoist'); w1.gold = 321; w1.bag.push(w1.makeItem('tao_sword', 'rare')); w1.equipItem(0); w1.loadFloor(2);
   const json = JSON.stringify(w1.toSave()); const w2 = new World(seeded(6), 1, FLOORS, 'warrior', JSON.parse(json) as SaveData);
   ok(w2.cls === 'taoist' && w2.level === 7 && w2.gold === 321 && w2.floorIndex === 2 && w2.equip.weapon?.name.includes('极品') === true && w2.hero!.tao === w1.hero!.tao, '存档 JSON 往返：职业/等级/金币/层数/装备一致');

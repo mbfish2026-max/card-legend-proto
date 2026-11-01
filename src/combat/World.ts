@@ -520,11 +520,10 @@ export class World {
   /** 子层：返回同图群上一层（仅非战斗、已到达过该层时可用），出生在起点 */
   upLayer(): string { const p = prevLayerOf(this.floorIndex, this.floors); if (p < 0) return '没有上一层';
     if (this.town) return '城内不可用'; this.loadFloor(p); this.events.push({ type: 'log', text: `返回上一层：${this.floor.name}` }); return 'ok'; }
-  /** 主角死亡后：损失部分金币，在本层起点满血复活，本层怪物重置 */
+  /** 主角死亡后：无任何损失（金币/背包/装备/经验不变，no-death-drop），在本层起点满血复活，本层怪物重置 */
   respawn() { this.stepTarget = null; this.stepQueued = 0;
     if (this.hero) return;
     this.deaths++;
-    this.gold = Math.floor(this.gold * (1 - WORLD.deathGoldLoss));
     this.units = [];
     this.spawnHero();
     this.loadFloor(this.floorIndex);

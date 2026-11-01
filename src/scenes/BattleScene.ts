@@ -703,7 +703,7 @@ export class BattleScene extends Phaser.Scene {
     const ui = this.scene.get('UI');
     const dim = ui.add.rectangle(640, 300, 1280, 600, 0x300000, 0.5).setDepth(99);
     const t = ui.add.text(640, 260, '你 已 阵 亡', { fontFamily: FONT, fontSize: '64px', color: '#ff4444', fontStyle: 'bold', stroke: '#000', strokeThickness: 6 }).setOrigin(0.5).setDepth(100);
-    const t2 = ui.add.text(640, 330, `3 秒后在本层起点复活（损失 ${Math.round(WORLD.deathGoldLoss * 100)}% 金币）`, { fontFamily: FONT, fontSize: '20px', color: '#fff', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5).setDepth(100);
+    const t2 = ui.add.text(640, 330, '3 秒后在本层起点复活（无损失）', { fontFamily: FONT, fontSize: '20px', color: '#fff', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5).setDepth(100);
     this.overlay = [dim, t, t2];
     this.time.delayedCall(3000, () => { this.world.respawn(); this.handle(this.world.drainEvents()); });
   }
