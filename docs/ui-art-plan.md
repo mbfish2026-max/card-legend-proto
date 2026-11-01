@@ -102,17 +102,18 @@
 | lingfu_icon_s.png | 32×32 | 0/0/0/0 | 灵符货币小图标 32×32（价格旁、顶栏余额） |
 | lingfu_icon_l.png | 96×96 | 0/0/0/0 | 灵符货币大图标 96×96（充值档位卡、获得弹窗） |
 | ribbon_limited.png | 112×28 | 24/24/0/0 | 限时/热卖丝带（横向拉伸，燕尾两端 24px 不拉伸；文字代码渲染） |
-| badge_corner.png | 64×64 | 0/0/0/0 | 商品/档位卡右上角斜角标（固定尺寸，贴右上角；文字旋转 45° 由代码渲染） |
+| badge_corner.png | 40×40 | 0/0/0/0 | 商品格右上红色斜角丝带（不含文字），按 80 格原尺寸设计；setOrigin(1,0) 贴格子右上角，随格子等比 setDisplaySize(size/2) |
 | recharge_card_normal.png | 128×160 | 30/30/30/30 | 充值档位卡底（常态）；图标/价格/赠送文字由代码叠加 |
 | recharge_card_sel.png | 128×160 | 30/30/30/30 | 充值档位卡底（选中）；图标/价格/赠送文字由代码叠加 |
 | recharge_card_rec.png | 128×160 | 30/30/30/30 | 充值档位卡底（推荐）；图标/价格/赠送文字由代码叠加 |
-| goods_slot_normal.png | 80×80 | 18/18/18/18 | 灵符商城商品格底（常态）；卷轴/项链/血石等商品图标由代码叠加 |
-| goods_slot_sel.png | 80×80 | 18/18/18/18 | 灵符商城商品格底（选中）；卷轴/项链/血石等商品图标由代码叠加 |
-| goods_slot_soldout.png | 80×80 | 18/18/18/18 | 灵符商城商品格底（售罄灰态）；卷轴/项链/血石等商品图标由代码叠加 |
+| goods_slot_normal.png | 80×80 | 20/20/20/20 | 灵符商城/商店商品格（常态）：7px 铜金粗边+四角金三角角饰（10px）+不透明深色内底；对齐用户参考图；图标居中叠加 |
+| goods_slot_sel.png | 80×80 | 20/20/20/20 | 灵符商城/商店商品格（选中）：7px 铜金粗边+四角金三角角饰（10px）+不透明深色内底；对齐用户参考图；图标居中叠加 |
+| goods_slot_soldout.png | 80×80 | 20/20/20/20 | 灵符商城/商店商品格（售罄）：7px 铜金粗边+四角金三角角饰（10px）+不透明深色内底；对齐用户参考图；图标居中叠加 |
 | slot_bloodstone.png | 64×64 | 0/0/0/0 | 装备栏血石位空槽（与 slot 同 64 体系；中央暗纹宝石，等比缩放，不走九宫格） |
 | qframe_common.png | 32×32 | 5/5/5/5 | 品质框·普通（rarity=common）；细边 3px+内光，中心透明，叠在 slot/goods_slot 或图标之上，任意尺寸 nineslice |
 | qframe_magic.png | 32×32 | 5/5/5/5 | 品质框·精良（rarity=magic）；细边 3px+内光，中心透明，叠在 slot/goods_slot 或图标之上，任意尺寸 nineslice |
 | qframe_rare.png | 32×32 | 5/5/5/5 | 品质框·极品（rarity=rare）；细边 3px+内光，中心透明，叠在 slot/goods_slot 或图标之上，任意尺寸 nineslice |
+| lingfu_icon_xs.png | 16×16 | 0/0/0/0 | 价格前小灵符（显示 16~20px，与 12~16px 价格字等高） |
 
 说明：
 - 边距 0/0/0/0 的是固定比例图，用 Image + setDisplaySize 等比缩放，不走九宫格。
@@ -140,9 +141,9 @@
 |---|---|
 | lingfu_icon_s 32×32 / lingfu_icon_l 96×96 | 灵符货币图标，固定尺寸。小图用于价格旁和顶栏余额（显示 16~28px），大图用于充值档位卡和获得弹窗 |
 | ribbon_limited 112×28，L/R=24 | 限时/热卖/推荐丝带，燕尾两端不拉伸，只拉宽；文字由代码渲染（白或金字、黑描边） |
-| badge_corner 64×64，固定 | 卡片或格子右上角的斜角标；文字旋转 45°（`setAngle(45)`）由代码叠加 |
+| badge_corner 40×40，固定（第四轮由 64 改为 40） | 红色斜角丝带，不含文字，见 §3.4 |
 | recharge_card_normal / sel / rec 128×160，边距 30 | 充值档位卡底：常态 / 选中（亮金描边）/ 推荐（红框加红光，建议再配 ribbon_limited） |
-| goods_slot_normal / sel / soldout 80×80，边距 18 | 商品格底，通用于卷轴、项链、血石等各类商品。售罄态是去色压暗，图标也由代码 `setTint(0x777777)` 并把 alpha 设为 0.5 |
+| goods_slot_normal / sel / soldout 80×80，边距 20（第四轮重做，见 §3.4） | 商品格底，通用于卷轴、项链、血石等各类商品。售罄态是去色压暗，图标也由代码 `setTint(0x777777)` 并把 alpha 设为 0.5 |
 | 共用 | panel_frame（桌面）/ panel_frame_s（手机）、title_plate、tab_on/off（分类页）、divider_v（档位区与商品区之间）、btn_*（购买） |
 
 商城接入：充值档位和商品格都是九宫格 nineslice，内容（图标、名称、价格）放在同一个 Container 里叠加。长列表沿用 scrollList 加 mask 滚动。示意图是 `preview_extra.jpg` 的上半部分。商品价格、档位金额都是示意数字，不是需求。
@@ -168,7 +169,7 @@
 **切片**：qframe_common / qframe_magic / qframe_rare，尺寸 32×32，边距 5/5/5/5，中心透明。
 
 - 结构：1px 黑外描 → 2px 主色斜面（左上亮、右下暗）→ 1px 暗内线 → 1px 主色半透明内光。
-- 主色直接取 RARITY_NUM。
+- 主色取 RARITY_NUM，第四轮有调整，见 §3.4。
 - 各档只差颜色和高光强度：rare 左上高光略强。没有雕花，也没有厚角饰。
 
 **为什么只出一个尺寸**：边框只有约 3px，九宫格拉伸时边宽保持不变，32~96px 都能用同一张：
@@ -189,6 +190,53 @@
 
 预览图：`docs/ui-preview/preview_quality.jpg`，生成脚本 `build_quality.py`（追加到 slices.json）和 `compose_quality.py`。重建顺序：build_extra.py → build_quality.py → pack_atlas.py。
 
+### 3.4 第四轮：对齐用户灵符商城参考图 + 品质框微调
+
+**goods_slot_normal / sel / soldout（80×80，边距 20/20/20/20，尺寸不变；边距由 18 改为 20）**
+
+- 结构从外到内：
+  1. 1px 黑外描；
+  2. 7px 铜金粗边，斜面处理，左上亮、右下暗，最外 1px 是高光线；
+  3. 1px 暗内线；
+  4. 四角各一个金色直角三角角饰，腰长 10px；
+  5. **不透明深色内底**：常态 #1E120C、选中 #24160C、售罄 #141416。
+- 边距 20 = 9px 边框 + 10px 角饰 + 1px 余量，九宫格拉伸时角饰不变形。中心是纯色，拉伸不会糊。
+- 三种状态：
+  - 选中：边框换亮金（#FFD46E / #BA8228），角饰也提亮；
+  - 售罄：灰黑冷色格（#4E5054 / #2C2D30），图标由代码去色，alpha 0.5，价格文字改成「售罄」。
+- 推荐显示 96~110px（参考图约 108px），最小 48px。
+- 背包、装备栏的普通 slot 不变。商城和商店用 goods_slot。
+
+**badge_corner（40×40，固定，透明底）**：红色斜带，从上边 x≈14 斜向右边 y≈26，带宽约 7px，带深色描边和一条亮线，不烘焙文字。
+
+- 叠放：`add.image(slotX + size, slotY, 'ui', 'badge_corner').setOrigin(1, 0).setDisplaySize(size/2, size/2)`，放在图标之上。
+- 设计基准是 80 格，原尺寸 40 即格宽的一半。
+- 文字需要时由代码旋转 45° 叠加，建议不写字，只做「限时/热卖」标识，和参考图一致。
+
+**lingfu_icon_xs（16×16，新增）**：竖向黄符纸加红色朱砂纹，用于价格前的小图标。
+
+- 显示 16~20px，与 12~16px 的价格字等高。
+- 叠放：图标 `setOrigin(0, 0.5)` 和价格文字放在同一基线行，图标在左，文字左对齐，间距 4px。
+- lingfu_icon_s（32）保留给顶栏余额，lingfu_icon_l（96）保留给充值卡。
+
+**品质框微调**（qframe 仍是 32×32，边距 5/5/5/5，结构和尺寸都不变）
+
+| key | 代码色值（Panel.ts:42 RARITY_NUM） | 切片主色 | 差异原因 |
+|---|---|---|---|
+| common | 0x8a8a8a | **0xb4b4b4** | 0x8a 在暗底和暗金底格上偏闷，提亮后仍是中性灰，可以识别 |
+| magic | 0x3a7aff | 0x3a7aff | 不变 |
+| rare | 0xffa020 | 0xffa020 | 主色不变；最外 1px 黑描边改为亮暖金 #FFBE50，内光 alpha 70→120。发光做在切片内部，不另出 qglow 叠层，九宫格结构和尺寸都不变，接入方式也不变 |
+
+- 代码里的 RARITY_NUM 描边色**不需要改**。改用 qframe 以后，描边色以切片为准。
+- 如果仍保留 rectangle 描边的地方，可以把 common 改成 0xb4b4b4 以保持一致。这一条由系统开发决定，本分支不改代码。
+
+预览：
+- `preview_shop_ref.jpg`：左边是用户参考图，右边是新切片按同样布局拼的两行十格。
+- `preview_extra.jpg`：商城示意已更新。
+- `preview_quality.jpg`：已更新。
+
+脚本 `build_shop.py`、`compose_shop_ref.py`。重建顺序：build_extra → build_quality → build_shop → pack_atlas → compose_*。
+
 ## 4. 接入建议（给系统开发）
 
 1. **加载**：在 assets-manifest 里加 atlas `ui_atlas`（png/webp + json），帧名就是切片文件名去掉 .png。样例见 `docs/ui-preview/atlas_ui_preview.png/.json`，这是 512×356 的简易 shelf 打包，正式打包建议用 TexturePacker 或 free-tex-packer，padding 2、extrude 1，防止 NineSlice 采样渗色。
@@ -207,23 +255,23 @@
 - MobileHud 是 DOM/CSS 写的，可以直接用同一批 PNG 做 `border-image`，例如 `border-image: url(btn_normal.png) 14 16 fill / 14px 16px`，这里的数字就是 §3 的边距。血条用 bar_frame 做 border-image，内层 div 用 bar_fill_* 作背景，并设 background-size: 100% 100%。
 - 预览 `preview_844x390.jpg` 是把 1280 的布局等比缩到 0.54 后合成的，用来看拉伸效果，不代表最终的手机排版。
 
-## 6. 包体积与加载评估（实测，第三轮更新）
+## 6. 包体积与加载评估（实测，第四轮更新）
 
 | 项 | 实测 |
 |---|---|
-| 43 个切片 PNG 合计 | **320,835 B**（第一轮 25 个 160,299 B；第二轮 15 个 159,847 B；第三轮品质框 3 个 689 B） |
+| 44 个切片 PNG 合计 | **308,291 B**（第四轮重做 goods_slot×3（共 8,927 B，原约 20.9 KB）、badge_corner 531 B；新增 lingfu_icon_xs 497 B；品质框 3 个 698 B） |
 | 其中最大 | panel_frame 62,460 B；recharge_card_* 三张约 28.7~29.1 KB；dialog_frame 28,301 B；panel_frame_s 15,031 B |
-| 合并 atlas（512×746 PNG，PIL optimize） | **305,077 B**（docs/ui-preview/atlas_ui_preview.png，帧表 .json） |
-| 同 atlas WebP 无损 | **210,322 B**（atlas_ui_preview_lossless.webp） |
-| 同 atlas WebP q90 / alpha95 | **76,022 B**（atlas_ui_preview_q90.webp） |
-| atlas 显存（RGBA） | 512×746×4 = **1,527,808 B（约 1.46 MB）** |
+| 合并 atlas（512×718 PNG，PIL optimize） | **295,031 B**（docs/ui-preview/atlas_ui_preview.png，帧表 .json） |
+| 同 atlas WebP 无损 | **202,136 B**（atlas_ui_preview_lossless.webp） |
+| 同 atlas WebP q90 / alpha95 | **74,338 B**（atlas_ui_preview_q90.webp） |
+| atlas 显存（RGBA） | 512×718×4 = **1,470,464 B（约 1.40 MB）** |
 | 对比：现有 public/assets/ui | 564,581 B；整个 public/assets 约 314 MB（第一轮 du -sh） |
 | 生成源材质 docs/ui-preview/src | 461,604 B（只在 docs，不进 public/dist） |
 
 compress-assets（vite.config.ts 里的 `compressAssets`）现在只处理 portraits/bg/map 和 ui/bg_dungeon.jpg，**ui 目录不在范围内**。
 
 建议（需要系统开发改代码，本分支不改）：
-1. 正式打包成 `assets/ui/ui_atlas.png` + json，43 个文件变成 1 次请求。预览 atlas 用的是简易 shelf 打包，有空隙；正式打包建议用 TexturePacker 或 free-tex-packer，padding 2、extrude 1，可以压到 512×512 左右。
-2. **只用无损或 q≥90**：在 compressAssets 的 targets 里加 ui_atlas，用 `{ lossless: true }`（实测 210 KB）或 `{ quality: 90, alphaQuality: 95 }`（实测 76 KB）。不要套用立绘的 80/85 或背景的 72，金边细线会出现色带。同时要改 loader.ts `assetUrl()` 的正则，让 `assets/ui/ui_atlas.png` 映射到 .webp。
+1. 正式打包成 `assets/ui/ui_atlas.png` + json，44 个文件变成 1 次请求。预览 atlas 用的是简易 shelf 打包，有空隙；正式打包建议用 TexturePacker 或 free-tex-packer，padding 2、extrude 1，可以压到 512×512 左右。
+2. **只用无损或 q≥90**：在 compressAssets 的 targets 里加 ui_atlas，用 `{ lossless: true }`（实测 202 KB）或 `{ quality: 90, alphaQuality: 95 }`（实测 74 KB）。不要套用立绘的 80/85 或背景的 72，金边细线会出现色带。同时要改 loader.ts `assetUrl()` 的正则，让 `assets/ui/ui_atlas.png` 映射到 .webp。
 3. **加载时机**：ui_atlas 放在 Boot/Title 预加载，一次加载，开始界面就要用。商城切片已经并进同一张 atlas，额外只有约 +160 KB PNG，不单独懒加载。以后商城如果有大 banner 或活动图，再单独打 atlas，打开商城时懒加载。
-4. 增量：WebP 无损约 +210 KB，q90 约 +76 KB，相对 314 MB 的资源可以忽略。显存 1.46 MB，手机端也可以接受。
+4. 增量：WebP 无损约 +202 KB，q90 约 +74 KB，相对 314 MB 的资源可以忽略。显存 1.40 MB，手机端也可以接受。
