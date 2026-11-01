@@ -27,6 +27,9 @@ export const WORLD = {
   exitRadius: 90,
   exitMargin: 160,
   mpRegen: 4,                  // 每秒回蓝
+  summonRegen: 0.005,         // [适配] 召唤物/宠物基础回血：每秒最大血量 0.5%（原无回血；官方未查到）
+  summonOocSec: 4,             // [适配] 召唤物 4 秒内未攻击、未被攻击 = 脱战
+  summonOocMul: 5,             // [适配] 脱战后回血 ×5（每秒 2.5%，约 40 秒回满）
   hpRegen: 1,                  // 每秒回血（脱战时 ×5）
   defFactor: 0.6,              // 伤害 = 原始 − 防御×该值（最低保留 dmgFloor）。feat/balance-battle：方案 B 的 0.5 在 merge balance-sys 后回退为 0.6（balance-sys 怪物攻击公式按 0.6×防御校准，0.5 会让战士死亡 ×10+）[适配]
   dmgFloor: 0.3,               // 保底伤害比例。feat/balance-battle：20%→30% [适配]（balance-plan B）

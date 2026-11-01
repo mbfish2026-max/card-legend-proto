@@ -27,6 +27,8 @@ export interface Unit extends UnitDef {
   companion?: boolean;
   /** 诱惑之光宠物（summon=true 且 pet=true）；petUntil = 叛变时间。不存档 */
   pet?: boolean; petUntil?: number;
+  /** 召唤物最近一次攻击/被攻击的 World.time（脱战回血判定，不存档） */
+  combatT?: number;
   /** 召唤物仇恨：被召唤物打过一次后记录其 uid；主角离怪 > WORLD.summonAggroNear 时只追打该召唤物（召唤物死亡自动失效） */
   aggroUid?: number;
   /** 传世替身法符：替身单位（不攻击、不移动，到时消散；不存档） */

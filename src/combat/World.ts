@@ -552,6 +552,12 @@ export class World {
    * magic = 魔法伤害占比（0 物理 / 1 魔法 / 0.5 沃玛教主混合）。官方：物理只算防御，魔法只算魔御（MAC）。
    * 物理部分 − 防御×defFactor，魔法部分 − 魔御×defFactor，各自保底 20%。ignoreDef（绿毒）两者都无视。
    */
+  /** 召唤物统一回血（骷髅/金甲骷髅/神兽/赶尸/诱惑宠物等所有 summon）：基础 summonRegen；summonOocSec 秒内未攻击也未被攻击 → ×summonOocMul [适配] */
+  summonOocNow(u: Unit) { return this.time - (u.combatT ?? -1e9) >= WORLD.summonOocSec; }
+  summonRegen(u: Unit, dt: number) {
+    if (!u.alive || u.hp >= u.maxHp || (u.poisonUntil && u.poisonUntil > this.time)) return;
+    u.hp = Math.min(u.maxHp, u.hp + u.maxHp * WORLD.summonRegen * (this.summonOocNow(u) ? WORLD.summonOocMul : 1) * dt);
+  }
   damage(target: Unit, amount: number, source?: Unit, canCrit = true, dot = false, ignoreDef = false, magic = 0) {
     if (!target.alive) return 0;
     const crit = canCrit && this.rng() < (source?.isHero ? this.critChance() : CRIT_CHANCE);
@@ -566,6 +572,7 @@ export class World {
     if (target.armorUntil && target.armorUntil > this.time) amount *= 1 - (target.armorReduce ?? 0.5);
     amount = Math.max(1, Math.round(amount));
     target.hp -= amount;
+    if (target.summon) target.combatT = this.time; if (source?.summon) source.combatT = this.time; // 召唤物脱战判定
     if (target.team === 'enemy' && (source?.summon || source?.companion) && source.alive) target.aggroUid = source.uid; // 召唤物/英雄打一下即记仇
     if (target.team === 'enemy' && source?.isHero) this.heroTargetUid = target.uid; // 合击「同一目标」判定用（不耗随机数）
     if (target.team === 'enemy' && target.ai !== 'chase') { target.ai = 'chase'; this.events.push({ type: 'aggro', uid: target.uid }); }
@@ -1527,6 +1534,7 @@ export class World {
       this.events.push({ type: 'charm', uid: p.uid, result: 'betray' }, { type: 'aggro', uid: p.uid }, { type: 'log', text: `${p.name}叛变了！` });
     }
     const allies = this.units.filter(u => u.summon && u.alive);
+    for (const sm of allies) this.summonRegen(sm, dt);
     for (const [k, sm] of allies.entries()) if (h) {
       const tg = this.alive('enemy').filter(e => e.ai === 'chase' && Math.abs(e.x - h.x) < (e.aggroUid === sm.uid ? WORLD.leashRange : 700)).sort((a, b) => Math.abs(a.x - sm.x) - Math.abs(b.x - sm.x))[0];
       if (tg) {
