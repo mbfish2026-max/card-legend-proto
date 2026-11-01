@@ -3,6 +3,7 @@ import { CLASSES } from './classes';
 import { BOOKS, bookItemId } from './books';
 import { TOWN_ITEMS } from './items-town';
 import { NEW_EQUIP, EQUIP_META, adaptMdef } from './equip-official';
+import { EG_EQUIP } from './eg-equip';
 // 物品表：中文名 + 图标。equip=基础属性；req=需求等级；price=出售价（商人收购价）
 const I = 'assets/items/';
 export const SLOTS: Slot[] = ['weapon', 'helmet', 'armor', 'necklace', 'ring', 'bracelet', 'boots'];
@@ -91,6 +92,8 @@ export const ITEMS: Record<string, ItemDef> = {
   magic_helm: { id: 'magic_helm', name: '魔法头盔', icon: 'assets/items/eq_magic_helm.png', slot: 'helmet', equip: { def: 2, hp: 16 }, req: 14, price: 20 }, // id=148
   // 官方装备表 v1 新增（数据与来源见 equip-official.ts / docs/equip-table.md）
   ...NEW_EQUIP,
+  // P2 eg-sets：40–50 级 40 件（src/data/eg-equip.ts）
+  ...EG_EQUIP,
 };
 // 存量装备挂官方职业限制（按官方需求类型推导）
 for (const [id, m] of Object.entries(EQUIP_META)) if (m.cls && ITEMS[id] && !ITEMS[id].cls) ITEMS[id].cls = m.cls;
@@ -98,7 +101,7 @@ for (const [id, m] of Object.entries(EQUIP_META)) if (m.cls && ITEMS[id] && !ITE
 for (const [id, m] of Object.entries(EQUIP_META)) { const v = adaptMdef(m.off), d = ITEMS[id]; if (v && d?.equip && d.equip.mdef === undefined) d.equip.mdef = v; }
 /** 套装：集齐 n 件激活对应加成（卸下即失效）；同名重复件只计 1 件（官方：相同款式不生效） */
 
-export interface SetDef { id: string; name: string; pieces: string[]; bonus: { n: number; stats: Partial<Record<'hp' | 'mp' | 'atk' | 'mag' | 'tao' | 'def', number>>; luck?: number; text: string }[] }
+export interface SetDef { id: string; name: string; pieces: string[]; bonus: { n: number; stats: Partial<Record<'hp' | 'mp' | 'atk' | 'mag' | 'tao' | 'def', number>>; luck?: number; /** 职业特效接口 id（eg-sets SET_SPECIALS；战斗开发实现） */ special?: string; text: string }[] }
 export const SETS: Record<string, SetDef> = {
   woma: { id: 'woma', name: '沃玛', pieces: ['set_woma_helm', 'set_woma_necklace', 'set_woma_bracelet'], bonus: [
     { n: 2, stats: { hp: 60 }, text: '生命+60' }, { n: 3, stats: { atk: 8, mag: 8, tao: 8, def: 5 }, text: '攻/魔/道+8 防御+5' }] },

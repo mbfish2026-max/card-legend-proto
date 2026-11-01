@@ -1450,6 +1450,13 @@ public/assets/ui/UI-Tooltip-Border.png
 - 无锚点、手工放置 [适配] 的节点：bichi_xinshou、bichi_newbie、rift_58、sq_jiguan 群、bichi_to_woma、bichi_to_dushe、sq_snake 群、rift_66、rift_67、hj_town；其余未列锚点的节点按旧 0–1 比例换算（[适配]）。
 - 东北角紫雾浮岛仅装饰；出口用 icon_wm_portal；无需新增美术。
 
+## E3 30–50 级装备图标（docs/equip-3050-plan.md，方案阶段，未接入）
+- 规格同现有物品图标：assets/items/eq_<id>.png，透明底，与 eq_shengzhan_helm 等同尺寸同风格；名称用官方原名，图上不要文字。
+- 武器 9：怒斩、龙牙、逍遥扇（折扇）、嗜魂法杖、命运之刃、霸者之刃、开天（巨剑）、镇天、玄天
+- 衣服 7：天魔神甲、法神披风、天尊道袍、雷霆战甲、烈焰魔衣、光芒道袍、凤天魔甲（男女是否分款，待 E3 决定）
+- 头盔 3：圣龙盔、魔龙盔、天龙盔
+- 首饰/靴 21：雷霆 项链/护腕/战戒/战靴，烈焰 项链/护腕/魔戒/魔靴，光芒 项链/护腕/道戒/道靴，战神 项链/手镯/戒指，圣魔 项链/手镯/戒指，真魂 项链/手镯/戒指
+- 纸娃娃层：9 把武器 + 7 件衣服 + 3 顶头盔，按 equipLayers 规格分三职业。
 ## E4. 40–50 级装备图标（art/equip-40-50 分支交付）
 
 清单依据 origin/feat/equip-3050 的 docs/art-requests.md 第 E3 章和 equip-3050-plan.md §3（共 40 个 id）。规格跟现有物品图标一致：public/assets/items/eq_<id>.png 64×64 透明，另有 eq_<id>@2x.png 128×128 透明。

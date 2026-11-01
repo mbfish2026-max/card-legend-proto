@@ -3,7 +3,7 @@ import { ITEMS, SLOT_NAMES, STAT_NAMES } from './items';
 import { EQUIP_META, ADAPT, TIER_REQ, NEED_CN, CQ, OffStats, Cls } from './equip-official';
 
 const CLS_CN: Record<Cls, string> = { warrior: '战士', mage: '法师', taoist: '道士' };
-const TIER_CN = { base: '普通', woma: '沃玛', zuma: '祖玛', chiyue: '赤月' } as const;
+const TIER_CN = { base: '普通', woma: '沃玛', zuma: '祖玛', chiyue: '赤月', eg40: '40–50' } as const;
 const ORDER = ['weapon', 'armor', 'helmet', 'necklace', 'ring', 'bracelet', 'boots'] as const;
 const fmtOff = (o?: OffStats) => !o ? '未查到' : [o.atk && `攻${o.atk.join('-')}`, o.mag && `魔${o.mag.join('-')}`, o.tao && `道${o.tao.join('-')}`, o.def && `防${o.def.join('-')}`, o.mdef && `魔御${o.mdef.join('-')}`, o.extra].filter(Boolean).join(' ') || '—';
 const fmtStats = (e: Record<string, number | undefined> = {}) => Object.entries(e).filter(([, v]) => v).map(([k, v]) => `${STAT_NAMES[k] ?? k}+${v}`).join(' ') || '—';
@@ -29,7 +29,7 @@ export function renderEquipTable(): string {
     const d = ITEMS[id], m = EQUIP_META[id];
     const need = m?.need ? `${NEED_CN[m.need.kind]} ${m.need.v}` : '未查到';
     const cls = d.cls?.length ? d.cls.map(c => CLS_CN[c]).join('/') : '通用';
-    const src = m?.cq ? CQ(m.cq) : '自创';
+    const src = m?.cq ? CQ(m.cq) : m?.origin === 'eg' ? (m.note?.split('（')[0] ?? '') : '自创';
     out.push(`| ${id} | ${d.name} | ${SLOT_NAMES[s]} | ${m?.tier ? TIER_CN[m.tier] : '—'} | ${m?.official === '自创' ? '自创' : need} | ${d.req} | ${cls} | ${m?.official === '自创' ? '自创' : fmtOff(m?.off)} | ${fmtStats(d.equip as any)} | ${src} |`);
   }
   out.push('', '## 去重盘点（存量 → 官方对应）', '', '| id | 本作名 | 官方对应 | 备注 |', '|---|---|---|---|');
