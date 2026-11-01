@@ -14,13 +14,13 @@ const evs = (w: World) => w.drainEvents().filter((e: any) => e.type === 'stone')
 // ── 血石
 {
   const w = mk(); const h = w.hero!; const st = makeShopItem(w, 'stone_m'); w.equip.stone = st;
-  h.hp = Math.floor(h.maxHp * 0.5); h.mp = h.maxMp; w.step(0.05); let e = evs(w);
+  h.hp = Math.floor(h.maxHp * 0.15); h.mp = h.maxMp; w.step(0.05); let e = evs(w);
   const add = Math.ceil(h.maxHp * World.STONE.pct);
-  ok(e.length === 1 && e[0].hp === add && e[0].mp === 0 && st.charge!.hp === 50000 - add && st.charge!.mp === 50000, `中血石 HP<60% 触发：+${add}（15% 上限），储量扣减`);
-  w.step(0.05); ok(evs(w).length === 0, '2 秒冷却内不再触发');
-  h.hp = Math.floor(h.maxHp * 0.5); for (let i = 0; i < 45; i++) w.step(0.05); ok(evs(w).length === 1, '冷却结束再次触发');
-  h.hp = Math.floor(h.maxHp * 0.7); for (let i = 0; i < 50; i++) w.step(0.05); ok(evs(w).length === 0, 'HP≥60% 不触发');
-  h.mp = Math.floor(h.maxMp * 0.3); h.hp = h.maxHp; w.step(0.05); e = evs(w); ok(e.length === 1 && e[0].mp > 0 && e[0].hp === 0 && st.charge!.mp < 50000, 'MP<40% 触发补蓝');
+  ok(e.length === 1 && e[0].hp === add && e[0].mp === 0 && st.charge!.hp === 50000 - add && st.charge!.mp === 50000, `中血石 HP<20% 触发：+${add}（3% 上限），储量扣减`);
+  w.step(0.05); ok(evs(w).length === 0, '8 秒冷却内不再触发');
+  h.hp = Math.floor(h.maxHp * 0.15); for (let i = 0; i < 165; i++) w.step(0.05); ok(evs(w).length === 1, '冷却结束再次触发');
+  h.hp = Math.floor(h.maxHp * 0.3); for (let i = 0; i < 170; i++) w.step(0.05); ok(evs(w).length === 0, 'HP≥20% 不触发');
+  h.mp = Math.floor(h.maxMp * 0.05); h.hp = h.maxHp; w.step(0.05); e = evs(w); ok(e.length === 1 && e[0].mp > 0 && e[0].hp === 0 && st.charge!.mp < 50000, 'MP<10% 触发补蓝');
   // 手动药水优先：喝药后（缓回中/药水冷却中）不触发
   const w2 = mk(); const h2 = w2.hero!; w2.equip.stone = makeShopItem(w2, 'stone_s'); w2.pots[0] = 5; h2.hp = Math.floor(h2.maxHp * 0.3);
   ok(w2.usePotion(0), '喝红药'); w2.step(0.05); ok(evs(w2).length === 0, '药水缓回中血石不触发（手动药水优先）');

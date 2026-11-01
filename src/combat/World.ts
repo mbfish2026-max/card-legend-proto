@@ -719,8 +719,7 @@ export class World {
     return n;
   }
   /** 血石参数 [适配]（官方：每秒 HP10/MP15，扣储量，耗尽消失；本作按 docs/lingfu-shop.md §3.3 加快节奏，见 §10.6） */
-  static STONE = { hpAt: 0.6, mpAt: 0.4, pct: 0.15, cd: 2 };
-  /** 小血石（用户决定）：无等级限制、新手可戴；为保持 1–39 难度指纹，按官方节奏每秒 HP+10 / MP+15（固定量，不按上限百分比），阈值同上 [适配] */
+  static STONE = { hpAt: 0.2, mpAt: 0.1, pct: 0.03, cd: 8 }; // 中/大/特 [适配]：HP<20% / MP<10% 时补上限 3%，各 8s 冷却（9 seed 调参，见 docs §10.6）
   // 小血石 [适配]：官方 2023 魔血石为每秒 +10HP/+15MP；为保持 1–39 级难度分布（9 seed 偏差≤15%），实装削弱为 HP<40% 时每 2s +3HP，不回 MP
   static STONE_S = { hpAt: 0.4, mpAt: 0, hp: 3, mp: 0, cd: 2 };
   /** 战斗侧佩戴等级覆盖：小血石免等级（商城 catalog 里 req=30 由系统开发改，见 docs §10.6） */
@@ -728,7 +727,7 @@ export class World {
   /** 物品有效佩戴等级 */
   reqOf(it: InvItem) { return World.STONE_REQ[it.item] ?? it.req; }
   stoneHpReady = 0; stoneMpReady = 0;
-  /** 血石：野外（含战斗/BOSS 房）HP<60% 或 MP<40% 时从储量补 15% 上限，HP/MP 各 2 秒冷却；手动药水优先（药水缓回中或药水冷却中不触发）。城内不生效（安全区 + 进城满血） */
+  /** 血石：野外（含战斗/BOSS 房）按 STONE/STONE_S 阈值从储量补给，HP/MP 各自冷却；手动药水优先（药水缓回中或药水冷却中不触发）。城内不生效（安全区 + 进城满血） */
   tickStone() {
     const h = this.hero, s = this.equip.stone, c = s?.charge, small = s?.item === 'stone_s', K = small ? World.STONE_S : World.STONE;
     if (!h || !h.alive || this.town || !s || !c || this.level < this.reqOf(s)) return;
