@@ -22,6 +22,7 @@ export const SLEEP_DIST = 640 + 2 * 1280;
 import { TOWNS, townFloors, townOfFloor, returnTownOf, STORAGE_SIZE, townWidth, TOWN_GATE_X, GATE_RANGE, TOWN_SPAWN_X, DOOR_RANGE, streetDoors } from '../data/towns';
 import { CONSUMABLE } from '../data/items-town';
 import { WOMA_FLOOR_NAME, WOMA_SECTIONS, WOMA_DOOR_X, HORN_MOB_CHANCE, HORN_MOBS, RING_MIN_LEVEL, RingQuest, ringReward, IDENT_MIN_LEVEL, IDENT_PRICE, IDENT_POOL, identValue } from '../data/r14b';
+import '../data/eg-sets';
 import { QUESTS, ACHIEVES, QuestDef, AchieveDef } from '../data/quests';
 import { summonDisplayName, summonNameColor, summonOwnerLabel } from './summonLabel';
 
@@ -317,6 +318,8 @@ export class World {
     return c;
   }
   /** 当前激活的套装加成 */
+  /** P2：已激活的套装职业特效 id（eg-sets SET_SPECIALS）——战斗开发据此实现效果 */
+  setSpecials(): string[] { return this.setBonuses().flatMap(b => b.special ? [b.special] : []); }
   setBonuses() { const c = this.setCounts(); return Object.values(SETS).flatMap(s => s.bonus.filter(b => (c[s.id] ?? 0) >= b.n)); }
   stats(): Stats { const b = this.baseStats(), e = this.equipStats(), r: any = {}; for (const k of Object.keys(ZERO)) r[k] = (b as any)[k] + (e as any)[k]; return r; }
   /** 旧档装备（存档 stats 无 mdef）：按物品定义 × 品质 × 强化 推导魔御，不改存档结构 */

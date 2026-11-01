@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## P2 eg-sets（feat/eg-sets）
+- 新增 40–50 级 40 件装备（eg-equip.ts，图标用美术 E4 eq_<id> 64/128，id 恒等）；雷霆/烈焰/光芒、战神/圣魔/真魂 6 套；三圣 4 件档 + 职业特效接口 setSpecials()。
+- 掉落 EG_DROPS（E1 ÷40，≤1/8，全部 ≥40 级层）；天尊进合击 BOSS；set_zuma/set_chiyue 停掉落、旧档保留。
+- 修 equip-3050-plan 三行错表；docs/eg-sets.md；tests/eg-sets.test.ts（17 项）。
+
 
 ## 战斗平衡 balance-battle2 第三轮 [适配]
 ### 最终（r3-5；9 个 seed 跑 sim-bands，日志 r3-5-*）

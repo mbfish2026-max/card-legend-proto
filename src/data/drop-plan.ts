@@ -17,13 +17,33 @@ export const DROP_ADD: Record<string, [string, number][]> = {
   wolf_king: [['iron_ring', 1 / 6]],
   orc: [['iron_ring', 1 / 100]],
   skeleton_lord: [['medium_armor', 1 / 15]],
-  boss_zuma: [['set_zuma_helm', 1 / 20], ['set_zuma_ring', 1 / 20], ['set_zuma_boots', 1 / 20]],
-  boss_redmoon: [['set_chiyue_necklace', 1 / 25], ['set_chiyue_ring', 1 / 25], ['set_chiyue_bracelet', 1 / 25]],
+  // D8/E5（P2 eg-sets）：自创祖玛套/赤月套停掉落（原 1/20、1/25），旧存档保留
 };
 const SZ = ['helm', 'necklace', 'ring', 'bracelet'];
 const HJ_GEAR: [string, number][] = [...SZ.map(k => ['shengzhan_' + k, 1 / 40] as [string, number]), ...SZ.map(k => ['fashen_' + k, 1 / 40] as [string, number]),
   ['dragon_sword', 1 / 60], ['longwen', 1 / 40], ['war_armor', 1 / 30], ['ghost_robe', 1 / 30], ['demon_robe', 1 / 30]];
-for (const b of ['boss_hj_home', 'boss_wolong', 'boss_leiyan', 'boss_fire_dragon', 'boss_molong']) DROP_ADD[b] = HJ_GEAR;
+HJ_GEAR.push(...SZ.map(k => ['tianzun_' + k, 1 / 40] as [string, number])); // P2：补天尊 4 件
+for (const b of ['boss_hj_home', 'boss_wolong', 'boss_leiyan', 'boss_fire_dragon', 'boss_molong']) DROP_ADD[b] = [...HJ_GEAR];
+/** P2 eg-sets：40–50 级新装备来源（docs/equip-3050-plan.md §2/§4.1；本作 1/N 已按 E1「官方 N÷40，不优于 1/8」换算/[适配]）。
+ *  只挂在最低出现层 ≥40 级的 BOSS 上（tests/eg-sets.test.ts 断言 40 级以下层不掉 40+ 装备）。 */
+const P = (ids: string[], n: number) => ids.map(id => [id, 1 / n] as [string, number]);
+const SHENBING = ['nuzhan', 'longya', 'xiaoyao_fan'], HEAVY40 = ['tianmo_armor', 'fashen_cape', 'tianzun_robe'];
+const ACC = (pre: string[], parts: string[]) => pre.flatMap(p => parts.map(k => p + '_' + k));
+const LEITING = ACC(['leiting', 'lieyan', 'guangmang'], ['necklace', 'bracelet', 'ring', 'boots']), ZHANSHEN = ACC(['zhanshen', 'shengmo', 'zhenhun'], ['necklace', 'bracelet', 'ring']);
+export const EG_DROPS: Record<string, [string, number][]> = {
+  boss_zuma: [...P(SHENBING, 100), ...P(['shihun_staff'], 200), ...P(['mingyun_blade'], 60)],
+  boss_bull_king: [...P(SHENBING, 100), ...P(['shihun_staff'], 200)],
+  boss_hongmo: P(HEAVY40, 20),
+  boss_redmoon: P(SHENBING, 50), // 天尊 4 件走 r14b setDrop（三圣职业套）
+  boss_twinhead_kong: P(ACC(['shengzhan'], ['helm', 'necklace', 'ring', 'bracelet']), 25),
+  boss_twinhead_blood: P(ACC(['fashen'], ['helm', 'necklace', 'ring', 'bracelet']), 25),
+  boss_hj_home: [...P(HEAVY40, 20), ...P(SHENBING, 40), ...P(['shihun_staff'], 80), ...P(['bazhe_blade'], 40)],
+  boss_wolong: [...P(['shenglong_helm', 'molong_helm', 'tianlong_helm'], 20), ...P(['leiting_armor', 'lieyan_robe', 'guangmang_robe'], 25)],
+  boss_leiyan: P(LEITING, 30),
+  boss_molong: [...P(ZHANSHEN, 30), ...P(LEITING, 40), ...P(['fengtian_armor'], 40)],
+  boss_fire_dragon: [...P(['kaitian', 'zhentian', 'xuantian'], 40), ...P(['fengtian_armor'], 25)],
+};
+for (const [b, add] of Object.entries(EG_DROPS)) (DROP_ADD[b] ??= []).push(...add);
 /** 怪物出现的最低层目标等级（未出现在任何层 → undefined，不封顶） */
 export const minFloorLv = (id: string): number | undefined => { let m: number | undefined;
   FLOORS.forEach((f, i) => { if (f.spawns.some(s => s.id === id)) m = Math.min(m ?? 99, FLOOR_TARGET_LV[i]); }); return m; };
