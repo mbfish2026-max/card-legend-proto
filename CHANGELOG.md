@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 修复：「下一层」与「上一层」入口统一用同一传送门素材（fix/portal-same，未合 main）
+- 新增 src/ui/portalArt.ts（PORTAL_TEX/PORTAL_LOOK/PORTAL_TEXT）；BattleScene.syncPortalArt() 为两入口唯一创建函数：portal_exit_sheet 动画 → portal_exit 静图 → 程序椭圆占位（缺图兜底保留）。
+- 方向区分：下一层水平镜像 + 淡紫色调，上一层原样；文字标签保留（「下一层」/「传送门：返回 XXX」）。删除旧的程序绘制石拱门。
+- 下一层点击区 150×220（桌面+手机均可点，手机最小约 81×119 CSS px）。无新增美术需求。
+- 测试：tests/portal-same.test.ts（12 项）、tests/e2e/portal-same-verify.mjs（4 视口 + NOART）；截图 docs/shots/portal-same/。
+
 ## 修复：换图后召唤物留在旧坐标/从远处走过来（fix/summon-mapchange，未合 main）
 - 根因：World.prevFloor（S 返回上一层）先 loadFloor 把召唤物放到本层起点附近，再把英雄挪到上一层终点（出口前），召唤物不跟着挪 → 相距约 8000px，要很久才走过来；enterTown（回城）完全不重置召唤物坐标；loadFloor 本身按 110+60k 排队，第 2/3 只已超 100px。另：读档恢复的召唤物（restoreSummons）不发 summon 事件，BattleScene 不建卡牌，直到换图前都看不见。
 - 修复：新增 World.placeSummonsNearHero()（召唤物含诱惑宠物交替落在英雄身后/身前 50/50/75/75/100px，夹在地图/长街内），在 loadFloor（下一层/传送/副本/出城/上一层按钮）、prevFloor 英雄落位之后、enterTown 调用；BattleScene.snapSummonViews() 换图/进城时卡牌直接跳到新坐标，缺卡牌的召唤物补建（读档后立即可见）。不改任何战斗/平衡数值。
