@@ -63,6 +63,7 @@ export class Panel {
   npc: string | null = null;
   constructor(public s: Phaser.Scene, public world: () => World, public onChange: (msg?: string, green?: boolean) => void, public onTitle: () => void) {
     // 手机版：对比面板打开时，点面板外空白处关闭（拖动 >8px、点面板内、点装备格不关）；桌面不挂
+    s.input?.on('pointerdown', () => { this.lastDown = this.s.time.now; });
     if (IS_MOBILE) s.input?.on('pointerup', (p: Phaser.Input.Pointer, objs: Phaser.GameObjects.GameObject[]) => this.tapOutside({ downX: p.downX, downY: p.downY, upX: p.upX, upY: p.upY, x: p.worldX, y: p.worldY }, objs as any));
   }
   /** 返回是否关闭（供测试） */
@@ -86,9 +87,14 @@ export class Panel {
   /** 角色/技能面板数据变了就重绘；返回是否重绘（供测试） */
   static AUTO_REFRESH_MS = 800;
   private lastAuto = -1e9;
+  /** 最近一次指针按下（scene 时间），供 refreshIfStale 避让 */
+  lastDown = -1e9;
   refreshIfStale(): boolean {
     if (this.mode !== 'bag' && this.mode !== 'skills') return false;
     if (this.statSnap() === this.snap) return false;
+    // feat/potion-expand：触屏「点一下选中、再点执行」进行中（sel 已选）或刚有按下（<AUTO_REFRESH_MS）时不自动重绘：
+    // 重绘会销毁格子/提示，新格子要等下一帧才进 Phaser 命中表，第二下点击会被吞（手机双击解包偶发失败的根因）
+    if (this.sel || this.s.time.now - this.lastDown < Panel.AUTO_REFRESH_MS) return false;
     // 战斗中经验/熟练度几乎每帧变：限频重绘，否则每帧重建的点击对象还在 Phaser 待插入队列里，触屏点不中
     const now = this.s.time.now;
     if (now - this.lastAuto < Panel.AUTO_REFRESH_MS) return false;

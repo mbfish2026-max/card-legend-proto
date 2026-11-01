@@ -91,11 +91,14 @@ export class PotBarDom {
     POT_SLOTS.forEach((sl, i) => {
       const e = document.createElement('div'); e.className = 'b'; e.dataset.id = 'pot' + i; e.title = sl.name + '（长按换药）';
       e.innerHTML = '<span></span>'; host.appendChild(e); this.btns.push(e); this.cnt.push(e.firstChild as HTMLElement);
-      let t: any = null, long = false, t0 = 0;
+      let t: any = null, long = false, t0 = 0, down = false;
       const eat = (ev: Event) => { if (ev.cancelable) ev.preventDefault(); ev.stopPropagation(); };
-      e.addEventListener('pointerdown', ev => { eat(ev); long = false; t0 = performance.now(); clearTimeout(t); t = setTimeout(() => { long = true; t = null; this.open(i); }, LONG_MS); });
-      e.addEventListener('pointerup', ev => { eat(ev); if (t) { clearTimeout(t); t = null; if (long) return; if (performance.now() - t0 >= LONG_MS) this.open(i); else this.onKey(POTIONS[selIdx(this.getW(), i)].key); } });
-      e.addEventListener('pointercancel', () => { clearTimeout(t); t = null; });
+      // 长按判定用事件时间戳（ev.timeStamp）而非回调到达时刻：主线程卡顿时计时器可能先于已发生的 pointerup 触发，
+      // 把短按误判成长按（弹层背景再吞掉后续点击）。抬起时按真实按住时长纠正。
+      e.addEventListener('pointerdown', ev => { eat(ev); down = true; long = false; t0 = ev.timeStamp; clearTimeout(t); t = setTimeout(() => { long = true; t = null; this.open(i); }, LONG_MS); });
+      e.addEventListener('pointerup', ev => { eat(ev); if (!down) return; down = false; const held = ev.timeStamp - t0; clearTimeout(t); t = null;
+        if (held < LONG_MS) { if (long) this.close(); long = false; this.onKey(POTIONS[selIdx(this.getW(), i)].key); } else if (!long) { long = true; this.open(i); } });
+      e.addEventListener('pointercancel', () => { clearTimeout(t); t = null; down = false; });
       e.addEventListener('contextmenu', eat);
       // 同 R54：吞掉 touch/mouse，防止穿透到地图
       e.addEventListener('touchstart', eat, { passive: false }); e.addEventListener('mousedown', eat); e.addEventListener('touchend', eat, { passive: false }); e.addEventListener('mouseup', eat);
