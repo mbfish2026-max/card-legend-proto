@@ -6,7 +6,7 @@ import { fmtInt, fmtText, bookEntry } from './fmt';
 import { SKILL_BOOK_DROPS } from '../data/skillBookDrops';
 import { COMPANION_UNLOCK_LEVEL, comboFor, BOOK_PAGE, BRM_BOOK, GOLD_BAR, PAGES_PER_BOOK, COMBO_LEVEL, heartFeedValue, RAGE_MAX, HEART_STORE_MAX, RECRUIT_DIALOG } from '../data/companion';
 import { toLogic, toLogicX, MAX_LW, Render } from '../render';
-import { frameBg, atlasReady, listRowPitch, rowHitHeight, viewCss, rowBg, scrollBar, slotBg, qualityFrame, slotHitSize, rowTint, SKILL_ROW_TINT, UI_SLICES } from './uiSlices';
+import { frameBg, atlasReady, listRowPitch, rowHitHeight, viewCss, rowBg, scrollBar, slotBg, qualityFrame, slotHitSize, rowTint, SKILL_ROW_TINT, UI_SLICES , panelFrameName, MOBILE_TABS, MIN_TAP } from './uiSlices';
 import { compareRows, diffText, CmpData } from './equipCompare';
 import { shouldTapClose } from './tapClose';
 import { RING_MIN_LEVEL, IDENT_PRICE, IDENT_MIN_LEVEL } from '../data/r14b';
@@ -81,10 +81,15 @@ export class Panel {
   private snap = ''; mscale = 1; skPage = 0; bookPage = 0; bookCs = false;
   statSnap() { const w = this.world(); return `${w.level}:${w.exp}:${JSON.stringify(w.skillTrain)}:${w.learned.size}`; }
   /** 角色/技能面板数据变了就重绘；返回是否重绘（供测试） */
+  static AUTO_REFRESH_MS = 800;
+  private lastAuto = -1e9;
   refreshIfStale(): boolean {
     if (this.mode !== 'bag' && this.mode !== 'skills') return false;
     if (this.statSnap() === this.snap) return false;
-    this.render(); return true;
+    // 战斗中经验/熟练度几乎每帧变：限频重绘，否则每帧重建的点击对象还在 Phaser 待插入队列里，触屏点不中
+    const now = this.s.time.now;
+    if (now - this.lastAuto < Panel.AUTO_REFRESH_MS) return false;
+    this.lastAuto = now; this.render(); return true;
   }
   render() {
     if (this.mode) this.snap = this.statSnap();
@@ -94,7 +99,7 @@ export class Panel {
     R.add(s.add.rectangle(640, 360, MAX_LW, 720, 0x000000, 0.45).setInteractive());
     const W = this.mode === 'settings' ? 640 : 1000, H = this.mode === 'settings' ? 580 : 500, top = Math.max(40, 360 - H / 2);
     // 边框与内容对齐：非设置面板内容从 top 起排到 top+478，边框覆盖 top-20 ~ top+480
-    R.add(frameBg(s, 'panel_frame', 640, this.mode === 'settings' ? 300 : top + H / 2 - 20, W, H, { fill: 0x15100b, alpha: 0.97, stroke: 0xd4a64a, sw: 3 }).setName('panelBg'));
+    R.add(frameBg(s, panelFrameName(IS_MOBILE, f => atlasReady(s, f)), 640, this.mode === 'settings' ? 300 : top + H / 2 - 20, W, H, { fill: 0x15100b, alpha: 0.97, stroke: 0xd4a64a, sw: 3 }).setName('panelBg'));
     const titles = { bag: '角色 / 背包', shop: '商人 · 杂货铺', skills: '技能', settings: '设置', map: this.wm.area ? '' : '世界地图', quests: '悬赏 / 成就', town: `${TOWNS[this.world().town ?? 'bichi']?.name ?? '城镇'} · 安全区` };
     if (titles[this.mode] && atlasReady(s, 'title_plate')) R.add(frameBg(s, 'title_plate', 640, top + 22, Math.max(200, titles[this.mode].length * 26 + 80), 40, { fill: 0 }).setName('titlePlate')); // B2 标题底牌（无图集不画，保持原样）
     R.add(txt(s, 640, top + 22, titles[this.mode], 24, '#ffd24a', { fontStyle: 'bold' }).setOrigin(0.5));
@@ -103,12 +108,28 @@ export class Panel {
     if (IS_MOBILE) { const cw = this.mscale > 1 ? 84 : 90, ch = this.mscale > 1 ? 76 : 84; R.add([...button(s, 640 + W / 2 - cw / 2 - 4, top + 14 + (ch - 64) / 2, cw, ch, '✕', () => this.close(), 30)]); }
     else R.add([...button(s, 640 + W / 2 - 26, top + 22, 36, 32, '✕', () => this.close(), 18)]);
     if (this.mode === 'settings') return this.renderSettings(R, top);
-    if (this.mode === 'skills') return this.renderSkills(R, top);
+    if (this.mode === 'skills') { this.renderSkills(R, top); return this.mobileTabs(R, top); }
     if (this.mode === 'map') return this.renderMap(R, top);
     if (this.mode === 'quests') return this.renderQuests(R, top);
     if (this.mode === 'town') { this.renderTown(R, top); if (this.npcNeedsBag()) this.renderBag(R, top); return; }
     if (this.mode === 'bag') this.renderEquip(R, top); else this.renderShop(R, top);
-    this.renderBag(R, top);
+    this.renderBag(R, top); this.mobileTabs(R, top);
+  }
+  /** 手机：角色背包 / 技能 页签（tab_on/tab_off 九宫格，无图集回退 button()）；最后加入以免被内容点击区盖住；桌面不加 */
+  private mobileTabs(R: Phaser.GameObjects.Container, top: number) {
+    const s = this.s;
+    if (!IS_MOBILE || (this.mode !== 'bag' && this.mode !== 'skills')) return;
+    MOBILE_TABS.forEach(t => {
+      const go = () => { if (this.mode === t.mode) return; this.mode = t.mode; this.sel = null; this.hideTip(); this.render(); };
+      const vis = tabButton(s, t.x, top + 22, t.w, t.h, t.label, this.mode === t.mode, go, 18);
+      vis.forEach(o => (o as any).disableInteractive?.());
+      // 透明矩形作点击层（与 slotBox 同机制，触屏可靠）
+      const hh = Math.max(t.h, MIN_TAP / Math.max(this.cssU(), 0.01));
+      // 点击区向上扩（下缘与页签底齐平），不压到下方装备格
+      const hit = s.add.rectangle(t.x, top + 22 + t.h / 2 - hh / 2, t.w, hh, 0x000000, 0.001).setInteractive({ useHandCursor: true }).setData('mtab', t.mode);
+      hit.on('pointerdown', go);
+      R.add([...vis, hit]);
+    });
   }
   private slotBox(R: Phaser.GameObjects.Container, x: number, y: number, size: number, it: InvItem | undefined, label: string, onClick: (right: boolean) => void, key = '', pitch = size) {
     const s = this.s;
@@ -174,7 +195,7 @@ export class Panel {
   }
   /** 面板坐标 1 单位 = 多少 CSS px（视口缩放 × 手机面板容器缩放） */
   private cssU() { return viewCss(Render.lw) * this.mscale; }
-  /** B3：行内按钮点击区 = rowHitHeight（手机 ≥36 CSS px、桌面 ≥44），且不超过行距 → 相邻行不重叠 */
+  /** B3：行内按钮点击区 = rowHitHeight（手机 ≥44 CSS px（受行距封顶）、桌面 ≥44），且不超过行距 → 相邻行不重叠 */
   private fitRow<T extends readonly Phaser.GameObjects.GameObject[]>(b: T, pitch: number): T {
     const o = b[0] as Phaser.GameObjects.Rectangle; if (!o.input) { o.setData('rowPitch', pitch); return b; }
     const hh = rowHitHeight(IS_MOBILE, o.height, pitch, this.cssU());
@@ -238,11 +259,11 @@ export class Panel {
     R.add(txt(s, x0 - size / 2, top + 50, `背包 ${w.bag.length}/${WORLD.bagSize}`, 15, '#ffe8a0'));
     const pages = Math.ceil(WORLD.bagSize / BAG_PAGE); this.bagPage = Math.max(0, Math.min(pages - 1, this.bagPage));
     const go = (d: number) => { this.bagPage = (this.bagPage + d + pages) % pages; this.sel = null; this.render(); };
-    R.add([...button(s, x0 + 150, top + 52, 40, 30, '◀', () => go(-1), 15)]);
-    R.add(txt(s, x0 + 175, top + 50, `${this.bagPage + 1}/${pages}`, 15, '#ffe8a0'));
-    R.add([...button(s, x0 + 250, top + 52, 40, 30, '▶', () => go(1), 15)]);
-    R.add([...button(s, x0 + 360, top + 52, 56, 30, '整理', () => { w.sortBag(); this.bagPage = 0; this.sel = null; this.hideTip(); this.render(); }, 13)]);
-    R.add([...button(s, x0 + 300, top + 52, 50, 30, '末页', () => { this.bagPage = Math.floor(Math.max(0, w.bag.length - 1) / BAG_PAGE); this.render(); }, 13)]);
+    R.add([...button(s, x0 + (IS_MOBILE ? 140 : 150), top + 52, IS_MOBILE ? 60 : 40, 30, '◀', () => go(-1), 15)]);
+    R.add(txt(s, x0 + (IS_MOBILE ? 182 : 175), top + 50, `${this.bagPage + 1}/${pages}`, 15, '#ffe8a0'));
+    R.add([...button(s, x0 + (IS_MOBILE ? 262 : 250), top + 52, IS_MOBILE ? 60 : 40, 30, '▶', () => go(1), 15)]);
+    R.add([...button(s, x0 + (IS_MOBILE ? 412 : 360), top + 52, IS_MOBILE ? 70 : 56, 30, '整理', () => { w.sortBag(); this.bagPage = 0; this.sel = null; this.hideTip(); this.render(); }, 13)]);
+    R.add([...button(s, x0 + (IS_MOBILE ? 334 : 300), top + 52, IS_MOBILE ? 66 : 50, 30, '末页', () => { this.bagPage = Math.floor(Math.max(0, w.bag.length - 1) / BAG_PAGE); this.render(); }, 13)]);
     const p0 = this.bagPage * BAG_PAGE;
     for (let i = p0; i < Math.min(WORLD.bagSize, p0 + BAG_PAGE); i++) {
       const it = w.bag[i], k = i - p0, x = x0 + (k % cols) * (size + 6), y = y0 + Math.floor(k / cols) * (size + 6);
@@ -312,8 +333,8 @@ export class Panel {
         if (autoable.has(k.id)) {
           const on = autoList.includes(k.id), pr = autoList.indexOf(k.id);
           R.add([...this.fitRow(button(s, IS_MOBILE ? 940 : 975, y, 96, rowH - 18, `${on ? '☑' : '☐'} 自动${on ? ' #' + (pr + 1) : ''}`, () => { Settings.toggleAutoSkill(k.id, w.cls); this.render(); }, 13), rowH)]);
-          R.add([...this.fitRow(button(s, IS_MOBILE ? 1020 : 1045, y, IS_MOBILE ? 56 : 32, rowH - 18, '↑', () => { Settings.moveAutoSkill(k.id, -1, w.cls); this.render(); }, 13, on && pr > 0), rowH)]);
-          R.add([...this.fitRow(button(s, IS_MOBILE ? 1082 : 1081, y, IS_MOBILE ? 56 : 32, rowH - 18, '↓', () => { Settings.moveAutoSkill(k.id, 1, w.cls); this.render(); }, 13, on && pr < autoList.length - 1), rowH)]);
+          R.add([...this.fitRow(button(s, IS_MOBILE ? 1020 : 1045, y, IS_MOBILE ? 60 : 32, rowH - 18, '↑', () => { Settings.moveAutoSkill(k.id, -1, w.cls); this.render(); }, 13, on && pr > 0), rowH)]);
+          R.add([...this.fitRow(button(s, IS_MOBILE ? 1084 : 1081, y, IS_MOBILE ? 60 : 32, rowH - 18, '↓', () => { Settings.moveAutoSkill(k.id, 1, w.cls); this.render(); }, 13, on && pr < autoList.length - 1), rowH)]);
         } else R.add(txt(s, 975, y, '手动', 12, '#888').setOrigin(0.5));
       }
     });

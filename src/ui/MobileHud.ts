@@ -1,4 +1,7 @@
 import { POTIONS } from '../data/skills';
+/** 药水键边长（CSS px，≥44）；技能弧最左键左缘距右安全区 = 外圈半径 + 25 + 50，药水再留 8px，避免挤占技能栏 */
+export const POT_CSS = 56;
+export const potRight = (outerR: number) => outerR + 25 + 50 + 8;
 import { fmtInt } from './fmt';
 import { Settings } from '../settings';
 import { fmtExp } from '../data/expCurve';
@@ -13,7 +16,7 @@ const CSS = `
 #mhud{position:fixed;inset:0;pointer-events:none;z-index:20;font-family:"PingFang SC","Microsoft YaHei",sans-serif;color:#ffe8a0;
  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:none;
  --sl:max(env(safe-area-inset-left),6px);--sr:max(env(safe-area-inset-right),6px);--st:max(env(safe-area-inset-top),4px);--sb:max(env(safe-area-inset-bottom),6px)}
-#mhud.off .ctl{display:none}
+#mhud.off .ctl,#mhud.off #mh-pos,#mhud.off #mh-posT{display:none}
 #mhud .b{pointer-events:auto;box-sizing:border-box;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;flex-direction:column;
  background:radial-gradient(circle at 50% 35%,rgba(74,50,22,.9),rgba(30,20,10,.88));border:2px solid #b8893a;border-radius:10px;color:#ffe8a0;font-size:12px;line-height:1.1;
  text-shadow:0 1px 2px #000;touch-action:none}
@@ -55,9 +58,9 @@ const CSS = `
 #mhud .sk .cd{position:absolute;inset:0;border-radius:50%}
 #mhud .sk .k{position:absolute;bottom:1px;right:6px;font-size:10px;color:#fff}
 #mhud .sk .cdt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:bold}
-#mh-pots{position:absolute;bottom:calc(var(--sb) + 4px);display:flex;gap:4px}
-#mh-pots .b{width:46px;height:46px;position:relative;padding:0;background-size:70%;background-repeat:no-repeat;background-position:center}
-#mh-pots .b span{position:absolute;right:3px;bottom:1px;font-size:11px;color:#fff}
+#mh-pots{position:absolute;bottom:calc(var(--sb) + 4px);display:flex;gap:6px}
+#mh-pots .b{width:${POT_CSS}px;height:${POT_CSS}px;position:relative;padding:0;background-size:88%;background-repeat:no-repeat;background-position:center}
+#mh-pots .b span{position:absolute;right:3px;bottom:1px;font-size:13px;color:#fff;text-shadow:0 0 2px #000,0 0 2px #000}
 #mh-auto{position:absolute;width:52px;height:44px}
 #mh-page{position:absolute;width:52px;height:44px}
 #mh-comp{position:absolute;display:flex;gap:4px}
@@ -154,8 +157,8 @@ export class MobileHud {
     const outerR = act.length > 4 ? 152 : 92;
     this.auto.style.right = `calc(var(--sr) + 8px)`; this.auto.style.bottom = `calc(var(--sb) + ${outerR + 50 + 8}px)`;
     this.page.style.right = `calc(var(--sr) + 66px)`; this.page.style.bottom = `calc(var(--sb) + ${outerR + 50 + 8}px)`;
-    const pots = this.root.querySelector('#mh-pots') as HTMLElement; pots.style.right = `calc(var(--sr) + ${outerR + 50 + 14}px)`;
-    this.comp.style.right = `calc(var(--sr) + ${outerR + 50 + 14}px)`; this.comp.style.bottom = `calc(var(--sb) + 56px)`;
+    const pots = this.root.querySelector('#mh-pots') as HTMLElement; pots.style.right = `calc(var(--sr) + ${potRight(outerR)}px)`;
+    this.comp.style.right = `calc(var(--sr) + ${potRight(outerR)}px)`; this.comp.style.bottom = `calc(var(--sb) + ${POT_CSS + 10}px)`;
   }
   reset() { this.dx = this.dy = 0; }
   pos!: HTMLElement; posT!: HTMLElement; ovw?: HTMLElement; private posKey = '';

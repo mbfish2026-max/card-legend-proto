@@ -61,7 +61,7 @@ export function listRowPitch(mobile: boolean, base: number, cssPerUnit: number):
   return mobile ? Math.max(base, Math.ceil(MOBILE_ROW_CSS / Math.max(cssPerUnit, 0.01))) : base;
 }
 export function rowHitHeight(mobile: boolean, btnH: number, pitch: number, cssPerUnit: number): number {
-  const want = mobile ? Math.max(btnH, MIN_TAP_MOBILE_PHYS / Math.max(cssPerUnit, 0.01)) : Math.max(btnH, MIN_TAP);
+  const want = mobile ? Math.max(btnH, MIN_TAP / Math.max(cssPerUnit, 0.01)) : Math.max(btnH, MIN_TAP);
   return Math.min(want, pitch);
 }
 /** 视口 CSS px / 逻辑 px（手机 FIT：逻辑 lw×720） */
@@ -98,9 +98,9 @@ export function bloodstoneSlot(s: Phaser.Scene, x: number, y: number, size: numb
   if (!atlasReady(s, 'slot_bloodstone')) return null;
   return s.add.image(x, y, UI_ATLAS, 'slot_bloodstone').setDisplaySize(size, size).setName('slotBloodstone');
 }
-/** B4 格子点击区：手机不低于 36 CSS px 但不超过格距（不与相邻格重叠）；桌面保持格子尺寸 */
+/** B4 格子点击区：手机目标 44 CSS px（格距不够时以格距为上限，844×390 约 43） 但不超过格距（不与相邻格重叠）；桌面保持格子尺寸 */
 export function slotHitSize(mobile: boolean, size: number, pitch: number, cssPerUnit: number): number {
-  return mobile ? Math.min(Math.max(size, MIN_TAP_MOBILE_PHYS / Math.max(cssPerUnit, 0.01)), Math.max(pitch, size)) : size;
+  return mobile ? Math.min(Math.max(size, MIN_TAP / Math.max(cssPerUnit, 0.01)), Math.max(pitch, size)) : size;
 }
 /** B4 技能行状态着色：九宫格无 tint 组件，有图集时在行上叠一层半透明状态色（无图集时原底色已表达状态，返回 null） */
 export const SKILL_ROW_TINT: Record<string, number> = { learned: 0x3a8a3a, locked: 0x8a5a20, learnable: 0x8a7410 };
@@ -131,3 +131,8 @@ export function orbLayers(s: Phaser.Scene, x: number, y: number, D: number, fill
 }
 /** 横条填充宽度（bar_fill_* 两端 2px 不拉伸：宽度不足 L+R 时隐藏） */
 export function barFillW(ratio: number, w: number) { return w * Math.max(0, Math.min(1, ratio || 0)); }
+
+/** 手机面板框：plan §4.7 手机横屏用 panel_frame_s（边距 20）；缺该帧退回 panel_frame（再缺由 frameBg 退回矩形） */
+export function panelFrameName(mobile: boolean, has: (f: string) => boolean): string { return mobile && has('panel_frame_s') ? 'panel_frame_s' : 'panel_frame'; }
+/** 手机角色背包 / 技能页签（面板逻辑坐标，左上；高 48 → 932×430 约 44.7 CSS px，844×390 约 40.6；两签间隔 6 不重叠，右缘 322 < 技能翻页键左缘 348） */
+export const MOBILE_TABS = [{ mode: 'bag' as const, label: '角色背包', x: 190, w: 84, h: 48 }, { mode: 'skills' as const, label: '技能', x: 280, w: 84, h: 48 }];

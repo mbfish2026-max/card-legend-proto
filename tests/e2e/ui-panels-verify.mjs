@@ -14,6 +14,7 @@ const scan = (page, key) => page.evaluate(k => {
   walk(s.children.list);
   if (bg) { const B = bg.getBounds(); out.bg = bg.type; const tw = l => l.forEach(o => { if (!o.visible) return; if (o.type === 'Text' && o.text.trim()) { const b = o.getBounds(); out.minFont = Math.min(out.minFont, parseFloat(o.style.fontSize) * (o.parentContainer?.scaleX ?? 1)); if (b.right > B.right + 2 || b.x < B.x - 2) out.over.push(o.text.slice(0, 16)); } if (o.list) tw(o.list); }); tw((bg.parentContainer ?? s.children).list); }
   return out; }, key);
+// 手机版 UIScene 面板按 ui-art-plan §4.7 用 panel_frame_s（feat/ui-mobile-panels）
 for (const [tag, mobile] of [['1280', false], ['844', true]]) for (const blocked of [false, true]) {
   const name = tag + (blocked ? '-fallback' : ''), srv = await startPreview({ block: u => blocked && /ui_atlas/.test(u) });
   const b = await launch(), page = await b.newPage(), w = watch(page);
@@ -35,7 +36,7 @@ for (const [tag, mobile] of [['1280', false], ['844', true]]) for (const blocked
   const P = 'window.__game.scene.getScene("UI").panel';
   // 背包 + 装备对比
   await page.evaluate(() => window.__game.scene.getScene('Battle').openPanel('bag')); await sleep(600);
-  r = await scan(page, 'UI'); want(r, 'panel_frame', '背包'); ok(!r.over.length, `${name} 背包文字不越出 ${r.over.join('|')}`);
+  r = await scan(page, 'UI'); want(r, mobile ? 'panel_frame_s' : 'panel_frame', '背包'); ok(!r.over.length, `${name} 背包文字不越出 ${r.over.join('|')}`);
   if (!blocked) ok(r.ns.title_plate > 0 && r.ns.inset_frame > 0, `${name} 背包标题底牌+人物内框`);
   await page.screenshot({ path: `${OUT}${name}-bag.png` });
   const cmp = await page.evaluate(t => { const U = window.__game.scene.getScene('UI'), W = window.__game.scene.getScene('Battle').world; U.panel.showTip(W.bag[0], 300, 150, t); const c = U.panel.tip, f = {}; c.list.forEach(o => o.type === 'NineSlice' && (f[o.frame.name] = 1)); const bd = c.getBounds(); return { name: c.name, f, inside: bd.x >= 0 && bd.y >= 0 && bd.bottom <= 720 }; }, mobile);
@@ -45,7 +46,7 @@ for (const [tag, mobile] of [['1280', false], ['844', true]]) for (const blocked
   // 点面板外关闭（对比框 tapClose）由 tests/e2e/tapclose-verify.mjs 回归
   // 商店（长列表 + 滚动）
   await page.evaluate(() => window.__game.scene.getScene('UI').panel.openNpc('bq_book')); await sleep(700);
-  r = await scan(page, 'UI'); want(r, 'panel_frame', '书店');
+  r = await scan(page, 'UI'); want(r, mobile ? 'panel_frame_s' : 'panel_frame', '书店');
   await page.screenshot({ path: `${OUT}${name}-book.png` });
   await page.evaluate(() => window.__game.scene.getScene('UI').panel.openNpc('bq_weapon')); await sleep(700);
   const rows = await page.evaluate(() => { const U = window.__game.scene.getScene('UI'), out = []; const walk = l => l.forEach(o => { if (o.getData?.('rowPitch') && o.visible) out.push({ p: o.getData('rowPitch'), h: o.getData('rowHit'), y: o.getWorldTransformMatrix().ty }); if (o.list) walk(o.list); }); walk(U.children.list); const c = window.__game.canvas.getBoundingClientRect(), cam = U.cameras.main; return { out, css: c.height / (cam.height / cam.zoom), k: U.panel.mscale, si: U.panel.scrollInfo }; });
@@ -60,11 +61,11 @@ for (const [tag, mobile] of [['1280', false], ['844', true]]) for (const blocked
   await page.evaluate(() => window.__game.scene.getScene('UI').panel.close()); await sleep(200);
   // 游戏内设置 / 世界地图
   await page.evaluate(() => window.__game.scene.getScene('Battle').openPanel('settings')); await sleep(500);
-  r = await scan(page, 'UI'); want(r, 'panel_frame', '游戏内设置'); ok(!r.over.length, `${name} 设置文字不越出 ${r.over.join('|')}`);
+  r = await scan(page, 'UI'); want(r, mobile ? 'panel_frame_s' : 'panel_frame', '游戏内设置'); ok(!r.over.length, `${name} 设置文字不越出 ${r.over.join('|')}`);
   await page.screenshot({ path: `${OUT}${name}-settings-ingame.png` });
   await page.evaluate(() => window.__game.scene.getScene('UI').panel.close()); await sleep(200);
   await page.evaluate(() => window.__game.scene.getScene('Battle').openPanel('map')); await sleep(900);
-  r = await scan(page, 'UI'); want(r, 'panel_frame', '世界地图');
+  r = await scan(page, 'UI'); want(r, mobile ? 'panel_frame_s' : 'panel_frame', '世界地图');
   await page.screenshot({ path: `${OUT}${name}-worldmap.png` });
   const bad = w.errs.filter(e => !/404|Failed to load/i.test(e)); ok(!bad.length, `${name} 无脚本错误 ${bad.slice(0, 3).join(' | ')}`);
   await b.close(); srv.stop();
