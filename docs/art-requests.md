@@ -1854,3 +1854,17 @@ public/assets/ui/UI-Tooltip-Border.png
 
 脚本 `docs/ui-preview/build_h_chain.py`、`compose_h_chain.py`；源图 `docs/ui-preview/src/h_*_src.jpg`；预览 `docs/ui-preview/preview_h_chain_icons.jpg`。**v2（主Bot 审后修正）**：①暗色提亮+左上轮廓高光：h_black_crystal_necklace/h_black_crystal_ring（紫青）、h_ebony_necklace/h_ebony_bracelet（暖棕）、h_death_glove（紫）；②8 条项链裁短链条放大吊坠，占比对齐 eq_* 项链；③h_steel_bracelet 改为带铰链锁扣铆钉的扁平宽钢箍，h_ebony_bracelet 改为雕纹粗圆木镯（源图 src/h_br_v2_src.jpg）。64 与 @2x 同步重出，预览底部加修正前后对比。
 待系统开发把对应物品 icon 从 gen_necklace/gen_bracelet/eq_iron_ring/gen_boots 换为上述文件。
+
+## 阶段2 腰带 7 条 + 空栏底图（待美术）
+图标现用 gen_bracelet 占位；规格同 H 链首饰（64px + @2x，透明底）。
+| id | 名称 | 需求 | 备注 |
+|---|---|---|---|
+| belt_hide | 兽皮腰带 | 15 | |
+| belt_iron | 铁腰带 | 22 | |
+| belt_bronze | 青铜腰带 | 30 | 等级保守 |
+| belt_steel | 钢铁腰带 | 35 | |
+| belt_leiting | 雷霆腰带 | 45 | 战士；外观与雷霆套一致 |
+| belt_lieyan | 烈焰腰带 | 45 | 法师；待核 |
+| belt_guangmang | 光芒腰带 | 45 | 道士；待核 |
+
+空栏底图（装备面板空槽剪影，60px + @2x）：slot_empty_belt（腰带）、slot_empty_boots（靴子）。血石空槽由灵符分支提供，不在此列。

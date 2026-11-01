@@ -451,3 +451,13 @@
 - 有回退。判断原因是魔杖、银蛇的需求从 6 提到 26 以后，法师和道士在 6–25 级只剩海魂、偃月、降魔、半月可用。H 章里补这个空档的 25 件首饰属于阶段 3 的新增物品，还没实现。
 - 结果：tests/battle.test.ts 不过（战士种子 3 只到 47 级，断言要求 48–52）。tests/eg-dungeon.test.ts 不过：D7 赤月道士凑齐中位 18 次，雷炎法师 21 次，目标是 22–32；原因是三圣按职业改到赤月恶魔 1/40，雷炎套按方案为 1/50。这两项断言都没有放宽，交给战斗开发和魔兽决定。
 - 「法师/道士 21–30 级死亡中位 ≤ 现值+1」和「1–39 偏差 10–15%」需要按等级段统计死亡，这次没有做，未验证。
+
+## 阶段2 类型改动清单（魔兽 2026-11-02 已确认，已落地 6404fad，仅成员、无逻辑）
+```diff
+-export type Slot = 'weapon' | 'helmet' | 'armor' | 'necklace' | 'ring' | 'bracelet' | 'boots';
++export type Slot = 'weapon' | 'helmet' | 'armor' | 'necklace' | 'ring' | 'bracelet' | 'boots' | 'belt';
+-export type EquipSlot = 'weapon' | 'helmet' | 'armor' | 'necklace' | 'ring1' | 'ring2' | 'bracelet1' | 'bracelet2' | 'boots';
++export type EquipSlot = 'weapon' | 'helmet' | 'armor' | 'necklace' | 'ring1' | 'ring2' | 'bracelet1' | 'bracelet2' | 'boots' | 'belt';
+```
+说明：'boots' 自 init（5e11453）起就是独立 Slot/EquipSlot，UI 也是独立栏（右列第 2 格，在「衣服」下方）；中期报告里“靴子占衣服位”是我看截图误判，无需改类型。仍按要求加了「衣服位靴子→boots」防御性迁移。
+连带：items.ts SLOTS/EQUIP_SLOTS/名称表加 belt；Panel.ts 坐标加 belt；World.ts migrateEquip 加靴子迁移（存档逻辑，非战斗）。待战斗开发 review。
