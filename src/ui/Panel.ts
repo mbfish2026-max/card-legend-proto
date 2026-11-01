@@ -1,3 +1,4 @@
+import { SET_SPECIALS } from '../data/eg-sets';
 import { clampOff, visibleRange, dragOff, wheelOff, isTap, thumb } from './scrollList';
 const NPC_VIS = 7;
 import { COMPANION_MODE_NAME } from '../data/companion';
@@ -156,7 +157,8 @@ export class Panel {
     const title = w.title(); const lines = [`${c.name}  Lv${w.level}${title ? '  「' + title + '」' : ''}`, `经验 ${fmtExp(w.exp)}/${fmtExp(w.expNext)}   金币 ${w.gold}   击杀 ${w.kills}`, `生命 ${h ? Math.ceil(h.hp) : 0}/${st.hp}   魔法 ${h ? Math.floor(h.mp ?? 0) : 0}/${st.mp}`,
       `攻击 ${st.atk}   魔法 ${st.mag}   道术 ${st.tao}   防御 ${Math.round(st.def)}   魔御 ${Math.round(st.mdef ?? 0)}   幸运 ${w.luck()}`];
     const sc = w.setCounts(), setLine = Object.values(SETS).filter(st => sc[st.id]).map(st => `${st.name}${sc[st.id]}/${st.pieces.length}`).join('  ');
-    if (setLine) lines.push(`套装 ${setLine}`);
+    const spx = w.setSpecials().map(id => SET_SPECIALS[id]?.text.replace(/ \[适配\]/, '')).filter(Boolean).join('；');
+    if (setLine) lines.push(`套装 ${setLine}${spx ? '  特效：' + spx : ''}`);
     R.add(txt(s, 175, top + 345, lines.join('\n'), 15, '#ffe8a0', { lineSpacing: setLine ? 2 : 6, strokeThickness: 2 }));
     if (!IS_MOBILE) R.add(txt(s, cx + 130, top + 270, IS_MOBILE ? '点两下\n装备栏=卸下' : '点击装备栏\n= 卸下', 12, '#999', { align: 'center' }).setOrigin(0.5, 0));
   }
@@ -274,7 +276,7 @@ export class Panel {
       // 第 2 行：已学→耗魔/冷却/修炼/升级；未学→需 LvX + 获取途径
       const up = lv >= 0 && lv < 3 && k.learn && k.train ? `升级：Lv${k.learn[lv + 1]}+修炼${k.train[lv]}` : lv === 3 ? '已满级' : '';
       const src = !bk ? '初始技能' : shopIds.has(k.id) ? `比奇书店有售 ${bk.price}金` : dropSrc[k.id] ? `BOSS 掉落：${dropSrc[k.id]}` : bk.drops.length ? '打怪掉落技能书' : '暂未开放获取';
-      const l2 = learned ? `${k.passive ? '无需施放' : `耗魔${fmtInt(k.mana)} 冷却${fmtInt(k.cooldown)}s`}  修炼${pts}${k.train ? '/' + k.train[2] : ''}  ${up}  ${k.desc}` : `需 Lv${need} · 获取：${src} · ${k.desc}`;
+      const l2 = learned ? `${k.passive ? '无需施放' : `耗魔${fmtInt(this.world().manaCost(k))}${this.world().manaCost(k) < k.mana ? "(法神-10%)" : ""} 冷却${fmtInt(k.cooldown)}s`}  修炼${pts}${k.train ? '/' + k.train[2] : ''}  ${up}  ${k.desc}` : `需 Lv${need} · 获取：${src} · ${k.desc}`;
       R.add(txt(s, 212, y - rowH / 2 + 5 + fs + 9, fmtText(l2).slice(0, IS_MOBILE ? 32 : 44), fs - 1, learned ? '#9fd' : '#ccc', { strokeThickness: 2 }));
       if (k.train && lv >= 0 && lv < 3) { const p = Math.min(1, pts / k.train[lv]); R.add(s.add.rectangle(212, y + rowH / 2 - 6, 220, 3, 0x333333).setOrigin(0, 0.5)); R.add(s.add.rectangle(212, y + rowH / 2 - 6, 220 * p, 3, 0x55cc77).setOrigin(0, 0.5)); }
       if (inBar) {

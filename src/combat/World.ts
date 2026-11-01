@@ -29,6 +29,8 @@ import { gateGap, BOSS_GEAR_GATE, GATE_K_TAKEN, GATE_K_DEALT } from '../data/bos
 import { summonDisplayName, summonNameColor, summonOwnerLabel } from './summonLabel';
 
 export const CRIT_CHANCE = 0.15, CRIT_MULT = 1.8;
+/** 三圣 4 件特效数值（用户指定，官方未查到 → [适配]），见 docs/set-fx.md */
+export const SET_FX = { shengzhanCrit: 0.05, shengzhanCritDmg: 1.5, fashenMana: 0.1, tianzunSummon: 0.1, tianzunHeal: 0.1 };
 export interface Input { dx: number; dy: number; use?: boolean; step?: number; /** false 时关闭自动普攻；缺省/true 保持原行为 */ autoAttack?: boolean }
 export interface SaveData {
   v: 1; cls: ClassId; level: number; exp: number; gold: number; pots: number[];
@@ -336,7 +338,16 @@ export class World {
   }
   /** 当前激活的套装加成 */
   /** P2：已激活的套装职业特效 id（eg-sets SET_SPECIALS）——战斗开发据此实现效果 */
-  setSpecials(): string[] { return this.setBonuses().flatMap(b => b.special ? [b.special] : []); }
+  setSpecials(): string[] { return [...new Set(this.setBonuses().flatMap(b => b.special ? [b.special] : []))]; }
+  /** 特效是否激活（按装备缓存；脱件/换装/读档即失效重算） */
+  hasSpecial(id: string): boolean {
+    const k = Object.values(this.equip).map(i => i?.item ?? '').join(',');
+    if (k !== this.spKey) { this.spKey = k; this.spSet = new Set(this.setSpecials()); }
+    return this.spSet.has(id);
+  }
+  private spKey = '\u0000'; private spSet = new Set<string>();
+  /** fashen4 [适配]：技能耗魔 −10%，向上取整，最低 1 */
+  manaCost(s: { mana: number }): number { return this.hasSpecial('fashen4') ? Math.max(1, Math.ceil(s.mana * (1 - SET_FX.fashenMana))) : s.mana; }
   setBonuses() { const c = this.setCounts(); return Object.values(SETS).flatMap(s => s.bonus.filter(b => (c[s.id] ?? 0) >= b.n)); }
   stats(): Stats { const b = this.baseStats(), e = this.equipStats(), r: any = {}; for (const k of Object.keys(ZERO)) r[k] = (b as any)[k] + (e as any)[k]; return r; }
   /** 旧档装备（存档 stats 无 mdef）：按物品定义 × 品质 × 强化 推导魔御，不改存档结构 */
@@ -577,7 +588,8 @@ export class World {
   damage(target: Unit, amount: number, source?: Unit, canCrit = true, dot = false, ignoreDef = false, magic = 0) {
     if (!target.alive) return 0;
     const crit = canCrit && this.rng() < (source?.isHero ? this.critChance() : CRIT_CHANCE);
-    if (crit) amount *= CRIT_MULT;
+    if (crit) amount *= source?.isHero && this.hasSpecial('shengzhan4') ? 1 + (CRIT_MULT - 1) * SET_FX.shengzhanCritDmg : CRIT_MULT; // shengzhan4：暴击额外部分 ×1.5（1.8→2.2）[适配]
+    if (source?.summon && this.hasSpecial('tianzun4')) amount *= 1 + SET_FX.tianzunSummon; // tianzun4：召唤物伤害（含继承）+10% [适配]
     const nb = this.newbieFloor;
     if (source?.boss?.enrageUntil && source.boss.enrageUntil > this.time) amount *= 1 + WORLD.bossEnrageAtk; // BOSS 狂暴 +30%
     if (!ignoreDef) { const up = (u?: number, v?: number) => u && u > this.time ? v ?? 0 : 0; amount = mitigate(amount, (target.def ?? 0) + up(target.defUpUntil, target.defUp), (target.mdef ?? target.def ?? 0) + up(target.mdefUpUntil, target.mdefUp), magic, nb ? WORLD.legacyDmgFloor : WORLD.dmgFloor, nb ? WORLD.legacyDefFactor : WORLD.defFactor); }
@@ -600,8 +612,9 @@ export class World {
     if (target.hp <= 0) this.kill(target);
     return amount;
   }
-  heal(target: Unit, amount: number) {
+  heal(target: Unit, amount: number, boost = true) {
     if (!target.alive) return;
+    if (boost && target.team !== 'enemy' && this.hasSpecial('tianzun4')) amount *= 1 + SET_FX.tianzunHeal; // tianzun4：治疗 +10% [适配]（药水不加）
     const a = Math.min(Math.round(amount), target.maxHp - target.hp);
     target.hp += a;
     this.events.push({ type: 'damage', target: target.uid, amount: a, x: target.x, heal: true });
@@ -984,7 +997,7 @@ export class World {
     if (s.passive) return { ok: false, reason: `${s.name} 为被动技能` };
     const slv = Math.max(0, this.skillLevel(s)), lvF = 1 + 0.1 * slv;
     if (cds[i] > 0) return { ok: false, reason: `${s.name} 冷却中（${fmtInt(Math.max(1, cds[i]))}s）` };
-    if ((h.mp ?? 0) < s.mana) return { ok: false, reason: '魔法值不足' };
+    if ((h.mp ?? 0) < this.manaCost(s)) return { ok: false, reason: '魔法值不足' };
     if (s.kind === 'summon' && opts.auto) {
       const max = SUMMON_MAX[s.id] ?? 1, mine = this.summons.filter(u => u.id === (CS_SUMMON[s.id]?.base.id ?? ''));
       if (max > 1) { if (mine.length >= max && mine.every(u => u.hp >= u.maxHp * AUTO_RESUMMON_HP)) return { ok: false, reason: `${s.name}已有 ${max} 只` }; }
@@ -1059,7 +1072,7 @@ export class World {
       }
     }
     if (s.area && s.kind === 'buff') targets = [h, ...this.units.filter(u => u.summon && u.alive && Math.abs(u.x - h.x) <= s.area!)];
-    h.mp = (h.mp ?? 0) - s.mana; for (let j = 0; j < cds.length; j++) cds[j] = Math.max(cds[j], castGapOf(this.cls)); cds[i] = Math.max(cds[i], s.cooldown); // 公共施法间隔 0.8s + 本技能轻量冷却（手动/自动共用）
+    h.mp = (h.mp ?? 0) - this.manaCost(s); for (let j = 0; j < cds.length; j++) cds[j] = Math.max(cds[j], castGapOf(this.cls)); cds[i] = Math.max(cds[i], s.cooldown); // 公共施法间隔 0.8s + 本技能轻量冷却（手动/自动共用）
     this.events.push({ type: 'attack', source: h.uid, target: targets[0]?.uid ?? h.uid, skill: s.id });
     this.addTrain(s, 100);
     const pw = this.power(s.stat) * this.skillScale() * (s.lvMult ? 1 : lvF);
@@ -1166,7 +1179,7 @@ export class World {
   tickHots(u: Unit) {
     if (!u.hots?.length) return;
     for (const x of u.hots) while (x.left > 0 && this.time >= x.next - 1e-9) { x.left--; x.next += WORLD.potHotSec / WORLD.potHotTicks;
-      if (x.hp) this.heal(u, x.hp); if (x.mp) u.mp = Math.min(u.maxMp, (u.mp ?? 0) + x.mp); }
+      if (x.hp) this.heal(u, x.hp, false); if (x.mp) u.mp = Math.min(u.maxMp, (u.mp ?? 0) + x.mp); }
     u.hots = u.hots.filter(x => x.left > 0);
   }
   /** 己方负面状态（主角/召唤物）：中毒、红毒、减速、定身 */
@@ -1437,7 +1450,7 @@ export class World {
   }
   /** [适配] 基本剑术/精神力战法准确 → 暴击率加成（官方准确数值 / 100） */
   critChance() {
-    let c = CRIT_CHANCE;
+    let c = CRIT_CHANCE + (this.hasSpecial('shengzhan4') ? SET_FX.shengzhanCrit : 0);
     for (const s of this.skillPool) {
       if (!s.passive || !s.accBonus) continue;
       const lv = this.skillLevel(s); if (lv < 0) continue;
