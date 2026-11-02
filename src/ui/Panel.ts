@@ -171,6 +171,7 @@ export class Panel {
     const hit = slotHitSize(IS_MOBILE, size, pitch, this.cssU());
     if (hit > size) r.setInteractive({ hitArea: new Phaser.Geom.Rectangle((size - hit) / 2, (size - hit) / 2, hit, hit), hitAreaCallback: Phaser.Geom.Rectangle.Contains, useHandCursor: !!it });
     else r.setInteractive({ useHandCursor: !!it });
+    if (key.startsWith('eq_')) r.setName(key);
     r.setData('slot', true).setData('slotHit', hit).setData('slotPitch', pitch).setData('slotSize', size);
     if (!IS_MOBILE) r.on('pointerover', () => { if (atl) r.setFillStyle(0xffe8a0, 0.12); else r.setFillStyle(0x2a2016); if (it) this.showTip(it, x + size / 2 + 6, y - size / 2); });
     if (!IS_MOBILE) r.on('pointerout', () => { r.setFillStyle(0x0a0806, atl ? 0.001 : 1); this.hideTip(); });
@@ -215,7 +216,7 @@ export class Panel {
     const sc = w.setCounts(), setLine = Object.values(SETS).filter(st => sc[st.id]).map(st => `${st.name}${sc[st.id]}/${st.pieces.length}`).join('  ');
     const spx = w.setSpecials().map(id => SET_SPECIALS[id]?.text.replace(/ \[适配\]/, '')).filter(Boolean).join('；');
     if (setLine) lines.push(`套装 ${setLine}${spx ? '  特效：' + spx : ''}`);
-    R.add(txt(s, 175, top + 357, lines.join('\n'), 15, '#ffe8a0', { lineSpacing: setLine ? 2 : 6, strokeThickness: 2 }));
+    R.add(txt(s, 175, top + (IS_MOBILE ? 338 : 357), lines.join('\n'), 15, '#ffe8a0', { lineSpacing: setLine ? 2 : 6, strokeThickness: 2 }));
     if (!IS_MOBILE) R.add(txt(s, cx, top + 66, '点击装备栏 = 卸下', 12, '#999', { align: 'center' }).setOrigin(0.5, 0.5)); // 原位置压右手镯栏，移到立绘上方
   }
   /** 面板坐标 1 单位 = 多少 CSS px（视口缩放 × 手机面板容器缩放） */

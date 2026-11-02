@@ -26,10 +26,10 @@ try {
     await sleep(600);
     const em = await p.evaluate(() => { const g = window.__game, pn = g.scene.getScene('UI').panel; const all = []; const walk = o => { all.push(o); (o.list ?? []).forEach(walk); }; g.scene.getScene('UI').children.list.forEach(walk);
       const f = n => all.find(o => o.name === n); const b = f('slotEmpty_belt'), t = f('slotEmpty_boots');
-      return { belt: !!b && b.texture.key, boots: !!t && t.texture.key, src: b ? b.texture.getSourceImage().width : 0, css: Math.round(Math.max(...all.filter(o => o.getData && o.getData('slotHit') && o.getData('slotSize') === 60).map(o => o.getData('slotHit'))) * pn.cssU()) }; });
+      return { belt: !!b && b.texture.key, boots: !!t && t.texture.key, src: b ? b.texture.getSourceImage().width : 0, css: Math.round(Math.min(...all.filter(o => /^eq_/.test(o.name ?? '')).map(o => o.getData('slotHit'))) * pn.cssU()) }; });
     chk(em.belt === 'ui_slot_empty_belt' && em.boots === 'ui_slot_empty_boots', `${VW}x${VH} 空栏底图已显示 ${JSON.stringify(em)}`);
     chk(em.src === (mob || true ? 120 : 60), `${VW}x${VH} DPR2 用 @2x（源宽 ${em.src}）`);
-    if (em.css >= 44) chk(true, `${VW}x${VH} 装备栏点击区 ${em.css} CSS px ≥44`); else console.log(`GAP ${VW}x${VH} 装备栏点击区 ${em.css} CSS px <44（行距 58 封顶，所有装备栏同此，非本次引入）`);
+    if (em.css >= 44) chk(true, `${VW}x${VH} 装备栏点击区最小 ${em.css} CSS px ≥44`); else chk(false, `${VW}x${VH} 装备栏点击区最小 ${em.css} CSS px <44`);
     await p.screenshot({ path: `${dir}/belt-empty-${VW}x${VH}.png` });
     chk(w.errs.length === 0, `${VW}x${VH} 无 JS 错误 ${w.errs.slice(0, 2).join(' | ')}`);
     await p.close();
