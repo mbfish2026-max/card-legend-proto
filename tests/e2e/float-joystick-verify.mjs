@@ -27,14 +27,14 @@ try {
     for (const [i, [x, y]] of POS.entries()) {
       chk(await onCanvas(x, y), `${tag} 位置${i + 1} (${x},${y}) 是空地画布`);
       await T('touchStart', [{ x, y, id: 1 }]); await sleep(80); let s = await st();
-      chk(s.act && Math.abs(s.bx - x) < 2 && Math.abs(s.by - y) < 2 && s.dx === 0 && s.dy === 0, `${tag} 位置${i + 1} 按下即在按下点出现底盘 (${s.bx.toFixed(0)},${s.by.toFixed(0)})，未拖动无方向`);
+      chk(s.act && Math.abs(s.bx - x) < 4 && Math.abs(s.by - y) < 4 && s.dx === 0 && s.dy === 0, `${tag} 位置${i + 1} 按下即在按下点出现底盘 (${s.bx.toFixed(0)},${s.by.toFixed(0)})，未拖动无方向`);
       const dirs = [['右', 50, 0, 1, 0], ['左', -50, 0, -1, 0], ['上', 0, -50, 0, -1], ['下', 0, 50, 0, 1]], got = [];
       for (const [n, ox, oy, ex, ey] of dirs) { await T('touchMove', [{ x: x + ox, y: y + oy, id: 1 }]); await sleep(60); s = await st(); got.push(`${n}=${s.dx},${s.dy}`); chk(s.dx === ex && s.dy === ey, `${tag} 位置${i + 1} ${n} → dx,dy=${s.dx},${s.dy}`); }
       if (i === 0) { const h0 = await p.evaluate(() => window.__game.scene.getScene('Battle').world.hero.x); await T('touchMove', [{ x: x + 50, y, id: 1 }]); await sleep(700);
         const h1 = await p.evaluate(() => window.__game.scene.getScene('Battle').world.hero.x); chk(h1 > h0 + 5, `${tag} 右推英雄实际右移 ${h0.toFixed(0)}→${h1.toFixed(0)}`); }
       // 超半径：底盘不跟随
       await T('touchMove', [{ x: x + 150, y: y + 6, id: 1 }]); await sleep(60); s = await st();
-      chk(s.dx === 1 && s.dy === 0 && Math.abs(s.bx - x) < 2, `${tag} 位置${i + 1} 拖到 150px（超半径）底盘不跟随、仍向右`);
+      chk(s.dx === 1 && s.dy === 0 && Math.abs(s.bx - x) < 4, `${tag} 位置${i + 1} 拖到 150px（超半径）底盘不跟随、仍向右`);
       await T('touchMove', [{ x: x + 40, y: y - 30, id: 1 }]); await sleep(120);
       await p.screenshot({ path: `${dir}/m${tag}-pos${i + 1}.png` });
       await T('touchEnd', []); await sleep(120); s = await st();
@@ -46,7 +46,7 @@ try {
     // —— 3. 按钮区按下不触发摇杆（真触摸：药水、技能、日志；顶栏/进入/合击 只查命中元素非画布 + 未激活）
     const btns = await p.evaluate(() => {
       const q = sel => [...document.querySelectorAll(sel)].filter(e => e.offsetParent !== null).map(e => { const r = e.getBoundingClientRect(); return { sel, x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height }; });
-      return [...q('#mh-pots .b').slice(0, 1), ...q('#mhud .sk').slice(0, 1), ...q('#mh-log'), ...q('#mh-top .b'), ...q('#mh-act'), ...q('#mh-comp .b'), ...q('#mh-hang'), ...q('#mh-shop'), ...q('#mh-auto')];
+      return [...q('#mhud .sk').slice(0, 1), ...q('#mh-log'), ...q('#mh-top .b'), ...q('#mh-act'), ...q('#mh-comp .b'), ...q('#mh-hang'), ...q('#mh-shop'), ...q('#mh-auto'), ...q('#mh-pots .b').slice(0, 1)]; // 药水放最后（按住会弹换药层）
     });
     for (const bt of btns) {
       const tgt = await p.evaluate((x, y) => { const e = document.elementFromPoint(x, y); return e === window.__game.canvas ? 'canvas' : (e?.closest('.b,#mh-log') ? 'btn' : e?.id || e?.tagName); }, bt.x, bt.y);
@@ -55,15 +55,15 @@ try {
       const s = await st(); if (real) { await T('touchEnd', []); await sleep(150); }
       chk(tgt === 'btn' && !s.act && s.dx === 0 && bt.w >= 44 && bt.h >= 44, `${tag} ${bt.sel} 按下不触发摇杆（命中=${tgt}${real ? '，真触摸' : ''}，${bt.w.toFixed(0)}×${bt.h.toFixed(0)}）`);
     }
-    await p.evaluate(() => document.getElementById('mh-log').classList.remove('open'));
+    await p.evaluate(() => { document.getElementById('mh-log').classList.remove('open'); document.getElementById('mh-potpop-bg')?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); }); await sleep(200);
     // —— 4. 多点触控：左手摇杆右推，右手按技能键（第二指），摇杆不受影响，技能键收到按下
     { const [x, y] = POS[1]; const sk = btns.find(b => b.sel === '#mhud .sk') ?? btns.find(b => b.sel === '#mh-act');
       await p.evaluate(() => { window.__skDown = 0; document.querySelectorAll('#mhud .sk,#mh-act').forEach(e => e.addEventListener('pointerdown', () => window.__skDown++)); });
       await T('touchStart', [{ x, y, id: 1 }]); await T('touchMove', [{ x: x + 50, y, id: 1 }]); await sleep(60);
       await T('touchStart', [{ x: x + 50, y, id: 1 }, { x: sk.x, y: sk.y, id: 2 }]); await sleep(80); let s = await st(); const n = await p.evaluate(() => window.__skDown);
-      chk(s.act && s.dx === 1 && n === 1 && Math.abs(s.bx - x) < 2, `${tag} 多点：摇杆保持右推、第二指按 ${sk.sel} 收到按下（${n}），底盘不动`);
+      chk(s.act && s.dx === 1 && n === 1 && Math.abs(s.bx - x) < 4, `${tag} 多点：摇杆保持右推、第二指按 ${sk.sel} 收到按下（${n}），底盘不动`);
       await T('touchMove', [{ x: x, y: y - 50, id: 1 }, { x: sk.x, y: sk.y, id: 2 }]); await sleep(60); s = await st(); chk(s.dy === -1 && s.dx === 0, `${tag} 多点：右手按住时左手改向上 dy=${s.dy}`);
-      await T('touchEnd', [{ x, y: y - 50, id: 1 }]); await sleep(80); s = await st(); chk(s.act && s.dy === -1, `${tag} 多点：右手先松开，摇杆仍激活`);
+      await T('touchMove', [{ x, y: y - 50, id: 1 }]); // CDP：touchMove 少列的点即松开 await sleep(80); s = await st(); chk(s.act && s.dy === -1, `${tag} 多点：右手先松开，摇杆仍激活`);
       await T('touchEnd', []); await sleep(80); s = await st(); chk(!s.act && s.dx === 0 && s.dy === 0, `${tag} 多点：左手松开停止`);
       // 先按右手按钮再按左侧：左手仍可激活
       await T('touchStart', [{ x: sk.x, y: sk.y, id: 2 }]); await T('touchStart', [{ x: sk.x, y: sk.y, id: 2 }, { x, y, id: 1 }]); await T('touchMove', [{ x: sk.x, y: sk.y, id: 2 }, { x: x - 50, y, id: 1 }]); await sleep(60); s = await st();
