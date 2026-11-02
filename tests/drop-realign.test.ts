@@ -27,7 +27,7 @@ let prev = 0; for (let r = 1; r <= 60; r++) { const d = realignDen(r, true); ok(
   ok(realignDen(r, true, 1e9) >= realignDen(r, true, 1), `需求 ${r} 夹在上下限内`); }
 ok(realignDen(26, true, 1600) === 107, '魔杖 邪恶钳虫 官方 1/1600 ÷15 = 1/107');
 // 4) D1 需求 + D5 改名（id 不变）+ G4 铁靴
-const REQ: Record<string, number> = { magic_staff: 26, tao_sword: 26, guyu: 35, helmet: 4, iron_sword: 5, /* early-gear-3-5 适配：官方 10 → 4/5 */ xiaoyao_fan: 35, shihun_staff: 35, pohun: 20, armor: 22, gold_ring: 22 };
+const REQ: Record<string, number> = { magic_staff: 25, tao_sword: 25, guyu: 30, helmet: 4, iron_sword: 11, /* starter-cloth(gear-tiers D3)：魔杖/银蛇 25、骨玉 30、铁剑 11；头盔仍 early-gear 4 */ xiaoyao_fan: 35, shihun_staff: 35, pohun: 20, armor: 22, gold_ring: 22 };
 for (const [id, r] of Object.entries(REQ)) ok(ITEMS[id].req === r, `${ITEMS[id].name} 需求 ${r}`);
 ok(ITEMS.tao_sword.name === '银蛇' && ITEMS.dragon_sword.name === '屠龙', 'D5 显示名 银蛇/屠龙');
 ok((ITEMS.boots.equip!.def ?? 0) < 2 && (ITEMS.boots.equip!.hp ?? 0) < 16, 'G4 铁靴低于布鞋15（防2 生命16）');
@@ -39,7 +39,7 @@ const w = new World(() => 0.5, 12, FLOORS, 'taoist', JSON.parse(JSON.stringify(s
 ok(w.equip.weapon?.item === 'tao_sword', '旧档已穿戴银蛇保留（不强制卸下）');
 ok(w.equip.weapon?.name === '银蛇[精良]', `旧名刷新为 银蛇[精良]（实际 ${w.equip.weapon?.name}）`);
 ok(w.bag.find(b => b.item === 'dragon_sword')?.name === '屠龙', '背包旧名 屠龙刀→屠龙');
-const bi = w.bag.findIndex(b => b.item === 'magic_staff'); ok(w.bag[bi].req === 26 && w.equipItem(bi) === '需要等级 26', '新穿魔杖按新需求 26');
+const bi = w.bag.findIndex(b => b.item === 'magic_staff'); ok(w.bag[bi].req === 25 && w.equipItem(bi) === '需要等级 25', '新穿魔杖按新需求 25（starter-cloth）');
 // 6) H 章过渡链：25 件首饰 + 4 双靴子，来源=方案、需求≤怪物等级+X、老存档无此 id 也不报错
 { const { H_ITEMS, H_PLAN } = await import('../src/data/h-chain');
   ok(Object.keys(H_ITEMS).length === 29 && Object.values(H_ITEMS).filter(i => i.slot === 'boots').length === 4, 'H 链 29 件（含靴子 4）');
