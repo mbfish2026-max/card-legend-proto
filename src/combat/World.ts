@@ -15,6 +15,7 @@ import { HERO, ENEMIES, SUMMON, SUMMON_BEAST, SUMMON_CORPSE, SUMMON_GOLDEN, DECO
 import { EXP_PER_LEVEL, EXP_VERSION, migrateExp, scaledExp, fmtExp } from '../data/expCurve';
 import { killExp, foeStatsAt, FLOOR_TARGET_LV, FOE_BAND, floorBand } from '../data/balance';
 import '../data/drop-plan';
+import { refreshInvItem } from '../data/drop-realign';
 import { REGIONS } from '../data/map';
 import { MINE_FLOORS, MINE_CAST, MINE_RESPAWN, MINE_RADIUS, mineX, minePurity, OIL_BOSSES, OIL_RATE } from '../data/mining'; // 阶段4：drop-plan 覆盖（副作用：改写 ENEMIES.drops）
 import { WORLD, FLOORS, Floor, FARM_RESPAWN, FARM_SAFE_DIST, nextFloorOf, SIDE_FLOORS, DEPTH_STEP, prevLayerOf, prevFloorOf, floorWidth, OLD_MAP_W, summonMulAt } from '../data/world';
@@ -252,12 +253,13 @@ export class World {
         save = { ...save, floorIndex: m(save.floorIndex ?? 0) }; this.reached = new Set([...this.reached].map(m)); this.bossKilled = new Set([...this.bossKilled].map(m));
       }
       // 旧存档兼容：已达到学习等级的技能视为已学
-      this.storage = [...(save.storage ?? [])]; this.skillOrder = [...(save.skillOrder ?? [])]; this.ringQ = save.ringQ ?? null; this.ringDone = save.ringDone ?? 0; this.companion = migrateCompanion(save.companion);
+      this.storage = [...(save.storage ?? [])]; for (const it of [...this.bag, ...this.storage, ...Object.values(this.equip)]) refreshInvItem(it); // drop-realign：D5 改名/D1 需求刷新（已穿戴不卸下）
+      this.skillOrder = [...(save.skillOrder ?? [])]; this.ringQ = save.ringQ ?? null; this.ringDone = save.ringDone ?? 0; this.companion = migrateCompanion(save.companion);
       // #11：旧档推导排除尚无获取途径的新书技能（shop:false 且无掉落）
       this.learned = new Set(save.learned ?? this.skillPool.filter(s => this.level >= (s.unlock ?? s.learn?.[0] ?? 1) && !(s.id in LATE_BOOKS) && (!BOOKS[s.id] || BOOKS[s.id].shop || BOOKS[s.id].drops.length)).map(s => s.id));
     }
     this.learned.add(this.starter);
-    this.expNext = EXP_PER_LEVEL(this.level);
+    this.expNext = EXP_PER_LEVEL(this.level, this.cls);
     this.spawnHero();
     this.loadFloor(save ? Math.min(save.floorIndex, this.floors.length - 1) : 0);
     if (save?.town && TOWNS[save.town]) this.enterTown(save.town, true);
@@ -578,7 +580,7 @@ export class World {
   }
   /** feat/maps-more：刷怪并按子层深度加成（官方第 d 层 攻/血 ×(1+DEPTH_STEP×(d−1))，原有层 depth 缺省=1 不变） */
   spawnFoe(id: string, x: number, y: number) { const u = this.spawn(ENEMIES[id], 'enemy', x, y), d = this.floor.depth ?? 1;
-    const bs = this.floors === FLOORS ? foeStatsAt(id, this.floorIndex) : null; // balance-sys：按层目标等级生成面板（新手图豁免）
+    const bs = this.floors === FLOORS ? foeStatsAt(id, this.floorIndex, this.cls) : null; // balance-sys：按层目标等级生成面板（新手图豁免）
     if (bs) { u.level = bs.level; u.hp = u.maxHp = bs.hp; u.atk = bs.atk; u.def = bs.def; if (u.tier !== 'boss') u.mdef = Math.round(bs.def * FOE_BAND.mdef[floorBand(this.floorIndex)]); }
     else if (d > 1) { const k = 1 + DEPTH_STEP * (d - 1); u.hp = u.maxHp = Math.round(u.hp * k); u.atk = Math.round(u.atk * k); }
     // feat/balance-battle：BOSS 攻击 = 同层普通怪均值 ×bossAtkVsNormal（取 max）、血 = 均值 ×bossHpVsNormal（取 min）[适配]；攻击间隔 1.5→1.2s。首图豁免
@@ -586,7 +588,7 @@ export class World {
     if (u.tier === 'boss' && !this.newbieFloor) {
       const kd = d > 1 ? 1 + DEPTH_STEP * (d - 1) : 1;
       const ns = this.floor.spawns.map(s => s.id).filter(sid => ENEMIES[sid] && ENEMIES[sid].tier !== 'boss')
-        .map(sid => (this.floors === FLOORS ? foeStatsAt(sid, this.floorIndex) : null) ?? { hp: ENEMIES[sid].hp * kd, atk: ENEMIES[sid].atk * kd });
+        .map(sid => (this.floors === FLOORS ? foeStatsAt(sid, this.floorIndex, this.cls) : null) ?? { hp: ENEMIES[sid].hp * kd, atk: ENEMIES[sid].atk * kd });
       if (bs) u.atk = Math.round(u.atk * (FLOOR_TARGET_LV[this.floorIndex] <= WORLD.bossEarlyLv ? WORLD.bossAtkEarly : FLOOR_TARGET_LV[this.floorIndex] <= WORLD.bossMidLv ? WORLD.bossAtkMid : WORLD.bossAtkLate)); // 主线：在 balance-sys 面板上乘倍率（早期 BOSS 削弱）
       else if (ns.length) u.atk = Math.max(u.atk, Math.round(WORLD.bossAtkVsNormal * ns.reduce((a, x) => a + x.atk, 0) / ns.length));
       if (ns.length) {
@@ -842,7 +844,7 @@ export class World {
     if (this.companion?.out && companionGainExp(this.companion, n, this.level)) this.events.push({ type: 'log', text: `英雄 ${this.companion.name} 升到 ${this.companion.level} 级`, color: 'green' });
     this.exp += n; this.events.push({ type: 'exp', amount: n });
     let up = false;
-    while (this.exp >= this.expNext) { this.exp -= this.expNext; this.level++; this.expNext = EXP_PER_LEVEL(this.level); up = true; this.events.push({ type: 'levelup', level: this.level }); }
+    while (this.exp >= this.expNext) { this.exp -= this.expNext; this.level++; this.expNext = EXP_PER_LEVEL(this.level, this.cls); up = true; this.events.push({ type: 'levelup', level: this.level }); }
     if (up) this.recompute(true);
   }
   pickup(g: GroundItem): boolean {
@@ -1983,5 +1985,7 @@ export function migrateEquip(save: Pick<SaveData, 'equip' | 'eqV'>): Partial<Rec
     if (e.ring && !e.ring1) e.ring1 = e.ring; if (e.bracelet && !e.bracelet1) e.bracelet1 = e.bracelet;
     delete e.ring; delete e.bracelet;
   }
+  // 阶段2：靴子独立栏。任何版本里误放在「衣服」位的靴子（slot==='boots'）迁到 boots；boots 已占用则原样保留在衣服位，装备不丢
+  if (e.armor?.slot === 'boots' && !e.boots) { e.boots = e.armor; delete e.armor; }
   return e;
 }

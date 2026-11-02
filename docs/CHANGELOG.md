@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 默认 sim 换装（feat/sim-swap-default，未合 main）
+- tests/sim-gear.ts：SIM_GEAR_SWAP 默认开（换装+清包），=0 复现旧行为。battle.test 阈值、PASS_MAX_DEATHS=14 不变。
+- FOE_CLS_4050 恢复 r3（战1.04/法1.12/道1.12），EXP_LATE_CLS 战1.25/法1.25/道1.3；battle.test 9 种子全 Lv50。详见 docs/balance-4050-class.md。
+
+## 40–50 按职业分倍率（feat/balance-4050-class，未合 main）
+- FOE_CLS_4050（L≥41 分职业 atk/hp 倍率，最终值全 1.0）与 EXP_LATE_CLS（战1.25/法1.25/道1.3）；1–39 与 94f4a01 逐项一致。详见 docs/balance-4050-class.md。
+- 已知偏差：真人反复刷 BOSS 时 40+ 装备获得更快，实际难度会比 sim 低；40+ 掉率不变。
+
 ## 死亡复活回「最近待过的城镇」（feat/respawn-last-town，未合 main）
 - 旧行为：World.respawn() 清空 units（召唤物一并丢失），在**本层起点**满血复活、本层怪物重置；BattleScene.heroDied 显示「3 秒后在本层起点复活」，3s 后调 respawn → onRespawn 建英雄卡、相机跟随。
 - 新行为：进入任一城镇/新手村（enterTown：xinshou 银杏村、bichi 比奇城、mengzhong 盟重土城、bairimen 白日门、cangyue 苍月岛、fengmo 封魔谷）时记录 `World.lastTownId`（野外不改）；死亡后满血复活并 enterTown(respawnTown())，落点=该城现有进城出生点 TOWN_SPAWN_X；存活召唤物（含诱惑宠物、等级保留）跟随，经 placeSummonsNearHero ≤100px、snapSummonViews 对齐卡牌。无损失规则（no-death-drop）、血量规则（满血）不变，未改战斗数值。阵亡提示/日志改为城名。
@@ -48,6 +56,11 @@
 ## 药水扩展方案文档（feat/potion-doc，只出文档）
 - docs/potion-expand.md：强效药、太阳水/强效太阳水、6 瓶捆与双击解包、商店掉落、平衡评估方案、存档兼容、实现拆分；art-requests 追加 P1 药水图标。
 
+## 文档：全装备审计（feat/drop-audit，未合 main，未改代码）
+- docs/drop-audit-full.md/.csv：124 件装备逐件对照 21cq（79 件打开物品页核验，32 件 EG 未查到，13 件自创），新增问题 14 条与 D7–D12 待决策；只读脚本 scripts/drop-audit-items.ts、scripts/drop-audit-full.py；抓取记录 docs/drop-audit-21cq/
+
+## 文档：装备掉落地点审计（feat/drop-audit，未合 main，未改代码）
+- docs/drop-audit.md：对照 21cq 1.76 资料审计 23 项问题和修正方案（魔杖/银蛇 req6→官方26、黑暗法师/蜘蛛女王掉魔杖等），新增只读脚本 scripts/drop-audit-dump.ts
 
 ## 修复：换图后召唤物留在旧坐标/从远处走过来（fix/summon-mapchange，未合 main）
 - 根因：World.prevFloor（S 返回上一层）先 loadFloor 把召唤物放到本层起点附近，再把英雄挪到上一层终点（出口前），召唤物不跟着挪 → 相距约 8000px，要很久才走过来；enterTown（回城）完全不重置召唤物坐标；loadFloor 本身按 110+60k 排队，第 2/3 只已超 100px。另：读档恢复的召唤物（restoreSummons）不发 summon 事件，BattleScene 不建卡牌，直到换图前都看不见。

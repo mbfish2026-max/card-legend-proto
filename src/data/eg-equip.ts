@@ -9,8 +9,8 @@ const L = (v: number): Need => ({ kind: 'level', v }), A = (v: number): Need => 
 export const EG_ROWS: Row[] = [
   ['nuzhan', '怒斩', 'weapon', W, 40, { atk: 38 }, A(46), 'C21', 1200],
   ['longya', '龙牙', 'weapon', M, 40, { atk: 28, mag: 18 }, G(28), 'C21', 1200],
-  ['xiaoyao_fan', '逍遥扇', 'weapon', T, 40, { atk: 18, tao: 28 }, L(35), 'C21', 1200],
-  ['shihun_staff', '嗜魂法杖', 'weapon', M, 40, { atk: 19, mag: 20 }, L(35), 'C21', 1500],
+  ['xiaoyao_fan', '逍遥扇', 'weapon', T, 35, { atk: 18, tao: 28 }, L(35), 'C21', 1200],
+  ['shihun_staff', '嗜魂法杖', 'weapon', M, 35, { atk: 19, mag: 20 }, L(35), 'C21', 1500],
   ['mingyun_blade', '命运之刃', 'weapon', W, 35, { atk: 28 }, L(35), 'C21', 800],
   ['bazhe_blade', '霸者之刃', 'weapon', null, 40, { atk: 38, mag: 18, tao: 22 }, L(40), 'T1(C)', 1500],
   ['kaitian', '开天', 'weapon', W, 47, { atk: 46 }, null, 'A1', 2000],

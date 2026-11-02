@@ -13,6 +13,45 @@
 - 定值复核（数据 360/Lv40，不设 SIM_POT_LV）：战 115/47、法 73/33、道 97/25，与第 5 轮逐种子一致。e2e potion-expand 购买改为升到 Lv40 后买超级金创药（扣 2160）。
 - 验收（c181930 之后）：tsc 0 错；npm test 全链跑完（equip-table 里「逐怪表 gen:monsters」✗ 只打印不退出，来自基线 maps-3050-combat 新怪未重生成文档，与药水无关）；build 通过；balance-battle / hj-battle / chuanshi / mobile-skills / potion-combat / potion-expand e2e 全部通过、0 JS 错误（potion-expand 手机双击解包偶发失败，重跑通过）。
 
+## 默认 sim 换装（feat/sim-swap-default，未合 main）
+- tests/sim-gear.ts：SIM_GEAR_SWAP 默认开（换装+清包），=0 复现旧行为。battle.test 阈值、PASS_MAX_DEATHS=14 不变。
+- FOE_CLS_4050 恢复 r3（战1.04/法1.12/道1.12），EXP_LATE_CLS 战1.25/法1.25/道1.3；battle.test 9 种子全 Lv50。详见 docs/balance-4050-class.md。
+
+## 40–50 按职业分倍率（feat/balance-4050-class，未合 main）
+- FOE_CLS_4050（L≥41 分职业 atk/hp 倍率，最终值全 1.0）与 EXP_LATE_CLS（战1.25/法1.25/道1.3）；1–39 与 94f4a01 逐项一致。详见 docs/balance-4050-class.md。
+- 已知偏差：真人反复刷 BOSS 时 40+ 装备获得更快，实际难度会比 sim 低；40+ 掉率不变。
+
+## 阶段2 腰带图标与空栏底图（feat/drop-realign，未合 main）
+
+- 合入 art/belt-icons（d581c18）：7 条腰带正式图标（AI 生成，64px + @2x），替换手镯占位；@2x 登记到 item-icons-2x。
+- 装备面板腰带/靴子空栏接入 slot_empty_belt、slot_empty_boots（AI 生成，单图加载、不进图集，高清屏用 @2x），叠在格子中央；有装备时不显示。
+- art-requests 腰带与空栏底图标为已交付。
+
+## 掉落重新对齐：掉率、图标、H 链调参、阶段2 腰带（feat/drop-realign，未合 main）
+
+- 掉率（魔兽批准）：天尊头盔/项链/戒指/手镯 boss_redmoon 1/40→1/120；烈焰项链/手镯/戒指/靴子 boss_leiyan 1/50→1/40（boss_molong 仍 1/50）。eg-dungeon 通过。
+- 图标：合入 art/h-chain-icons（98351f6），29 件 H 链换正式图标并登记 @2x（item-icons-2x.ts）；36px 截图验收见 docs/shots/drop-realign/。
+- H 链调参 v5（只动本作适配值）：属性 ×2.5，战士专属件 ×2，无职业防御件每点防御 +10 生命。修复 41b5a4c 中 8 件战士专属件误按 ×2.5 写入的问题（8fa1159）。9 seed 结果见 docs/sim-realign-h.md。
+- 阶段2：Slot/EquipSlot 加 'belt'（魔兽确认，仅成员）；7 条腰带 [暂定]（烈焰/光芒 [待核]），暂无掉落、不上商店、不计套装、占位图标；装备面板加腰带栏；存档迁移：衣服位的靴子迁到 boots（不丢装备）；单测 tests/belt-boots.test.ts。
+- 测试夹具：battle.test 戒指用例等级上调（金戒指需求 9→22），断言不变。
+
+## 掉落重新对齐 H 章过渡链新物品（feat/drop-realign，未合 main）
+
+- 新增 29 件 H 章过渡装备（项链 8 / 手镯 10 / 戒指 7 / 靴子 4）：`src/data/h-chain.ts`。属性按官方区间 [适配]，靴子数值与售价标「暂定」；21cq 编号与官方名写入 EQUIP_META（靴子 1.76 掉落未查到，cq=0）。
+- 来源按需求曲线走怪物掉落（req ≤ 怪等级 + 6，Boss +8），不上商店；`applyRealign` 先剔除再按 H_PLAN 写入，避免自动掉落规划重复挂源。
+- 图标暂复用同槽图标（程序内占位），目标文件名清单见 docs/art-requests.md，待美术2 出图（AI 生成）。
+- 老存档兼容：新增 id 不影响旧 id；已穿戴物品不变。
+- 修复：tests/drop-plan.test.ts 阶段1 引入的注释吞掉断言的问题；该测试改为与 gen:drops 一致加载运行时掉落表。
+- 单测：drop-realign 新增 H 链校验（件数、注册、来源、需求≤怪等级+X、职业、存档往返）。
+
+## 掉落重新对齐 阶段 1：数据层（feat/drop-realign，未合 main）
+- 10 件装备的需求改为官方值。银蛇/屠龙只改显示名，id 不变。124 件按方案表重设来源和爆率（新曲线）。撤掉尸王搬迁。铁靴降数值。老存档读档时刷新名称和需求，已穿戴的保留。
+- 新增 tests/drop-realign.test.ts。9 种子有回退（道士死亡中位 11→22，战士有 1 个种子只到 47 级）；battle 和 eg-dungeon 两个断言不过，没有放宽。详见 docs/drop-realign.md「实施记录」。
+
+## 文档：装备需求/掉落重新对齐方案（feat/drop-realign，只出文档，未合 main）
+- 新增 docs/drop-realign.md（A–I 章）和 docs/drop-realign.csv。内容：124 件逐件需求/来源/新爆率；新曲线（按档 K 换算＋上下限）；风险；9 种子评估方案；分阶段实施；待定问题；1–30 级过渡链（新增 25 件首饰）；腰带栏与靴子补全（新增 4 靴 7 腰带）。
+- 新增只读脚本 scripts/drop-realign-plan.py，并扩展 scripts/drop-realign-dump.ts 的导出。art-requests 增加 36 个图标和腰带空栏底图的需求（AI 生成，未出图）。没有改任何游戏代码。
+
 ## 修复：手机药水图标/数量被框盖住（fix/mobile-potion-clip，未合 main）
 - 根因 1：B6 皮肤给药水格（56px）套 btn_normal 框时，border-image-width 用了 1x 边距 14/16/14/16 CSS px。布局边框只有 2px，框图向内画到 padding 区，格内只剩 24×28 净空。图标 background-size 88%（≈45.8px）的上下左右边缘和右下角的数字都被框盖住。
 - 根因 2：MobileHud 每帧用 potBtns[i].textContent 写数量，把角标 span 冲掉了。数字变成按钮里的居中文字，角标 CSS（right:3px/bottom:1px）不生效，2/3 位数会压到框上。

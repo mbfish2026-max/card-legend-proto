@@ -92,23 +92,23 @@ let pass = 0; const ok = (c: boolean, m: string) => { if (!c) { console.error('F
 {
   const { ITEMS } = await import('../src/data/items');
   const { TIER_REQ, EQUIP_META } = await import('../src/data/equip-official');
-  ok(ITEMS.dragon_sword.req === 34, '屠龙 34 = 官方需求'); ok(ITEMS.armor.req === 12 && ITEMS.gold_ring.req === 9, '重盔甲/金戒指 暂保留 12/9（待决定，见 items.ts 注释）');
+  ok(ITEMS.dragon_sword.req === 34, '屠龙 34 = 官方需求'); ok(ITEMS.armor.req === 22 && ITEMS.gold_ring.req === 22, '重盔甲/金戒指 22/22（drop-realign D1，官方需求）');
   ok(['dragon_sword'].every(id => EQUIP_META[id]?.need?.kind !== 'level' || EQUIP_META[id].need.v === ITEMS[id].req), '与 equip-official 官方 need 一致');
   for (const [set, t] of [['woma', 'woma'], ['zuma', 'zuma'], ['chiyue', 'chiyue']] as const)
     ok(Object.values(ITEMS).filter(it => it.set === set).every(it => it.req === TIER_REQ[t]), `自创${set}套 req = TIER_REQ ${TIER_REQ[t]}`);
   const { World: W3, SaveData: _S } = await import('../src/combat/World') as any; const { FLOORS: F3 } = await import('../src/data/world');
   const w = new W3(() => 0.5, 20, F3, 'warrior'); const it = w.makeItem('dragon_sword'); it.req = 15; w.bag.push(it);
   const w2 = new W3(() => 0.5, 1, F3, 'warrior', JSON.parse(JSON.stringify(w.toSave())));
-  ok(w2.bag.some((b: any) => b.item === 'dragon_sword' && b.req === 15), '旧存档：已有实例 req 不追溯');
+  ok(w2.bag.some((b: any) => b.item === 'dragon_sword' && b.req === ITEMS.dragon_sword.req), '旧存档：实例 req 读档刷新为当前需求（drop-realign G2：已穿戴保留，新穿按新需求）');
 }
 // ---- 阶段 4：drop-plan ----
 {
   const { ITEMS } = await import('../src/data/items'); const { FLOOR_TARGET_LV } = await import('../src/data/balance');
   const { DROP_REMOVED, minFloorLv, CAP_BOSS, CAP_GEAR, CAP_NORMAL, DROPS_BEFORE } = await import('../src/data/drop-plan'); const { FLOORS: F4 } = await import('../src/data/world');
-  const gear = (id: string) => (ENEMIES[id].drops ?? []).filter(d => ITEMS[d.item]?.slot);
+  const gear = (id: string) => (ENEMIES[id].drops ?? []).filter(d => ITEMS[d.item]?.slot && !(id === 'orc_chief' && ['armor', 'gold_ring'].includes(d.item))); // drop-realign D3 例外
   ok(Object.keys(ENEMIES).every(id => { const L = minFloorLv(id); return L === undefined || gear(id).every(d => (ITEMS[d.item]?.req ?? 0) <= L + (ENEMIES[id].tier !== 'boss' ? CAP_NORMAL : ITEMS[d.item]?.slot === 'weapon' ? CAP_BOSS : CAP_GEAR)); }), '所有怪：装备需求 ≤ 最低出现层目标等级 + 6/8');
   ok(!gear('tree_demon').some(d => ['longwen', 'caijue', 'wujigun', 'jingzhongyue'].includes(d.item)) && DROPS_BEFORE.tree_demon.some(d => d.item === 'longwen'), '万年树妖不再掉 龙纹/裁决/无极/井中月（原千年树妖表）');
-  ok(!gear('skeleton_lord').some(d => d.item === 'pohun'), '骷髅精灵不掉破魂');
+  ok(gear('skeleton_lord').some(d => d.item === 'pohun'), '骷髅精灵掉破魂（drop-realign 方案表：破魂需求 20，官方来源）');
   ok(gear('boss_chulong').some(d => d.item === 'longwen') || gear('boss_white_boar').some(d => d.item === 'longwen'), '蜈蚣洞/石墓 BOSS 仍掉龙纹剑');
   const src = new Set(Object.values(ENEMIES).flatMap(u => (u.drops ?? []).map(d => d.item)));
   for (const id of ['iron_ring', 'medium_armor', 'shengzhan_helm', 'shengzhan_ring', 'fashen_helm', 'fashen_bracelet']) ok(src.has(id), `${ITEMS[id].name} 有掉落来源`);

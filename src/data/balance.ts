@@ -6,6 +6,7 @@ import { FLOORS, FLOOR_ORDER } from './world';
 import { ENEMIES } from './units';
 import { EXP_PER_LEVEL_BASE as EXP_PER_LEVEL, EXP_SCALE, FLOOR_EXP_MULT, FLOOR_EXP_CAP as FLOOR_EXP_CAP_REF } from './expCurve';
 import { OFFICIAL_MON_EXP } from './monsterExp';
+import type { ClassId } from './classes';
 
 /** [适配] 主线 39 个位置的进入等级（FLOOR_ORDER 顺序），末项 = 目标通关等级 50（文档 §C） */
 export const MAIN_ANCHORS: readonly number[] = [
@@ -118,16 +119,21 @@ export const FOE_BAND = { atk: [0.9, 0.97, 1.02, 1.04, 1.05], hp: [1, 1, 1.6, 1,
   /** 普通怪魔御 = 防御 × 该倍率（缺省魔御=防御；官方怪物有独立魔御 MAC，本作数值未查到） */ mdef: [1, 1, 1, 1, 1],
   /** 召唤物仇恨是否生效（0 = 该段普通怪不被召唤物拉走，仍追主角；替身法符不受影响） */ petAggro: [1, 1, 1, 1, 1],
   /** 层内普通怪密度倍率（1=不变；1.3=每 10 只追加约 3 只同种）[适配] */ dens: [1, 1, 1, 1, 1] };
+/** feat/balance-4050-class [适配]（官方未查到）：L≥41（FOE_BAND 第 4 段 = 牛魔寺庙起）按玩家职业再乘怪物攻/血（普通怪与 BOSS 同乘）；
+ *  1–40（含祖玛阁 L40）不受影响；全 1 = 与 94f4a01 一致。依据 9 种子 sim 调参，见 docs/balance-4050-class.md */
+export const FOE_CLS_4050: Record<ClassId, { atk: number; hp: number }> = { warrior: { atk: 1.04, hp: 1 }, mage: { atk: 1.12, hp: 1 }, taoist: { atk: 1.12, hp: 1 } };
+const clsK = (L: number, cls?: ClassId) => (cls && fb(L) === 4 ? FOE_CLS_4050[cls] : undefined) ?? { atk: 1, hp: 1 };
 export const floorBand = (f: number) => fb(FLOOR_TARGET_LV[f] ?? 1);
 const fb = (L: number) => Math.min(4, Math.max(0, Math.floor((L - 1) / 10)));
-export const foeStatsAt = (id: string, f: number): { level: number; hp: number; atk: number; def: number } | null => {
+export const foeStatsAt = (id: string, f: number, cls?: ClassId): { level: number; hp: number; atk: number; def: number } | null => {
   const d = ENEMIES[id]; if (!d || EXEMPT_FLOORS.includes(f) || f < 0 || f >= FLOORS.length) return null;
   const level = monsterLevelAt(id, f), s = formulaStats(FLOOR_TARGET_LV[f] + (d.tier === 'boss' ? 2 : 0)); // [适配] 显示等级（经验衰减用）普通 L_f+0~3、BOSS L_f+5；面板统一按 L_f（BOSS L_f+2）计算，同层强弱差异由 ratio 体现
-  if (d.tier === 'boss') return { level, hp: Math.round(s.hp * BOSS_HP_X * (f === 5 ? 0.8 : 1)), atk: Math.round(s.atk * BOSS_ATK_X * (f === 5 ? 0.7 : 1)), def: Math.round(s.def * BOSS_DEF_X) };
+  const ck = clsK(FLOOR_TARGET_LV[f], cls);
+  if (d.tier === 'boss') return { level, hp: Math.round(s.hp * BOSS_HP_X * (f === 5 ? 0.8 : 1) * ck.hp), atk: Math.round(s.atk * BOSS_ATK_X * (f === 5 ? 0.7 : 1) * ck.atk), def: Math.round(s.def * BOSS_DEF_X) };
   const ns = FLOORS[f].spawns.map(sp => ENEMIES[sp.id]).filter(x => x && x.tier !== 'boss');
   const avg = (k: 'hp' | 'atk') => ns.reduce((a, x) => a + x[k], 0) / Math.max(1, ns.length);
   // 21–30 死亡压力（怪物侧）[适配]：该段普通怪攻 ×1.15；尸王殿(5) 为战士断崖层，普通怪 ×0.85、BOSS 攻 ×0.7 血 ×0.8（9 种子 sim-band 校准，见 docs/exp-curve.md）
   const L = FLOOR_TARGET_LV[f], pa = f === 5 ? 0.85 : L >= 21 && L <= 30 ? 1.15 : 1;
   // balance-battle2：尸王殿(5) 不吃段血量加成，保持 BOSS 血 >2 倍小怪（tests/drop-plan 不变式）[适配]
-  return { level, hp: Math.round(s.hp * (f === 5 ? 1 : FOE_BAND.hp[fb(L)]) * ratio(d.hp, avg('hp'))), atk: Math.round(s.atk * pa * FOE_BAND.atk[fb(L)] * ratio(d.atk, avg('atk'))), def: s.def };
+  return { level, hp: Math.round(s.hp * (f === 5 ? 1 : FOE_BAND.hp[fb(L)]) * ratio(d.hp, avg('hp')) * ck.hp), atk: Math.round(s.atk * pa * FOE_BAND.atk[fb(L)] * ratio(d.atk, avg('atk')) * ck.atk), def: s.def };
 };

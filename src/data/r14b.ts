@@ -29,7 +29,7 @@ ENEMIES.boss_redmoon.setDrop = CLASS_SETS.flatMap(s => SETS[s.id].pieces);
 // ---------- #13 屠龙：官方 req34、攻 5-35、战士专用（21cq id=108） ----------
 export const TULONG_SRC = 'https://www.21cq.com/mir/View.aspx?id=108';
 const topAtk = Math.max(...Object.values(ITEMS).filter(i => i.slot === 'weapon' && i.id !== 'dragon_sword' && (i.req ?? 0) <= 34).map(i => i.equip?.atk ?? 0));
-// [适配] 攻击 = 同段（req≤34）最高攻击武器 ×1.1；名字保留「屠龙刀」（存档/掉落表兼容）
+// [适配] 攻击 = 同段（req≤34）最高攻击武器 ×1.1；显示名 D5 改为「屠龙」（id dragon_sword 不变，存档兼容）
 Object.assign(ITEMS.dragon_sword, { req: 34, cls: ['warrior'] as Cls[], equip: { atk: Math.round(topAtk * 1.1) } });
 
 // ---------- #14 沃玛寺庙多层 ----------

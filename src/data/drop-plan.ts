@@ -2,6 +2,7 @@ import { ENEMIES } from './units';
 import { ITEMS } from './items';
 import { FLOORS } from './world';
 import { FLOOR_TARGET_LV } from './balance';
+import { applyRealign } from './drop-realign';
 /**
  * 阶段 4（balance-sys）：魔兽 drop-plan 覆盖层。在 R13 官方掉落（drops-official, 1/N）之上做三件事，全部标 [适配]：
  *  1) 越级封顶：怪物出现的最低层目标等级 L_min，装备需求 > L_min + CAP（普通 6 / BOSS 8）的条目移除
@@ -56,12 +57,7 @@ for (const [id, u] of Object.entries(ENEMIES)) {
   const rm = (u.drops ?? []).filter(d => !keep.includes(d)).map(d => d.item); if (rm.length) DROP_REMOVED[id] = rm;
   u.drops = keep;
 }
-/** 越级移除的装备「下移到对口层」：需求 ≤ 尸王（最低出现层 19，封顶 27）的条目以原几率并入尸王（尸王殿/矿区，19–24 级段）[适配]；
- *  否则保留在原有的高层来源（蜈蚣洞/石墓 BOSS 同表，不重复添加）。这样 21–30 段的装备节奏由 L10 提前拿 24 级装 → L19–27 拿到。 */
-export const RELOCATE_TO = 'boss_lich', RELOCATE_MAX = 0.25; // 下移几率上限 1/4（兽人酋长原 1/1 必掉重盔甲/金戒指）[适配]
-{ const L = minFloorLv(RELOCATE_TO) ?? 19, add: [string, number][] = (DROP_ADD[RELOCATE_TO] ??= []);
-  for (const [id, rm] of Object.entries(DROP_REMOVED)) for (const item of rm) if ((ITEMS[item]?.req ?? 99) <= L + CAP_BOSS && !add.some(a => a[0] === item))
-    add.push([item, Math.min(RELOCATE_MAX, DROPS_BEFORE[id].find(d => d.item === item)!.chance)]); }
+/** D7（drop-realign）：撤回「下移到尸王」的重挂（原 RELOCATE_TO='boss_lich'），这些装备改挂官方来源怪，见 drop-realign.ts。 */
 for (const [id, add] of Object.entries(DROP_ADD)) { const u = ENEMIES[id]; if (!u) continue;
   for (const [item, chance] of add) if (ITEMS[item] && !(u.drops ??= []).some(d => d.item === item)) u.drops.push({ item, chance }); }
 
@@ -78,4 +74,5 @@ export function applyExtraDrops(table: Record<string, [string, number][]> = BOSS
       u.drops.push({ item, chance: Math.min(1, chance) }); added.push(`${id}:${item}`); } }
   return added;
 }
+applyRealign(); // drop-realign：124 件装备来源/爆率按方案 B 表整体替换（机制源不动）
 applyExtraDrops();

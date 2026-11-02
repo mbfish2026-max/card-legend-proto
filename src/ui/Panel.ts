@@ -182,26 +182,28 @@ export class Panel {
     });
   }
   private renderEquip(R: Phaser.GameObjects.Container, top: number) {
-    const s = this.s, w = this.world(), c = CLASSES[w.cls], cx = 330, size = 60;
+    const s = this.s, w = this.world(), c = CLASSES[w.cls], cx = 330, size = 48;
     // 中间立绘，左右两列装备栏
     R.add(s.add.rectangle(cx, top + 210, 170, 260, c.bg)); R.add(frameBg(s, 'inset_frame', cx, top + 210, 170, 260, { fill: 0, alpha: 0, stroke: 0xb8a070, sw: 2 })); // 职业底色保留，内框叠上
     // 装备上身预览：衣服/武器分层合成；缺素材回退原立绘，层图就绪后重绘面板
     const look = equipLook(s, w.cls, c.art, w.equip, () => { if (this.mode === 'bag' && this.root === R) this.render(); });
     if (s.textures.exists(look.key)) { const im = s.add.image(cx, top + 330, look.key).setOrigin(0.5, 1).setName('equipPreview'); im.setScale(Math.min(250 / im.height, 200 / im.width)); R.add(im); }
-    // 左列：头盔/项链/武器/左手镯/左戒指；右列：衣服/靴子/右手镯/右戒指（间距 58，末行底边 top+342 不压属性文字，竖屏同坐标系不越界）
-    const L = cx - 130, Rx = cx + 130, y0 = top + 80, dy = 58;
+    // R78（docs/stage2-lingfu-conflict.md 布局方案）：左列 头盔/项链/武器/左手镯/左戒指/腰带；右列 衣服/靴子/血石/右手镯/右戒指（各 6 行预留，间距 50、格 48，末行底边 top+354，属性文字下移到 top+357）
+    const L = cx - 130, Rx = cx + 130, y0 = top + 80, dy = 50;
     const pos: Record<EquipSlot, [number, number]> = { helmet: [L, y0], necklace: [L, y0 + dy], weapon: [L, y0 + dy * 2], bracelet1: [L, y0 + dy * 3], ring1: [L, y0 + dy * 4],
-      armor: [Rx, y0], boots: [Rx, y0 + dy], stone: [Rx, y0 + dy * 2], bracelet2: [Rx, y0 + dy * 3], ring2: [Rx, y0 + dy * 4] };
+      armor: [Rx, y0], boots: [Rx, y0 + dy], stone: [Rx, y0 + dy * 2], bracelet2: [Rx, y0 + dy * 3], ring2: [Rx, y0 + dy * 4], belt: [L, y0 + dy * 5] };
     for (const sl of EQUIP_SLOTS) {
       const [x, y] = pos[sl];
       if (sl === 'stone' && !w.equip.stone) { const bs = bloodstoneSlot(s, x, y, size); if (bs) R.add(bs); } // 灵符商城：血石栏空槽底图
-      this.slotBox(R, x, y, size, w.equip[sl], EQUIP_SLOT_NAMES[sl], () => {
+      const empty = (sl === 'belt' || sl === 'boots') && !w.equip[sl] && s.textures.exists('ui_slot_empty_' + sl); // 阶段2：腰带/靴子空栏底图（单图）
+      this.slotBox(R, x, y, size, w.equip[sl], empty ? '' : EQUIP_SLOT_NAMES[sl], () => {
         if (this.ironIdx != null) {
           const m = w.enhanceWithIron(this.ironIdx, sl); this.ironIdx = null;
           sfx(s, 'loot', 0.5); this.onChange(m, m.includes('成功')); this.render(); return;
         }
         const e = w.unequip(sl); this.onChange(e ?? `卸下 ${EQUIP_SLOT_NAMES[sl]}`); sfx(s, 'loot', 0.4); this.render();
       }, 'eq_' + sl, dy);
+      if (empty) R.add(s.add.image(x, y, 'ui_slot_empty_' + sl).setDisplaySize(size - 8, size - 8).setName('slotEmpty_' + sl));
     }
     const st = w.stats(), h = w.hero;
     const title = w.title(); const lines = [`${c.name}  Lv${w.level}${title ? '  「' + title + '」' : ''}`, `经验 ${fmtExp(w.exp)}/${fmtExp(w.expNext)}   金币 ${w.gold}   击杀 ${w.kills}`, `生命 ${h ? Math.ceil(h.hp) : 0}/${st.hp}   魔法 ${h ? Math.floor(h.mp ?? 0) : 0}/${st.mp}`,
@@ -209,8 +211,8 @@ export class Panel {
     const sc = w.setCounts(), setLine = Object.values(SETS).filter(st => sc[st.id]).map(st => `${st.name}${sc[st.id]}/${st.pieces.length}`).join('  ');
     const spx = w.setSpecials().map(id => SET_SPECIALS[id]?.text.replace(/ \[适配\]/, '')).filter(Boolean).join('；');
     if (setLine) lines.push(`套装 ${setLine}${spx ? '  特效：' + spx : ''}`);
-    R.add(txt(s, 175, top + 345, lines.join('\n'), 15, '#ffe8a0', { lineSpacing: setLine ? 2 : 6, strokeThickness: 2 }));
-    if (!IS_MOBILE) R.add(txt(s, cx + 130, top + 270, IS_MOBILE ? '点两下\n装备栏=卸下' : '点击装备栏\n= 卸下', 12, '#999', { align: 'center' }).setOrigin(0.5, 0));
+    R.add(txt(s, 175, top + 357, lines.join('\n'), 15, '#ffe8a0', { lineSpacing: setLine ? 2 : 6, strokeThickness: 2 }));
+    if (!IS_MOBILE) R.add(txt(s, cx, top + 66, '点击装备栏 = 卸下', 12, '#999', { align: 'center' }).setOrigin(0.5, 0.5)); // 原位置压右手镯栏，移到立绘上方
   }
   /** 面板坐标 1 单位 = 多少 CSS px（视口缩放 × 手机面板容器缩放） */
   private cssU() { return viewCss(Render.lw) * this.mscale; }

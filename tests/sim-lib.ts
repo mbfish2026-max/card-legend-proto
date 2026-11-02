@@ -3,6 +3,9 @@ declare const process: { env: Record<string, string | undefined> };
 // @ts-ignore tsconfig 无 node 类型（运行于 tsx）
 import { appendFileSync } from 'node:fs';
 import { World } from '../src/combat/World';
+import { GEAR_SWAP, gearTick, gearEnd } from './sim-gear';
+import { DL, dlVirt, dlTick, dlEnd } from './sim-droplog';
+import './sim-tune'; // 默认关：SIM_TUNE_* 未设时不打任何补丁
 import { FLOORS } from '../src/data/world';
 import { CLASSES, ClassId } from '../src/data/classes';
 import { ITEMS } from '../src/data/items';
@@ -57,12 +60,13 @@ export const simRun = (c: ClassId, seed: number, maxT = SIM_MAX_T) => {
     const stoneUsed = new Set<string>();
     const w = (process.env.ALL ? learnAll : (x: World) => x)(Object.assign(new World(seeded(seed), 1, FLOORS, c), { dungeons: false })); let cds = w.skills.map(() => 0); let t = 0, potUsed = 0, goldAt40 = -1; const potGold = [0, 0]; let freeDeaths = 0, costDeaths = 0; const learnLog: string[] = []; let hjCombo = 0, hjHeroDmg = 0, hjAllDmg = 0, hjT = 0, hjOut = 0;
     const dg = { heroDmg: 0, sumDmg: 0, sumDeaths: 0, t: 0, sumT: 0, sumN: 0, foeOnSum: 0, foeOnHero: 0, sumLv: 0, sumHp: 0, heroHp: 0, samples: 0, sumKillDmg: 0, allKillDmg: 0 };
-    const deathAt: { floor: number; lv: number }[] = []; const plog: { buf: any[]; last: number } = { buf: [], last: -1 }; const floorLv: Record<number, number> = {};
+    const deathAt: { floor: number; lv: number }[] = []; const plog: { buf: any[]; last: number } = { buf: [], last: -1 }; const floorLv: Record<number, number> = {}; const goldAt: Record<number, number> = {}; let _gl = 0; const eqAt: Record<number, any> = {}; // drop-realign：金币曲线统计（只读，不改战斗）
     const gearAt: Record<number, any> = {}; const lvK: number[] = [], lvT: number[] = [], lvVK: number[] = [], lvVT: number[] = []; const kills = [0, 0, 0, 0, 0, 0], killT = [0, 0, 0, 0, 0, 0], virtKills = [0, 0, 0, 0, 0, 0], virtT = [0, 0, 0, 0, 0, 0], replays: Record<number, number> = {}; let floorKills = 0, floorT = 0, lastF = -1;
     /** 首清经验：每层第一次进入到清完（离开）所得经验 ÷ 进入时等级所需 */
     const firstClear: Record<number, { lv: number; exp: number }> = {}; let curFirst: number | null = null;
     while (!w.done && t < maxT) {
       if (floorLv[w.floorIndex] === undefined && !w.town) { floorLv[w.floorIndex] = w.level; gearAt[w.floorIndex] = { lv: w.level, ...w.equipStats() }; }
+      if (w.level > _gl) { _gl = w.level; goldAt[w.level] = w.gold; if ([25, 35, 40, 45, 50].includes(w.level)) eqAt[w.level] = Object.fromEntries(Object.entries(w.equip).filter(([, v]) => v).map(([k, v]: any) => [k, `${v.name}${v.req}`])); }
       const h = w.hero;
       if (!h) { if (process.env.SIMDBG && deathAt.length % (+process.env.SIMDBG > 1 ? +process.env.SIMDBG : 25) === 0) console.log('died', w.floorIndex, 'Lv', w.level, (globalThis as any)._near); deathAt.push({ floor: w.floorIndex, lv: w.level }); if (PLOG && plog.buf.length && FLOORS[w.floorIndex]?.name === PLOG_FLOOR) { plogW({ ev: 'death', cls: c, seed, lv: w.level, pots: [...w.pots], last5s: plog.buf }); plog.buf = []; } learnLog.push(`死@${w.floorIndex + 1}层Lv${w.level}`);
         // fix/sim-baseline：死亡分「无损失 / 有损失」计数（实测复活前后金币、经验、等级、背包、装备，不写死）；只读，不改轨迹
@@ -70,7 +74,7 @@ export const simRun = (c: ClassId, seed: number, maxT = SIM_MAX_T) => {
         // 任务 A 后层更长、怪更多，死亡即整层重刷：同层连死 SIM_STUCK 次 → 模拟玩家「回上一层练 1 级再来」（虚拟刷怪，只加经验与估算用时，死亡照常计数）
         const fd = deathAt.filter(d => d.floor === w.floorIndex).length, pk = FLOOR_ORDER.indexOf(w.floorIndex);
         if (fd % SIM_STUCK === 0 && pk > 0) { const pf = FLOOR_ORDER[pk - 1], ids = FLOORS[pf].spawns.map(sp => sp.id).filter(id => ENEMIES[id]?.tier !== 'boss'), lv0 = w.level, spk = 6;
-          let i = 0; while (w.level === lv0 && i < 5000) { const id = ids[i++ % ids.length]; const b = band(w.level); lvVK[w.level] = (lvVK[w.level] ?? 0) + 1; lvVT[w.level] = (lvVT[w.level] ?? 0) + spk; w.gainExp(killExp(id, pf, w.level, monsterLevelAt(id, pf))); w.gold += virtGold(id, pf); virtKills[b]++; virtT[b] += spk; t += spk; }
+          let i = 0; while (w.level === lv0 && i < 5000) { const id = ids[i++ % ids.length]; const b = band(w.level); lvVK[w.level] = (lvVK[w.level] ?? 0) + 1; if (DL) dlVirt(id, w.level); lvVT[w.level] = (lvVT[w.level] ?? 0) + spk; w.gainExp(killExp(id, pf, w.level, monsterLevelAt(id, pf))); w.gold += virtGold(id, pf); virtKills[b]++; virtT[b] += spk; t += spk; }
           w.drainEvents(); w.recompute(true); learnLog.push(`卡关练级@${pf + 1}层→Lv${w.level}`); }
         continue; }
       const plOn = !!PLOG && FLOORS[w.floorIndex]?.name === PLOG_FLOOR && !w.town, plPots = plOn ? [...w.pots] : null, plHp = h.hp, plMp = h.mp ?? 0;
@@ -85,7 +89,8 @@ export const simRun = (c: ClassId, seed: number, maxT = SIM_MAX_T) => {
       }
       for (let i = 0; i < w.skills.length; i++) { if (w.skills[i].id === 'charm' && !w.charmAutoOk()) continue; w.cast(i, cds); }
       for (let i = 0; i < w.skills.length; i++) w.cast(i, cds, { auto: true }); // 模拟 = 自动施法（施毒跳过已中毒）
-      for (let i = w.bag.length - 1; i >= 0; i--) { const it = w.bag[i]; if (it.slot && it.req <= w.level && !w.equip[w.targetSlot(it)!]) w.equipItem(i); }
+      if (GEAR_SWAP) gearTick(w, c, seed); else { for (let i = w.bag.length - 1; i >= 0; i--) { const it = w.bag[i]; if (it.slot && it.req <= w.level && !w.equip[w.targetSlot(it)!]) w.equipItem(i); } if (process.env.SIM_GEAR_DUMP) gearTick(w, c, seed, false); } // feat/sim-gear-swap
+      if (DL) dlTick(w);
       // feat/lingfu-combat：SIM_STONE=1 → Lv1 起佩戴血石（小血石免等级/35 中/40 大/45 特，每档各一块，储量用完销毁）；默认关 → 与 lingfu-shop 基线一致
       if (process.env.SIM_STONE) { const tier = STONE_TIERS.filter(x => w.level >= (process.env.SIM_STONE_M40 && x[0] === 'stone_m' ? 40 : x[1])).pop(); const cur = w.equip.stone;
         if (cur?.charge && cur.charge.hp <= 0 && cur.charge.mp <= 0) { stoneUsed.add(cur.item); w.equip.stone = undefined; }
@@ -122,7 +127,7 @@ export const simRun = (c: ClassId, seed: number, maxT = SIM_MAX_T) => {
         curFirst = null; const f = w.floorIndex;
         if ((replays[f] ?? 0) < SIM_REPLAYS) { replays[f] = (replays[f] ?? 0) + 1; w.loadFloor(f); lastF = f; continue; }
         const ids = w.floor.spawns.map(sp => sp.id).filter(id => ENEMIES[id]?.tier !== 'boss'); const spk = floorKills ? Math.max(1, floorT / floorKills) : 5;
-        let i = 0; while (w.level < MAIN_ANCHORS[k + 1] && i < 1e6) { const id = ids[i++ % ids.length]; const b = band(w.level); lvVK[w.level] = (lvVK[w.level] ?? 0) + 1; lvVT[w.level] = (lvVT[w.level] ?? 0) + spk; w.gainExp(killExp(id, f, w.level, monsterLevelAt(id, f))); virtKills[b]++; virtT[b] += spk; }
+        let i = 0; while (w.level < MAIN_ANCHORS[k + 1] && i < 1e6) { const id = ids[i++ % ids.length]; const b = band(w.level); lvVK[w.level] = (lvVK[w.level] ?? 0) + 1; if (DL) dlVirt(id, w.level); lvVT[w.level] = (lvVT[w.level] ?? 0) + spk; w.gainExp(killExp(id, f, w.level, monsterLevelAt(id, f))); virtKills[b]++; virtT[b] += spk; }
         w.drainEvents(); w.recompute(true);
       }
       const _d0 = w.deaths, _near = process.env.SIMDBG ? w.units.filter(u => u.alive && u.team !== 'ally' && Math.abs(u.x - w.hero!.x) < 300).map(u => `${u.id}:${u.hp}/${u.maxHp}a${u.atk}`).join(',') : '';
@@ -139,6 +144,7 @@ export const simRun = (c: ClassId, seed: number, maxT = SIM_MAX_T) => {
     }
     if (process.env.HJ_STATS) console.log(`   HJ ${c} 种子${seed}: lv≥40 时长 ${Math.round(hjT)}s 英雄在场 ${Math.round(hjOut)}s 合击 ${hjCombo} 次 英雄伤害占比 ${(100 * hjHeroDmg / Math.max(1, hjHeroDmg + hjAllDmg)).toFixed(1)}% 英雄等级 ${w.companion?.level ?? "-"} Lv≥40后死亡 ${learnLog.filter(x => /死@.*Lv(\d+)/.test(x) && +x.match(/Lv(\d+)/)![1] >= 40).length}`);
     if (process.env.DIAG) console.log('DIAG', c, seed, JSON.stringify(dg));
-    return { potGold, goldAt40, freeDeaths, costDeaths, gearAt, lvK, lvT, lvVK, lvVT, deaths: w.deaths, done: w.done, potUsed, t, level: w.level, learnLog, deathAt, floorLv, kills, killT, virtKills, virtT, firstClear };
+    gearEnd(w, c, seed); dlEnd(w, c, seed); // feat/sim-gear-swap（只读）
+    return { potGold, goldAt40, freeDeaths, costDeaths, gearAt, lvK, lvT, lvVK, lvVT, deaths: w.deaths, done: w.done, potUsed, t, level: w.level, learnLog, deathAt, floorLv, kills, killT, virtKills, virtT, firstClear, goldAt, eqAt };
   };
 export const median = (a: number[]) => { const b = [...a].sort((x, y) => x - y); return b[(b.length - 1) >> 1] / 2 + b[b.length >> 1] / 2; };

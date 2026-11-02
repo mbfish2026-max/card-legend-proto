@@ -203,7 +203,7 @@ const free = (w: World) => w.skills.map(() => 0);
 { // 死亡复活 + 存档读档
   const w = mk([{ id: 'wolf', x: 3000 }], [], 'mage', 5); w.gold = 100; w.kill(w.hero!); ok(!w.hero, '主角死亡');
   w.respawn(); ok(!!w.hero && w.hero.hp === w.hero.maxHp && w.gold === 100 && w.deaths === 1 && w.town === w.respawnTown(), '满血复活并回到最近城镇，金币不损失');
-  const w1 = new World(seeded(5), 7, FLOORS, 'taoist'); w1.gold = 321; w1.bag.push(w1.makeItem('tao_sword', 'rare')); w1.equipItem(0); w1.loadFloor(2);
+  const w1 = new World(seeded(5), 7, FLOORS, 'taoist'); w1.gold = 321; w1.bag.push(w1.makeItem('wood_sword', 'rare')); w1.equipItem(0); w1.loadFloor(2);
   const json = JSON.stringify(w1.toSave()); const w2 = new World(seeded(6), 1, FLOORS, 'warrior', JSON.parse(json) as SaveData);
   ok(w2.cls === 'taoist' && w2.level === 7 && w2.gold === 321 && w2.floorIndex === 2 && w2.equip.weapon?.name.includes('极品') === true && w2.hero!.tao === w1.hero!.tao, '存档 JSON 往返：职业/等级/金币/层数/装备一致');
 }
@@ -892,7 +892,7 @@ const free = (w: World) => w.skills.map(() => 0);
 }
 
 { // 5.1 双戒双镯 + 存档迁移
-  const w = mk([], [], 'warrior', 20); const base = w.stats();
+  const w = mk([], [], 'warrior', 30) /* 金戒指需求经重新对齐 9→22，夹具等级 20→30，断言不变 */; const base = w.stats();
   const wear = (id: string) => { w.bag.push(w.makeItem(id)); return w.equipItem(w.bag.length - 1); };
   wear('gold_ring'); const r1 = w.equip.ring1!; ok(!!r1 && !w.equip.ring2, '第一枚戒指 → ring1');
   wear('gold_ring'); const r2 = w.equip.ring2!; ok(!!r2 && w.equip.ring1 === r1, '第二枚戒指 → 空位 ring2');
@@ -905,7 +905,7 @@ const free = (w: World) => w.skills.map(() => 0);
   ok(w.stats().def === base.def + (w.equip.bracelet1!.stats.def ?? 0) + (w.equip.bracelet2!.stats.def ?? 0) + (w.equip.ring1!.stats.def ?? 0), '双镯防御叠加');
   const lo = mk([], [], 'warrior', 1); lo.bag.push(lo.makeItem('gold_ring')); ok(lo.equipItem(0)!.includes('等级'), '戒指仍检查需求等级');
   // 旧档：单戒/单镯
-  const old = mk([], [], 'taoist', 15); old.bag.push(old.makeItem('gold_ring'), old.makeItem('bracelet')); old.equipItem(1); old.equipItem(0);
+  const old = mk([], [], 'taoist', 30) /* 金戒指需求 9→22，夹具等级 15→30，断言不变 */; old.bag.push(old.makeItem('gold_ring'), old.makeItem('bracelet')); old.equipItem(1); old.equipItem(0);
   const sv: any = JSON.parse(JSON.stringify(old.toSave())); sv.equip = { ring: sv.equip.ring1, bracelet: sv.equip.bracelet1, weapon: sv.equip.weapon }; delete sv.eqV;
   const before = old.stats(), bagN = sv.bag.length;
   const nw = new World(seeded(1), 1, FLOORS, 'taoist', sv as SaveData);

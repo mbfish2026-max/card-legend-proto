@@ -1781,3 +1781,114 @@ AI 生成的 Legend of Mir 风格的蓝紫发光椭圆光圈漩涡，没有用 W
 - 捆（6 瓶捆在一起，用麻绳或布包，颜色和单瓶对应）：金创药(小)包、魔法药(小)包、金创药(中)包、魔法药(中)包、超级金创药、超级魔法药、太阳水包、强效太阳水包。
 - 共 12 张；文件名建议 `assets/items/pot_<key>.png`、`assets/items/bundle_<key>.png`。
 - **状态：已出图**（art/potion-icons，美术2）。public/assets/items/ 下 pot_hp_big / pot_mp_big / pot_sun / pot_sun_big；bundle_hp_small / bundle_mp_small / bundle_hp_mid / bundle_mp_mid / bundle_hp_big（超级金创药）/ bundle_mp_big（超级魔法药）/ bundle_sun / bundle_sun_big，均 64×64 透明 PNG，无 @2x。预览 docs/ui-preview/preview_potion_icons.jpg；脚本 docs/ui-preview/build_potion.py。区分：小包=麻绳捆、中包=布袋、超级=木箱、太阳水包=皮袋、强效太阳水包=红绣袋+金光。
+
+## 装备重新对齐：新增物品图标与腰带栏（feat/drop-realign，提案，未生成）
+
+- 来源：全部 **AI 生成**，像素风，参照现有 gen_* 图标；本次不生成图。
+- 共 36 个图标 + 1 个腰带空栏底图。
+
+| # | 物品 | 部位 | 需求 | 来源 |
+|---|---|---|---|---|
+| 1 | 金项链 | necklace | 2 | AI 生成 |
+| 2 | 黑色水晶项链 | necklace | 13 | AI 生成 |
+| 3 | 黑檀项链 | necklace | 13 | AI 生成 |
+| 4 | 黄色水晶项链 | necklace | 13 | AI 生成 |
+| 5 | 魔鬼项链 | necklace | 17 | AI 生成 |
+| 6 | 琥珀项链 | necklace | 17 | AI 生成 |
+| 7 | 凤凰明珠 | necklace | 17 | AI 生成 |
+| 8 | 蓝翡翠项链 | necklace | 23 | AI 生成 |
+| 9 | 皮制手套 | bracelet | 7 | AI 生成 |
+| 10 | 钢手镯 | bracelet | 8 | AI 生成 |
+| 11 | 大手镯 | bracelet | 9 | AI 生成 |
+| 12 | 魔法手镯 | bracelet | 18 | AI 生成 |
+| 13 | 坚固手套 | bracelet | 18 | AI 生成 |
+| 14 | 黑檀手镯 | bracelet | 19 | AI 生成 |
+| 15 | 道士手镯 | bracelet | 19 | AI 生成 |
+| 16 | 魔力手镯 | bracelet | 20 | AI 生成 |
+| 17 | 死神手套 | bracelet | 22 | AI 生成 |
+| 18 | 金手镯 | bracelet | 23 | AI 生成 |
+| 19 | 六角戒指 | ring | 7 | AI 生成 |
+| 20 | 玻璃戒指 | ring | 7 | AI 生成 |
+| 21 | 牛角戒指 | ring | 9 | AI 生成 |
+| 22 | 蓝色水晶戒指 | ring | 16 | AI 生成 |
+| 23 | 黑色水晶戒指 | ring | 20 | AI 生成 |
+| 24 | 蛇眼戒指 | ring | 20 | AI 生成 |
+| 25 | 珍珠戒指 | ring | 20 | AI 生成 |
+| 26 | 布鞋 | boots | 15 | AI 生成 |
+| 27 | 鹿皮靴 | boots | 22 | AI 生成 |
+| 28 | 紫绸靴 | boots | 30 | AI 生成 |
+| 29 | 避魂靴 | boots | 35 | AI 生成 |
+| 30 | 兽皮腰带 | belt | 15 | AI 生成 |
+| 31 | 铁腰带 | belt | 22 | AI 生成 |
+| 32 | 青铜腰带 | belt | 30 | AI 生成 |
+| 33 | 钢铁腰带 | belt | 35 | AI 生成 |
+| 34 | 雷霆腰带 | belt | 45 | AI 生成 |
+| 35 | 烈焰腰带 | belt | 45 | AI 生成 |
+| 36 | 光芒腰带 | belt | 45 | AI 生成 |
+| 37 | 腰带空栏底图（实际交付名 slot_empty_belt，另加 slot_empty_boots） | ui | - | AI 生成 ✅ 已交付 |
+
+### H 章过渡链图标（29 件）——✅ 已交付（art/h-chain-icons 98351f6，已接入 feat/drop-realign，含 @2x）
+
+已接入：`icon` 已改为目标文件名，@2x 已登记 item-icons-2x。下表「当前占位」列为接入前的占位，留作记录。
+
+| 名称 | 需求等级 | 用途（槽位/职业） | 当前占位 | 目标文件名 |
+|---|---|---|---|---|
+| 金项链 | 2 | 项链/通用 | gen_necklace.png | items/h_gold_necklace.png |
+| 黑色水晶项链 | 13 | 项链/战 | gen_necklace.png | items/h_black_crystal_necklace.png |
+| 黑檀项链 | 13 | 项链/法 | gen_necklace.png | items/h_ebony_necklace.png |
+| 黄色水晶项链 | 13 | 项链/道 | gen_necklace.png | items/h_yellow_crystal_necklace.png |
+| 魔鬼项链 | 17 | 项链/战 | gen_necklace.png | items/h_devil_necklace.png |
+| 琥珀项链 | 17 | 项链/法 | gen_necklace.png | items/h_amber_necklace.png |
+| 凤凰明珠 | 17 | 项链/道 | gen_necklace.png | items/h_phoenix_pearl.png |
+| 蓝翡翠项链 | 23 | 项链/战 | gen_necklace.png | items/h_blue_jade_necklace.png |
+| 皮制手套 | 7 | 手镯/通用 | gen_bracelet.png | items/h_leather_glove.png |
+| 钢手镯 | 8 | 手镯/通用 | gen_bracelet.png | items/h_steel_bracelet.png |
+| 大手镯 | 9 | 手镯/通用 | gen_bracelet.png | items/h_big_bracelet.png |
+| 魔法手镯 | 18 | 手镯/通用 | gen_bracelet.png | items/h_magic_bracelet.png |
+| 坚固手套 | 18 | 手镯/通用 | gen_bracelet.png | items/h_sturdy_glove.png |
+| 黑檀手镯 | 19 | 手镯/法 | gen_bracelet.png | items/h_ebony_bracelet.png |
+| 道士手镯 | 19 | 手镯/道 | gen_bracelet.png | items/h_tao_bracelet.png |
+| 魔力手镯 | 20 | 手镯/战 | gen_bracelet.png | items/h_power_bracelet.png |
+| 死神手套 | 22 | 手镯/战 | gen_bracelet.png | items/h_death_glove.png |
+| 金手镯 | 23 | 手镯/通用 | gen_bracelet.png | items/h_gold_bracelet.png |
+| 六角戒指 | 7 | 戒指/法 | eq_iron_ring.png | items/h_hex_ring.png |
+| 玻璃戒指 | 7 | 戒指/道 | eq_iron_ring.png | items/h_glass_ring.png |
+| 牛角戒指 | 9 | 戒指/战 | eq_iron_ring.png | items/h_horn_ring.png |
+| 蓝色水晶戒指 | 16 | 戒指/战 | eq_iron_ring.png | items/h_blue_crystal_ring.png |
+| 黑色水晶戒指 | 20 | 戒指/战 | eq_iron_ring.png | items/h_black_crystal_ring.png |
+| 蛇眼戒指 | 20 | 戒指/法 | eq_iron_ring.png | items/h_snake_eye_ring.png |
+| 珍珠戒指 | 20 | 戒指/道 | eq_iron_ring.png | items/h_pearl_ring.png |
+| 布鞋 | 15 | 靴子/通用 | gen_boots.png | items/h_cloth_shoes.png |
+| 鹿皮靴 | 22 | 靴子/通用 | gen_boots.png | items/h_deer_boots.png |
+| 紫绸靴 | 30 | 靴子/通用 | gen_boots.png | items/h_silk_boots.png |
+| 避魂靴 | 35 | 靴子/通用 | gen_boots.png | items/h_soul_boots.png |
+
+**状态：已出图（art/h-chain-icons）** 29 张 64×64 RGBA + 同名 @2x 128×128，位于 `public/assets/items/`：
+- 项链：h_gold_necklace 金项链 / h_black_crystal_necklace 黑色水晶项链 / h_ebony_necklace 黑檀项链 / h_yellow_crystal_necklace 黄色水晶项链 / h_devil_necklace 魔鬼项链 / h_amber_necklace 琥珀项链 / h_phoenix_pearl 凤凰明珠 / h_blue_jade_necklace 蓝翡翠项链
+- 手镯：h_leather_glove 皮制手套 / h_steel_bracelet 钢手镯 / h_big_bracelet 大手镯 / h_magic_bracelet 魔法手镯 / h_sturdy_glove 坚固手套 / h_ebony_bracelet 黑檀手镯 / h_tao_bracelet 道士手镯 / h_power_bracelet 魔力手镯 / h_death_glove 死神手套 / h_gold_bracelet 金手镯
+- 戒指：h_hex_ring 六角戒指 / h_glass_ring 玻璃戒指 / h_horn_ring 牛角戒指 / h_blue_crystal_ring 蓝色水晶戒指 / h_black_crystal_ring 黑色水晶戒指 / h_snake_eye_ring 蛇眼戒指 / h_pearl_ring 珍珠戒指
+- 靴子：h_cloth_shoes 布鞋 / h_deer_boots 鹿皮靴 / h_silk_boots 紫绸靴 / h_soul_boots 避魂靴
+
+脚本 `docs/ui-preview/build_h_chain.py`、`compose_h_chain.py`；源图 `docs/ui-preview/src/h_*_src.jpg`；预览 `docs/ui-preview/preview_h_chain_icons.jpg`。**v2（主Bot 审后修正）**：①暗色提亮+左上轮廓高光：h_black_crystal_necklace/h_black_crystal_ring（紫青）、h_ebony_necklace/h_ebony_bracelet（暖棕）、h_death_glove（紫）；②8 条项链裁短链条放大吊坠，占比对齐 eq_* 项链；③h_steel_bracelet 改为带铰链锁扣铆钉的扁平宽钢箍，h_ebony_bracelet 改为雕纹粗圆木镯（源图 src/h_br_v2_src.jpg）。64 与 @2x 同步重出，预览底部加修正前后对比。
+待系统开发把对应物品 icon 从 gen_necklace/gen_bracelet/eq_iron_ring/gen_boots 换为上述文件。
+
+## 阶段2 腰带 7 条 + 空栏底图——✅ 已交付（art/belt-icons d581c18，含 @2x，AI 生成）
+已接入：belts.ts 用 items/belt_*.png 并登记 @2x（28c85e1）；规格 64px + @2x，透明底。
+| id | 名称 | 需求 | 备注 |
+|---|---|---|---|
+| belt_hide | 兽皮腰带 | 15 | |
+| belt_iron | 铁腰带 | 22 | |
+| belt_bronze | 青铜腰带 | 30 | 等级保守 |
+| belt_steel | 钢铁腰带 | 35 | |
+| belt_leiting | 雷霆腰带 | 45 | 战士；外观与雷霆套一致 |
+| belt_lieyan | 烈焰腰带 | 45 | 法师；待核 |
+| belt_guangmang | 光芒腰带 | 45 | 道士；待核 |
+
+空栏底图（装备面板空槽剪影，60px + @2x）：slot_empty_belt（腰带）、slot_empty_boots（靴子）。血石空槽由灵符分支提供，不在此列。
+
+**状态：✅ 已交付并接入（28c85e1）**
+- 腰带（`public/assets/items/`，64×64 RGBA + 同名 @2x 128×128）：belt_hide 兽皮腰带（毛边兽皮+骨扣）/ belt_iron 铁腰带（铆钉皮带+方铁扣，已提亮加冷色边缘高光）/ belt_bronze 青铜腰带（铜片+卷纹椭圆扣）/ belt_steel 钢铁腰带（钢片+盾形扣嵌蓝宝石）/ belt_leiting 雷霆腰带（蓝紫金属+闪电盾扣+电光）/ belt_lieyan 烈焰腰带（红皮金饰+火焰扣+火光）/ belt_guangmang 光芒腰带（白金片+日芒扣白宝石+金白圣光）
+- 空栏底图（`public/assets/ui/`，60×60 + @2x 120×120，透明底暗纹剪影，叠在 slot 空格中央）：slot_empty_belt、slot_empty_boots
+- 未进 ui_atlas：图集 512×512 已用高度 509，放不下，改单图交付；如需进图集要先扩图集或重排（由主Bot决定）。
+- 脚本 `docs/ui-preview/build_belt.py`、`compose_belt.py`；源图 `docs/ui-preview/src/belt{1,2}_src.jpg`、`slot_empty_src.jpg`；预览 `docs/ui-preview/preview_belt_icons.jpg`。
+- 待系统开发：src/data/belts.ts 的 icon 由 gen_bracelet 占位换为 items/belt_*.png 并登记 @2x；装备面板腰带/靴子空槽接入 ui/slot_empty_*.png。

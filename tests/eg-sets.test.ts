@@ -29,7 +29,7 @@ FLOORS.forEach((f, i) => { if (FLOOR_TARGET_LV[i] >= 40) return;
 ok(bad.length === 0, `目标等级 <40 的层不掉 Lv40+ 装备${bad.length ? '：' + [...new Set(bad)].slice(0, 5).join(' ') : ''}`);
 ok(Object.values(EG_DROPS).flat().every(([, c]) => c <= 1 / 8), 'E1：新增爆率不优于 1/8');
 // 天尊进 HJ 掉落、自创套停掉落
-ok(['helm', 'necklace', 'ring', 'bracelet'].every(k => ENEMIES.boss_hj_home.drops!.some(d => d.item === 'tianzun_' + k)), '天尊 4 件进合击 BOSS 掉落');
+ok(['helm', 'necklace', 'ring', 'bracelet'].every(k => ENEMIES.boss_redmoon.drops!.some(d => d.item === 'tianzun_' + k)), 'D9 天尊 4 件按职业归赤月恶魔（drop-realign）');
 ok(!RETIRED_SET_ITEMS.some(id => src.has(id)), 'D8：set_zuma/set_chiyue 不再掉落');
 ok(RETIRED_SET_ITEMS.every(id => ITEMS[id]?.slot) && SETS.zuma && SETS.chiyue, '自创套物品与套装定义保留（旧存档）');
 // 套装
