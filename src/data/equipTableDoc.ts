@@ -1,4 +1,5 @@
 // docs/equip-table.md 生成器（纯函数）。改装备数据后运行 `npm run gen:equip`；单测校验文档与数据一致。
+import { SHOP_ITEMS } from '../shop/catalog';
 import { ITEMS, SLOT_NAMES, STAT_NAMES } from './items';
 import { EQUIP_META, ADAPT, TIER_REQ, NEED_CN, CQ, OffStats, Cls } from './equip-official';
 
@@ -8,7 +9,7 @@ const ORDER = ['weapon', 'armor', 'helmet', 'necklace', 'ring', 'bracelet', 'boo
 const fmtOff = (o?: OffStats) => !o ? '未查到' : [o.atk && `攻${o.atk.join('-')}`, o.mag && `魔${o.mag.join('-')}`, o.tao && `道${o.tao.join('-')}`, o.def && `防${o.def.join('-')}`, o.mdef && `魔御${o.mdef.join('-')}`, o.extra].filter(Boolean).join(' ') || '—';
 const fmtStats = (e: Record<string, number | undefined> = {}) => Object.entries(e).filter(([, v]) => v).map(([k, v]) => `${STAT_NAMES[k] ?? k}+${v}`).join(' ') || '—';
 
-export function equipIds(): string[] { return Object.keys(ITEMS).filter(id => ITEMS[id].slot); }
+export function equipIds(): string[] { return Object.keys(ITEMS).filter(id => ITEMS[id].slot && !SHOP_ITEMS[id]); } // 灵符商城商品不进装备表
 
 export function renderEquipTable(): string {
   const ids = equipIds();

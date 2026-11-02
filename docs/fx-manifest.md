@@ -1,6 +1,6 @@
 # FX MANIFEST
 
-26 个原创程序化特效，均为透明 PNG（RGBA）图集 + Phaser 3 JSON Hash。每帧的 `anchor` 为归一化 pivot（Phaser 3 会读取为 customPivot）；meta.fx 中包含 pivot/blend/fps/loop。源码：`src/fxlib.py`、`src/effects.py`、`src/build.py`（`python3 build.py [前缀]`）、`src/preview_scene.py`（合成预览）、`src/validate.py`（JSON 与 PNG 尺寸校验，最近一次结果：ALL OK）。预览：`preview/sheet_*.png`（每帧 + 品红 pivot 十字）和 `preview/preview_fx_{warrior,mage,taoist}.png`。
+26 个程序化生成特效，均为透明 PNG（RGBA）图集 + Phaser 3 JSON Hash。每帧的 `anchor` 为归一化 pivot（Phaser 3 会读取为 customPivot）；meta.fx 中包含 pivot/blend/fps/loop。源码：`src/fxlib.py`、`src/effects.py`、`src/build.py`（`python3 build.py [前缀]`）、`src/preview_scene.py`（合成预览）、`src/validate.py`（JSON 与 PNG 尺寸校验，最近一次结果：ALL OK）。预览：`preview/sheet_*.png`（每帧 + 品红 pivot 十字）和 `preview/preview_fx_{warrior,mage,taoist}.png`。
 
 | 文件 | 帧 | 帧尺寸 | fps | 循环 | 锚点 (pivot px) | 技能 | 阶段 | 混合 | PNG 字节 |
 |---|---|---|---|---|---|---|---|---|---|

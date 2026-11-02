@@ -15,6 +15,7 @@ export class UIScene extends Phaser.Scene {
     this.input.mouse?.disableContextMenu();
     this.panel = new Panel(this, () => b.world, (m, g) => { if (m) b.log(m, g); b.saveGame(); }, () => b.toTitle());
     this.panel.onTeleport = () => { b.handle(b.world.drainEvents()); b.saveGame(); };
+    this.panel.onSave = () => { b.handle(b.world.drainEvents()); b.saveGame(); };
     const modes: (PanelMode | 'shop')[] = ['bag', 'quests', 'skills', 'shop', 'settings'];
     const hud = new Hud(this, b.world.floor.name, b.floorIcons(), b.world.skills, i => b.openPanel(modes[i]), IS_MOBILE, k => b.onKey(k));
     b.attachHud(hud);

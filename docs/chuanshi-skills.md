@@ -29,6 +29,6 @@
 未做图标的传世技能（与现有重叠或资料过少）：诅咒术、风火轮、战魂真悟、乾坤一掷、冰霜雪雨、凝血离魂、兽灵术、天仙咒、阴阳法环、施毒大法（来源 145z，版本差异大，存疑）。
 
 ## 图标
-- 文件：`public/assets/skills/skill_<id>.png`（64×64）+ `skill_<id>@2x.png`（128×128），RGBA，原创绘制，带暗钢斜边框，与现有图标风格接近。
+- 文件：`public/assets/skills/skill_<id>.png`（64×64）+ `skill_<id>@2x.png`（128×128），RGBA，AI 生成，带暗钢斜边框，与现有图标风格接近。
 - 预览：`docs/art-gap-preview/chuanshi_skills.jpg`
 - 未做特效，仅列特效要点。

@@ -28,7 +28,10 @@ export const SIM_STUCK = 5;
 /** 虚拟刷怪金币期望（R56b 修模拟：此前只给经验不给金币 → 卡关后金币归零、无药可买 → 死亡循环）：金币掉率 × 金额均值 × 层系数（与 World.dropItem 一致） */
 const virtGold = (id: string, pf: number) => { const g = ENEMIES[id]?.drops?.find(d => d.item === 'gold'); const [g0, g1] = WORLD.goldAmount; return g ? g.chance * (g0 + g1) / 2 * (1 + pf * 0.6) : 0; };
 const band = (lv: number) => Math.min(5, Math.floor((lv - 1) / 10));
+/** 血石档位（与 src/shop/catalog.ts BLOODSTONES 一致；sim 不 import 商城） */
+const STONE_TIERS: [string, number, number][] = [['stone_s', 1, 20000], ['stone_m', 35, 50000], ['stone_l', 40, 120000], ['stone_x', 45, 300000]];
 export const simRun = (c: ClassId, seed: number, maxT = SIM_MAX_T) => {
+    const stoneUsed = new Set<string>();
     const w = (process.env.ALL ? learnAll : (x: World) => x)(Object.assign(new World(seeded(seed), 1, FLOORS, c), { dungeons: false })); let cds = w.skills.map(() => 0); let t = 0, potUsed = 0, freeDeaths = 0, costDeaths = 0; const learnLog: string[] = []; let hjCombo = 0, hjHeroDmg = 0, hjAllDmg = 0, hjT = 0, hjOut = 0;
     const dg = { heroDmg: 0, sumDmg: 0, sumDeaths: 0, t: 0, sumT: 0, sumN: 0, foeOnSum: 0, foeOnHero: 0, sumLv: 0, sumHp: 0, heroHp: 0, samples: 0, sumKillDmg: 0, allKillDmg: 0 };
     const deathAt: { floor: number; lv: number }[] = []; const floorLv: Record<number, number> = {};
@@ -52,6 +55,10 @@ export const simRun = (c: ClassId, seed: number, maxT = SIM_MAX_T) => {
       for (let i = 0; i < w.skills.length; i++) { if (w.skills[i].id === 'charm' && !w.charmAutoOk()) continue; w.cast(i, cds); }
       for (let i = 0; i < w.skills.length; i++) w.cast(i, cds, { auto: true }); // 模拟 = 自动施法（施毒跳过已中毒）
       for (let i = w.bag.length - 1; i >= 0; i--) { const it = w.bag[i]; if (it.slot && it.req <= w.level && !w.equip[w.targetSlot(it)!]) w.equipItem(i); }
+      // feat/lingfu-combat：SIM_STONE=1 → Lv1 起佩戴血石（小血石免等级/35 中/40 大/45 特，每档各一块，储量用完销毁）；默认关 → 与 lingfu-shop 基线一致
+      if (process.env.SIM_STONE) { const tier = STONE_TIERS.filter(x => w.level >= (process.env.SIM_STONE_M40 && x[0] === 'stone_m' ? 40 : x[1])).pop(); const cur = w.equip.stone;
+        if (cur?.charge && cur.charge.hp <= 0 && cur.charge.mp <= 0) { stoneUsed.add(cur.item); w.equip.stone = undefined; }
+        if (tier && !stoneUsed.has(tier[0]) && w.equip.stone?.item !== tier[0]) { if (w.equip.stone) stoneUsed.add(w.equip.stone.item); const it = w.makeItem(tier[0], 'common'); it.req = tier[1]; it.charge = { hp: tier[2], mp: tier[2] }; w.equip.stone = it; } }
       // 黑铁：模拟脚本卖掉（避免碎装干扰难度基线；玩家可手动强化）
       for (let i = w.bag.length - 1; i >= 0; i--) if (w.bag[i]?.item === 'black_iron') w.sellItem(i);
       // 黑铁：模拟脚本卖掉（避免碎装干扰难度基线；玩家可手动强化）

@@ -1,6 +1,6 @@
 # 技能特效需求清单（fx-requests）
 
-产出目录：`/Users/razer/card-legend-art-out/fx/`（透明 PNG 图集 + Phaser JSON Hash）。全部为程序化原创渲染；参考帧只用于参考颜色、形状、尺寸和节奏，参考帧位于 box 上的 `/workspace/fcl/video_frames/f_*.jpg` 和 `video2_frames/g_*.jpg`。「参考不足」表示视频里没有清晰对应的画面，按通用风格制作。
+产出目录：`/Users/razer/card-legend-art-out/fx/`（透明 PNG 图集 + Phaser JSON Hash）。全部为程序化生成渲染；参考帧只用于参考颜色、形状、尺寸和节奏，参考帧位于 box 上的 `/workspace/fcl/video_frames/f_*.jpg` 和 `video2_frames/g_*.jpg`。「参考不足」表示视频里没有清晰对应的画面，按通用风格制作。
 锚点类型：center 表示目标或施法者的视觉中心；ground 表示脚底地面（GROUND_Y）；caster_front 表示施法者朝向侧前方；projectile 为弹道头部。pivot 以单帧左上角为原点。
 
 | 文件名 | 技能id | 阶段 | 帧数 | 帧尺寸 | 帧率 | 循环 | 锚点类型 | pivot px | 混合模式 | 时长ms | 说明 |
@@ -91,7 +91,7 @@
 | fx_mass_heal_burst | 12 | 512×256 | 256,220 | 20 | 否 | 主角脚下 (cx, y)；光环约 375ms 扩到 ±190px；每目标仍叠 fx_heal_pillar（间隔 80ms） |
 
 缺图时的兜底：回落到 fx_magic_shield_* 着色，再回落 fx.holyLight。
-已知不足：参考帧里没有这三个技能，造型为原创；loop 的幽光点在循环接缝处有轻微跳变。
+已知不足：参考帧里没有这三个技能，造型为程序化生成；loop 的幽光点在循环接缝处有轻微跳变。
 
 ## #诱惑之光（feat/charm，2026-10-31）
 - 施放：`fx_charm_light`（目标身上粉紫色光环/心形光点，约 0.6s，单体）。未注册/缺失 → `playFx` 返回 null，回落 `fx.holyLight`（Graphics 圣光占位），不崩溃。
@@ -126,7 +126,7 @@
 
 - 按 1× 使用；缺图或超出特效上限时退回原 fx.slash，不报错。
 - 宠物按 unit.pet 判断（优先于骷髅/神兽）；pet 原本是被诱惑的怪物，id 不是 summon_*。
-- 已知不足：三者都参考不足，造型为原创；atk/hurt 立绘单帧不在本次范围内。
+- 已知不足：三者都参考不足，造型为程序化生成；atk/hurt 立绘单帧不在本次范围内。
 
 ## 阶段 B 合击特效（fx_combo_<id>；未出图前用现有 Graphics 占位，不报错）
 所有：PNG 序列帧，加色混合 ADD，播放 0.6s（12 帧 @20fps），以目标为锚点；伤害结算在第 6 帧（0.3s）。
@@ -150,7 +150,7 @@
 | fx_combo_pixing | 10 | 384×384 | 192,192 | 20 | ADD | 同上；第 6 帧星芒最亮，之后麻痹电弧 |
 
 - comboFx：有图播图，缺图仍走金环 Graphics；「合击名」飘字和震屏两种情况都保留。
-- 原作合击帧「未查到」；box 参考视频帧中无合击画面，「参考不足」。形态只依据 21cq.com/chuanqi/743.html、百度百科「合击」的文字描述，原创绘制。
+- 原作合击帧「未查到」；box 参考视频帧中无合击画面，「参考不足」。形态只依据 21cq.com/chuanqi/743.html、百度百科「合击」的文字描述，程序化生成。
 - 已知不足：~~shihun/mori 的循环尾段、pixing 的 3s 麻痹需要逻辑侧另外播放循环/状态，本次未接~~（feat/hj-fx-loop 已接，见下）；huolong 用的是横向盘旋（照规格 ±300px），不是具象龙形。
 
 ### 阶段 B 合击持续段接入（feat/hj-fx-loop，2026-10-31）
@@ -167,7 +167,7 @@
 
 ## 阶段 B #9 魔龙教主 / 魔龙血域美术需求（立绘已到位：boss_molong_full.png（108d607），魔龙教主与魔龙守将 boss_hj_home 均指向 boss_molong，紫色 tint 占位已移除；背景 bg_floor24 缺图走现有回退）
 ### 合击持续段 产出记录（特效 Bot，2026-10-31，分支 fx/combo-loop）
-规格取自 origin/feat/hj-fx-loop 的本文件（main 上尚无该小节）。全部 ADD、12fps、pivot=目标卡中心，原作持续表现「未查到」，原创，风格同 fx_combo_*。
+规格取自 origin/feat/hj-fx-loop 的本文件（main 上尚无该小节）。全部 ADD、12fps、pivot=目标卡中心，原作持续表现「未查到」，程序化生成，风格同 fx_combo_*。
 | 文件 | 帧 | 帧尺寸 | pivot | 循环 | 说明 |
 |---|---|---|---|---|---|
 | fx_combo_shihun_loop | 8 | 640×192 | 320,72 | 是 | 毒沼持续，亮度 0.7×，首尾无缝 |
@@ -238,4 +238,4 @@ main 上不存在、未做：强化术、无极真气、隐身、集体隐身。
 
 素材：每技能 _start(5帧) / _loop(10帧) / _end(4帧)，256×96，pivot (128,48)=光环中心=脚底，12fps，ADD，depth 9（卡牌 10 之下）。旋转/呼吸已画入帧内，代码勿再 setAngle，可等比 setScale 0.8–1.2。已在 FxPlayer FX_DEFS 登记，调用点未改（BattleScene 385/481 仍播旧罩身，待战斗开发切换到 (hv.cx, 脚底 y)）。
 
-制作记录：原创程序化生成（card-legend-art-out/fx/src/effects.py `_aura`），首尾无缝已帧差校验；预览 preview_fx_ground_aura.png。
+制作记录：程序化生成（card-legend-art-out/fx/src/effects.py `_aura`），首尾无缝已帧差校验；预览 preview_fx_ground_aura.png。

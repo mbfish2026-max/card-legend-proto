@@ -6,7 +6,9 @@ import { fmtInt, fmtText, bookEntry } from './fmt';
 import { SKILL_BOOK_DROPS } from '../data/skillBookDrops';
 import { COMPANION_UNLOCK_LEVEL, comboFor, BOOK_PAGE, BRM_BOOK, GOLD_BAR, PAGES_PER_BOOK, COMBO_LEVEL, heartFeedValue, RAGE_MAX, HEART_STORE_MAX, RECRUIT_DIALOG } from '../data/companion';
 import { toLogic, toLogicX, MAX_LW, Render } from '../render';
-import { frameBg, atlasReady, listRowPitch, rowHitHeight, viewCss, rowBg, scrollBar, slotBg, qualityFrame, slotHitSize, rowTint, SKILL_ROW_TINT, UI_SLICES , panelFrameName, MOBILE_TABS, MIN_TAP } from './uiSlices';
+import { isShopUsable, useShopItem } from '../shop/shop';
+import { renderLingfu, resetLingfu } from './LingfuShopView';
+import { frameBg, atlasReady, listRowPitch, rowHitHeight, viewCss, rowBg, scrollBar, slotBg, qualityFrame, slotHitSize, bloodstoneSlot, rowTint, SKILL_ROW_TINT, UI_SLICES , panelFrameName, MOBILE_TABS, MIN_TAP } from './uiSlices';
 import { compareRows, diffText, CmpData } from './equipCompare';
 import { shouldTapClose } from './tapClose';
 import { RING_MIN_LEVEL, IDENT_PRICE, IDENT_MIN_LEVEL } from '../data/r14b';
@@ -39,7 +41,7 @@ import { CONSUMABLE } from '../data/items-town';
 import { Settings, DEFAULT_AUTO_SKILLS } from '../settings';
 import { equipLook } from './EquipLayers';
 
-export type PanelMode = 'bag' | 'shop' | 'skills' | 'settings' | 'map' | 'quests' | 'town';
+export type PanelMode = 'bag' | 'shop' | 'skills' | 'settings' | 'map' | 'quests' | 'town' | 'lingfu';
 export const RARITY_HEX: Record<string, string> = { common: '#ffffff', magic: '#5aa8ff', rare: '#ffb020' };
 const RARITY_NUM: Record<string, number> = { common: 0x8a8a8a, magic: 0x3a7aff, rare: 0xffa020 };
 const RARITY_CN: Record<string, string> = { common: '普通', magic: '精良', rare: '极品' };
@@ -56,6 +58,8 @@ export class Panel {
   /** 商店分页：杂货 / 书店（R11 技能书） */
   shopTab: 'goods' | 'books' = 'goods';
   onTeleport?: () => void;
+  /** 灵符商城购买成功后立即存档 */
+  onSave?: () => void;
   /** R14 城镇：当前选中的 NPC id */
   npc: string | null = null;
   constructor(public s: Phaser.Scene, public world: () => World, public onChange: (msg?: string, green?: boolean) => void, public onTitle: () => void) {
@@ -76,6 +80,7 @@ export class Panel {
   close() {
     // R14 横版长街：关闭店铺界面 = 回到街上（出城走西端城门）
     if (this.mode === 'town') this.npc = null;
+    if (this.mode === 'lingfu') resetLingfu();
     this.clearMapInput(); this.sel = null; this.ironIdx = null; this.mode = null; this.root?.destroy(true); this.root = undefined; this.hideTip(); }
   /** #11 修复：面板打开时升级/得经验不刷新。render 时记录快照，UIScene.update 每帧比对 */
   private snap = ''; mscale = 1; skPage = 0; bookPage = 0; bookCs = false;
@@ -100,7 +105,7 @@ export class Panel {
     const W = this.mode === 'settings' ? 640 : 1000, H = this.mode === 'settings' ? 580 : 500, top = Math.max(40, 360 - H / 2);
     // 边框与内容对齐：非设置面板内容从 top 起排到 top+478，边框覆盖 top-20 ~ top+480
     R.add(frameBg(s, panelFrameName(IS_MOBILE, f => atlasReady(s, f)), 640, this.mode === 'settings' ? 300 : top + H / 2 - 20, W, H, { fill: 0x15100b, alpha: 0.97, stroke: 0xd4a64a, sw: 3 }).setName('panelBg'));
-    const titles = { bag: '角色 / 背包', shop: '商人 · 杂货铺', skills: '技能', settings: '设置', map: this.wm.area ? '' : '世界地图', quests: '悬赏 / 成就', town: `${TOWNS[this.world().town ?? 'bichi']?.name ?? '城镇'} · 安全区` };
+    const titles = { bag: '角色 / 背包', shop: '商人 · 杂货铺', skills: '技能', settings: '设置', map: this.wm.area ? '' : '世界地图', quests: '悬赏 / 成就', lingfu: '灵符商城', town: `${TOWNS[this.world().town ?? 'bichi']?.name ?? '城镇'} · 安全区` };
     if (titles[this.mode] && atlasReady(s, 'title_plate')) R.add(frameBg(s, 'title_plate', 640, top + 22, Math.max(200, titles[this.mode].length * 26 + 80), 40, { fill: 0 }).setName('titlePlate')); // B2 标题底牌（无图集不画，保持原样）
     R.add(txt(s, 640, top + 22, titles[this.mode], 24, '#ffd24a', { fontStyle: 'bold' }).setOrigin(0.5));
     // 手机：面板整体放大到接近全屏（地图面板自带拖动/缩放坐标换算，不放大）；关闭键加大到 ≥44px
@@ -110,6 +115,7 @@ export class Panel {
     if (this.mode === 'settings') return this.renderSettings(R, top);
     if (this.mode === 'skills') { this.renderSkills(R, top); return this.mobileTabs(R, top); }
     if (this.mode === 'map') return this.renderMap(R, top);
+    if (this.mode === 'lingfu') return renderLingfu({ s, R, top, W, H, world: this.world, cssU: this.cssU(), toPanel: p => this.toPanel(p), addOff: f => this.mapOff.push(f), rerender: () => this.render(), close: () => this.close(), onChange: this.onChange, save: () => this.onSave?.() });
     if (this.mode === 'quests') return this.renderQuests(R, top);
     if (this.mode === 'town') { this.renderTown(R, top); if (this.npcNeedsBag()) this.renderBag(R, top); return; }
     if (this.mode === 'bag') this.renderEquip(R, top); else this.renderShop(R, top);
@@ -173,9 +179,10 @@ export class Panel {
     // 左列：头盔/项链/武器/左手镯/左戒指；右列：衣服/靴子/右手镯/右戒指（间距 58，末行底边 top+342 不压属性文字，竖屏同坐标系不越界）
     const L = cx - 130, Rx = cx + 130, y0 = top + 80, dy = 58;
     const pos: Record<EquipSlot, [number, number]> = { helmet: [L, y0], necklace: [L, y0 + dy], weapon: [L, y0 + dy * 2], bracelet1: [L, y0 + dy * 3], ring1: [L, y0 + dy * 4],
-      armor: [Rx, y0], boots: [Rx, y0 + dy], bracelet2: [Rx, y0 + dy * 3], ring2: [Rx, y0 + dy * 4] };
+      armor: [Rx, y0], boots: [Rx, y0 + dy], stone: [Rx, y0 + dy * 2], bracelet2: [Rx, y0 + dy * 3], ring2: [Rx, y0 + dy * 4] };
     for (const sl of EQUIP_SLOTS) {
       const [x, y] = pos[sl];
+      if (sl === 'stone' && !w.equip.stone) { const bs = bloodstoneSlot(s, x, y, size); if (bs) R.add(bs); } // 灵符商城：血石栏空槽底图
       this.slotBox(R, x, y, size, w.equip[sl], EQUIP_SLOT_NAMES[sl], () => {
         if (this.ironIdx != null) {
           const m = w.enhanceWithIron(this.ironIdx, sl); this.ironIdx = null;
@@ -268,8 +275,10 @@ export class Panel {
     for (let i = p0; i < Math.min(WORLD.bagSize, p0 + BAG_PAGE); i++) {
       const it = w.bag[i], k = i - p0, x = x0 + (k % cols) * (size + 6), y = y0 + Math.floor(k / cols) * (size + 6);
       this.slotBox(R, x, y, size, it, '', right => {
-        if (this.mode === 'shop' || this.npcKind() && this.npcKind() !== 'storage') { const g = w.sellItem(i); sfx(s, 'coin'); this.onChange(`出售 ${it!.name} 获得 ${g} 金币`, true); }
+        if ((this.mode === 'shop' || this.npcKind() && this.npcKind() !== 'storage') && it?.bound) this.onChange('灵符商城物品不可出售', false);
+        else if (this.mode === 'shop' || this.npcKind() && this.npcKind() !== 'storage') { const g = w.sellItem(i); sfx(s, 'coin'); this.onChange(`出售 ${it!.name} 获得 ${g} 金币`, true); }
         else if (this.npcKind() === 'storage') { const e = w.deposit(i); this.onChange(e ?? `存入 ${it!.name}`, !e); }
+        else if (isShopUsable(it!.item) && !right) { const r = useShopItem(w, i); sfx(s, 'loot', 0.5); this.onChange(r.msg, r.ok); if (r.ok && it!.item === 'return_stone') { this.mode = null; this.close(); } if (r.ok) this.onTeleport?.(); }
         else if (CONSUMABLE[it!.item]) { const m = w.useConsumable(i); sfx(s, 'loot', 0.5); if (w.town) { this.mode = 'town'; this.npc = null; } this.onChange(m, m.startsWith('使用')); }
         else if (right) { w.dropItem(i); this.onChange(`丢弃 ${it!.name}`); }
         else if (it!.slot) { const e = w.equipItem(i); if (!e) sfx(s, 'loot', 0.5); this.onChange(e ?? `装备 ${it!.name}`, !e); }

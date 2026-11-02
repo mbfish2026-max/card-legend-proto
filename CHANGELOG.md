@@ -22,6 +22,11 @@
 - sim：sim-lib / scripts/balance-sim 复活后若在城，立即 leaveTown(死亡层)（失败则直接 loadFloor），轨迹同旧「本层起点复活」；差异仅召唤物复活后保留。
 - 测试：tests/respawn-last-town.test.ts（多城切换回最近城、野外不改记录、旧档回退、非法字段、存档往返、召唤物 ≤100px/等级、多次死亡；修复前在 `lastTownId=bichi` 失败）；e2e tests/e2e/respawn-last-town-verify.mjs（比奇城→野外→阵亡→回比奇；盟重→野外→阵亡→回盟重，断言 town/城名/召唤物距离与等级/镜头内/0 console error；修复前阵亡提示仍为「本层起点」并超时失败）。
 
+## 灵符商城·战斗侧接入（feat/lingfu-combat，未合 main）
+- 血石 `World.tickStone`：**小血石无等级限制**（Lv1 起生效）；HP<40% 每 2s +3HP、不回 MP [适配]（官方 2023 魔血石每秒 +10HP/+15MP，为保持 1–39 级难度削弱，小血石单独评估 1–39 战−9%/法−11%/道+13%）。中/大/特 35/40/45：HP<20%/MP<10% 补上限 3%，8s 冷却 [适配]（原 15%/2s 过强；9 seed 1–39 合计 战−13%/法−14%/道−2%，40–50 为基线的 54%/50%/193%）。手动药水优先，城内不生效，储量随存档，耗尽保留空石，头顶飘字「血石 +N」。
+- 技巧项链：熟练度 ×5。召唤直升 `boostSummon(7)`：在场与之后召唤均为 7 级，新增可选存档字段 `summonBoostLv`。回城石：战斗中/BOSS 房可用，瞬发，30s 冷却 [适配]，召唤物跟随。
+- 测试：tests/lingfu-combat.test.ts 29 项进 npm test；e2e tests/e2e/lingfu-combat-verify.mjs。详见 docs/lingfu-shop.md §10.6。
+
 ## 修复：换图后召唤物留在旧坐标/从远处走过来（fix/summon-mapchange，未合 main）
 - 根因：World.prevFloor（S 返回上一层）先 loadFloor 把召唤物放到本层起点附近，再把英雄挪到上一层终点（出口前），召唤物不跟着挪 → 相距约 8000px，要很久才走过来；enterTown（回城）完全不重置召唤物坐标；loadFloor 本身按 110+60k 排队，第 2/3 只已超 100px。另：读档恢复的召唤物（restoreSummons）不发 summon 事件，BattleScene 不建卡牌，直到换图前都看不见。
 - 修复：新增 World.placeSummonsNearHero()（召唤物含诱惑宠物交替落在英雄身后/身前 50/50/75/75/100px，夹在地图/长街内），在 loadFloor（下一层/传送/副本/出城/上一层按钮）、prevFloor 英雄落位之后、enterTown 调用；BattleScene.snapSummonViews() 换图/进城时卡牌直接跳到新坐标，缺卡牌的召唤物补建（读档后立即可见）。不改任何战斗/平衡数值。

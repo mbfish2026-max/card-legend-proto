@@ -347,3 +347,23 @@ slice 顺序是 上 右 下 左（T R B L），值取自 slices.json。也可以
 2. 改 loader.ts `assetUrl()` 的正则映射 .webp；json 不压缩。
 3. 在 TitleScene preload 一次加载。
 4. DOM 单图和 @2x 由构建一起压成 webp，参数同上。
+
+
+## 灵符商城图标（第六轮，art/lingfu-icons，基于 feat/lingfu-shop）
+按 docs/art-requests.md「灵符商城缺图」清单交付（共 8 项）。源图为 AI 生成黑底图（GenerateImage）（docs/ui-preview/src/lf_*_src.jpg），build_lingfu.py 抠成透明底、缩放、锐化、加 1px 投影；无魔兽系列素材。
+
+| key / 帧名 | 文件 | 尺寸 | 用法 | 体积 |
+|---|---|---|---|---|
+| summon_lv7_scroll | public/assets/icons/shop_summon_scroll.png | 64×64 | 召唤直升卷轴（金头卷轴+红色召唤阵） | 7,050 B |
+| return_stone | public/assets/icons/shop_return_stone.png | 64×64 | 回城石（蓝白漩涡石+金扣） | 7,343 B |
+| skill_necklace | public/assets/icons/shop_skill_necklace.png | 64×64 | 技巧项链（绿宝石+金书纹吊坠） | 7,178 B |
+| stone_s | public/assets/icons/bloodstone_s.png | 64×64 | 血石（小）：粉红哑光原石，最小 | 3,141 B |
+| stone_m | public/assets/icons/bloodstone_m.png | 64×64 | 血石（中）：亮红刻面+金爪 | 5,212 B |
+| stone_l | public/assets/icons/bloodstone_l.png | 64×64 | 血石（大）：深红+华丽金托+高光 | 6,143 B |
+| stone_x | public/assets/icons/bloodstone_xl.png | 64×64 | 血石（特）：暗血红+黑金托+红色光焰，最大 | 7,412 B |
+| lingfu_entry（ui_atlas 帧） | docs/ui-preview/slices/lingfu_entry.png；DOM dom/2x/lingfu_entry@2x.png | 源 56×44，九宫格 L/R 18、T/B 14，fixed=false | 右下常驻入口：桌面 add.nineslice→setSize(88,44)；手机 #mh-shop 52×44 CSS，border-image 用 @2x（slice 36/28）。中间叠 lingfu_icon_s + 「灵符」字 | 549 B / @2x 6,176 B |
+
+血石四档靠体积（0.56/0.72/0.86/1.0）、颜色（粉→亮红→深红→暗血红）、托座（无→金爪→金托→黑金光焰）区分，40px 下仍可分（见预览第 4 行）。灵符货币图标沿用现有 lingfu_icon_xs/s/l，本轮未改。
+
+图集：入口按 88×44 放不进 512×512（所有 rectpack 算法/排序都试过），改为源 56×44 横向拉伸。重建后 **47 帧**，512×512，PNG 265,336 B，WebP 无损 175,958 B，q90 74,708 B，json 12,864 B；逐像素自检通过。DOM @2x 现为 18 张。图集已满（used_h 510），再加帧需拆 ui_atlas_2。
+预览：docs/ui-preview/preview_lingfu_icons.jpg（原尺寸、goods_slot 1280×720 与 844×390、血石 64/48/40 对比、入口拉伸、×3 细节）。

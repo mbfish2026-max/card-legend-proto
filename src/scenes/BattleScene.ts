@@ -322,6 +322,7 @@ export class BattleScene extends Phaser.Scene {
     if (k === 'B' || k === 'C' || k === 'I') return this.openPanel('bag');
     if (k === 'T') { if (this.world.town) { this.townUse(); return; } return this.openPanel('shop'); }
     if (k === 'K') return this.openPanel('skills');
+    if (k === 'L') return this.openPanel('lingfu'); // 灵符商城
     if (k === 'H') { this.log(this.world.useRecallScroll()); return; } // 任务C：回城卷快捷键
     if (k === 'Q') return this.openPanel('quests');
     if (this.paused || this.state !== 'play') return;
@@ -546,6 +547,10 @@ export class BattleScene extends Phaser.Scene {
       } else if (e.type === 'aggro') this.views.get(e.uid)?.alert(WORLD.alertSec);
       else if (e.type === 'leap') this.views.get(e.uid)?.leap(WORLD.leapSec * 1000);
       else if (e.type === 'leash') { const v = this.views.get(e.uid); if (v) fx.floatNumber(this, v.cx, v.cy - v.h * 0.3, v.h, '脱离战斗', FX.statusColor, 0.6); }
+      else if (e.type === 'stone') { // 灵符商城·血石自动补给：头顶飘字（最小实现）
+        const hv = this.world.hero && this.views.get(this.world.hero.uid);
+        if (hv) { if (e.hp) fx.floatNumber(this, hv.cx - 18, hv.cy - hv.h * 0.35, hv.h, `血石 +${e.hp}`, '#ff8a8a', 0.6); if (e.mp) fx.floatNumber(this, hv.cx + 18, hv.cy - hv.h * 0.2, hv.h, `血石 +${e.mp}`, '#8ab8ff', 0.6); }
+      }
       else if (e.type === 'floor') { this.enterFloor(e.index, e.name); this.syncBackPortal(); }
       else if (e.type === 'town') this.buildStreet(e.id);
       else if (e.type === 'cleared') this.log('首领已被击败！出口已开启，向右前往下一层');

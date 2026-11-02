@@ -2,15 +2,16 @@ import { EquipSlot, ItemDef, Slot } from '../combat/types';
 import { CLASSES } from './classes';
 import { BOOKS, bookItemId } from './books';
 import { TOWN_ITEMS } from './items-town';
+import { SHOP_ITEMS } from '../shop/catalog';
 import { NEW_EQUIP, EQUIP_META, adaptMdef } from './equip-official';
 import { EG_EQUIP } from './eg-equip';
 // 物品表：中文名 + 图标。equip=基础属性；req=需求等级；price=出售价（商人收购价）
 const I = 'assets/items/';
-export const SLOTS: Slot[] = ['weapon', 'helmet', 'armor', 'necklace', 'ring', 'bracelet', 'boots'];
-export const SLOT_NAMES: Record<Slot, string> = { weapon: '武器', helmet: '头盔', armor: '衣服', necklace: '项链', ring: '戒指', bracelet: '手镯', boots: '靴子' };
+export const SLOTS: Slot[] = ['weapon', 'helmet', 'armor', 'necklace', 'ring', 'bracelet', 'boots', 'stone'];
+export const SLOT_NAMES: Record<Slot, string> = { weapon: '武器', helmet: '头盔', armor: '衣服', necklace: '项链', ring: '戒指', bracelet: '手镯', boots: '靴子', stone: '血石' };
 /** 穿戴位：戒指×2、手镯×2（热血传奇官方穿戴位） */
-export const EQUIP_SLOTS: EquipSlot[] = ['weapon', 'helmet', 'armor', 'necklace', 'ring1', 'ring2', 'bracelet1', 'bracelet2', 'boots'];
-export const EQUIP_SLOT_NAMES: Record<EquipSlot, string> = { weapon: '武器', helmet: '头盔', armor: '衣服', necklace: '项链', ring1: '左戒指', ring2: '右戒指', bracelet1: '左手镯', bracelet2: '右手镯', boots: '靴子' };
+export const EQUIP_SLOTS: EquipSlot[] = ['weapon', 'helmet', 'armor', 'necklace', 'ring1', 'ring2', 'bracelet1', 'bracelet2', 'boots', 'stone'];
+export const EQUIP_SLOT_NAMES: Record<EquipSlot, string> = { weapon: '武器', helmet: '头盔', armor: '衣服', necklace: '项链', ring1: '左戒指', ring2: '右戒指', bracelet1: '左手镯', bracelet2: '右手镯', boots: '靴子', stone: '血石' };
 /** 物品部位 → 可放入的穿戴位（按优先顺序） */
 export function equipSlotsFor(k: Slot): EquipSlot[] { return k === 'ring' ? ['ring1', 'ring2'] : k === 'bracelet' ? ['bracelet1', 'bracelet2'] : [k]; }
 /** 存档装备结构版本：2 = 双戒双镯 */
@@ -136,3 +137,5 @@ for (const b of Object.values(BOOKS)) {
 
 // R14 城镇/消耗品新物品
 Object.assign(ITEMS, TOWN_ITEMS);
+/** 灵符商城商品（src/shop/catalog.ts；不进掉落表） */
+Object.assign(ITEMS, SHOP_ITEMS);

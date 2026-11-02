@@ -33,8 +33,8 @@ ok(qualityFrame(mk(true), 0, 0, 52, 'legend') === null && qualityFrame(mk(true),
 { const b: any = bloodstoneSlot(mk(true), 5, 6, 60); ok(b && b.kind === 'image' && b.a[3] === 'slot_bloodstone' && b.disp[0] === 60 && b.disp[1] === 60, '血石空槽：固定帧图片 setDisplaySize（不走九宫格）'); }
 ok(bloodstoneSlot(mk(false), 0, 0, 60) === null, '血石空槽 无图集 → null');
 ok(UI_SLICES.slot_bloodstone.fixed === true, 'slot_bloodstone 标记 fixed');
-ok(BLOODSTONE_SLOT_VISIBLE === false && !/bloodstoneSlot\(/.test(src('src/ui/Panel.ts')), '血石槽（stone）未实现 → 装备界面不显示血石空槽，存档结构不变');
-ok(!/stone/.test(src('src/combat/types.ts').match(/EquipSlot\s*=[^;]*/)?.[0] ?? ''), 'EquipSlot 未新增 stone');
+ok(BLOODSTONE_SLOT_VISIBLE === true && /bloodstoneSlot\(/.test(src('src/ui/Panel.ts')) && /stone: \[Rx, y0 \+ dy \* 2\]/.test(src('src/ui/Panel.ts')), '灵符商城：血石栏（stone）已实现 → 装备界面右列靴子下显示血石空槽');
+ok(/stone/.test(src('src/combat/types.ts').match(/EquipSlot\s*=[^;]*/)?.[0] ?? ''), '灵符商城：EquipSlot 已新增 stone（旧档缺 equip.stone 按空处理）');
 // 点击区：手机 844×390（面板缩放约 1.28）
 const css = viewCss(1280 * 844 / 390 > 1280 ? Math.round(720 * 844 / 390) : 1280) * 1.28;
 for (const [size, pitch, what] of [[56, 62, '背包'], [60, 58, '装备'], [42, 46, '仓库']] as const) {

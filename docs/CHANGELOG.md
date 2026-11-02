@@ -6,6 +6,21 @@
 - **存档字段变化（系统开发注意）**：SaveData 新增可选字段 `lastTownId?: string`（TOWNS 的 id，如 `"bichi"`）；仅在去过城镇后写出。读档：合法 id → 用之；缺省/非法 → 回退存档 `town`（若在城内存档）→ 再回退 `returnTownOf(floorIndex)`（本层原有「回城」城镇）。`v` 仍为 1，无迁移，旧档兼容。
 - sim：sim-lib / scripts/balance-sim 复活后若在城，立即 leaveTown(死亡层)（失败则直接 loadFloor），轨迹同旧「本层起点复活」；差异仅召唤物复活后保留。
 - 测试：tests/respawn-last-town.test.ts（多城切换回最近城、野外不改记录、旧档回退、非法字段、存档往返、召唤物 ≤100px/等级、多次死亡；修复前在 `lastTownId=bichi` 失败）；e2e tests/e2e/respawn-last-town-verify.mjs（比奇城→野外→阵亡→回比奇；盟重→野外→阵亡→回盟重，断言 town/城名/召唤物距离与等级/镜头内/0 console error；修复前阵亡提示仍为「本层起点」并超时失败）。
+
+## 灵符商城·战斗侧接入（feat/lingfu-combat，未合 main）
+- 血石 `World.tickStone`：**小血石无等级限制**（Lv1 起生效）；HP<40% 每 2s +3HP、不回 MP [适配]（官方 2023 魔血石每秒 +10HP/+15MP，为保持 1–39 级难度削弱，小血石单独评估 1–39 战−9%/法−11%/道+13%）。中/大/特 35/40/45：HP<20%/MP<10% 补上限 3%，8s 冷却 [适配]（原 15%/2s 过强；9 seed 1–39 合计 战−13%/法−14%/道−2%，40–50 为基线的 54%/50%/193%）。手动药水优先，城内不生效，储量随存档，耗尽保留空石，头顶飘字「血石 +N」。
+- 技巧项链：熟练度 ×5。召唤直升 `boostSummon(7)`：在场与之后召唤均为 7 级，新增可选存档字段 `summonBoostLv`。回城石：战斗中/BOSS 房可用，瞬发，30s 冷却 [适配]，召唤物跟随。
+- 测试：tests/lingfu-combat.test.ts 29 项进 npm test；e2e tests/e2e/lingfu-combat-verify.mjs。详见 docs/lingfu-shop.md §10.6。
+## 灵符商城第一版（feat/lingfu-shop，未合 main）
+- 2026-11-02：fx-manifest、fx-requests 中描述特效来源的「原创」改为「程序化生成」（特效由 Python 脚本渲染），只改文字。
+- 2026-11-02：文档措辞修正，把美术素材来源统一写成「AI 生成」，不再写「原创」（ui-art-plan、art-requests、equip-layers、chuanshi-skills、README、build_lingfu.py docstring、assets-manifest 注释）。音频来源描述未改，代码逻辑未改。
+- 2026-11-01：合入美术2 origin/art/lingfu-icons（75559c6）。商品图标改用 assets/icons/shop_*.png、bloodstone_s/m/l/xl.png（特级 stone_x → bloodstone_xl）。桌面入口用 nineslice lingfu_entry，setSize 88×44，缺帧回退 btn_normal 或纯色。手机 #mh-shop 52×44 用 border-image lingfu_entry@2x（slice 28/36），图加载成功才启用，按下时提亮。图集 47 帧，DOM @2x 18 张，已重跑 sync-ui-atlas。小血石取消等级限制（req 30→1），中/大/特 35/40/45 不变，前期难度评估见 docs/lingfu-shop.md。
+- 灵符：1 元 = 10 灵符（仅显示）；访客本机钱包 `fcl_lingfu_v1`（不进 SaveData、不按存档槽，首次发 5000，删槽/新槽不再发，导入存档不带余额，扣费幂等、发货失败退款）；RemoteWallet 空实现（对齐 wallet Edge Function 形状，返回 not_configured）。充值页置灰「未接入支付」。
+- 入口：桌面右下「灵符」按钮（菜单圆钮上方）、手机 #mh-shop（自动开关上方 52×44 CSS px）、L 键。界面用 ui_atlas（panel_frame_s/list_row/tab_on/off/btn_normal），缺图集回退矩形；页签 推荐/召唤/成长/补给/便利/充值，列表拖动/滚轮，确认框、灵符不足提示，点面板外关闭。
+- 商品：召唤直升卷轴 300、回城石 100（10 次、30 s 冷却、无读条、回所在区域主城）、技巧项链 500（necklace 栏，熟练度×5 待战斗接）、血石 小/中/大/特（新 stone 装备栏，Lv30/35/40/45，200/450/900/1800）。商城物品绑定不可出售。
+- 存档：EquipSlot 加 stone、InvItem 加 uses/charge/bound/cdAt（可选字段，旧档兼容）。
+- 测试：tests/lingfu-shop.test.ts 40 项进 npm test；e2e tests/e2e/lingfu-shop-verify.mjs（844×390/932×430/874×402/1280×720 触屏 + 1280×720 桌面，含 NOATLAS）；tapclose e2e 改为 10 个装备格。截图 docs/shots/lingfu-shop/。
+
 ## 修复：换图后召唤物留在旧坐标/从远处走过来（fix/summon-mapchange，未合 main）
 - 根因：World.prevFloor（S 返回上一层）先 loadFloor 把召唤物放到本层起点附近，再把英雄挪到上一层终点（出口前），召唤物不跟着挪 → 相距约 8000px，要很久才走过来；enterTown（回城）完全不重置召唤物坐标；loadFloor 本身按 110+60k 排队，第 2/3 只已超 100px。另：读档恢复的召唤物（restoreSummons）不发 summon 事件，BattleScene 不建卡牌，直到换图前都看不见。
 - 修复：新增 World.placeSummonsNearHero()（召唤物含诱惑宠物交替落在英雄身后/身前 50/50/75/75/100px，夹在地图/长街内），在 loadFloor（下一层/传送/副本/出城/上一层按钮）、prevFloor 英雄落位之后、enterTown 调用；BattleScene.snapSummonViews() 换图/进城时卡牌直接跳到新坐标，缺卡牌的召唤物补建（读档后立即可见）。不改任何战斗/平衡数值。
