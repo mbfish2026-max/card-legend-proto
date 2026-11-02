@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## sim 工具合并审计（feat/sim-tools-merge，未合 main）
+- 合并 feat/sim-gear-swap 214d73d（-X ours）：SIM_DROP_LOG / SIM_TUNE / gear40 文档 / simgear v3 评估 main 上都已有，树与 origin/main 一致，没有新增代码。详见 docs/sim-tools-merge.md。
+- R78 合并后难度对照见 docs/sim-tools-merge.md。
+
 ## fix/r78-equip-tap：手机装备栏点击区 ≥44（基于 release/r78，未合 main）
 
 - 手机装备栏由两列×6 行改为 3 列×4 行（行列距 70、格 56），立绘右移；属性文字上移到 top+338，不压底部提示。桌面两列×6 行不变。

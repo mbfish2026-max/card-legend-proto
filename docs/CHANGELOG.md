@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## sim 工具合并审计（feat/sim-tools-merge，未合 main）
+- 合并 feat/sim-gear-swap 214d73d（-X ours）：SIM_DROP_LOG / SIM_TUNE / gear40 文档 / simgear v3 评估 main 上都已有，树与 origin/main 一致，没有新增代码。详见 docs/sim-tools-merge.md。
+- R78 合并后难度对照见 docs/sim-tools-merge.md。
+
 ## 默认 sim 换装（feat/sim-swap-default，未合 main）
 - tests/sim-gear.ts：SIM_GEAR_SWAP 默认开（换装+清包），=0 复现旧行为。battle.test 阈值、PASS_MAX_DEATHS=14 不变。
 - FOE_CLS_4050 恢复 r3（战1.04/法1.12/道1.12），EXP_LATE_CLS 战1.25/法1.25/道1.3；battle.test 9 种子全 Lv50。详见 docs/balance-4050-class.md。
