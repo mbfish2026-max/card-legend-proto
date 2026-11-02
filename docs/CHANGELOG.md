@@ -3,7 +3,7 @@
 ## 手机浮动摇杆（feat/float-joystick，未合 main）
 - 手机横屏 #mh-joy 改为浮动摇杆：左半屏、safe-area 顶 +64px 以下任意空地按下画布，底盘出现在按下点，拖动方向即移动方向，松手消失并停止。
 - 参数（src/ui/joyMath.ts）：底盘 120px，拇指最大位移 R=44px；死区横 0.35R、纵 0.5R；超半径时拇指钳在边上，底盘不跟随。
-- 避让：只在 window 捕获阶段拦截「目标是画布」的按下，DOM 按钮（药水栏/顶栏/技能/攻击/日志/挂机等）不触发摇杆，≥44px 点击区不变；画布可点物（传送门、NPC、城门，walk 背景除外）由 BattleScene.joyBlockedAt 命中测试后交给 Phaser 处理。面板/弹窗打开时不响应。多点触控按 pointerId 区分。
+- 避让：只在 window 捕获阶段拦截「目标是画布」的按下，DOM 按钮（药水栏/顶栏/技能/攻击/日志/挂机等）不触发摇杆，≥44px 点击区不变；画布可点物（传送门、NPC、城门；walk 背景与怪物卡牌除外，怪物身上按下也能拖摇杆）由 BattleScene.joyBlockedAt 命中测试后交给 Phaser 处理。面板/弹窗打开时不响应。多点触控按 pointerId 区分。
 - 挂机：沿用现有逻辑，方向输入（出死区）= 手动接管，挂机关闭，提示「手动操作，挂机已关闭」；死区内按住不关。桌面版不变。
 - 测试：tests/float-joystick.test.ts（9 项，已接入 npm test）、tests/e2e/float-joystick-verify.mjs；portal-same 单测/e2e 的摇杆断言改为「门本体放行」。截图 docs/shots/float-joystick/。
 

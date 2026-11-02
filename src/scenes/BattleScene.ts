@@ -814,13 +814,13 @@ export class BattleScene extends Phaser.Scene {
 
   /** 点按移动一格（键盘与虚拟方向键共用）；同帧多次按以最后一次为准，World 内再做 1 次排队 */
   hold = new HoldKeys();
-  /** feat/float-joystick（仅输入层）：屏幕点 (clientX,clientY) 下是否有画布可点物（传送门、NPC、城门等；walk 背景除外）→ 是则摇杆放行给 Phaser */
+  /** feat/float-joystick（仅输入层）：屏幕点 (clientX,clientY) 下是否有画布可点物（传送门、NPC、城门等；walk 背景、怪物卡牌除外）→ 是则摇杆放行给 Phaser */
   joyBlockedAt(cx: number, cy: number): boolean {
     const c = this.game.canvas.getBoundingClientRect(); if (!c.width || !c.height) return false;
     const x = (cx - c.left) * this.scale.width / c.width, y = (cy - c.top) * this.scale.height / c.height;
     const list = ((this.input as any)._list ?? []) as Phaser.GameObjects.GameObject[];
     const hits = this.input.manager.hitTest({ x, y } as any, list, this.cameras.main, []);
-    return hits.some((o: any) => o.input?.enabled && o.visible !== false && !o.getData?.('walkBg'));
+    return hits.some((o: any) => o.input?.enabled && o.visible !== false && !o.getData?.('walkBg') && !o.unit); // 怪物卡牌不挡摇杆（左半屏怪物上按下=移动）
   }
   stepKey(d: number) { if (this.state === 'play' && !this.paused) { if (this.hang.on) this.stopHang('manual'); this.world.queueStep(d); } }
   /** 自动技能：按 Settings.autoSkills（或职业推荐）优先级尝试释放；失败静默；手动按键走 onKey 优先占冷却 */
