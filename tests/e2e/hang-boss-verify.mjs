@@ -25,7 +25,7 @@ const mkSave = (cls, floorIndex, learned) => ({ v: 1, cls, level: 60, exp: 0, go
 const LEARN = { taoist: ['summon_skeleton', 'poison', 'soul_fire'], mage: ['fireball', 'thunder'], warrior: [] };
 const sample = 'const h = W.hero; return { gt: W.time, fi: W.floorIndex, ph: B.hang.phase, cy: B.hang.cycles, on: B.hang.on, cd: h ? h.cd : 0, x: h ? h.x : 0, foes: W.alive("enemy").length, sm: W.units.filter(u => u.summon && u.alive).length, ban: B.hud?.hangBanner?.visible ? B.hud.hangBanner.text : "", stop: B.hangStopMsg, fade: B.fading };';
 const FI = 5; // 尸王殿（单测同层，含首领、可往返）
-const NORM = `for (const u of W.alive('enemy')) if (u.tier !== 'boss') u.alive = false; W.units = W.units.filter(u => u.alive); W.farmQueue.length = 0; W.ground.length = 0; B.handle(W.drainEvents());`;
+const NORM = `for (const u of W.alive('enemy')) if (u.tier !== 'boss') u.alive = false; W.units = W.units.filter(u => u.alive); W.farmQueue.length = 0; W.ground.length = 0; B.handle(W.drainEvents()); for (const [uid, v] of [...B.views]) if (!W.units.includes(v.unit)) { v.destroy(); B.views.delete(uid); }`;
 const PULL = `const b = W.alive('enemy').find(u => u.tier === 'boss'); if (b) { b.x = W.hero.x + 320; b.homeX = b.x; } return b ? b.name : null;`;
 const S2 = sample.replace('return {', 'return { boss: B.hang.boss, bk: B.hang.bossKills, bhp: (W.alive("enemy").find(u => u.tier === "boss") || {}).hp, ');
 try {
@@ -35,10 +35,10 @@ try {
     const fi0 = await run(page, 'return W.floorIndex;');
     const bn = await run(page, `${NORM} ${PULL}`);
     await run(page, 'B.hangToggleAt = -1e9; B.toggleHang();');
-    const t0 = Date.now(); const seen = new Set(), shots = new Set(); let engT = 0, pressed = false, moved = false, r, potsUsed = false; const p0 = await run(page, 'return W.pots.reduce((a, b) => a + b, 0);');
+    const t0 = Date.now(); const seen = new Set(), shots = new Set(); let engT = 0, pressed = false, moved = false, r, potsUsed = false; const p0 = await run(page, 'return W.pots[W.selectedPotionIndex(0)];');
     while (Date.now() - t0 < 150000) {
       r = await run(page, S2); if (r.ban) seen.add(r.ban); if (!r.on) break;
-      if (r.boss !== null && !engT) engT = Date.now();
+      if (r.boss !== null && !engT) { engT = Date.now(); await run(page, 'W.hero.hp = Math.floor(W.hero.maxHp * 0.35);'); } // 低于设置红药阈值 40%、高于 bosslow 30% → 应自动喝药
       if (engT && !shots.has('fight') && Date.now() - engT > 1500 && r.bk === 0) { shots.add('fight'); await page.screenshot({ path: `${dir}/boss-${tag}-${cls}-fighting.png` }); }
       if (engT && !pressed && Date.now() - engT > 3000) { pressed = true; await run(page, 'const b = W.alive("enemy").find(u => u.tier === "boss"); if (b) b.hp = Math.min(b.hp, Math.ceil(b.maxHp * 0.03));'); }
       if (r.bk >= 1 && !shots.has('down') && !r.fade) { shots.add('down'); await page.screenshot({ path: `${dir}/boss-${tag}-${cls}-bossdown.png` }); }
@@ -47,9 +47,10 @@ try {
       if (r.cy >= 1 && r.fi === fi0 && r.ph === 'farm') break;
       await sleep(150);
     }
-    potsUsed = (await run(page, 'return W.pots.reduce((a, b) => a + b, 0);')) < p0;
+    potsUsed = (await run(page, 'return W.pots[W.selectedPotionIndex(0)];')) < p0;
     ok(!!bn && engT > 0 && [...seen].some(t => /遇到首领，自动接战/.test(t)), `${tag} ${cls} 首领（${bn}）自动接战，横幅：${[...seen].join(' / ')}`);
     ok(r.bk >= 1 && r.cy >= 1 && r.on && r.fi === fi0, `${tag} ${cls} 首领击杀 ${r.bk} → 继续循环 ${r.cy} 轮回到原层，挂机=${r.on} ${r.stop || ''}`);
+    ok(potsUsed, `${tag} ${cls} 打首领中 HP35% → 自动喝红药（红药格数量减少；首领掉落药水会加到别的格）`);
     ok(shots.has('fight') && shots.has('down') && [...seen].some(t => /首领已击败/.test(t)), `${tag} ${cls} 截图 ${[...shots].join(',')}（用药=${potsUsed}）`);
     ok(w.errs.length === 0, `${tag} ${cls} 控制台 0 报错 ${w.errs.slice(0, 2).join(' | ')}`);
     await page.close();
