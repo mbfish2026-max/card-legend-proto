@@ -21,7 +21,7 @@ export const OFFICIAL_MAX = OFFICIAL_EXP.length - 1;
  *  怪物经验倍率仍按官方表（EXP_PER_LEVEL_BASE）定标，所以每级所需击杀数 ×EXP_LATE_MUL；1–39 级不变；50 级以上随 49 级一起 ×EXP_LATE_MUL（保持单调） */
 export const EXP_LATE_MUL = 2;
 /** feat/balance-4050-class [适配]：40 级起升级所需再按玩家职业 ×该系数（实际倍率 = EXP_LATE_MUL × 系数）；不传职业（伙伴/英雄、怪物经验定标）= 1 */
-export const EXP_LATE_CLS: Record<string, number> = { warrior: 1, mage: 1, taoist: 1 };
+export const EXP_LATE_CLS: Record<string, number> = { warrior: 1.25, mage: 1.25, taoist: 1.3 };
 export const EXP_LATE_LV: readonly [number, number] = [40, 49];
 /** 官方形状曲线（不含 40–49 级加倍），用于怪物/悬赏经验定标 */
 export const EXP_PER_LEVEL_BASE = (lv: number): number => {
