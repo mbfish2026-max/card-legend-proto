@@ -42,7 +42,7 @@ try {
         await sleep(mob ? 400 : 30); // 桌面：面板每 800ms 可能因经验/熟练度变化自动重绘并收起悬停提示（既有行为），悬停后尽快截图
         const req = await p.evaluate(() => window.__game.scene.getScene('Battle').world.bag.find(i => i.item === 'iron_sword').req);
         const tipOn = await p.evaluate(() => !!window.__game.scene.getScene('UI').panel.tip); if (mob) chk(tipOn, `${VW}x${VH} 铁剑提示框已显示`); else console.log('待核', `${VW}x${VH} 桌面悬停提示：无头浏览器下截图未稳定捕获（tip=${tipOn}），以手机三尺寸截图为准`);
-        chk(req === 5, `${VW}x${VH} 铁剑需求等级 ${req}（官方 10 → 5）`);
+        chk(req === 11, `${VW}x${VH} 铁剑需求等级 ${req}（starter-cloth：5 → 11）`);
         if (mob) console.log('shot', await shot(p, `tooltip-iron-sword-req5-${VW}x${VH}`));
       }
       chk(w.errs.length === 0, `${VW}x${VH} ${cls} 无 JS 错误 ${w.errs.slice(0, 2).join(' | ')}`); await p.close();
