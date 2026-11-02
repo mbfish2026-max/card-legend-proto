@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 血石容量显示（feat/stone-capacity-ui，未合 main）
+- 装备栏血石格、背包血石、悬浮提示显示「剩余/总容量」（小血石只显示红，中/大/特红+蓝）；电脑与手机都有。数字格式 1.2k / 19.9k / 300k，剩余向下取整。
+- 耗尽：单池为 0 数字变红；全部为 0 时图标变灰 + 红色「耗尽」，提示框写「储量耗尽（不再补给）」。
+- 只读 InvItem.charge，不改 tickStone 与战斗；旧档缺 charge 显示 0/总并标耗尽，存档格式不变。
+- 储量变化才重绘（statSnap 加 stoneSig），保留「有选中 / 按下 800ms 内 / 限频」不重绘的保护。
+- 测试：tests/stone-capacity-ui.test.ts（进 npm test）；e2e tests/e2e/stone-capacity-verify.mjs；截图 docs/shots/stone-capacity-ui/。详见 docs/stone-capacity-ui.md。
+
 ## 默认 sim 换装（feat/sim-swap-default，未合 main）
 - tests/sim-gear.ts：SIM_GEAR_SWAP 默认开（换装+清包），=0 复现旧行为。battle.test 阈值、PASS_MAX_DEATHS=14 不变。
 - FOE_CLS_4050 恢复 r3（战1.04/法1.12/道1.12），EXP_LATE_CLS 战1.25/法1.25/道1.3；battle.test 9 种子全 Lv50。详见 docs/balance-4050-class.md。
