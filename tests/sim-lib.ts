@@ -91,8 +91,8 @@ export const simRun = (c: ClassId, seed: number, maxT = SIM_MAX_T) => {
       for (let i = 0; i < w.skills.length; i++) w.cast(i, cds, { auto: true }); // 模拟 = 自动施法（施毒跳过已中毒）
       if (GEAR_SWAP) gearTick(w, c, seed); else { for (let i = w.bag.length - 1; i >= 0; i--) { const it = w.bag[i]; if (it.slot && it.req <= w.level && !w.equip[w.targetSlot(it)!]) w.equipItem(i); } if (process.env.SIM_GEAR_DUMP) gearTick(w, c, seed, false); } // feat/sim-gear-swap
       if (DL) dlTick(w);
-      // feat/lingfu-combat：SIM_STONE=1 → Lv1 起佩戴血石（小血石免等级/35 中/40 大/45 特，每档各一块，储量用完销毁）；默认关 → 与 lingfu-shop 基线一致
-      if (process.env.SIM_STONE) { const tier = STONE_TIERS.filter(x => w.level >= (process.env.SIM_STONE_M40 && x[0] === 'stone_m' ? 40 : x[1])).pop(); const cur = w.equip.stone;
+      // feat/lingfu-combat：SIM_STONE=1 → Lv1 起佩戴血石（小血石免等级/35 中/40 大/45 特，每档各一块，储量用完销毁；SIM_STONE_SMALL=1 只送小血石，仅 sim 开关）；默认关 → 与 lingfu-shop 基线一致
+      if (process.env.SIM_STONE) { const tier = STONE_TIERS.filter(x => (!process.env.SIM_STONE_SMALL || x[0] === 'stone_s') && w.level >= (process.env.SIM_STONE_M40 && x[0] === 'stone_m' ? 40 : x[1])).pop(); const cur = w.equip.stone;
         if (cur?.charge && cur.charge.hp <= 0 && cur.charge.mp <= 0) { stoneUsed.add(cur.item); w.equip.stone = undefined; }
         if (tier && !stoneUsed.has(tier[0]) && w.equip.stone?.item !== tier[0]) { if (w.equip.stone) stoneUsed.add(w.equip.stone.item); const it = w.makeItem(tier[0], 'common'); it.req = tier[1]; it.charge = { hp: tier[2], mp: tier[2] }; w.equip.stone = it; } }
       // 黑铁：模拟脚本卖掉（避免碎装干扰难度基线；玩家可手动强化）
