@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 默认 sim 换装（feat/sim-swap-default，未合 main）
+- tests/sim-gear.ts：SIM_GEAR_SWAP 默认开（换装+清包），=0 复现旧行为。battle.test 阈值、PASS_MAX_DEATHS=14 不变。
+- FOE_CLS_4050 恢复 r3（战1.04/法1.12/道1.12），EXP_LATE_CLS 战1.25/法1.25/道1.3；battle.test 9 种子全 Lv50。详见 docs/balance-4050-class.md。
+
 ## 40–50 按职业分倍率（feat/balance-4050-class，未合 main）
 - FOE_CLS_4050（L≥41 分职业 atk/hp 倍率，最终值全 1.0）与 EXP_LATE_CLS（战1.25/法1.25/道1.3）；1–39 与 94f4a01 逐项一致。详见 docs/balance-4050-class.md。
 - 已知偏差：真人反复刷 BOSS 时 40+ 装备获得更快，实际难度会比 sim 低；40+ 掉率不变。
