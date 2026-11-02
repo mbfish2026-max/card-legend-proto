@@ -5,6 +5,15 @@
 - 修复（src/ui/LingfuShopView.ts）：遮罩 pointerdown 时记录 pointer.downTime，pointerup 仅当同一次按下发生在遮罩上才关闭。点面板外、点 ✕ 照常关闭。
 - 测试：tests/e2e/lingfu-click-verify.mjs（桌面鼠标 move/down/up 点灵符 + 角色/悬赏/技能/商店/设置 5 个菜单钮、面板内不关、面板外关、✕ 关；手机触摸灵符）。修复前 FAIL（灵符），修复后 ALL OK；其他入口修复前即正常（只有灵符面板挂了点外关闭）。
 
+## 自动挂机 P1/MVP 实现（feat/auto-hang，未合 main）
+- 新增 src/combat/autoHang.ts：在锚点之间巡逻；在拴绳范围内追怪；8 秒无伤害放弃目标；绕路 400px 拾取；卡住时掉头，累计 3 次停止。自动用药 3 格，阈值可在设置调整（红 40% / 太阳水 30% / 蓝 30%）。
+- 停止条件：低血无药、死亡（不恢复）、本层清空、遇首领、背包满。入口：桌面按钮 1226,546 88×44 + J 键；手机 #mh-hang 52×44，在灵符商城左侧。不存档。
+- 测试：tests/auto-hang.test.ts（已接入 npm test）、tests/e2e/auto-hang-verify.mjs、tests/e2e/auto-hang-layout10.mjs。未改战斗数值和游戏数据，未跑 sim。
+
+## 自动挂机方案文档（feat/auto-hang，未合 main）
+- 新增 docs/auto-hang.md：巡逻/追击/技能/用药/低血与死亡/拾取背包/BOSS/换层行为设计，电脑与手机开关入口及接管规则，存档与离线，复用点与改动估算，风险、待拍板清单、MVP 分阶段。仅文档，未改 src、未跑 sim。
+
+
 ## fix/r78-equip-tap：手机装备栏点击区 ≥44（基于 release/r78，未合 main）
 
 - 手机装备栏由两列×6 行改为 3 列×4 行（行列距 70、格 56），立绘右移；属性文字上移到 top+338，不压底部提示。桌面两列×6 行不变。
