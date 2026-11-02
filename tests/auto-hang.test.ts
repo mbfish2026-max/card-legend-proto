@@ -23,7 +23,11 @@ const foe = (uid: number, x: number, extra: any = {}) => ({ uid, x, y: 0, hp: 50
   const w = mk({ w: { farmQueue: [{}] } }), a = new AutoHang(); a.start(w); const dirs: number[] = []; let stop: string | undefined;
   for (let t = 0; t < 7 && !stop; t += 0.05) { w.time = t; const r = a.tick(w, 0.05); stop = r.stop; dirs.push(r.dx); }
   ok(stop === 'stuck', '连续 3 次卡住 → stuck'); ok(new Set(dirs.filter(Boolean)).size === 2, '卡住时掉头（两个方向都出现过）'); }
-{ const w = mk(), a = new AutoHang(); a.start(w); ok(a.tick(w, 0.016).stop === 'cleared', '无怪无刷新无掉落 → cleared'); }
+{ // 用户新增：清层不再停止 → 进下一层（use）；末层无法往返 → nocycle
+  const fl = [{ spawns: [] }, { spawns: [] }, { spawns: [] }];
+  const w = mk({ w: { floors: fl, floorIndex: 0, floor: fl[0], level: 30 } }), a = new AutoHang(); a.start(w); const r = a.tick(w, 0.016);
+  ok(!r.stop && r.use && r.dx === 1 && a.phase === 'toNext', '无怪无刷新无掉落 → 走向出口进入下一层（不再 cleared 停）');
+  const w2 = mk({ w: { floors: fl, floorIndex: 2, floor: fl[2], level: 30 } }), a2 = new AutoHang(); a2.start(w2); ok(a2.tick(w2, 0.016).stop === 'nocycle' && /最后一层/.test(a2.info), '末层清空 → nocycle 停并提示'); }
 { const w = mk({ units: [foe(9, 900)], hero: { hp: 10 } }); w.pots = [0, 5, 0, 5]; const a = new AutoHang(); a.start(w); ok(a.tick(w, 0.016).stop === 'lowhp', 'HP 10% 且红/太阳水为 0 → lowhp');
   w.pots = [1, 5, 0, 5]; ok(!a.tick(w, 0.016).stop, '有红药时不停'); }
 { const w = mk({ units: [foe(9, 900), foe(10, 3000, { tier: 'boss', homeX: 3000 })] }), a = new AutoHang(); a.start(w);
