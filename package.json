@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "verify:hang-stuck": "node tests/e2e/hang-stuck-verify.mjs",
     "dev": "vite --host --port 5180",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",

@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## fix/hang-stuck：挂机时道士站在远处不靠近、不攻击（未合 main）
+- 根因：autoHang 的远程站桩条件是 `cls!=='warrior' && mp>=10 && gap<=300`，满足时 dx=0。道士只有治愈术，或施毒已挂上、技能在冷却时，什么都不放；普攻又只在近战距离内触发；要 8s 不掉血才放弃目标，换目标后照旧站桩。
+- 修复：站桩 1.5s 仍没有出手（普攻 cd 上跳或 MP 下降才算），就改为走近普攻；4s 原地不出手，就忽略该目标 10s 并掉头。另修 Fx.frostTint：目标已销毁时不再抛错。
+- 测试：tests/hang-stuck.test.ts（48 项，修复前道士 6 FAIL），tests/e2e/hang-stuck-verify.mjs（npm run verify:hang-stuck）。未改战斗数值和游戏数据，未跑 sim。
+
 ## fix/lingfu-click-close：电脑鼠标点灵符入口，商店打开又立刻关闭（未合 main）
 - 根因：桌面入口 lingfuEntry 在 pointerdown 打开面板；Panel.render 末尾 flushInput 让新建的全屏遮罩当帧就可点，同一次点击的 pointerup 落在遮罩上，经 shouldTapClose（面板外、位移 ≤8px）关闭面板。按住拖出 >8px 再松开不算点击，所以不关。手机入口是 DOM 按钮（#mh-shop），抬起不落在画布遮罩上，不受影响。
 - 修复（src/ui/LingfuShopView.ts）：遮罩 pointerdown 时记录 pointer.downTime，pointerup 仅当同一次按下发生在遮罩上才关闭。点面板外、点 ✕ 照常关闭。

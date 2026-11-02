@@ -189,3 +189,25 @@
 
 ### 未验证
 - 卡住后掉头和停止只在单测里验证过。真机触屏、iOS 安全区、长时间挂机的性能都未查到。
+
+## 11. fix/hang-stuck：道士站在远处不靠近、不攻击
+
+**现象**：挂机时，英雄停在离怪约 300px 处，既不靠近也不出手。用户确认是道士。
+
+**根因**（src/combat/autoHang.ts，修复前）：
+- 远程站桩条件是 `w.cls !== 'warrior' && h.mp >= 10 && gap <= 300`。满足时 dx=0，英雄停在原地，只靠 autoCast 出手。
+- 道士 Lv5–20 的默认自动技能只有 `heal`（DEFAULT_AUTO_SKILLS）。另外几种情况也一样放不出攻击技能：施毒已挂上、没有护身符、技能在冷却。这时 MP 仍 ≥10，英雄停在 gap≈297px 处，什么都不放。
+- 普攻只在 meleeSide() 找到近战距离内的敌人时才会触发（gap ≤ max(range)+0.5），所以也不出手。
+- 要等 giveUpSec=8s 内目标不掉血，才会放弃目标。换到下一只怪后，又会照样站桩。骷髅或施毒造成的零星伤害还会不断重置这 8 秒。
+- 复现：
+  - 单测：修复前 6 FAIL，全部是道士。Lv10 只会治愈术，左右两侧 290/600px 空转 7.3–8.0s；施毒+骷髅，左 250/290px 空转 3.7/4.1s。日志 /workspace/pcsim/hangstuck-before-unit.log。
+  - e2e：用旧构建跑道士。道士 Lv10 在 1280×720 和 844×390 下，左右 290/600px 共 8 FAIL，空转 7.1–9.0s（墙钟）。日志 /workspace/pcsim/hangstuck-e2e-before.log。
+
+**修复**（只改挂机决策，没有改战斗数值）：
+- 站桩改成看实际出手：`acted()` 检测 h.cd 上跳（普攻）或 MP 下降（施法）。站桩超过 `HANG.standSec=1.5s` 仍没有出手，就对该目标设 `meleeOnly`，走到近战距离普攻。
+- 兜底：dx=0 且超过 `HANG.idleSec=4s` 没有出手，就忽略该目标 10s，掉头巡逻。英雄不会原地发呆。
+- 顺带修了一个 UI 问题：`Fx.frostTint` 在冰箭飞行途中目标已经死亡销毁时（scene=undefined），原先会抛 TypeError。挂机法师 e2e 会触发它，现在直接跳过。
+
+**回归测试**：
+- tests/hang-stuck.test.ts（已接入 npm test）：真实 World，6 组用例 × 左右两侧 × 60/250/290/600px，共 48 项。
+- tests/e2e/hang-stuck-verify.mjs（`npm run verify:hang-stuck`）：1280×720 和 844×390 两种尺寸，空转按游戏时间计（W.time），要求 ≤3s 且怪掉血，控制台 0 报错。
