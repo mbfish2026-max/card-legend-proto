@@ -23,3 +23,9 @@ cmp 口径（死亡 = 9 种子合计，h = 中位数，通关 = Lv≥50 且单�
 - main 与 r3 单独版的 sim-bands JSON 共有字段逐项相同；main 只多了 potGold/goldAt40/learn/gearAt 等字段。没有漂移，40–50 仍达标（死亡 >15/7/13，h ≥10.68/9.05/12.98）。
 - 为什么没差异：默认 sim 下血石 SIM_STONE、新用药 SIM_POT 都是关的（tests/sim-lib.ts:19、:95），灵符商城也不进 sim 路径。所以合进来的灵符/血石/药水扩充对默认 sim 结果的影响是 0。打开这两个开关后的数值本轮没跑（未查到）。
 - battle.test 口径（cl-r78，EXIT=0，硬门全过）：战 死亡 10/10/3/6/16/9/6/14/8（中位 9），法 3/3/6/9/8/5/1/7/6（中位 6），道 9/6/1/10/4/0/0/2/4（中位 4），全部 Lv50，有损失死亡 0。GAP：战 单层最多 6（>5）；道 死亡中位 4（<6）；法/战用时比 0.50（<0.7）。
+
+## STONE+POT 叠加（R78 续，origin/main 665b01d，tests/scripts/src 与 665b01d 一致）
+### 开关含义（tests/sim-lib.ts）
+- SIM_STONE=1（:94–97）：Lv1 起直接给英雄**白送**血石（makeItem，不扣金币或灵符）：小血石(免等级) / 35 级中 / 40 级大 / 45 级特，每档各一块，储量 hp=mp=20000/50000/120000/300000，用完就销毁并换下一档。sim 里没有灵符货币和商城购买流程，等于「每档各买一块」的理想玩家。子开关 SIM_STONE_M40（中血石 40 级才戴）本轮没用。
+- SIM_POT=1（:18–33、:81–85、:119）：用药走药水栏 usePotionSlot（每格选有货里最强的药）。红药 HP<40%、蓝药 MP<40、太阳水 HP<30%（SIM_SUN_HP）。补药方面，到等级买强效红/蓝，Lv22 起太阳水补到 2（SIM_SUN_CAP），Lv35 起钱够就买强效太阳水捆。子开关 SIM_SUN_HP/SIM_SUN_CAP/SIM_POT_LV/SIM_MP_BIG/SIM_HPBIG_PRICE/SIM_SUNBIG_PRICE 本轮都用默认值。SIM_POT_LOG 只做观测记录，本轮没开。
+- battle.test 调用 simRun，环境变量会传进去。
