@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 自动挂机方案文档（feat/auto-hang，未合 main）
+- 新增 docs/auto-hang.md：巡逻/追击/技能/用药/低血与死亡/拾取背包/BOSS/换层行为设计，电脑与手机开关入口及接管规则，存档与离线，复用点与改动估算，风险、待拍板清单、MVP 分阶段。仅文档，未改 src、未跑 sim。
+
 ## 默认 sim 换装（feat/sim-swap-default，未合 main）
 - tests/sim-gear.ts：SIM_GEAR_SWAP 默认开（换装+清包），=0 复现旧行为。battle.test 阈值、PASS_MAX_DEATHS=14 不变。
 - FOE_CLS_4050 恢复 r3（战1.04/法1.12/道1.12），EXP_LATE_CLS 战1.25/法1.25/道1.3；battle.test 9 种子全 Lv50。详见 docs/balance-4050-class.md。
