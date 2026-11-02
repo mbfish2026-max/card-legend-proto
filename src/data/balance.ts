@@ -121,7 +121,7 @@ export const FOE_BAND = { atk: [0.9, 0.97, 1.02, 1.04, 1.05], hp: [1, 1, 1.6, 1,
   /** 层内普通怪密度倍率（1=不变；1.3=每 10 只追加约 3 只同种）[适配] */ dens: [1, 1, 1, 1, 1] };
 /** feat/balance-4050-class [适配]（官方未查到）：L≥41（FOE_BAND 第 4 段 = 牛魔寺庙起）按玩家职业再乘怪物攻/血（普通怪与 BOSS 同乘）；
  *  1–40（含祖玛阁 L40）不受影响；全 1 = 与 94f4a01 一致。依据 9 种子 sim 调参，见 docs/balance-4050-class.md */
-export const FOE_CLS_4050: Record<ClassId, { atk: number; hp: number }> = { warrior: { atk: 1.04, hp: 1 }, mage: { atk: 1.12, hp: 1 }, taoist: { atk: 1.12, hp: 1 } };
+export const FOE_CLS_4050: Record<ClassId, { atk: number; hp: number }> = { warrior: { atk: 1.0, hp: 1 }, mage: { atk: 1.12, hp: 1 }, taoist: { atk: 1.12, hp: 1 } };
 const clsK = (L: number, cls?: ClassId) => (cls && fb(L) === 4 ? FOE_CLS_4050[cls] : undefined) ?? { atk: 1, hp: 1 };
 export const floorBand = (f: number) => fb(FLOOR_TARGET_LV[f] ?? 1);
 const fb = (L: number) => Math.min(4, Math.max(0, Math.floor((L - 1) / 10)));
