@@ -851,6 +851,10 @@ export class World {
       if (this.time - this.bagFullLogT > 3) { this.bagFullLogT = this.time; this.events.push({ type: 'log', text: '背包已满，无法拾取' }); }
       return false;
     }
+    if (def?.potion !== undefined && this.pots[def.potion] >= POT_MAX) { // feat/potion-combat：拾取药水也守 999 上限，满了留在地上
+      if (this.time - this.bagFullLogT > 3) { this.bagFullLogT = this.time; this.events.push({ type: 'log', text: '药水已满，无法拾取' }); }
+      return false;
+    }
     this.ground.splice(this.ground.indexOf(g), 1);
     if (g.item === 'gold') this.gold += g.amount;
     else if (def.potion !== undefined) this.pots[def.potion]++;
@@ -926,6 +930,11 @@ export class World {
   getSelectedPotion(slot: number): string { return this.potSel[slot] ?? POT_SLOTS[slot]?.items[0] ?? ''; }
   /** 选中的药在 POTIONS 的下标（-1 = 无效格） */
   selectedPotionIndex(slot: number): number { return potIndex(this.getSelectedPotion(slot)); }
+  /** feat/potion-combat P4：用药水栏第 slot 格当前选中的药（快捷键 1/2/3 与点格都走这里） */
+  usePotionSlot(slot: number): string | null { const i = this.selectedPotionIndex(slot); return i < 0 ? null : this.usePotion(i); }
+  /** 某药当前剩余冷却秒数（太阳水看 sunReady，纯蓝看 mpReady，其余看 potReady） */
+  potionCooldown(i: number): number { const p = POTIONS[i], h = this.hero; if (!p || !h) return 0;
+    return Math.max(0, ((p.instant ? h.sunReady : p.mp && !p.hp ? h.mpReady : h.potReady) ?? 0) - this.time); }
   /** 长按弹层换药种；只能换成同类（红只能换红） */
   setSelectedPotion(slot: number, item: string): boolean {
     const s = POT_SLOTS[slot]; if (!s || !(s.items as readonly string[]).includes(item)) return false; this.potSel[slot] = item; return true;
@@ -1356,6 +1365,13 @@ export class World {
   usePotion(i: number): string | null {
     const p = POTIONS[i], h = this.hero;
     if (!p?.item || !h || this.pots[i] <= 0) return null;
+    if (p.instant) { // feat/potion-combat P4：太阳水/强效太阳水 = 立刻回复，独立 sunReady 冷却（不占红/蓝冷却，不走 HoT）
+      if (h.hp >= h.maxHp && (h.mp ?? 0) >= h.maxMp) return null;
+      if (this.time < (h.sunReady ?? 0)) return null;
+      this.pots[i]--; h.sunReady = this.time + WORLD.potCd;
+      if (p.hp) this.heal(h, p.hp, false); /* 走 heal 事件 → 绿色回血飘字 */ if (h.maxMp > 0) h.mp = Math.min(h.maxMp, (h.mp ?? 0) + (p.mp ?? 0));
+      return ITEMS[p.item].name;
+    }
     if ((p.hp && h.hp >= h.maxHp && !p.mp) || (p.mp && (h.mp ?? 0) >= h.maxMp && !p.hp)) return null;
     if ((p.hp && this.time < (h.potReady ?? 0)) || (p.mp && this.time < (h.mpReady ?? 0))) return null; // 1s 冷却（红/蓝各自独立，[适配]）
     this.pots[i]--; if (p.hp) h.potReady = this.time + WORLD.potCd; if (p.mp) h.mpReady = this.time + WORLD.potCd;

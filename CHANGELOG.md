@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## 药水战斗侧 P4/P6（feat/potion-combat，未合 main）
+- 用药：键盘 1/2/3 = 药水栏红/蓝/太阳水格当前选中的药（World.usePotionSlot / selectedPotionIndex）；键盘 4 保留中蓝；点格仍转发选中药。
+- 太阳水/强效太阳水立刻回复（HP180+MP240 / HP300+MP480），独立冷却 hero.sunReady 1s，不占红蓝冷却、不产生 HoT；强效红蓝沿用 HoT。与血石 tickStone 独立叠加（只写文档，未合 lingfu-combat）。
+- sim：tests/sim-lib.ts 加 SIM_POT=1 开关（默认关，轨迹不变），9 种子对比见 docs/potion-expand.md §9.3；1–39 偏差 ≤2%，40–50 未达标（战士过易、法师变难），建议见文档。
+- e2e：hotbar-click「点击药水格 = 按 1」在 main/potion-expand 上失败的根因是 fix/town-hot 后城内 HoT 0.5s 即结算清空，断言「HoT 入队数不减」过时；改为「HoT 入队或 HP 回升」。
+- 太阳水瞬回走 heal 事件，显示「+N」回血飘字。
+- e2e：balance-battle 蓝药改按 2（3 = 太阳水格）；新增 tests/e2e/potion-combat-verify.mjs（键盘/点格用选中药、太阳水瞬回飘字，截图 docs/shots/potion-combat/）。
+- 测试：tests/potion-combat.test.ts（28 项）。
+- 第 5 轮调参（魔兽授权改价格）：强效金创药 180→360 金；强效红蓝/太阳水/强效太阳水包门槛统一 Lv40。9 种子战士 40–50 63→47、道士 27→25 达标，法师 4→33 仍未达标（价格杠杆无效，见 docs §9.5）。
+- 桌面提示「药水 1-3」；药水拾取 999 上限拒收。
+- 定值复核（数据 360/Lv40，不设 SIM_POT_LV）：战 115/47、法 73/33、道 97/25，与第 5 轮逐种子一致。e2e potion-expand 购买改为升到 Lv40 后买超级金创药（扣 2160）。
+- 验收（c181930 之后）：tsc 0 错；npm test 全链跑完（equip-table 里「逐怪表 gen:monsters」✗ 只打印不退出，来自基线 maps-3050-combat 新怪未重生成文档，与药水无关）；build 通过；balance-battle / hj-battle / chuanshi / mobile-skills / potion-combat / potion-expand e2e 全部通过、0 JS 错误（potion-expand 手机双击解包偶发失败，重跑通过）。
+
 ## 修复：手机药水图标/数量被框盖住（fix/mobile-potion-clip，未合 main）
 - 根因 1：B6 皮肤给药水格（56px）套 btn_normal 框时，border-image-width 用了 1x 边距 14/16/14/16 CSS px。布局边框只有 2px，框图向内画到 padding 区，格内只剩 24×28 净空。图标 background-size 88%（≈45.8px）的上下左右边缘和右下角的数字都被框盖住。
 - 根因 2：MobileHud 每帧用 potBtns[i].textContent 写数量，把角标 span 冲掉了。数字变成按钮里的居中文字，角标 CSS（right:3px/bottom:1px）不生效，2/3 位数会压到框上。

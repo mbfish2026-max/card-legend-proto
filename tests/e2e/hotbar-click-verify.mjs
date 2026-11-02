@@ -29,7 +29,8 @@ try {
         const a = await st(p); await click(q0); const c = await st(p), hc = await hots();
         { const t0 = await p.evaluate(() => window.__game.scene.getScene('Battle').world.time); await p.waitForFunction(t0 => window.__game.scene.getScene('Battle').world.time >= t0 + 1.1, { timeout: 20000 }, t0); } // 按游戏时间等过 1s 冷却
         await key('1'); const k = await st(p), hk = await hots();
-        chk(c.pots[0] === a.pots[0] - 1 && k.pots[0] === c.pots[0] - 1 && hc >= 1 && hk >= hc, `${tag} 点击药水格 = 按 1（瓶数 ${a.pots[0]}→${c.pots[0]}→${k.pots[0]}，HoT 入队 ${hc}→${hk}）`);
+        // feat/potion-combat ⑤：fix/town-hot 后城内 HoT 照常结算，0.5s 就到期清空 → 原「hk >= hc」在等 1.1s 冷却后必然 1→0（d1280/m932 失败根因）；改为「HoT 入队或 HP 已回升」
+        chk(c.pots[0] === a.pots[0] - 1 && k.pots[0] === c.pots[0] - 1 && (hc >= 1 || c.hp > a.hp) && (hk >= 1 || k.hp > c.hp), `${tag} 点击药水格 = 按 1（瓶数 ${a.pots[0]}→${c.pots[0]}→${k.pots[0]}，HoT 入队 ${hc}→${hk}）`);
         if (!(c.hp > a.hp)) console.log('KNOWN', `${tag} 城内喝药 HP 不回升（${a.hp}→${c.hp}→${k.hp}）：城内不结算 HoT，推测出城后补回（未验证）——战斗逻辑问题，单独汇报未改`);
         chk(c.tt === null && c.x === a.x, `${tag} 城内点击药水格不触发点地行走（townTarget=${JSON.stringify(c.tt)} x ${a.x}→${c.x}）`);
         const e0 = await st(p); await click(q1); const e1 = await st(p); await key('2'); const e2 = await st(p);

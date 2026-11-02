@@ -14,10 +14,10 @@ ok(POTIONS.length === 8, 'POTIONS 共 8 种');
 ok(['hp_small', 'hp_mid', 'mp_small', 'mp_mid'].every((k, i) => POTIONS[i].item === k && POTIONS[i].key === String(i + 1)), '旧 4 种下标与 key 不动');
 ok(POTIONS[0].hp === 120 && POTIONS[1].hp === 320 && POTIONS[2].mp === 90 && POTIONS[3].mp === 240 && POTIONS[0].price === 20 && POTIONS[1].price === 60, '旧 4 种数值不变');
 const P = (k: string) => POTIONS[potIndex(k)];
-ok(P('hp_big').hp === 560 && P('hp_big').price === 180 && P('hp_big').lv === 22, '强效金创药 HP560 180金 Lv22');
-ok(P('mp_big').mp === 900 && P('mp_big').price === 180 && P('mp_big').lv === 22, '强效魔法药 MP900 180金 Lv22');
-ok(P('sun').hp === 180 && P('sun').mp === 240 && P('sun').price === 300 && P('sun').lv === 22 && P('sun').instant, '太阳水 HP180+MP240 立刻 300金 Lv22');
-ok(P('sun_big').hp === 300 && P('sun_big').mp === 480 && P('sun_big').price === 600 && P('sun_big').lv === 35 && P('sun_big').bundleOnly, '强效太阳水 HP300+MP480 600金 Lv35 只卖捆');
+ok(P('hp_big').hp === 560 && P('hp_big').price === 360 && P('hp_big').lv === 40, '强效金创药 HP560 360金 Lv40（第5轮调参）');
+ok(P('mp_big').mp === 900 && P('mp_big').price === 180 && P('mp_big').lv === 40, '强效魔法药 MP900 180金 Lv40');
+ok(P('sun').hp === 180 && P('sun').mp === 240 && P('sun').price === 300 && P('sun').lv === 40 && P('sun').instant, '太阳水 HP180+MP240 立刻 300金 Lv40');
+ok(P('sun_big').hp === 300 && P('sun_big').mp === 480 && P('sun_big').price === 600 && P('sun_big').lv === 40 && P('sun_big').bundleOnly, '强效太阳水 HP300+MP480 600金 Lv40 只卖捆');
 ok(POTIONS.every((p, i) => ITEMS[p.item]?.potion === i), 'ITEMS.potion 下标与 POTIONS 对齐');
 ok(!('hp_strong' in ITEMS) && !('mp_strong' in ITEMS) && !('sun_water' in ITEMS), '旧 key 不再是物品（不能并存两种强效金创药）');
 ok(Object.values(ITEMS).filter(d => d.name === '强效金创药').length === 1 && Object.values(ITEMS).filter(d => d.name === '太阳水').length === 1, '「强效金创药」「太阳水」各只有一个物品');
@@ -32,11 +32,11 @@ ok(bundlePrice('bundle_hp_small') === 120 && bundlePrice('bundle_sun_big') === 3
 ok(Object.keys(BUNDLES).every(id => ITEMS[id].price === bundlePrice(id) / 2), '回收价 = 捆价/2');
 
 console.log('药店列表');
-const r1 = potShopRows(1), r22 = potShopRows(22), r35 = potShopRows(35);
+const r1 = potShopRows(1), r39 = potShopRows(39), r40 = potShopRows(40);
 ok(!r1.some(r => r.kind === 'pot' && r.id === 'sun_big'), '强效太阳水不卖散装');
 ok(r1.filter(r => !r.locked).map(r => r.id).sort().join() === ['hp_small', 'hp_mid', 'mp_small', 'mp_mid', 'bundle_hp_small', 'bundle_hp_mid', 'bundle_mp_small', 'bundle_mp_mid'].sort().join(), 'Lv1 只能买小/中散装与捆');
-ok(r22.filter(r => r.locked).map(r => r.id).join() === 'bundle_sun_big', 'Lv22 只剩强效太阳水包锁定');
-ok(r35.every(r => !r.locked) && r35.length === 15, 'Lv35 全部解锁（7 散装 + 8 捆）');
+ok(r39.filter(r => r.locked).length === 7 && r39.filter(r => !r.locked).length === 8, 'Lv39 强效/太阳水全部锁定');
+ok(r40.every(r => !r.locked) && r40.length === 15, 'Lv40 全部解锁（7 散装 + 8 捆）');
 
 console.log('旧 key 迁移');
 const old = { pots: [3, 1, 4, 1], bag: [inv('hp_strong', 5), inv('bone'), inv('mp_strong'), inv('sun_water', 2)], storage: [inv('hp_strong', 7)], companion: { bag: [inv('hp_strong', 3), inv('sun_water')] } };
@@ -73,8 +73,8 @@ ok(w3.potSel.join() === 'hp_big,mp_small,sun_big' && w3.pots.join() === w1.pots.
 
 console.log('买药 / 买捆 / 解包');
 const w = new World(() => 0.5, 10, undefined, 'warrior'); w.gold = 100000;
-ok(w.buyPotion(potIndex('hp_big')) === '需要等级 22' && w.buyBundle('bundle_hp_big') === '需要等级 22', 'Lv10 不能买强效（散装/捆）');
-w.level = 35; ok(w.buyPotion(potIndex('sun_big')) === '药店只卖捆', '强效太阳水散装不卖');
+ok(w.buyPotion(potIndex('hp_big')) === '需要等级 40' && w.buyBundle('bundle_hp_big') === '需要等级 40', 'Lv10 不能买强效（散装/捆）');
+w.level = 40; ok(w.buyPotion(potIndex('sun_big')) === '药店只卖捆', '强效太阳水散装不卖');
 const g0 = w.gold; ok(w.buyBundle('bundle_sun_big') === null && w.gold === g0 - 3600, '买强效太阳水包扣 3600');
 ok(w.buyBundle('bundle_sun_big') === null && w.bag.filter(b => b.item === 'bundle_sun_big').length === 1 && w.bag.find(b => b.item === 'bundle_sun_big')!.qty === 2, '同种捆叠在 1 格');
 const bi = w.bag.findIndex(b => b.item === 'bundle_sun_big'); const r = w.unbundle(bi);

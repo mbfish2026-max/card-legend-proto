@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { FONT } from '../data/fx';
 import { POTIONS, SkillDef } from '../data/skills';
-/** 半透明虚拟手柄（仅手机）：左下四向键，右下技能 F1-Fn，右上药水 1-4，上方 背包/商人/设置/静音。
+/** 半透明虚拟手柄（仅手机）：左下四向键，右下技能 F1-Fn，右上药水 1-3，上方 背包/商人/设置/静音。
  *  按键直接调用与键盘相同的 onKey；方向键通过 dir 状态并入每帧移动输入。支持多点触控。 */
 export class VirtualPad {
   root: Phaser.GameObjects.Container; dir = { left: false, right: false, up: false, down: false };

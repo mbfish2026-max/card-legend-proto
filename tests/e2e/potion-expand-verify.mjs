@@ -77,9 +77,10 @@ try {
     await p.evaluate(() => window.__game.scene.getScene('UI').panel.close()); await sleep(400);
     // ④ 药店购买（比奇药店）
     await p.evaluate(() => window.__game.scene.getScene('UI').panel.openNpc('bq_potion')); await sleep(800);
-    const locked = await findPos(p, 'UI', '强效太阳水包 需Lv35'); 
+    const locked = await findPos(p, 'UI', '强效太阳水包 需Lv40'); 
     if (!locked) { await p.evaluate(() => { const P = window.__game.scene.getScene('UI').panel; for (const k of Object.keys(P.npcScroll)) P.npcScroll[k] = 99; P.render(); }); await sleep(400); }
-    chk(!!(await findPos(p, 'UI', '强效太阳水包 需Lv35')), `${tag} 强效太阳水包 Lv35 门槛灰显`);
+    chk(!!(await findPos(p, 'UI', '强效太阳水包 需Lv40')), `${tag} 强效太阳水包 Lv40 门槛灰显`);
+    await p.evaluate(() => { window.__game.scene.getScene('Battle').world.level = 40; window.__game.scene.getScene('UI').panel.render(); }); await sleep(300); // 第5轮：强效捆 Lv40 起卖，升到 40 再测购买
     const findBuy = () => p.evaluate(() => { const U = window.__game.scene.getScene('UI'), all = []; const walk = l => l.forEach(o => { if (o.type === 'Text' && o.visible) all.push(o); if (o.list) walk(o.list); }); walk(U.children.list);
       const nm = all.find(o => o.text === '超级金创药'); if (!nm) return null; const y = nm.getBounds().centerY; const bt = all.filter(o => o.text === '购买' && Math.abs(o.getBounds().centerY - y) < 24).sort((a, b) => Math.abs(a.getBounds().centerX - nm.getBounds().centerX) - Math.abs(b.getBounds().centerX - nm.getBounds().centerX))[0];
       if (!bt) return null; const c = bt.getBounds(), cv = window.__game.canvas.getBoundingClientRect(), wv = U.cameras.main.worldView; return { x: cv.left + (c.centerX - wv.x) * cv.width / wv.width, y: cv.top + (c.centerY - wv.y) * cv.height / wv.height }; });
@@ -88,7 +89,7 @@ try {
     if (!btn && process.env.DBG) console.log(await p.evaluate(() => { const U = window.__game.scene.getScene('UI'), all = []; const walk = l => l.forEach(o => { if (o.type === 'Text') all.push(o); if (o.list) walk(o.list); }); walk(U.children.list); return JSON.stringify(U.panel.npcScroll) + all.filter(o => /超级|购买/.test(o.text)).map(o => o.visible + o.text + '@' + o.getBounds().centerY).join(' | '); }));
     chk(!!btn, `${tag} 找到「超级金创药」购买键`);
     if (btn) { const g0 = await W(p); await tap(btn); await sleep(400); const g1 = await W(p);
-      chk(g0.gold - g1.gold === 1080 && (g1.bag.find(x => x.item === 'bundle_hp_big')?.qty ?? 0) === (g0.bag.find(x => x.item === 'bundle_hp_big')?.qty ?? 0) + 1, `${tag} 购买超级金创药：金 -${g0.gold - g1.gold}，捆 +1`); }
+      chk(g0.gold - g1.gold === 2160 && (g1.bag.find(x => x.item === 'bundle_hp_big')?.qty ?? 0) === (g0.bag.find(x => x.item === 'bundle_hp_big')?.qty ?? 0) + 1, `${tag} 购买超级金创药：金 -${g0.gold - g1.gold}，捆 +1`); }
     await p.screenshot({ path: `${dir}/${tag}-shop.png` });
     const errs = w.errs.filter(e => !(NOATLAS && /Failed to load resource/.test(e))); chk(errs.length === 0, `${tag} 无 JS 错误${NOATLAS ? '（图集被拦的加载失败除外）' : ''} ${errs.slice(0, 2).join(' | ')}`);
     await p.close();

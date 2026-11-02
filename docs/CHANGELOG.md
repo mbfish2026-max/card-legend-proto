@@ -21,6 +21,20 @@
 - 存档：EquipSlot 加 stone、InvItem 加 uses/charge/bound/cdAt（可选字段，旧档兼容）。
 - 测试：tests/lingfu-shop.test.ts 40 项进 npm test；e2e tests/e2e/lingfu-shop-verify.mjs（844×390/932×430/874×402/1280×720 触屏 + 1280×720 桌面，含 NOATLAS）；tapclose e2e 改为 10 个装备格。截图 docs/shots/lingfu-shop/。
 
+## 药水战斗侧 P4/P6（feat/potion-combat，未合 main）
+- 用药：键盘 1/2/3 = 药水栏红/蓝/太阳水格当前选中的药（World.usePotionSlot / selectedPotionIndex）；键盘 4 保留中蓝；点格仍转发选中药。
+- 太阳水/强效太阳水立刻回复（HP180+MP240 / HP300+MP480），独立冷却 hero.sunReady 1s，不占红蓝冷却、不产生 HoT；强效红蓝沿用 HoT。与血石 tickStone 独立叠加（只写文档，未合 lingfu-combat）。
+- sim：tests/sim-lib.ts 加 SIM_POT=1 开关（默认关，轨迹不变），9 种子对比见 docs/potion-expand.md §9.3；1–39 偏差 ≤2%，40–50 未达标（战士过易、法师变难），建议见文档。
+- e2e：hotbar-click「点击药水格 = 按 1」在 main/potion-expand 上失败的根因是 fix/town-hot 后城内 HoT 0.5s 即结算清空，断言「HoT 入队数不减」过时；改为「HoT 入队或 HP 回升」。
+- 太阳水瞬回走 heal 事件，显示「+N」回血飘字。
+- e2e：balance-battle 蓝药改按 2（3 = 太阳水格）；新增 tests/e2e/potion-combat-verify.mjs（键盘/点格用选中药、太阳水瞬回飘字，截图 docs/shots/potion-combat/）。
+- 测试：tests/potion-combat.test.ts（28 项）。
+- 第 5 轮调参（魔兽授权改价格）：强效金创药 180→360 金；强效红蓝/太阳水/强效太阳水包门槛统一 Lv40。9 种子战士 40–50 63→47、道士 27→25 达标，法师 4→33 仍未达标（价格杠杆无效，见 docs §9.5）。
+- 桌面提示「药水 1-3」；药水拾取 999 上限拒收。
+- 定值复核（数据 360/Lv40，不设 SIM_POT_LV）：战 115/47、法 73/33、道 97/25，与第 5 轮逐种子一致。e2e potion-expand 购买改为升到 Lv40 后买超级金创药（扣 2160）。
+- 验收（c181930 之后）：tsc 0 错；npm test 全链跑完（equip-table 里「逐怪表 gen:monsters」✗ 只打印不退出，来自基线 maps-3050-combat 新怪未重生成文档，与药水无关）；build 通过；balance-battle / hj-battle / chuanshi / mobile-skills / potion-combat / potion-expand e2e 全部通过、0 JS 错误（potion-expand 手机双击解包偶发失败，重跑通过）。
+
+
 ## 药水扩展（feat/potion-expand，未合 main）
 - 修：手机双击解包/短按药水偶发失败。根因①Phaser 3.90 新 setInteractive 对象要到下一帧 preUpdate 才进命中表，而 DOM 触摸即时处理——面板重绘后一帧内（卡顿时更长）的点击落空；`Panel.render` 后立即 `flushInput` 并入。②战斗中经验变化使背包每 800ms 自动重绘，正好落在「点一下选中、再点执行」之间；已选中或刚按下时不自动重绘。③手机药水格长按用 setTimeout 判定，卡顿时计时器先于已发生的 pointerup 触发，短按被误判成长按、弹层背景吞掉后续点击；改按事件时间戳判定。新增 tests/tap-timing.test.ts。
 - 数据（P1）：POTIONS 只在末尾追加 hp_big 强效金创药（HP560，180 金，Lv22）、mp_big 强效魔法药（MP900，180 金，Lv22）、sun 太阳水（HP180+MP240，300 金，Lv22）、sun_big 强效太阳水（HP300+MP480，600 金，Lv35，只卖捆）。旧 4 种的 index 和 key 不变。旧 key hp_strong/mp_strong/sun_water 合并到 hp_big/mp_big/sun，读档时迁移，瓶数不丢。

@@ -1,5 +1,7 @@
 // 难度模拟（从 battle.test.ts 抽出，供测试与 scripts/sim-bands.ts 共用；逻辑不变，另记每次死亡的层/等级与每层进入等级）
 declare const process: { env: Record<string, string | undefined> };
+// @ts-ignore tsconfig 无 node 类型（运行于 tsx）
+import { appendFileSync } from 'node:fs';
 import { World } from '../src/combat/World';
 import { FLOORS } from '../src/data/world';
 import { CLASSES, ClassId } from '../src/data/classes';
@@ -9,6 +11,27 @@ import { comboFor } from '../src/data/companion';
 import { WORLD, FLOOR_ORDER } from '../src/data/world';
 import { MAIN_ANCHORS, killExp, monsterLevelAt } from '../src/data/balance';
 import { ENEMIES } from '../src/data/units';
+import { POTIONS } from '../src/data/skills';
+// ===== feat/potion-combat 补给/用药策略（SIM_POT=1 开；默认关 = potion-expand 原轨迹）=====
+const POTC = !!process.env.SIM_POT;
+if (process.env.SIM_HPBIG_PRICE) POTIONS[4].price = +process.env.SIM_HPBIG_PRICE; // 调参临时杠杆（定值后写回 skills.ts）
+if (process.env.SIM_SUNBIG_PRICE) POTIONS[7].price = +process.env.SIM_SUNBIG_PRICE;
+const SUN_HP = +(process.env.SIM_SUN_HP ?? 0.3), SUN_CAP = +(process.env.SIM_SUN_CAP ?? 2), POT_LV = +(process.env.SIM_POT_LV ?? 0); // POT_LV：模拟玩家从几级起改买强效/太阳水（0 = 药店门槛）
+/** 每格选「有货里最强」那种（玩家习惯：长按换成最好的药） */
+function potSelBest(w: any) { for (const [slot, items] of [[0, ['hp_big', 'hp_mid', 'hp_small']], [1, ['mp_big', 'mp_mid', 'mp_small']], [2, ['sun_big', 'sun']]] as [number, string[]][]) {
+  const it = items.find(x => w.pots[POTIONS.findIndex(p => p.item === x)] > 0); if (it && w.getSelectedPotion(slot) !== it) w.setSelectedPotion(slot, it); } }
+/** 补药：够等级买强效（散装），否则中药；太阳水 Lv22 起补到 SUN_CAP；强效太阳水只卖捆，Lv35 起金币够买 1 捆解开 */
+function potBuy(w: any, cap: number) {
+  const L = (i: number) => Math.max(POTIONS[i].lv ?? 1, POT_LV), hp = w.level >= L(4) ? 4 : 1, mp = w.level >= L(5) && process.env.SIM_MP_BIG !== '0' ? 5 : 3; // SIM_MP_BIG=0：蓝只买中蓝
+  const n = (a: number, b: number) => w.pots[a] + w.pots[b];
+  while (w.gold >= POTIONS[hp].price && n(1, 4) < cap && !w.buyPotion(hp)) { /* buy */ }
+  while (w.gold >= POTIONS[mp].price && n(3, 5) < cap && !w.buyPotion(mp)) { /* buy */ }
+  if (w.level >= L(7) && n(6, 7) < SUN_CAP && w.gold >= 6 * POTIONS[7].price + 1000 && !w.buyBundle('bundle_sun_big')) { const bi = w.bag.findIndex((x: any) => x.item === 'bundle_sun_big'); if (bi >= 0) w.unbundle(bi); }
+  while (w.level >= L(6) && w.gold >= POTIONS[6].price && n(6, 7) < SUN_CAP && !w.buyPotion(6)) { /* buy */ }
+}
+// SIM_POT_LOG=路径（默认关）：逐场记录指定层（SIM_POT_LOG_FLOOR，默认 封魔殿）的喝药/死亡，JSONL 写入该路径。纯只读观测，不调用任何改状态/耗随机数的方法
+const PLOG = process.env.SIM_POT_LOG, PLOG_FLOOR = process.env.SIM_POT_LOG_FLOOR ?? '封魔殿';
+const plogW = (o: any) => { if (PLOG) appendFileSync(PLOG, JSON.stringify(o) + '\n'); };
 export function seeded(s: number) { return () => (s = (s * 16807) % 2147483647) / 2147483647; }
 const learnAll = (w: World) => { w.learned = new Set(CLASSES[w.cls].skills.map(s => s.id)); return w; };
 export const SEEDS = [3, 7, 11, 19, 23, 42, 57, 88, 101];
@@ -32,16 +55,16 @@ const band = (lv: number) => Math.min(5, Math.floor((lv - 1) / 10));
 const STONE_TIERS: [string, number, number][] = [['stone_s', 1, 20000], ['stone_m', 35, 50000], ['stone_l', 40, 120000], ['stone_x', 45, 300000]];
 export const simRun = (c: ClassId, seed: number, maxT = SIM_MAX_T) => {
     const stoneUsed = new Set<string>();
-    const w = (process.env.ALL ? learnAll : (x: World) => x)(Object.assign(new World(seeded(seed), 1, FLOORS, c), { dungeons: false })); let cds = w.skills.map(() => 0); let t = 0, potUsed = 0, freeDeaths = 0, costDeaths = 0; const learnLog: string[] = []; let hjCombo = 0, hjHeroDmg = 0, hjAllDmg = 0, hjT = 0, hjOut = 0;
+    const w = (process.env.ALL ? learnAll : (x: World) => x)(Object.assign(new World(seeded(seed), 1, FLOORS, c), { dungeons: false })); let cds = w.skills.map(() => 0); let t = 0, potUsed = 0, goldAt40 = -1; const potGold = [0, 0]; let freeDeaths = 0, costDeaths = 0; const learnLog: string[] = []; let hjCombo = 0, hjHeroDmg = 0, hjAllDmg = 0, hjT = 0, hjOut = 0;
     const dg = { heroDmg: 0, sumDmg: 0, sumDeaths: 0, t: 0, sumT: 0, sumN: 0, foeOnSum: 0, foeOnHero: 0, sumLv: 0, sumHp: 0, heroHp: 0, samples: 0, sumKillDmg: 0, allKillDmg: 0 };
-    const deathAt: { floor: number; lv: number }[] = []; const floorLv: Record<number, number> = {};
+    const deathAt: { floor: number; lv: number }[] = []; const plog: { buf: any[]; last: number } = { buf: [], last: -1 }; const floorLv: Record<number, number> = {};
     const gearAt: Record<number, any> = {}; const lvK: number[] = [], lvT: number[] = [], lvVK: number[] = [], lvVT: number[] = []; const kills = [0, 0, 0, 0, 0, 0], killT = [0, 0, 0, 0, 0, 0], virtKills = [0, 0, 0, 0, 0, 0], virtT = [0, 0, 0, 0, 0, 0], replays: Record<number, number> = {}; let floorKills = 0, floorT = 0, lastF = -1;
     /** 首清经验：每层第一次进入到清完（离开）所得经验 ÷ 进入时等级所需 */
     const firstClear: Record<number, { lv: number; exp: number }> = {}; let curFirst: number | null = null;
     while (!w.done && t < maxT) {
       if (floorLv[w.floorIndex] === undefined && !w.town) { floorLv[w.floorIndex] = w.level; gearAt[w.floorIndex] = { lv: w.level, ...w.equipStats() }; }
       const h = w.hero;
-      if (!h) { if (process.env.SIMDBG && deathAt.length % (+process.env.SIMDBG > 1 ? +process.env.SIMDBG : 25) === 0) console.log('died', w.floorIndex, 'Lv', w.level, (globalThis as any)._near); deathAt.push({ floor: w.floorIndex, lv: w.level }); learnLog.push(`死@${w.floorIndex + 1}层Lv${w.level}`);
+      if (!h) { if (process.env.SIMDBG && deathAt.length % (+process.env.SIMDBG > 1 ? +process.env.SIMDBG : 25) === 0) console.log('died', w.floorIndex, 'Lv', w.level, (globalThis as any)._near); deathAt.push({ floor: w.floorIndex, lv: w.level }); if (PLOG && plog.buf.length && FLOORS[w.floorIndex]?.name === PLOG_FLOOR) { plogW({ ev: 'death', cls: c, seed, lv: w.level, pots: [...w.pots], last5s: plog.buf }); plog.buf = []; } learnLog.push(`死@${w.floorIndex + 1}层Lv${w.level}`);
         // fix/sim-baseline：死亡分「无损失 / 有损失」计数（实测复活前后金币、经验、等级、背包、装备，不写死）；只读，不改轨迹
         const lossKey = () => JSON.stringify([w.gold, w.exp, w.level, w.bag.length, Object.values(w.equip).filter(Boolean).length]); const lk0 = lossKey(); { const df = w.floorIndex; w.respawn(); /* 复活回最近城镇后，sim 玩家走回死亡层继续（与旧「本层起点复活」轨迹一致） */ if (w.town && w.leaveTown(df)) { w.town = null; w.loadFloor(df); } } if (lossKey() === lk0) freeDeaths++; else costDeaths++;
         // 任务 A 后层更长、怪更多，死亡即整层重刷：同层连死 SIM_STUCK 次 → 模拟玩家「回上一层练 1 级再来」（虚拟刷怪，只加经验与估算用时，死亡照常计数）
@@ -50,8 +73,16 @@ export const simRun = (c: ClassId, seed: number, maxT = SIM_MAX_T) => {
           let i = 0; while (w.level === lv0 && i < 5000) { const id = ids[i++ % ids.length]; const b = band(w.level); lvVK[w.level] = (lvVK[w.level] ?? 0) + 1; lvVT[w.level] = (lvVT[w.level] ?? 0) + spk; w.gainExp(killExp(id, pf, w.level, monsterLevelAt(id, pf))); w.gold += virtGold(id, pf); virtKills[b]++; virtT[b] += spk; t += spk; }
           w.drainEvents(); w.recompute(true); learnLog.push(`卡关练级@${pf + 1}层→Lv${w.level}`); }
         continue; }
+      const plOn = !!PLOG && FLOORS[w.floorIndex]?.name === PLOG_FLOOR && !w.town, plPots = plOn ? [...w.pots] : null, plHp = h.hp, plMp = h.mp ?? 0;
+      if (POTC) { // feat/potion-combat（SIM_POT=1）：同阈值，按药水栏当前选中药用；太阳水 HP<30% 才喝（瞬回，独立冷却）
+        potSelBest(w);
+        if (h.hp < h.maxHp * 0.4 && w.usePotionSlot(0)) potUsed++;
+        if ((h.mp ?? 0) < 40) w.usePotionSlot(1);
+        if (h.hp < h.maxHp * SUN_HP && w.usePotionSlot(2)) potUsed++;
+      } else {
       if (h.hp < h.maxHp * 0.4 && w.usePotion(w.pots[1] > 0 ? 1 : 0)) potUsed++;
       if ((h.mp ?? 0) < 40) w.usePotion(w.pots[3] > 0 ? 3 : 2);
+      }
       for (let i = 0; i < w.skills.length; i++) { if (w.skills[i].id === 'charm' && !w.charmAutoOk()) continue; w.cast(i, cds); }
       for (let i = 0; i < w.skills.length; i++) w.cast(i, cds, { auto: true }); // 模拟 = 自动施法（施毒跳过已中毒）
       for (let i = w.bag.length - 1; i >= 0; i--) { const it = w.bag[i]; if (it.slot && it.req <= w.level && !w.equip[w.targetSlot(it)!]) w.equipItem(i); }
@@ -79,8 +110,12 @@ export const simRun = (c: ClassId, seed: number, maxT = SIM_MAX_T) => {
       const saving = w.shopBooks().some(b => !w.learned.has(b.skill) && w.level >= w.needLevel(w.skillPool.find(x => x.id === b.skill)!)); // 补给策略：进图前回村补药，药量随层深增加（存钱买书时也按层深少量补）
       const depth = w.floorIndex;
       const cap = saving ? Math.min(3, 1 + Math.floor(depth / 4)) : 3 + Math.floor(depth / 2);
+      const _g0 = w.gold; // 金币流水（只读）：买药花费按 <40 / ≥40 分段
+      if (POTC) potBuy(w, cap); else {
       while (w.gold >= 60 && w.pots[1] < cap) w.buyPotion(1);
       while (w.gold >= 60 && w.pots[3] < cap) w.buyPotion(3);
+      }
+      potGold[w.level >= 40 ? 1 : 0] += _g0 - w.gold; if (w.level >= 40 && goldAt40 < 0) goldAt40 = w.gold;
       if (w.floorIndex !== lastF) { lastF = w.floorIndex; if (process.env.SIMDBG && w.hero) console.log('enter', w.floorIndex, 'Lv', w.level, 'hp', w.hero.maxHp, 'atk', w.hero.atk, 'def', w.hero.def, 'deaths', w.deaths); floorKills = 0; floorT = 0; if (!w.town && !(w.floorIndex in firstClear)) { firstClear[w.floorIndex] = { lv: w.level, exp: 0 }; curFirst = w.floorIndex; } else curFirst = null; }
       const k = FLOOR_ORDER.indexOf(w.floorIndex);
       if (!w.town && k >= 0 && w.hero && w.hero.x >= w.exitX - WORLD.exitRadius - 20 && !w.alive('enemy').some(u => u.tier === 'boss') && w.level < MAIN_ANCHORS[k + 1]) {
@@ -91,7 +126,12 @@ export const simRun = (c: ClassId, seed: number, maxT = SIM_MAX_T) => {
         w.drainEvents(); w.recompute(true);
       }
       const _d0 = w.deaths, _near = process.env.SIMDBG ? w.units.filter(u => u.alive && u.team !== 'ally' && Math.abs(u.x - w.hero!.x) < 300).map(u => `${u.id}:${u.hp}/${u.maxHp}a${u.atk}`).join(',') : '';
-      w.step(0.05, { dx: (() => { const f = w.queue(1)[0]; return f && w.inMelee(h, f) ? 0 : 1; })(), dy: 0 }); (globalThis as any)._near = _near; { const evs = w.drainEvents(); for (const e of evs) if (e.type === 'exp') { if (curFirst !== null) firstClear[curFirst].exp += (e as any).amount; } else if (e.type === 'death' && !w.town) { kills[band(w.level)]++; lvK[w.level] = (lvK[w.level] ?? 0) + 1; floorKills++; }
+      if (plOn) { const used = plPots!.map((n, k) => n - w.pots[k]).map((d, k) => d > 0 ? POTIONS[k].item : '').filter(Boolean);
+        const slotSt = [0, 2].map(sl => { const k = w.selectedPotionIndex(sl); return k < 0 ? { n: 0, cd: 0 } : { n: w.pots[k], cd: +w.potionCooldown(k).toFixed(2) }; });
+        plog.buf.push({ t: +w.time.toFixed(2), hp: plHp, mp: plMp, max: h.maxHp, used, hpS: slotSt[0], sunS: slotSt[1] }); if (plog.buf.length > 100) plog.buf.shift();
+        if (used.length) plogW({ ev: 'use', cls: c, seed, lv: w.level, t: +w.time.toFixed(2), used, hp: plHp, mp: plMp, max: h.maxHp, pots: [...w.pots] });
+        plog.last = w.floorIndex; }
+      w.step(0.05, { dx: (() => { const f = w.queue(1)[0]; return f && w.inMelee(h, f) ? 0 : 1; })(), dy: 0 }); if (plOn) { const b = plog.buf[plog.buf.length - 1]; if (b) b.hp1 = h.hp; } (globalThis as any)._near = _near; { const evs = w.drainEvents(); for (const e of evs) if (e.type === 'exp') { if (curFirst !== null) firstClear[curFirst].exp += (e as any).amount; } else if (e.type === 'death' && !w.town) { kills[band(w.level)]++; lvK[w.level] = (lvK[w.level] ?? 0) + 1; floorKills++; }
       if (process.env.DIAG && w.level >= 11 && w.level <= 20 && !w.town && w.hero) { const ids = new Map(w.units.map(u => [u.uid, u])); dg.t += 0.05; const ss = w.units.filter(u => u.alive && u.summon); if (ss.length) dg.sumT += 0.05; dg.sumN += ss.length * 0.05;
         if (Math.round(t * 20) % 20 === 0) { dg.samples++; dg.heroHp += w.hero.maxHp; for (const sm of ss) { dg.sumLv += sm.level ?? 0; dg.sumHp += sm.maxHp; } for (const f of w.units) if (f.alive && f.team === 'enemy' && Math.abs(f.x - w.hero.x) < 400) { const tg = (w as any).summonAggro?.(f); if (tg) dg.foeOnSum++; else dg.foeOnHero++; } }
         for (const e of evs as any[]) { const tu = ids.get(e.target), su = ids.get(e.source); if (e.type === 'damage' && !e.heal && tu) { if (tu.isHero) dg.heroDmg += e.amount; else if (tu.summon) dg.sumDmg += e.amount; else if (tu.team === 'enemy') { dg.allKillDmg += e.amount; if (su?.summon) dg.sumKillDmg += e.amount; } } if (e.type === 'death' && tu?.summon) dg.sumDeaths++; } }
@@ -99,6 +139,6 @@ export const simRun = (c: ClassId, seed: number, maxT = SIM_MAX_T) => {
     }
     if (process.env.HJ_STATS) console.log(`   HJ ${c} 种子${seed}: lv≥40 时长 ${Math.round(hjT)}s 英雄在场 ${Math.round(hjOut)}s 合击 ${hjCombo} 次 英雄伤害占比 ${(100 * hjHeroDmg / Math.max(1, hjHeroDmg + hjAllDmg)).toFixed(1)}% 英雄等级 ${w.companion?.level ?? "-"} Lv≥40后死亡 ${learnLog.filter(x => /死@.*Lv(\d+)/.test(x) && +x.match(/Lv(\d+)/)![1] >= 40).length}`);
     if (process.env.DIAG) console.log('DIAG', c, seed, JSON.stringify(dg));
-    return { freeDeaths, costDeaths, gearAt, lvK, lvT, lvVK, lvVT, deaths: w.deaths, done: w.done, potUsed, t, level: w.level, learnLog, deathAt, floorLv, kills, killT, virtKills, virtT, firstClear };
+    return { potGold, goldAt40, freeDeaths, costDeaths, gearAt, lvK, lvT, lvVK, lvVT, deaths: w.deaths, done: w.done, potUsed, t, level: w.level, learnLog, deathAt, floorLv, kills, killT, virtKills, virtT, firstClear };
   };
 export const median = (a: number[]) => { const b = [...a].sort((x, y) => x - y); return b[(b.length - 1) >> 1] / 2 + b[b.length >> 1] / 2; };
