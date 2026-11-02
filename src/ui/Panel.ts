@@ -43,6 +43,7 @@ import { Settings, DEFAULT_AUTO_SKILLS } from '../settings';
 import { equipLook } from './EquipLayers';
 
 import { flushInput } from './flushInput';
+import { stoneCap, stoneSig, stoneTipLines, fmtPool } from './stoneCap';
 export type PanelMode = 'bag' | 'shop' | 'skills' | 'settings' | 'map' | 'quests' | 'town' | 'lingfu';
 export const RARITY_HEX: Record<string, string> = { common: '#ffffff', magic: '#5aa8ff', rare: '#ffb020' };
 const RARITY_NUM: Record<string, number> = { common: 0x8a8a8a, magic: 0x3a7aff, rare: 0xffa020 };
@@ -89,7 +90,7 @@ export class Panel {
     this.clearMapInput(); this.sel = null; this.ironIdx = null; this.mode = null; this.root?.destroy(true); this.root = undefined; this.hideTip(); }
   /** #11 修复：面板打开时升级/得经验不刷新。render 时记录快照，UIScene.update 每帧比对 */
   private snap = ''; mscale = 1; skPage = 0; bookPage = 0; bookCs = false;
-  statSnap() { const w = this.world(); return `${w.level}:${w.exp}:${JSON.stringify(w.skillTrain)}:${w.learned.size}`; }
+  statSnap() { const w = this.world(); return `${w.level}:${w.exp}:${JSON.stringify(w.skillTrain)}:${w.learned.size}:${stoneSig(w.equip.stone, w.bag)}`; } // 血石储量变了才重绘（仍受 sel/按下 800ms/限频保护）
   /** 角色/技能面板数据变了就重绘；返回是否重绘（供测试） */
   static AUTO_REFRESH_MS = 800;
   private lastAuto = -1e9;
@@ -157,11 +158,18 @@ export class Panel {
     const r = s.add.rectangle(x, y, size, size, 0x0a0806, atl ? 0.001 : 1);
     if (!atl) r.setStrokeStyle(2, it ? RARITY_NUM[it.rarity] : 0x4a3a28);
     R.add(r);
-    if (it && s.textures.exists('item_' + it.item)) R.add(s.add.image(x, y, 'item_' + it.item).setDisplaySize(size - 8, size - 8));
+    // feat/stone-capacity-ui：血石在格子下部显示「剩余/总」（红/蓝各一行），图标缩小上移不被压住；耗尽则图标变灰 + 「耗尽」
+    const cap = stoneCap(it), nl = cap?.pools.length ?? 0, lh = size >= 56 ? 11 : 10, isz = size - 8 - nl * lh;
+    if (it && s.textures.exists('item_' + it.item)) { const im = s.add.image(x, y - nl * lh / 2, 'item_' + it.item).setDisplaySize(isz, isz); if (cap?.empty) im.setTint(0x555555).setAlpha(0.6).setName('stoneEmptyIcon'); R.add(im); }
     else if (label) R.add(txt(s, x, y, label, 12, '#6a5a40', { strokeThickness: 0 }).setOrigin(0.5));
     if (it?.enhance) R.add(txt(s, x + size / 2 - 4, y + size / 2 - 10, '+' + it.enhance, 12, '#c8f0ff', { fontStyle: 'bold', strokeThickness: 3 }).setOrigin(1, 0.5));
     if (it?.item === 'black_iron') { R.add(txt(s, x + size / 2 - 2, y + size / 2 - 8, '+' + (it.purity ?? 1), 11, '#aaf', { fontStyle: 'bold', strokeThickness: 2 }).setOrigin(1, 0.5)); if ((it.qty ?? 1) > 1) R.add(txt(s, x - size / 2 + 4, y + size / 2 - 8, '×' + (it.qty ?? 1), 11, '#ffe8a0', { fontStyle: 'bold', strokeThickness: 2 }).setOrigin(0, 0.5)); }
     if (it && BUNDLES[it.item]) R.add(txt(s, x + size / 2 - 4, y + size / 2 - 9, String(it.qty ?? 1), 12, '#fff', { fontStyle: 'bold', strokeThickness: 3 }).setOrigin(1, 0.5).setName('bundleQty')); // feat/potion-expand：捆数量（右下）
+    if (cap) {
+      cap.pools.forEach((pl, i) => { const t = txt(s, x, y + size / 2 - 3 - (nl - 1 - i) * lh, fmtPool(pl), lh - 1, pl.left <= 0 ? '#ff4040' : pl.kind === 'hp' ? '#ff9090' : '#90c0ff', { fontStyle: 'bold', strokeThickness: 2 }).setOrigin(0.5, 1).setName('stoneCap_' + pl.kind);
+        if (t.width > size - 4) t.setScale((size - 4) / t.width); R.add(t); });
+      if (cap.empty) R.add(txt(s, x, y - nl * lh / 2, '耗尽', size >= 56 ? 14 : 12, '#ff4040', { fontStyle: 'bold', strokeThickness: 3 }).setOrigin(0.5).setName('stoneEmpty'));
+    }
     if (it && atl) { const q = qualityFrame(s, x, y, size - 4, it.rarity); if (q) R.add(q); else r.setStrokeStyle(2, RARITY_NUM[it.rarity]); }
     // 套装激活角标：已装备且该套装至少触发一档加成
     const setId = it && key.startsWith('eq_') ? ITEMS[it.item]?.set : undefined;
@@ -545,6 +553,7 @@ export class Panel {
       const cl = ITEMS[it.item]?.cls;
       if (cl?.length) lines.push([`职业：${cl.map(c => CLASSES[c].name).join('/')}`, cl.includes(w.cls) ? '#fff' : '#ff4040']);
     }
+    lines.push(...stoneTipLines(it));
     lines.push([`售价 ${it.price} 金币`, '#ffd24a']);
     if (touch) lines.push([this.mode === 'shop' ? '再点一次：出售' : it.slot && this.sel?.startsWith('eq_') ? '再点一次：卸下' : it.slot ? '再点一次：装备' : BUNDLES[it.item] ? '再点一次：解开（6 瓶）' : '不可装备', '#9fd']);
     { const cd = it.slot ? compareRows(it, w.equip) : null; if (cd) { this.showCompare(it, cd, lines.slice(2).filter(([t]) => !/^需要等级|^(生命|魔法值|攻击|魔法|道术|防御|魔御) \+/.test(t)), x, y, touch); return; } }
