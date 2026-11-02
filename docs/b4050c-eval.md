@@ -86,3 +86,6 @@ r3 ATK 1.04,1.12,1.12 EXP 1.25,1.25,1.3
 - cmp.py 的「通关」口径是「Lv50 且该种子死亡 ≤14」，比 battle.test 严：r3 为 8/9/9，基线为 9/9/8。battle.test 硬断言（done、Lv48–52、有损失死亡 ≤14）全过。
 - ③ 没有种子卡 Lv49，不需要调参：0 轮。
 - 字节一致：eedfa27（不设 env）与 5f00605（SIM_GEAR_SWAP=0）simRun 结果 JSON 的 sha256 相同（三职业×种子 3/88）：7acea750…8ba5。
+## 默认sim换装 验收
+- tsc EXIT=0；npm test 单进程 EXIT=0（npmtest3.log，GAP 3 项：战单层 6、道中位 4、法/战用时 0.50）；npm run build EXIT=0。
+- e2e 串行：balance-battle / hj-battle / chuanshi / mobile-skills 全部 EXIT=0，控制台 0 报错；工作区干净，没有截图被改写。
