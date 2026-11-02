@@ -1,6 +1,6 @@
 // feat/auto-hang P1：自动挂机 e2e（真实浏览器）。电脑 1280×720 + 手机 844×390/874×402/932×430：
 //  入口点一下开 / 再点关 / 不闪（逐帧采样 hang.on）；J 键；巡逻击杀（位置变化 + 击杀数增加）；方向键接管关闭；
-//  背包满 / 低血无药 / 阵亡 / 首领 / 清空 自动停止并出提示；测量按钮点击区与顶栏间距；0 控制台错误；截图。
+//  背包满 / 低血无药 / 阵亡 自动停止；首领自动接战、清空前往下一层（用户新增）并出提示；测量按钮点击区与顶栏间距；0 控制台错误；截图。
 // 用法：npm run build && node tests/e2e/auto-hang-verify.mjs [截图目录]
 import { startPreview, launch, watch, sleep, findPos } from './lib.mjs';
 import { mkdirSync } from 'node:fs';
@@ -75,9 +75,17 @@ try {
     const stops = [
       ['bagfull', /背包已满/, `W.bag = arg.bag.map(x => ({ ...x })); const h = W.hero; W.ground.push({ gid: 99001, item: 'iron_sword', name: '测试剑', rarity: 'common', x: h.x + 120, y: 0, landAt: W.time - 1, atk: 1, hp: 0, amount: 1, inv: { ...arg.bag[0], uid: 99001 } });`],
       ['lowhp', /血量过低/, 'W.pots = W.pots.map(() => 0); W.hero.hp = Math.ceil(W.hero.maxHp * 0.1);'],
-      ['boss', /首领/, `const ids = [...new Set(W.floors.flatMap(f => f.spawns.map(s => s.id)))]; for (const id of ids) { W.spawnFoe(id, W.hero.x + 300, 0); const u = W.units[W.units.length - 1]; if (u.tier === 'boss') break; u.alive = false; } W.drainEvents();`],
-      ['cleared', /已清空/, 'W.units.forEach(u => { if (u.team === "enemy") u.alive = false; }); W.ground = []; W.farmQueue = [];'],
     ];
+    { // 用户新增（fix/hang-stuck 清层循环）：本层清空不再停止，改为前往下一层并提示
+      await reset(page); await startHang(page); await sleep(200); await run(page, 'W.units.forEach(u => { if (u.team === "enemy") u.alive = false; }); W.ground = []; W.farmQueue = [];');
+      let bn = '', on = false; for (let i = 0; i < 20 && !/正在进入下一层/.test(bn); i++) { await sleep(150); bn = await banner(page); on = await run(page, 'return B.hang.on;'); }
+      ok(on && /正在进入下一层/.test(bn), `${tag} cleared → 不停止，前往下一层，横幅「${bn}」`);
+      if (touch) await page.screenshot({ path: `${dir}/${tag}-cleared-tonext.png` }); }
+    { // 用户新增/推翻：遇首领不再停止，改为自动接战
+      await reset(page); await startHang(page); await sleep(200); await run(page, `const ids = [...new Set(W.floors.flatMap(f => f.spawns.map(s => s.id)))]; for (const id of ids) { W.spawnFoe(id, W.hero.x + 300, 0); const u = W.units[W.units.length - 1]; if (u.tier === 'boss') break; u.alive = false; } W.drainEvents();`);
+      let bn = '', on = false, eng = false; for (let i = 0; i < 20 && !eng; i++) { await sleep(150); bn = await banner(page); on = await run(page, 'return B.hang.on;'); eng = await run(page, 'return B.hang.boss !== null;'); }
+      ok(on && eng && /首领/.test(bn), `${tag} boss → 不停止，自动接战，横幅「${bn}」`);
+      if (touch) await page.screenshot({ path: `${dir}/${tag}-boss-engage.png` }); }
     for (const [nm, re, code] of stops) {
       await reset(page); await startHang(page); await sleep(200); await page.evaluate(new Function('arg', 'const B = window.__game.scene.getScene("Battle"), W = B.world; ' + code), { bag });
       const m = await waitStop(page, re); await sleep(250); const bn = await banner(page);

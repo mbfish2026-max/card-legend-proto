@@ -156,7 +156,7 @@ export function iceRoar(s: S, x: number, y: number, r: number) {
 }
 /** 冰冻减速标记：目标短暂泛蓝 */
 export function frostTint(img: Phaser.GameObjects.GameObject, ms: number) {
-  const a = img as Phaser.GameObjects.Image; if (!a.setTint) return; a.setTint(0x88ccff);
+  const a = img as Phaser.GameObjects.Image; if (!a?.setTint || !a.scene) return; // fix/hang-stuck：冰箭飞行中目标已死亡销毁（scene=undefined）时跳过，原先抛 TypeError a.setTint(0x88ccff);
   a.scene.time.delayedCall(ms, () => a.active && a.clearTint());
 }
 /** 魔法盾：蓝色泡泡罩住施法者，持续闪烁 */

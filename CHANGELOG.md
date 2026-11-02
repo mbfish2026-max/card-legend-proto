@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## R84
+- R84：自动挂机修复——道士卡住修复、清层后自动换层循环、遇首领自动接战（合并 fix/hang-stuck）。
+
 ## R83
 - R83：三职业出生自带布衣、前期装备增加 9–11 / 15–20 级过渡档、祝玛三件恢复掉落、手机悬赏图标（合并 feat/starter-cloth）；1–30 级难度未重跑。
 
@@ -39,6 +42,22 @@
 
 - World.ts 小改（待战斗开发确认）：SaveData.starterGiven、构造时发放/补发、sellItem 拒绝 bound、toSave 写标记。
 - 测试：新增 tests/early-gear.test.ts、tests/e2e/early-gear-shots.mjs（截图 docs/shots/early-gear-3-5/）；drop-realign 仅改新需求断言；battle/summon-inherit 中假设武器栏为空的段落去掉出生木剑。1–10 级难度基线未重跑；G-14：道士 1–10 级死亡 < 1 时木剑道术 3→1。
+
+## 挂机自动打首领（用户新增/推翻原「遇首领停止」，fix/hang-stuck，未合 main）
+- 挂机在本层（刷怪层）遇到首领时自动接战：首领追击/警戒、进入仇恨距离，或本层普通怪已清空只剩首领，都会接战。冷却到期刷出的首领和回层后刷出的首领同样处理。接战沿用现有追击、普攻、技能、召唤和三格自动喝药（阈值沿用设置）。横幅显示「遇到首领，自动接战」，之后常驻「首领战中（自动接战）」。
+- 首领死后继续清层、换层、回层循环，横幅提示「首领已击败，本层已清空，正在进入下一层…」。掉落沿用走过拾取，背包满仍停止。换层途中（走向下一层或返回）不接战，继续走。
+- 去掉停止原因「遭遇首领」。新增两个停止原因：bosslow，打首领中没有药且 HP < 30%；bosstimeout，同一首领接战超过 5 分钟游戏时间，或连续 60s 没有造成新伤害。常量为 HANG.bossLowHp / bossMaxSec / bossStallSec。死亡、低血无药、背包满停止保留。
+- 测试：tests/hang-boss.test.ts、tests/e2e/hang-boss-verify.mjs（npm run verify:hang-boss），并同步更新 auto-hang / hang-cycle 旧断言。未改战斗数值和游戏数据，未跑 sim。
+
+## 挂机清层换层循环（用户新增，fix/hang-stuck，未合 main）
+- 本层清空后自动走到出口进下一层，到下一层不战斗、走回返回入口，回原层（怪重刷）继续挂机，循环进行。横幅依次提示「正在进入下一层 / 正在返回原层 / 已返回原层」。
+- 无法往返（侧层、末层、首领封印、返回入口不通本层）→ 停止，并提示原因（nocycle）。死亡、低血无药、背包满、首领等停止条件保留。召唤物随换层跟随。
+- 测试：tests/hang-cycle.test.ts、tests/e2e/hang-cycle-verify.mjs（npm run verify:hang-cycle）。未改数值和游戏数据，未跑 sim。
+
+## fix/hang-stuck：挂机时道士站在远处不靠近、不攻击（未合 main）
+- 根因：autoHang 的远程站桩条件是 `cls!=='warrior' && mp>=10 && gap<=300`，满足时 dx=0。道士只有治愈术，或施毒已挂上、技能在冷却时，什么都不放；普攻又只在近战距离内触发；要 8s 不掉血才放弃目标，换目标后照旧站桩。
+- 修复：站桩 1.5s 仍没有出手（普攻 cd 上跳或 MP 下降才算），就改为走近普攻；4s 原地不出手，就忽略该目标 10s 并掉头。另修 Fx.frostTint：目标已销毁时不再抛错。
+- 测试：tests/hang-stuck.test.ts（48 项，修复前道士 6 FAIL），tests/e2e/hang-stuck-verify.mjs（npm run verify:hang-stuck）。未改战斗数值和游戏数据，未跑 sim。
 
 
 ## fix/lingfu-click-close：电脑鼠标点灵符入口，商店打开又立刻关闭（未合 main）
