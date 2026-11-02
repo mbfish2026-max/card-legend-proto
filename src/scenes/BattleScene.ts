@@ -211,7 +211,7 @@ export class BattleScene extends Phaser.Scene {
       const C = this.street = this.add.container(0, 0).setDepth(3), W = townWidth(id), has = (k: string) => this.textures.exists(k);
       if (has(L.bg)) C.add(this.add.image(0, 0, L.bg).setOrigin(0).setScale(K).setName('townBg'));
       else C.add(this.add.rectangle(0, 0, W, 720, 0x6a5a40).setOrigin(0));
-      C.add(this.add.rectangle(0, 0, W, 720, 0, 0.001).setOrigin(0).setInteractive().on('pointerdown', (p: Phaser.Input.Pointer) => this.walkTo(p.worldX, 'walk')));
+      C.add(this.add.rectangle(0, 0, W, 720, 0, 0.001).setOrigin(0).setInteractive().setData('walkBg', true).on('pointerdown', (p: Phaser.Input.Pointer) => this.walkTo(p.worldX, 'walk')));
       for (const it of L.items) {
         const x = it.x * K, n = it.npc ? TOWNS[id].npcs.find(v => v.id === it.npc) : undefined;
         if (it.shop) { if (has(it.shop)) C.add(this.add.image(x, 760 * K, it.shop).setOrigin(0.5, 1).setScale(L.shopScale * K).setName('shop:' + it.shop)); else C.add(this.add.rectangle(x, 760 * K, 540 * K, 720 * K, 0x6a4a2a).setOrigin(0.5, 1)); }
@@ -232,7 +232,7 @@ export class BattleScene extends Phaser.Scene {
       else C.add(this.add.rectangle(0, 720 * K, W, 360 * K, 0x9a8a70).setOrigin(0));
       // 近景店铺带：三段拼成整街；缺图时用单个 shop_<id> 门面（0.85 倍，底边 y=760）
       // 点街面任意处：走到那里（手机横屏左右走）
-      C.add(this.add.rectangle(0, 0, W, 720, 0, 0.001).setOrigin(0).setInteractive().on('pointerdown', (p: Phaser.Input.Pointer) => this.walkTo(p.worldX, 'walk')));
+      C.add(this.add.rectangle(0, 0, W, 720, 0, 0.001).setOrigin(0).setInteractive().setData('walkBg', true).on('pointerdown', (p: Phaser.Input.Pointer) => this.walkTo(p.worldX, 'walk')));
       const near = [1, 2, 3].every(i => has('street_near_' + i));
       if (near) [1, 2, 3].forEach(i => C.add(this.add.image(1920 * (i - 1) * K, 0, 'street_near_' + i).setOrigin(0).setScale(K)));
       for (const d of streetDoors(id)) {
@@ -814,6 +814,14 @@ export class BattleScene extends Phaser.Scene {
 
   /** 点按移动一格（键盘与虚拟方向键共用）；同帧多次按以最后一次为准，World 内再做 1 次排队 */
   hold = new HoldKeys();
+  /** feat/float-joystick（仅输入层）：屏幕点 (clientX,clientY) 下是否有画布可点物（传送门、NPC、城门等；walk 背景、怪物卡牌除外）→ 是则摇杆放行给 Phaser */
+  joyBlockedAt(cx: number, cy: number): boolean {
+    const c = this.game.canvas.getBoundingClientRect(); if (!c.width || !c.height) return false;
+    const x = (cx - c.left) * this.scale.width / c.width, y = (cy - c.top) * this.scale.height / c.height;
+    const list = ((this.input as any)._list ?? []) as Phaser.GameObjects.GameObject[];
+    const hits = this.input.manager.hitTest({ x, y } as any, list, this.cameras.main, []);
+    return hits.some((o: any) => o.input?.enabled && o.visible !== false && !o.getData?.('walkBg') && !o.unit); // 怪物卡牌不挡摇杆（左半屏怪物上按下=移动）
+  }
   stepKey(d: number) { if (this.state === 'play' && !this.paused) { if (this.hang.on) this.stopHang('manual'); this.world.queueStep(d); } }
   /** 自动技能：按 Settings.autoSkills（或职业推荐）优先级尝试释放；失败静默；手动按键走 onKey 优先占冷却 */
   lastAuto = ''; autoCount: Record<string, number> = {};

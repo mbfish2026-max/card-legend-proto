@@ -19,6 +19,7 @@ import { fmtExp } from '../data/expCurve';
 import type { BattleScene } from '../scenes/BattleScene';
 import type { Hud } from './Hud';
 import { applyDomSkin } from './domSkin';
+import { joyClamp, joyDir, inJoyZone } from './joyMath';
 import { PotBarDom, POT_POP_CSS } from './potBar';
 /**
  * 手机专用 HUD（DOM 层，CSS 像素 + safe-area）：只替换显示/输入层，所有动作都转发给 BattleScene.onKey / dx,dy，
@@ -57,8 +58,8 @@ const CSS = `
 #mh-ovw .box{background:#05060c;border:2px solid #d4a64a;border-radius:8px;padding:8px 12px;max-width:min(92vw,640px);max-height:88vh;overflow:auto;box-sizing:border-box;color:#ddd;font-size:13px;line-height:1.45;position:relative}
 #mh-ovw h3{margin:0 52px 4px 0;font-size:15px;color:#ffe8a0}#mh-ovw .x{position:absolute;right:4px;top:4px;width:44px;height:44px;font-size:20px;background:#2a1d10;color:#ffe8a0;border:1px solid #b8893a;border-radius:6px}
 #mh-ovw .wm{display:block;margin:8px auto 2px;min-width:200px;min-height:44px;font-size:15px;background:#2a1d10;color:#ffe8a0;border:2px solid #b8893a;border-radius:6px}#mh-ovw p{margin:2px 0;white-space:normal;word-break:break-all}
-#mh-joy{position:absolute;left:0;bottom:0;width:calc(var(--sl) + 84px);height:calc(var(--sb) + 78px);pointer-events:auto;touch-action:none}
-#mh-joy .base{position:absolute;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;display:none;
+#mh-joy{position:absolute;left:0;top:0;width:50%;height:100%;pointer-events:none;touch-action:none}
+#mh-joy .base{position:fixed;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;display:none;
  background:rgba(0,0,0,.18);border:2px solid rgba(255,232,160,.35)}
 #mh-joy.act .base{display:block}#mh-joy.act .hint{opacity:.15}
 #mh-joy .hint{position:absolute;left:var(--sl);bottom:var(--sb);width:56px;height:56px;border-radius:50%;background:rgba(0,0,0,.25);border:2px solid rgba(255,232,160,.45);
@@ -83,7 +84,7 @@ const CSS = `
 `;
 type Btn = HTMLDivElement;
 export class MobileHud {
-  root: HTMLDivElement; dx = 0; dy = 0; onStep?: (d: number) => void;
+  root: HTMLDivElement; dx = 0; dy = 0; private joyEnd = () => {}; private joyAc = new AbortController(); onStep?: (d: number) => void;
   private bars: Record<string, [HTMLElement, HTMLElement]> = {}; private info!: HTMLElement; private log!: HTMLElement; private floor!: HTMLElement;
   private skBtns: { el: Btn; cd: HTMLElement; t: HTMLElement; i: number }[] = []; potBar!: PotBarDom;
   private act!: Btn; private auto!: Btn; private page!: Btn; private shop!: Btn; private hang!: Btn; skPage = 0; private comp!: HTMLElement; private skSig = ''; private logSig = '';
@@ -109,21 +110,29 @@ export class MobileHud {
     icon('🎒', '角色', 'B', 'bag'); icon('📜', '技能', 'K', 'skills'); icon('<img class="ici" src="assets/items/INV_Misc_Bag_08.png" alt="">', '悬赏', 'Q', 'quests'); // bounty-icon：🎯 改用 art/bounty-icon 通缉令图标 icon('🗺', '传送', 'M', 'map'); // 地图面板即传送界面（点已到达入口传送）
     // 商人/传送合并为右下「对话/进入」键（城里 T 与 W 同为 townUse；战斗地图没有商人），不再单列商店图标
     { const e = this.btn(top, '<span class="ic">🏯</span>回城', () => { const en = b.entranceHere(); if (en === 'town' || en === 'prev' || b.world.town) b.mobileAct(); else b.onKey('H'); }); e.dataset.id = 'town'; } // 任务C：在起点入口=回城/上一层，野外其余位置=用回城卷 icon('⚙', '设置', 'ESCAPE', 'settings');
-    // 左下：摇杆（fix/portal-same：触发区只覆盖「移动」圆钮及周边约 20px，不再盖住左端「上一层」传送门；按下后 pointer capture，手指拖出区域仍能控制），多点触控按 pointerId 区分
+    // feat/float-joystick：浮动摇杆。左半屏（顶栏以下）任意位置按下画布即在按下点出现底盘，拖动方向=移动方向，松手消失并停止。
+    // 只在 window 捕获阶段拦「落在画布上」的按下：DOM 按钮（药水栏/顶栏/技能/攻击/日志等）事件目标不是画布，天然不触发摇杆，点击区不变；
+    // 画布上的可点物（传送门、城内 NPC/城门，walk 背景除外）由 b.joyBlockedAt 命中测试放行给 Phaser；面板/弹窗打开（#mhud.off 或 b 非 play）不响应。
+    // 多点触控按 pointerId 区分：摇杆只认首个指头，其余手指照常点右侧按钮。超出半径：拇指钳在半径边上，底盘不跟随。
     const joy = this.el('div', r, 'ctl'); joy.id = 'mh-joy'; this.el('div', joy, 'hint').innerHTML = '◀ ▶<br>移动';
     const base = this.el('div', joy, 'base'); const knob = this.el('div', base, 'knob');
-    let pid = -1; const R = 44;
+    let pid = -1, ox = 0, oy = 0;
     const mv = (e: PointerEvent) => {
-      const bb = base.getBoundingClientRect(); let x = e.clientX - (bb.left + bb.width / 2), y = e.clientY - (bb.top + bb.height / 2);
-      const d = Math.hypot(x, y); if (d > R) { x *= R / d; y *= R / d; }
-      knob.style.transform = `translate(${x}px,${y}px)`;
-      this.dx = Math.abs(x) > R * 0.35 ? Math.sign(x) : 0; this.dy = Math.abs(y) > R * 0.5 ? Math.sign(y) : 0;
+      const [x, y] = joyClamp(e.clientX - ox, e.clientY - oy); knob.style.transform = `translate(${x}px,${y}px)`;
+      [this.dx, this.dy] = joyDir(x, y);
     };
-    const end = (e: PointerEvent) => { if (e.pointerId !== pid) return; pid = -1; this.dx = this.dy = 0; knob.style.transform = ''; joy.classList.remove('act'); };
-    joy.addEventListener('pointerdown', e => { if (pid >= 0) return; pid = e.pointerId; joy.setPointerCapture?.(pid); e.preventDefault();
-      const jb = joy.getBoundingClientRect(); base.style.left = (e.clientX - jb.left) + 'px'; base.style.top = (e.clientY - jb.top) + 'px'; joy.classList.add('act'); mv(e); });
-    joy.addEventListener('pointermove', e => { if (e.pointerId === pid) mv(e); });
-    joy.addEventListener('pointerup', end); joy.addEventListener('pointercancel', end);
+    const end = (e: PointerEvent) => { if (e.pointerId !== pid) return; e.stopImmediatePropagation(); pid = -1; this.dx = this.dy = 0; knob.style.transform = ''; joy.classList.remove('act'); };
+    const cv = () => b.game.canvas;
+    const sig = { capture: true, signal: this.joyAc.signal };
+    window.addEventListener('pointerdown', e => {
+      if (pid >= 0 || e.target !== cv() || r.classList.contains('off') || this.ovw || !r.isConnected) return;
+      if (!inJoyZone(e.clientX, e.clientY, window.innerWidth) || b.joyBlockedAt?.(e.clientX, e.clientY)) return;
+      e.stopImmediatePropagation(); e.preventDefault(); pid = e.pointerId; ox = e.clientX; oy = e.clientY;
+      base.style.left = ox + 'px'; base.style.top = oy + 'px'; joy.classList.add('act'); mv(e);
+    }, sig);
+    window.addEventListener('pointermove', e => { if (e.pointerId === pid) { e.stopImmediatePropagation(); mv(e); } }, sig);
+    window.addEventListener('pointerup', end, sig); window.addEventListener('pointercancel', end, sig);
+    this.joyEnd = () => { if (pid >= 0) end({ pointerId: pid, stopImmediatePropagation() {} } as any); };
     // 右下：互动（传送/对话）+ 技能弧 + 自动 + 药水 + 合击
     this.act = this.btn(r, '进入', () => b.mobileAct()); this.act.id = 'mh-act'; this.act.classList.add('ctl');
     this.auto = this.btn(r, '', () => { Settings.autoAttack = !Settings.autoAttack; Settings.save(); }); this.auto.id = 'mh-auto'; this.auto.classList.add('ctl');
@@ -180,7 +189,7 @@ export class MobileHud {
     const pots = this.root.querySelector('#mh-pots') as HTMLElement; pots.style.right = `calc(var(--sr) + ${potRight(outerR)}px)`;
     this.comp.style.right = `calc(var(--sr) + ${potRight(outerR)}px)`; this.comp.style.bottom = `calc(var(--sb) + ${POT_CSS + 10}px)`;
   }
-  reset() { this.dx = this.dy = 0; }
+  reset() { this.joyEnd(); this.dx = this.dy = 0; }
   pos!: HTMLElement; posT!: HTMLElement; ovw?: HTMLElement; private posKey = '';
   /** 地图总览（手机 DOM 弹层）：点层名开关；✕ ≥44px */
   toggleOverview() {
@@ -200,7 +209,7 @@ export class MobileHud {
       p.boss.map(b => `<i class="bs" style="left:${b * 100}%"></i>`).join('') + `<i class="h" style="left:${p.hero * 100}%"></i>`;
     this.posT.textContent = p.hint;
   }
-  setVisible(v: boolean) { this.root.classList.toggle('off', !v); if (!v) this.dx = this.dy = 0; }
+  setVisible(v: boolean) { this.root.classList.toggle('off', !v); if (!v) { this.joyEnd(); this.dx = this.dy = 0; } }
   update(cds: number[]) {
     const w = this.b.world, h = w.hero; if (!w) return; this.drawPos();
     if (w.skills.map(s => s.id).join() !== this.skSig) this.layoutSkills();
@@ -232,5 +241,5 @@ export class MobileHud {
   }
   /** 测试用：所有可点控件 */
   hits() { return Array.from(this.root.querySelectorAll<HTMLElement>('.b, #mh-log, #mh-joy .hint, #mh-floor, #mh-pos, #mh-posT')); }
-  destroy() { this.potBar?.close(); this.root.remove(); }
+  destroy() { this.joyAc.abort(); this.potBar?.close(); this.root.remove(); }
 }

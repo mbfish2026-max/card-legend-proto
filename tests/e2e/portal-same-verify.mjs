@@ -67,16 +67,15 @@ try {
     // 上一层点击 → 换层
     { const sp = bk.r && await p.evaluate(spot, bk.r); chk(sp && sp.vis.w >= 44 && sp.vis.h >= 44, `${tag} 上一层 屏内（含 HUD 下）区域 ${sp ? `${sp.vis.w.toFixed(0)}×${sp.vis.h.toFixed(0)} 未被 HUD 盖 ${(sp.free * 100).toFixed(0)}%` : '无'}`);
       // 手机：摇杆区（#mh-joy）包围盒不得与上一层门本体点击区重叠，且门本体可直接点到（不再借「进入」键）
-      if (mob) { const j = await p.evaluate(() => { const r = document.getElementById('mh-joy').getBoundingClientRect(); return { l: r.left, r: r.right, t: r.top, b: r.bottom }; });
-        const ov = bk.r && !(j.r <= bk.r.l || j.l >= bk.r.r || j.b <= bk.r.t || j.t >= bk.r.b);
-        console.log(`  ${tag} joy=${JSON.stringify(j)} back=${JSON.stringify(bk.r)}`);
-        chk(bk.r && !ov, `${tag} 摇杆区与上一层门本体包围盒不重叠`); }
+      if (mob && sp?.p) { // feat/float-joystick：浮动摇杆覆盖左半屏，但画布可点物（门本体）命中测试放行，不触发摇杆
+        const bl = await p.evaluate(q => window.__game.scene.getScene('Battle').joyBlockedAt(q.x, q.y), sp.p);
+        chk(bl, `${tag} 上一层门本体处按下放行给画布（不触发浮动摇杆）`); }
       if (mob) { // 摇杆：按「移动」圆钮，手指拖出触发区 120px 仍右推（pointer capture），松手归零
-        const h = await p.evaluate(() => { const r = document.querySelector('#mh-joy .hint').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+        const h = await p.evaluate(() => ({ x: Math.round(innerWidth * 0.3), y: Math.round(innerHeight * 0.7) })); // 浮动摇杆：左半屏空地按下
         const cdp = await p.target().createCDPSession(), T = (type, pts) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: pts });
         await T('touchStart', [{ x: h.x, y: h.y, id: 1 }]); await T('touchMove', [{ x: h.x + 60, y: h.y, id: 1 }]); await T('touchMove', [{ x: h.x + 120, y: h.y - 30, id: 1 }]); await sleep(150);
         const d1 = await p.evaluate(() => window.__mhud.dx); await T('touchEnd', []); await sleep(150); const d2 = await p.evaluate(() => window.__mhud.dx);
-        chk(d1 === 1 && d2 === 0, `${tag} 摇杆拖出触发区仍控制（dx=${d1}），松手归零（dx=${d2}）`);
+        chk(d1 === 1 && d2 === 0, `${tag} 浮动摇杆拖出底盘半径仍控制（dx=${d1}），松手归零（dx=${d2}）`);
         await p.evaluate(() => { const s = window.__game.scene.getScene('Battle'), W = s.world; W.hero.x = 220; const v = s.views.get(W.hero.uid); if (v) v.x = 220; s.cameras.main.setScroll(0, s.cameras.main.scrollY); }); await sleep(600); }
       const f0 = await floor(); const via = 'portal';
       chk(!!sp?.p, `${tag} 上一层门本体可直接点${sp?.p ? ` (${sp.p.x},${sp.p.y})` : '（被 HUD 盖住）'}`); if (sp?.p) await tap(sp.p);
