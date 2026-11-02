@@ -37,6 +37,13 @@ export function renderSettingsView(s: Phaser.Scene, R: Phaser.GameObjects.Contai
   R.add([...button(s, 640, top + 210, 280, 38, `自动攻击：${Settings.autoAttack ? '开' : '关'}`, () => {
     Settings.autoAttack = !Settings.autoAttack; Settings.save(); o.rerender();
   }, 17)]);
+  // feat/auto-hang：挂机自动用药阈值（点击循环 20%~60%）；红/太阳水按 HP，蓝按 MP
+  const HANG_STEPS = [0.2, 0.3, 0.4, 0.5, 0.6];
+  ([['hangRed', '挂机红', 'HP', 300], ['hangSun', '挂机太阳水', 'HP', 420], ['hangBlue', '挂机蓝', 'MP', 860]] as const).forEach(([k, nm, st, x]) => {
+    R.add([...button(s, x, top + 210, 112, 34, `${nm} ${st}<${Math.round(Settings[k] * 100)}%`, () => {
+      const i = HANG_STEPS.findIndex(v => Math.abs(v - Settings[k]) < 0.001); Settings[k] = HANG_STEPS[(i + 1) % HANG_STEPS.length]; Settings.save(); o.rerender();
+    }, 11)]);
+  });
   R.add(txt(s, 640, top + 248, '开启后贴脸自动普攻（不追怪）；勾选技能按优先级/冷却自动放；手动按键优先', 12, '#9ab', IS_MOBILE ? { align: 'center', wordWrap: { width: 560, useAdvancedWrap: true } } : undefined).setOrigin(0.5, IS_MOBILE ? 0 : 0.5));
   // 自动技能勾选（标题界面可切职业；游戏内为当前职业）
   if (o.onPickClass) (Object.keys(CLASSES) as ClassId[]).forEach((c, i) => {

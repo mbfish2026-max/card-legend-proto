@@ -28,6 +28,7 @@ import type { UIScene } from './UIScene';
 import { playMusic } from '../music';
 import { FxQuality } from '../ui/Fx';
 import { GroundAuras, hasAuraFx } from '../ui/groundAura';
+import { AutoHang, HANG_STOP_TEXT, type HangStop } from '../combat/autoHang';
 import { PORTAL_LOOK, PORTAL_TEXT, PORTAL_W, PORTAL_H, portalArtKind, type PortalDir } from '../ui/portalArt';
 
 // 稀有度：光柱颜色 = 地上物品名颜色；越稀有光柱越高
@@ -57,11 +58,25 @@ export class BattleScene extends Phaser.Scene {
   /** R11 学会新技能：面板关闭后重建快捷栏/手机技能键 */
   skillsDirty = false;
   get paused() { return !!this.ui?.panel?.open; }
+  /** feat/auto-hang：挂机状态（不存档；create 时重建 = 读档后一律关闭） */
+  hang = new AutoHang(); hangStopMsg = ''; private hangToggleAt = -1e9;
+  /** J 键 / 挂机按钮：开 ↔ 关（250ms 去抖，防同一次点按被 pointer/touch 重复派发导致「开了又关」） */
+  toggleHang() {
+    const now = performance.now(); if (now - this.hangToggleAt < 250) return; this.hangToggleAt = now;
+    if (this.hang.on) return this.stopHang('toggle');
+    if (this.state !== 'play') return;
+    const r = this.hang.start(this.world); if (r) { this.hangStopMsg = HANG_STOP_TEXT[r]; this.log(this.hangStopMsg); this.hud?.setHang(false, this.hangStopMsg); return; }
+    this.hangStopMsg = ''; this.log('自动挂机已开启（方向键 / 摇杆 / J 取消）', true); this.hud?.setHang(true);
+  }
+  stopHang(why: HangStop) {
+    if (!this.hang.on) return; this.hang.stop(); this.hangStopMsg = HANG_STOP_TEXT[why];
+    this.log(this.hangStopMsg); this.hud?.setHang(false, this.hangStopMsg); if (why !== 'toggle' && why !== 'manual') this.sfx('click');
+  }
 
   create(data: { cls?: ClassId; save?: SaveData }) {
     Settings.load(); Settings.apply(this.sound);
     this.views.clear(); this.groundObjs.clear(); this.hud = undefined; this.pendingLogs = []; this.overlay = [];
-    this.state = 'play'; this.expTotal = 0; this.saveT = 0;
+    this.state = 'play'; this.expTotal = 0; this.saveT = 0; this.hang = new AutoHang(); this.hangStopMsg = '';
     const qs = new URLSearchParams(location.search), W = MAX_WIDTH_SCREENS * 1280; // 任务 A：按最宽层预建，进层时 applyFloorWidth 按本层宽显示/限位
     // 横版地图：本层背景分段拼接（交替镜像）
     this.bgImgs = [];
@@ -323,9 +338,11 @@ export class BattleScene extends Phaser.Scene {
     if (k === 'T') { if (this.world.town) { this.townUse(); return; } return this.openPanel('shop'); }
     if (k === 'K') return this.openPanel('skills');
     if (k === 'L') return this.openPanel('lingfu'); // 灵符商城
-    if (k === 'H') { this.log(this.world.useRecallScroll()); return; } // 任务C：回城卷快捷键
+    if (k === 'H') { if (this.hang.on) this.stopHang('manual'); this.log(this.world.useRecallScroll()); return; } // 任务C：回城卷快捷键
     if (k === 'Q') return this.openPanel('quests');
     if (this.paused || this.state !== 'play') return;
+    if (k === 'J') return this.toggleHang(); // feat/auto-hang
+    if (this.hang.on && (k === ' ' || k === 'W' || k === 'S')) this.stopHang('manual'); // 进入/回入口：先关挂机再执行
     // 合击版 A2/A4 [适配] 键位：R 召唤/收回、E 切换状态（官方 Ctrl+E）、G 合击爆发（官方 Ctrl+S，本作 S 已用于回城）
     if (k === 'R' || k === 'E' || k === 'G') { const w = this.world; const e = k === 'R' ? w.toggleCompanion() : k === 'E' ? w.cycleCompanionMode() : w.unleashCombo();
       if (e) this.log(e); this.handle(w.drainEvents()); this.ui?.panel?.open && this.ui.panel.render(); return; }
@@ -701,6 +718,7 @@ export class BattleScene extends Phaser.Scene {
   }
   heroDied() {
     if (this.state !== 'play') return;
+    this.stopHang('dead');
     this.state = 'dead'; this.ui?.panel?.close();
     const ui = this.scene.get('UI');
     const dim = ui.add.rectangle(640, 300, 1280, 600, 0x300000, 0.5).setDepth(99);
@@ -796,11 +814,11 @@ export class BattleScene extends Phaser.Scene {
 
   /** 点按移动一格（键盘与虚拟方向键共用）；同帧多次按以最后一次为准，World 内再做 1 次排队 */
   hold = new HoldKeys();
-  stepKey(d: number) { if (this.state === 'play' && !this.paused) this.world.queueStep(d); }
+  stepKey(d: number) { if (this.state === 'play' && !this.paused) { if (this.hang.on) this.stopHang('manual'); this.world.queueStep(d); } }
   /** 自动技能：按 Settings.autoSkills（或职业推荐）优先级尝试释放；失败静默；手动按键走 onKey 优先占冷却 */
   lastAuto = ''; autoCount: Record<string, number> = {};
-  tryAutoSkills() {
-    if (!Settings.autoAttack) return;
+  tryAutoSkills(force = false) {
+    if (!Settings.autoAttack && !force) return;
     const h = this.world.hero; if (!h?.alive) return;
     const a = this.world.autoCast(Settings.skillsFor(this.world.cls), this.cds, this.lastAuto); if (!a) return;
     const r = a.r; this.lastAuto = a.id; this.autoCount[a.id] = (this.autoCount[a.id] ?? 0) + 1;
@@ -810,6 +828,14 @@ export class BattleScene extends Phaser.Scene {
       if (hv) { hv.windup(h.facing); this.time.delayedCall(FX.windupMs, () => this.skillFx(r.skill, hv, r.targets, evs)); }
       else this.handle(evs);
       return;
+    }
+  }
+  /** feat/auto-hang：按 Settings 阈值自动用三格选中药（冷却/数量由 usePotion 拒绝，失败静默） */
+  hangPotions() {
+    const w = this.world;
+    for (const slot of this.hang.potionSlots(w, { red: Settings.hangRed, sun: Settings.hangSun, blue: Settings.hangBlue })) {
+      const pi = w.selectedPotionIndex(slot); if (pi < 0) continue; const n = w.usePotion(pi);
+      if (n) { this.sfx('potion'); this.log(`[挂机] ${n}使用`, true); }
     }
   }
   /** 存活怪物都要有卡牌：练级图（farm）刷新怪、号角召出的怪等不发 summon 事件，逐帧补建缺失视图，避免「看不到的怪在攻击我」 */
@@ -826,8 +852,14 @@ export class BattleScene extends Phaser.Scene {
       if (dx) this.townTarget = null;
       else if (this.townTarget && this.world.town && this.world.hero) { const d = this.townTarget.x - this.world.hero.x; if (Math.abs(d) < 12) { const t = this.townTarget; this.townTarget = null; this.townArrive(t.id); } else dx = Math.sign(d); }
       const dy = this.state === 'play' ? Math.sign((k.DOWN.isDown ? 1 : 0) - (k.UP.isDown ? 1 : 0) + (pad?.dy ?? 0)) : 0;
-      if (this.state === 'play') this.tryAutoSkills();
-      this.world.step(dt, { dx, dy, use: this.useNext, autoAttack: Settings.autoAttack }); this.useNext = false;
+      // feat/auto-hang：玩家方向输入 = 接管（关挂机）；否则由 AutoHang 产出本帧 dx，并强制自动普攻/自动技能 + 三格自动用药
+      let hangOn = false;
+      if (this.hang.on && this.state === 'play') {
+        if (dx || dy) this.stopHang('manual');
+        else { const r = this.hang.tick(this.world, dt); if (r.stop) this.stopHang(r.stop); else { dx = r.dx; hangOn = true; this.hangPotions(); } }
+      }
+      if (this.state === 'play') this.tryAutoSkills(hangOn);
+      this.world.step(dt, { dx, dy, use: this.useNext, autoAttack: Settings.autoAttack || hangOn }); this.useNext = false;
       this.cds = this.cds.map(c => Math.max(0, c - dt));
       this.saveT += dt; if (this.saveT > 15) { this.saveT = 0; this.saveGame(); }
     }
@@ -841,6 +873,7 @@ export class BattleScene extends Phaser.Scene {
     this.portal.setAlpha(!this.world.cleared ? 0.35 : 1);
     this.portalHint?.setVisible(this.world.atExit && this.state === 'play' && !(this.world.floor.boss && this.world.alive('enemy').some(u => u.tier === 'boss')));
     this.hud?.setExp(this.world.level, this.world.exp, this.world.expNext);
+    this.hud?.setHang(this.hang.on);
     // 接近首领时切换首领战音乐，击败后回到本层音乐
     const boss = this.world.alive('enemy').find(e => e.tier === 'boss'), hh = this.world.hero;
     const nearBoss = !!boss && !!hh && Math.abs(boss.x - hh.x) < 900;

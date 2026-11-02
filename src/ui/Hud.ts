@@ -8,6 +8,8 @@ import { MENU_LABELS } from '../assets-manifest';
 import type { Overview, PosBar } from '../data/mapOverview';
 /** 桌面灵符商城入口（1280×720 逻辑坐标，中心点） */
 export const LINGFU_BTN = { x: 1226, y: 596, w: 88, h: 44 };
+/** feat/auto-hang：桌面挂机开关（灵符入口正上方，间距 6px；点击区 88×44） */
+export const HANG_BTN = { x: 1226, y: 546, w: 88, h: 44 };
 
 const txt = (s: Phaser.Scene, x: number, y: number, t: string, size: number, color = '#fff', extra: Phaser.Types.GameObjects.Text.TextStyle = {}) =>
   s.add.text(x, y, t, { fontFamily: FONT, fontSize: size + 'px', color, stroke: '#000', strokeThickness: 3, ...extra });
@@ -45,6 +47,17 @@ class Orb {
 }
 
 export class Hud {
+  hangTxt?: Phaser.GameObjects.Text; hangBanner?: Phaser.GameObjects.Text; private hangUntil = 0;
+  /** feat/auto-hang：按钮高亮 + 屏幕上方横幅（挂机中=绿色小字；停止=红色醒目，5 秒后淡出）。放在可视区上方 18% 处，不压中间战斗区 */
+  setHang(on: boolean, stopMsg?: string) {
+    const s = this.s; if (!s?.sys?.isActive()) return;
+    this.hangTxt?.setText(on ? '挂机中 J' : '挂机 J').setColor(on ? '#7fff7f' : '#d8f0a0');
+    if (!this.hangBanner?.scene) this.hangBanner = s.add.text(640, 130, '', { fontFamily: FONT, fontSize: '22px', color: '#fff', fontStyle: 'bold', stroke: '#000', strokeThickness: 5, backgroundColor: '#000000aa', padding: { x: 14, y: 6 } }).setOrigin(0.5).setDepth(101).setName('hangBanner');
+    const wv = s.cameras.main.worldView; this.hangBanner.setPosition(wv.centerX, wv.y + wv.height * 0.18);
+    if (stopMsg) { this.hangUntil = s.time.now + 5000; this.hangBanner.setText('⚠ ' + stopMsg).setColor('#ff5050').setFontSize(24).setVisible(true).setAlpha(1); }
+    else if (on) { this.hangBanner.setText('自动挂机中（方向键 / J 取消）').setColor('#9fff9f').setFontSize(18).setVisible(true).setAlpha(1); }
+    else if (s.time.now > this.hangUntil) this.hangBanner.setVisible(false);
+  }
   hp: Orb; mp: Orb; radar: Phaser.GameObjects.Graphics; skillPos: { x: number; y: number }[] = [];
   potT: Phaser.GameObjects.Text[] = []; potBar!: PotBarDesk; dots: Phaser.GameObjects.Rectangle[] = [];
   logT: Phaser.GameObjects.Text[] = []; lines: { t: string; c: string; at: number }[] = []; logBg?: Phaser.GameObjects.Rectangle | Phaser.GameObjects.NineSlice;
@@ -165,6 +178,13 @@ export class Hud {
       txt(s, hasIc ? x + 10 : x, y, '灵符', 16, '#ffe070', { fontStyle: 'bold' }).setOrigin(0.5).setDepth(21);
       s.add.rectangle(x, y, bw, bh, 0, 0.001).setDepth(25).setName('lingfuEntry').setInteractive({ useHandCursor: true })
         .on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); onSkill('L'); });
+    }
+    if (!mobile && onSkill) {
+      const { x, y, w: bw, h: bh } = HANG_BTN;
+      const bg = ns(s, 'btn_normal', x, y, bw, bh); if (bg) bg.setDepth(20); else s.add.rectangle(x, y, bw, bh, 0x1d2a10).setStrokeStyle(2, 0x8fbf4a).setDepth(20);
+      this.hangTxt = txt(s, x, y, '挂机 J', 16, '#d8f0a0', { fontStyle: 'bold' }).setOrigin(0.5).setDepth(21);
+      s.add.rectangle(x, y, bw, bh, 0, 0.001).setDepth(25).setName('hangEntry').setInteractive({ useHandCursor: true })
+        .on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); onSkill('J'); });
     }
     // 战斗日志：电脑放左下（底栏左侧空位，不挡商人），手机放左上（左下是方向键）；半透明、6 秒后自动淡出
     if (mobile) this.bagPos = { x: 600, y: 44 };
