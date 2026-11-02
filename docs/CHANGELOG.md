@@ -40,6 +40,13 @@
 ## 自动挂机方案文档（feat/auto-hang，未合 main）
 - 新增 docs/auto-hang.md：巡逻/追击/技能/用药/低血与死亡/拾取背包/BOSS/换层行为设计，电脑与手机开关入口及接管规则，存档与离线，复用点与改动估算，风险、待拍板清单、MVP 分阶段。仅文档，未改 src、未跑 sim。
 
+## 血石容量显示（feat/stone-capacity-ui，未合 main）
+- 装备栏血石格、背包血石、悬浮提示显示「剩余/总容量」（小血石只显示红，中/大/特红+蓝）；电脑与手机都有。数字格式 1.2k / 19.9k / 300k，剩余向下取整。
+- 耗尽：单池为 0 数字变红；全部为 0 时图标变灰 + 红色「耗尽」，提示框写「储量耗尽（不再补给）」。
+- 只读 InvItem.charge，不改 tickStone 与战斗；旧档缺 charge 显示 0/总并标耗尽，存档格式不变。
+- 储量变化才重绘（statSnap 加 stoneSig），保留「有选中 / 按下 800ms 内 / 限频」不重绘的保护。
+- 测试：tests/stone-capacity-ui.test.ts（进 npm test）；e2e tests/e2e/stone-capacity-verify.mjs；截图 docs/shots/stone-capacity-ui/。详见 docs/stone-capacity-ui.md。
+
 
 ## 默认 sim 换装（feat/sim-swap-default，未合 main）
 - tests/sim-gear.ts：SIM_GEAR_SWAP 默认开（换装+清包），=0 复现旧行为。battle.test 阈值、PASS_MAX_DEATHS=14 不变。

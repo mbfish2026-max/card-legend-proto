@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## R85
+- R85：手机浮动摇杆（feat/float-joystick）、5 倍经验卷轴（feat/exp-scroll，图标仍为占位图）、血石剩余/总容量显示（feat/stone-capacity-ui）。本次按要求未跑 npm test / e2e，仅 tsc + build。
+
 ## R84
 - R84：自动挂机修复——道士卡住修复、清层后自动换层循环、遇首领自动接战（合并 fix/hang-stuck）。
 
