@@ -22,6 +22,8 @@ export const HANG = {
   stuckSec: 2, stuckPx: 8, stuckMax: 3, // 2 秒内 |Δx|<8px 视为卡住；连续 3 次 → 停
   lowHpStop: 0.2,      // 无药时 HP < 20% → 停
   rangedStand: 300,    // 法师/道士：目标间距 ≤300px 且有蓝时站定放技能
+  standSec: 1.5,       // fix/hang-stuck：站桩后 1.5 秒内英雄没有出手（普攻/耗蓝施法）→ 本目标改为贴脸普攻
+  idleSec: 4,          // fix/hang-stuck：有目标却原地不动且英雄不出手累计 4 秒 → 放弃目标并掉头（兜底，绝不原地空转）
 };
 export interface HangThresholds { red: number; sun: number; blue: number }
 
@@ -29,9 +31,13 @@ export class AutoHang {
   on = false; dir: 1 | -1 = 1; target: number | null = null;
   private tgtT = 0; private tgtHp = 0; private stuckT = 0; private stuckX = 0; private stuckN = 0;
   private ignore = new Map<number, number>();
+  /** fix/hang-stuck：英雄出手检测（h.cd 被重置 = 普攻；MP 下降 = 施法）与站桩空转计时 */
+  private lastCd = 0; private lastMp = 0; private actT = 0; private standT = 0; private idleT = 0; private meleeOnly: number | null = null;
+  private acted(w: World) { const h = w.hero!; const a = h.cd > this.lastCd + 1e-3 || (h.mp ?? 0) < this.lastMp - 1e-3; this.lastCd = h.cd; this.lastMp = h.mp ?? 0; if (a) this.actT = w.time; return a; }
   start(w: World): HangStop | null {
     if (w.town || !w.hero?.alive) return 'town';
     this.on = true; this.target = null; this.stuckN = 0; this.stuckT = 0; this.stuckX = w.hero.x; this.ignore.clear();
+    this.lastCd = w.hero.cd; this.lastMp = w.hero.mp ?? 0; this.actT = w.time; this.standT = 0; this.idleT = 0; this.meleeOnly = null;
     const { L, R } = this.anchors(w); this.dir = w.hero.x < (L + R) / 2 ? 1 : -1; return null;
   }
   stop() { this.on = false; this.target = null; }
@@ -57,7 +63,7 @@ export class AutoHang {
     if (!h.alive) return { dx: 0, stop: 'dead' };
     if (w.town) return { dx: 0, stop: 'town' };
     if (h.hp / h.maxHp < HANG.lowHpStop && !this.hasHpPotion(w)) return { dx: 0, stop: 'lowhp' };
-    const foes = w.alive('enemy'), now = w.time;
+    const foes = w.alive('enemy'), now = w.time; const acted = this.acted(w);
     if (foes.some(b => b.tier === 'boss' && (b.ai === 'chase' || b.ai === 'alert' || Math.abs(b.x - h.x) <= WORLD.aggroRange + 60))) return { dx: 0, stop: 'boss' };
     const { L, R } = this.anchors(w);
     const ground = w.ground.filter(g => g.landAt <= now && g.x >= L - 60 && g.x <= R + 60 && Math.abs(g.x - h.x) <= HANG.pickupDetour);
@@ -70,7 +76,7 @@ export class AutoHang {
     if (!t) {
       const c = foes.filter(u => u.tier !== 'boss' && !u.pet && inRange(u.x) && Math.abs(u.x - h.x) <= WORLD.leashRange && (this.ignore.get(u.uid) ?? -Infinity) <= now)
         .sort((a, b) => Math.abs(a.x - h.x) - Math.abs(b.x - h.x))[0];
-      if (c) { t = c; this.tgtT = now; this.tgtHp = c.hp; }
+      if (c) { t = c; this.tgtT = now; this.tgtHp = c.hp; this.standT = 0; this.idleT = 0; this.meleeOnly = null; }
     }
     this.target = t?.uid ?? null;
     // 层清空：区间内外都无非首领怪、无待刷新、无可捡物品
@@ -79,9 +85,16 @@ export class AutoHang {
     let dx = 0, fighting = false;
     if (t) {
       fighting = true;
-      const ranged = w.cls !== 'warrior' && (h.mp ?? 0) >= 10 && w.gap(h, t) <= HANG.rangedStand;
-      dx = w.inMelee(h, t) || ranged ? 0 : Math.sign(t.x - h.x);
+      // fix/hang-stuck：远程站桩只在「站下后英雄确实在出手」时成立。道士只会治愈术 / 符毒用完 / 技能全冷却时
+      // 旧逻辑在 gap≤300 处站着既不放技能也打不到普攻（普攻只在贴脸 inMelee 时触发），直到 8 秒放弃 → 改为走到贴脸普攻
+      const melee = w.inMelee(h, t);
+      let ranged = this.meleeOnly !== t.uid && w.cls !== 'warrior' && (h.mp ?? 0) >= 10 && w.gap(h, t) <= HANG.rangedStand;
+      if (ranged && !melee) { this.standT += dt; if (now - this.actT > HANG.standSec && this.standT > HANG.standSec) { this.meleeOnly = t.uid; ranged = false; } } else this.standT = 0;
+      dx = melee || ranged ? 0 : Math.sign(t.x - h.x);
       if (dx) this.dir = dx as 1 | -1;
+      // 兜底：有目标、不移动、英雄也不出手 → 累计 idleSec 放弃该目标并掉头巡逻
+      if (!dx && !acted && now - this.actT > HANG.idleSec) { this.idleT += dt; } else this.idleT = 0;
+      if (!dx && now - this.actT > HANG.idleSec && this.idleT > 0) { this.ignore.set(t.uid, now + 10); this.target = null; this.meleeOnly = null; this.actT = now; this.dir = -this.dir as 1 | -1; return { dx: this.dir }; }
     } else if (ground.length && !(w.bag.length >= WORLD.bagSize)) {
       const g = ground.sort((a, b) => Math.abs(a.x - h.x) - Math.abs(b.x - h.x))[0];
       dx = Math.abs(g.x - h.x) < WORLD.pickupRadius * 0.5 ? 0 : Math.sign(g.x - h.x); fighting = !dx;
