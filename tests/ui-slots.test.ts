@@ -51,7 +51,8 @@ ok(slotHitSize(true, 20, 60, 0.5) === 60 && slotHitSize(true, 20, 100, 0.5) === 
 const P = src('src/ui/Panel.ts'), H = src('src/ui/Hud.ts');
 ok(/slotBg\(s, x, y, size, selected/.test(P) && /qualityFrame\(s, x, y, size - 4, it\.rarity\)/.test(P), 'Panel.slotBox 用 slotBg + qualityFrame');
 ok(/qualityFrame\(s, cx \+ icon/.test(P), '装备对比图标用 qualityFrame');
-ok(/slotHitSize\(IS_MOBILE, size, pitch/.test(P) && /'bag_' \+ i, size \+ 6\)/.test(P) && /'eq_' \+ sl, dy\)/.test(P), 'slotBox 点击区按格距封顶');
+ok(/slotHitSize\(IS_MOBILE, size, pitch/.test(P) && /'bag_' \+ i, size \+ 6\)/.test(P) && /'eq_' \+ sl, pitch\)/.test(P) && /pitch = IS_MOBILE \? MD : dy/.test(P), 'slotBox 点击区按格距封顶（装备栏：桌面 dy，手机 3 列行列距 MD）');
+ok(/MD = 70/.test(P) && 70 * 0.7 >= 44, 'fix/r78-equip-tap：手机装备栏 3 列×4 行，行列距 70（844×390 面板 0.7 CSS px/单位 → 点击区可达 44）');
 ok((H.match(/slotBg\(s, x, y/g) ?? []).length === 1 && /slotBg\(s, x, y, S, false/.test(readFileSync('src/ui/potBar.ts', 'utf8')), 'Hud 快捷栏技能格+药水格用 slotBg（药水格在 potBar.ts，feat/potion-expand）');
 ok(/rowTint\(s, row/.test(P), '技能行调用 rowTint');
 ok(!/(slotBg|qualityFrame)\([^;]*\.setScale/.test(P + H), '格子九宫格不 setScale');

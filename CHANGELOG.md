@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## fix/r78-equip-tap：手机装备栏点击区 ≥44（基于 release/r78，未合 main）
+
+- 手机装备栏由两列×6 行改为 3 列×4 行（行列距 70、格 56），立绘右移；属性文字上移到 top+338，不压底部提示。桌面两列×6 行不变。
+- 实测点击区最小值：844×390 / 874×402 / 932×430 均为 44 CSS px（原 35），1280×720 仍为 48。腰带、靴子、血石栏都在内，腰带/靴子空栏底图（AI 生成，@2x）照常显示。
+- e2e：新增 tests/e2e/equip-tap-shots.mjs（截图存 docs/shots/r78-equip-tap/）；belt-shots 不再写死 60；tapclose 按名字排除装备格；ui-slots 断言同步。
+
 ## 药水战斗侧 P4/P6（feat/potion-combat，未合 main）
 - 用药：键盘 1/2/3 = 药水栏红/蓝/太阳水格当前选中的药（World.usePotionSlot / selectedPotionIndex）；键盘 4 保留中蓝；点格仍转发选中药。
 - 太阳水/强效太阳水立刻回复（HP180+MP240 / HP300+MP480），独立冷却 hero.sunReady 1s，不占红蓝冷却、不产生 HoT；强效红蓝沿用 HoT。与血石 tickStone 独立叠加（只写文档，未合 lingfu-combat）。
