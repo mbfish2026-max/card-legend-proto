@@ -84,7 +84,7 @@ const free = (w: World) => w.skills.map(() => 0);
 { // 职业属性与成长
   for (const c of ['warrior', 'mage', 'taoist'] as ClassId[]) {
     const w = mk([], [], c, 1), h = w.hero!;
-    ok(h.maxHp === CLASSES[c].base.hp && h.atk === CLASSES[c].base.atk && w.skills.length >= 4 && w.skills.every(s => !s.passive), `${CLASSES[c].name} 1 级属性 + 快捷栏主动技能`);
+    ok(h.maxHp === CLASSES[c].base.hp && h.atk === CLASSES[c].base.atk + (w.equip.weapon?.stats.atk ?? 0) /* early-gear：出生木剑 */ && w.equip.weapon?.item === 'wood_sword' && w.skills.length >= 4 && w.skills.every(s => !s.passive), `${CLASSES[c].name} 1 级属性 + 快捷栏主动技能`);
     const hp1 = h.maxHp, m1 = h.mag ?? 0, t1 = h.tao ?? 0; h.hp = 5; w.gainExp(w.expNext);
     ok(w.level === 2 && h.maxHp > hp1 && h.hp === h.maxHp && (c !== 'mage' || h.mag! > m1) && (c !== 'taoist' || h.tao! > t1), `${CLASSES[c].name} 升级自动成长并回满`);
   }
@@ -180,7 +180,7 @@ const free = (w: World) => w.skills.map(() => 0);
   ok(w.ground.length === 0 && w.bag.some(i => i.item === 'dragon_sword'), '装备进入背包');
   ok(w.pots[1] === pot0 + allHp - (g.item === 'hp_mid' ? 1 : 0) || w.pots[1] >= pot0, '药水计入药水栏');
   const lv0 = w.level; w.level = Math.max(lv0, 34); w.recompute(); // R14：屠龙官方 req34
-  const atk0 = h.atk, si = w.bag.findIndex(i => i.item === 'dragon_sword'), sw = w.bag[si];
+  const atk0 = h.atk - (w.equip.weapon?.stats.atk ?? 0) /* early-gear：替换出生木剑 */, si = w.bag.findIndex(i => i.item === 'dragon_sword'), sw = w.bag[si];
   ok(w.equipItem(si) === null && w.equip.weapon === sw && h.atk === atk0 + (sw.stats.atk ?? 0), `装备屠龙刀攻击 +${sw.stats.atk}`);
   ok(w.unequip('weapon') === null && h.atk === atk0 && w.bag.includes(sw), '卸下回到背包，属性还原');
   const low = mk([], [], 'warrior', 1); low.bag.push(low.makeItem('dragon_sword')); ok(low.equipItem(0)?.includes('需要等级') === true, '等级不足不能装备');
@@ -325,7 +325,7 @@ const free = (w: World) => w.skills.map(() => 0);
   ok(!r.ok && r.reason === '主角与召唤物生命已满' && h.mp === mp1 && Math.max(...cds) === 0, '都满血：不施放、不耗蓝、不占公共间隔');
 }
 { // 召唤物等级 [适配]：初始=技能等级(≤3)；主角+召唤物总击杀累计阈值升级，最高 7；名字带等级、蓝色逐级加深；重新召唤从初始等级重启
-  const w = mk([{ id: 'orc', x: 3000 }], [], 'taoist', 30); const h = w.hero!; h.mp = h.maxMp = 9999;
+  const w = mk([{ id: 'orc', x: 3000 }], [], 'taoist', 30); const h = w.hero!; w.equip.weapon = undefined; w.recompute(); /* early-gear：本段只测召唤等级比例，去掉出生木剑保持原基线 */ h.mp = h.maxMp = 9999;
   const k = idx(w, 'summon_skeleton'); w.cast(k, free(w)); const sm = w.summon!; const L0 = sm.sLv!;
   ok(L0 === Math.min(3, w.skillLevel(w.skills[k])) && sm.name === `骷髅·${L0}级 道士的宠物` && sm.nameColor === SUMMON_NAME_COLORS[L0], `初始等级=技能等级（${L0}），名字「${sm.name}」颜色 ${sm.nameColor}`);
   const hp0 = sm.maxHp, atk0 = sm.atk, ih0 = w.summonInherit(sm).hp; const colors = [sm.nameColor];
@@ -709,7 +709,7 @@ const free = (w: World) => w.skills.map(() => 0);
 
 
 { // R5 黑铁强化：成功率、属性、提纯、破碎、商店限购、Boss 掉落
-  const w = mk([], [], 'warrior', 20);
+  const w = mk([], [], 'warrior', 20); w.equip.weapon = undefined; /* early-gear：本段假设武器栏原为空 */
   w.bag.push(w.makeItem('iron_sword')); w.equipItem(0);
   const baseAtk = w.equip.weapon!.stats.atk!;
   w.bag.push(w.makeItem('black_iron', 'common', { purity: 5 }));
@@ -734,7 +734,7 @@ const free = (w: World) => w.skills.map(() => 0);
   const r = mk([]); r.bag.push(r.makeItem('black_iron', 'common', { purity: 2 }), r.makeItem('black_iron', 'common', { purity: 2 }));
   ok(r.refineIron(0, 1).includes('[+3]') && r.bag.length === 1 && r.bag[0].purity === 3, '两块+2 提纯 → +3');
   // 破碎（+5 失败）
-  const sh = mk([], [], 'warrior', 20); sh.bag.push(sh.makeItem('iron_sword')); sh.equipItem(0);
+  const sh = mk([], [], 'warrior', 20); sh.equip.weapon = undefined; /* early-gear */ sh.bag.push(sh.makeItem('iron_sword')); sh.equipItem(0);
   sh.equip.weapon!.enhance = 5; sh.applyEnhanceStats(sh.equip.weapon!);
   sh.bag.push(sh.makeItem('black_iron', 'common', { purity: 1 }));
   // rng: first call enhanceChance fail (0.99), second shatterChance trigger (0)
@@ -807,9 +807,9 @@ const free = (w: World) => w.skills.map(() => 0);
   ok(changedSlots(ls, ls2).join() === 'weapon', '换武器只影响武器层');
   ok(changedSlots(ls, resolveLayers('warrior', {})).join() === 'body,armor,weapon' && resolveLayers('warrior', {}).length === 0, '全脱 → 回原立绘');
   const w = mk([]); w.equipItem(0);
-  const old = new World(seeded(1), 1, [{ name: 't', spawns: [] }], 'warrior', (({ equip, ...r }) => r)(w.toSave()) as any);
+  const old = new World(seeded(1), 1, [{ name: 't', spawns: [] }], 'warrior', (({ equip, ...r }) => ({ ...r, starterGiven: 1 /* early-gear：已发过出生木剑的旧档，避免补发 */ }))(w.toSave()) as any);
   ok(resolveLayers(old.cls, old.equip).length === 0 && resolveLayers('warrior', undefined).length === 0, '旧存档/无装备照常（无层）');
-  const w2 = mk([]); w2.bag.push(it('dragon_sword', 'weapon', 1)); const wi = w2.bag.length - 1;
+  const w2 = mk([]); w2.equip.weapon = undefined; /* early-gear */ w2.bag.push(it('dragon_sword', 'weapon', 1)); const wi = w2.bag.length - 1;
   { const a = comboKey('warrior', resolveLayers('warrior', w2.equip)); w2.equipItem(wi); const b = comboKey('warrior', resolveLayers('warrior', w2.equip)); w2.unequip('weapon'); const c2 = comboKey('warrior', resolveLayers('warrior', w2.equip)); ok(a !== b && c2 === a, '穿/脱武器后组合签名刷新并可还原'); }
 }
 

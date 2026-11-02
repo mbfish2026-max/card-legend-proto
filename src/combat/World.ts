@@ -1,3 +1,4 @@
+import { makeStarterWeapon } from '../data/early-gear';
 import { compareSlot } from '../ui/equipCompare';
 import { CompanionState, migrateCompanion, companionGainExp, COMPANION_BAG, COMPANION_UNLOCK_LEVEL, newCompanion, feedHeart, heartFeedValue, HEART_STORE_MAX, RAGE_MAX, COMBO_LEVEL, COMBO_GOLD_BARS, BRM_BOOK, BOOK_PAGE, GOLD_BAR, PAGES_PER_BOOK, comboFor, HEART_ITEM, COMPANION_UNIT_ID, COMPANION_RECALL_CD, COMPANION_MODES, COMPANION_MODE_NAME, CompanionMode, companionStats, rageTick, unleash, canUnleash, comboEffect, COMBO_RANGE, pickPotion, COMPANION_POT_HP, COMPANION_POT_MP } from '../data/companion';
 import { fmtInt } from '../ui/fmt';
@@ -40,6 +41,8 @@ export interface SummonSave { id: string; pet?: boolean; sLv: number; sKills: nu
 export interface SaveData {
   /** feat/lingfu-combat：召唤直升卷轴已用 → 之后新召唤物初始等级（可选字段，缺省 0 = 未用） */
   summonBoostLv?: number;
+  /** feat/early-gear-3-5：出生木剑已发放（缺省 = 旧档，武器栏为空时补发一次） */
+  starterGiven?: 1;
   v: 1; cls: ClassId; level: number; exp: number; gold: number; pots: number[]; /** feat/potion-expand：3 格药水栏各格当前选中药 key（缺省 = 旧档，按 defaultSel） */ potSel?: string[];
   equip: Partial<Record<EquipSlot, InvItem>>; bag: InvItem[]; floorIndex: number; kills: number; nextUid: number;
   /** 技能修炼点（熟练度），按技能 id */
@@ -177,7 +180,7 @@ export class World {
   /** 火墙等地面持续区：[适配] 落点灼烧 */
   zones: { x: number; until: number; dps: number; radius: number; tick: number; skill: string }[] = [];
   exp = 0; expNext: number; nextUid = 1; nextGid = 1; nextItem = 1; time = 0;
-  pots = POTIONS.map(p => p.count); gold = 0;
+  pots = POTIONS.map(p => p.count); gold = 0; starterGiven = false;
   /** feat/potion-expand：3 格药水栏（红/蓝/太阳水）当前选中药 key，见 getSelectedPotion */
   potSel: string[] = normSel(null, this.pots);
   /** 背包（最多 WORLD.bagSize 格）与装备栏 */
@@ -259,6 +262,9 @@ export class World {
       this.learned = new Set(save.learned ?? this.skillPool.filter(s => this.level >= (s.unlock ?? s.learn?.[0] ?? 1) && !(s.id in LATE_BOOKS) && (!BOOKS[s.id] || BOOKS[s.id].shop || BOOKS[s.id].drops.length)).map(s => s.id));
     }
     this.learned.add(this.starter);
+    // feat/early-gear-3-5（G-10/G-12，待战斗开发确认）：出生木剑；旧档武器栏空且无标记时补发一次
+    if (save?.starterGiven) this.starterGiven = true;
+    if (!this.starterGiven) { if (!this.equip.weapon) this.equip.weapon = makeStarterWeapon(i => this.makeItem(i)); this.starterGiven = true; }
     this.expNext = EXP_PER_LEVEL(this.level, this.cls);
     this.spawnHero();
     this.loadFloor(save ? Math.min(save.floorIndex, this.floors.length - 1) : 0);
@@ -896,7 +902,7 @@ export class World {
     return null;
   }
   dropItem(bagIdx: number): InvItem | null { const [it] = this.bag.splice(bagIdx, 1); if (it) this.events.push({ type: 'inventory' }); return it ?? null; }
-  sellItem(bagIdx: number): number { const it = this.bag[bagIdx]; if (!it) return 0; if (BUNDLES[it.item] && (it.qty ?? 1) > 1) { it.qty!--; this.gold += it.price; this.events.push({ type: 'inventory' }); return it.price; } this.bag.splice(bagIdx, 1); this.gold += it.price; this.events.push({ type: 'inventory' }); return it.price; }
+  sellItem(bagIdx: number): number { const it = this.bag[bagIdx]; if (!it || it.bound) return 0; if (BUNDLES[it.item] && (it.qty ?? 1) > 1) { it.qty!--; this.gold += it.price; this.events.push({ type: 'inventory' }); return it.price; } this.bag.splice(bagIdx, 1); this.gold += it.price; this.events.push({ type: 'inventory' }); return it.price; }
   buyPotion(i: number): string | null {
     const p = POTIONS[i]; if (!p) return '无效商品';
     if (this.gold < p.price) return '金币不足';
@@ -1583,7 +1589,7 @@ export class World {
     this.ground.push(it); this.events.push({ type: 'drop', uid: 0, x, y: it.y, items: [it] }, { type: 'log', text: `${d.name} 奖励：${ITEMS[id].name}`, color: 'green' });
   }
   toSave(): SaveData {
-    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], potSel: [...this.potSel], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, town: this.town, ...(this.summonBoostLv ? { summonBoostLv: this.summonBoostLv } : {}), kills: this.kills, nextUid: this.nextItem, skillTrain: { ...this.skillTrain }, townsSeen: [...this.townsSeen], ...(this.lastTownId ? { lastTownId: this.lastTownId } : {}), reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], ringQ: this.ringQ, ringDone: this.ringDone, eqV: EQUIP_VERSION, expV: EXP_VERSION, bossCd: Object.fromEntries(Object.keys(this.bossCdUntil).map(k => [k, this.bossCdLeft(+k)]).filter(e => (e[1] as number) > 0)), bossCdId: Object.fromEntries(Object.entries(this.bossCdId).map(([k, v]) => [k, Math.ceil(v - this.time)]).filter(e => (e[1] as number) > 0)), mineCd: Object.fromEntries(Object.keys(this.mineCdUntil).map(k => [k, this.mineCdLeft(+k)]).filter(e => (e[1] as number) > 0)), companion: this.companion ? JSON.parse(JSON.stringify(this.companion)) : null, summons: this.units.filter(u => u.summon && u.alive && !u.decoy && u.sBase).map(u => ({ id: u.id, ...(u.pet ? { pet: true } : {}), sLv: u.sLv ?? 0, sKills: u.sKills ?? 0, base: { ...u.sBase! }, hpR: u.maxHp > 0 ? u.hp / u.maxHp : 1, level: u.level, ...(u.pet ? { def: u.def, mdef: u.mdef } : {}) })), dungeonRuns: JSON.parse(JSON.stringify(this.dungeonRuns)), dungeonFirst: [...this.dungeonFirst]  };
+    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], potSel: [...this.potSel], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, town: this.town, ...(this.summonBoostLv ? { summonBoostLv: this.summonBoostLv } : {}), kills: this.kills, nextUid: this.nextItem, ...(this.starterGiven ? { starterGiven: 1 as const } : {}), skillTrain: { ...this.skillTrain }, townsSeen: [...this.townsSeen], ...(this.lastTownId ? { lastTownId: this.lastTownId } : {}), reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], ringQ: this.ringQ, ringDone: this.ringDone, eqV: EQUIP_VERSION, expV: EXP_VERSION, bossCd: Object.fromEntries(Object.keys(this.bossCdUntil).map(k => [k, this.bossCdLeft(+k)]).filter(e => (e[1] as number) > 0)), bossCdId: Object.fromEntries(Object.entries(this.bossCdId).map(([k, v]) => [k, Math.ceil(v - this.time)]).filter(e => (e[1] as number) > 0)), mineCd: Object.fromEntries(Object.keys(this.mineCdUntil).map(k => [k, this.mineCdLeft(+k)]).filter(e => (e[1] as number) > 0)), companion: this.companion ? JSON.parse(JSON.stringify(this.companion)) : null, summons: this.units.filter(u => u.summon && u.alive && !u.decoy && u.sBase).map(u => ({ id: u.id, ...(u.pet ? { pet: true } : {}), sLv: u.sLv ?? 0, sKills: u.sKills ?? 0, base: { ...u.sBase! }, hpR: u.maxHp > 0 ? u.hp / u.maxHp : 1, level: u.level, ...(u.pet ? { def: u.def, mdef: u.mdef } : {}) })), dungeonRuns: JSON.parse(JSON.stringify(this.dungeonRuns)), dungeonFirst: [...this.dungeonFirst]  };
   }
 
   /** 点按一格：滑行中的按键全部排队（同向最多 10 格，反向则替换队列），每次按键都会走一格 */

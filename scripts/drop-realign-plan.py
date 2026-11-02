@@ -26,7 +26,8 @@ for uid, v in d['official'].items():
 for m in CQM.values():
     for nm, n in m['drops'].items(): offN.setdefault((norm(m['name']), re.sub(r'\((男|女)\)', '', nm)), int(n))
 # ---- 曲线 ----
-BANDS = [(1, 9, 8, 3, 60, 8), (10, 19, 10, 5, 100, 12), (20, 29, 15, 8, 150, 20), (30, 39, 25, 12, 250, 30), (40, 49, 40, 20, 400, 50), (50, 999, 40, 30, 600, 80)]
+BANDS = [(1, 9, 16, 2, 30, 4),  # early-gear-3-5 ×2；表已按 docs/early-gear-3-5.md §3.2 手工同步，未重跑本脚本
+          (10, 19, 10, 5, 100, 12), (20, 29, 15, 8, 150, 20), (30, 39, 25, 12, 250, 30), (40, 49, 40, 20, 400, 50), (50, 999, 40, 30, 600, 80)]
 def band(req): return next(b for b in BANDS if b[0] <= req <= b[1])
 def rate(req, boss, N):
     lo, hi, K, cap, flo, de = band(req)

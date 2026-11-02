@@ -27,7 +27,7 @@ let prev = 0; for (let r = 1; r <= 60; r++) { const d = realignDen(r, true); ok(
   ok(realignDen(r, true, 1e9) >= realignDen(r, true, 1), `需求 ${r} 夹在上下限内`); }
 ok(realignDen(26, true, 1600) === 107, '魔杖 邪恶钳虫 官方 1/1600 ÷15 = 1/107');
 // 4) D1 需求 + D5 改名（id 不变）+ G4 铁靴
-const REQ: Record<string, number> = { magic_staff: 26, tao_sword: 26, guyu: 35, helmet: 10, iron_sword: 10, xiaoyao_fan: 35, shihun_staff: 35, pohun: 20, armor: 22, gold_ring: 22 };
+const REQ: Record<string, number> = { magic_staff: 26, tao_sword: 26, guyu: 35, helmet: 4, iron_sword: 5, /* early-gear-3-5 适配：官方 10 → 4/5 */ xiaoyao_fan: 35, shihun_staff: 35, pohun: 20, armor: 22, gold_ring: 22 };
 for (const [id, r] of Object.entries(REQ)) ok(ITEMS[id].req === r, `${ITEMS[id].name} 需求 ${r}`);
 ok(ITEMS.tao_sword.name === '银蛇' && ITEMS.dragon_sword.name === '屠龙', 'D5 显示名 银蛇/屠龙');
 ok((ITEMS.boots.equip!.def ?? 0) < 2 && (ITEMS.boots.equip!.hp ?? 0) < 16, 'G4 铁靴低于布鞋15（防2 生命16）');

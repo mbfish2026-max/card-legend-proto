@@ -7,7 +7,7 @@ const clear = (w: World) => { for (const e of w.units) if (e.team === 'enemy') e
 const summonsOf = (w: World) => w.units.filter(u => u.summon && u.alive);
 const inh = (h: any) => ({ atk: Math.round(WORLD.summonInhAtk * Math.max(h.atk, h.tao)), def: Math.round(WORLD.summonInhDef * h.def), hp: Math.round(WORLD.summonInhHp * h.maxHp) });
 for (const id of ['summon_skeleton', 'summon_beast', 'drive_corpse', 'summon_golden_skeleton']) {
-  const w = new World(() => 0.5, 42, FLOORS, 'taoist'); clear(w); const h: any = w.hero!; h.mp = h.maxMp = 99999;
+  const w = new World(() => 0.5, 42, FLOORS, 'taoist'); clear(w); (w as any).equip.weapon = undefined; w.recompute(); /* early-gear：本测试假设武器栏原为空，去掉出生木剑 */ const h: any = w.hero!; h.mp = h.maxMp = 99999;
   for (const s of w.skillPool) { w.learned.add(s.id); w.skillTrain[s.id] = 99999; }
   for (const u of summonsOf(w)) u.alive = false;
   const i = w.skills.findIndex(s => s.id === id); const r = w.cast(i, w.skills.map(() => 0)); if (!r.ok) throw new Error(id + ' ' + r.reason);

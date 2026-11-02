@@ -11,8 +11,9 @@ import { REALIGN_PLAN } from './drop-realign-table';
 import type { InvItem } from '../combat/types';
 
 /** C 章曲线：[需求下限, 上限, K, BOSS 上限分母, BOSS 下限分母, BOSS 段默认分母]；普通怪三个分母 ×2 */
+/** early-gear-3-5：1–9 档系数 ×2（K 8→16、BOSS 上限 3→2（1.5 取整）、下限 60→30、默认 8→4）；其它档不动 */
 export const REALIGN_BANDS: [number, number, number, number, number, number][] = [
-  [1, 9, 8, 3, 60, 8], [10, 19, 10, 5, 100, 12], [20, 29, 15, 8, 150, 20], [30, 39, 25, 12, 250, 30], [40, 49, 40, 20, 400, 50], [50, 999, 40, 30, 600, 80]];
+  [1, 9, 16, 2, 30, 4], [10, 19, 10, 5, 100, 12], [20, 29, 15, 8, 150, 20], [30, 39, 25, 12, 250, 30], [40, 49, 40, 20, 400, 50], [50, 999, 40, 30, 600, 80]];
 /** A 章等级规则：需求 ≤ 怪物等级 + X（普通 6 / BOSS 8），且怪物等级 ≤ 需求 + 15 */
 export const REALIGN_X_NORMAL = 6, REALIGN_X_BOSS = 8, REALIGN_OVER = 15;
 /** 返回 1/N 的分母 N。officialN 未查到（undefined）→ 段默认 */

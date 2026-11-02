@@ -4,16 +4,16 @@ import type { ItemDef } from '../combat/types';
 const I = 'assets/items/';
 export const H_ITEMS: Record<string, ItemDef> = {
   h_gold_necklace: { id: 'h_gold_necklace', name: '金项链', icon: I + 'h_gold_necklace.png', slot: 'necklace', equip: {"atk": 3}, req: 2, price: 5 }, // [适配] 官方 攻击0-1 敏捷+1
-  h_black_crystal_necklace: { id: 'h_black_crystal_necklace', name: '黑色水晶项链', icon: I + 'h_black_crystal_necklace.png', slot: 'necklace', equip: {"atk": 2}, req: 13, price: 15, cls: ["warrior"] }, // [适配] 官方 攻击1-0
-  h_ebony_necklace: { id: 'h_ebony_necklace', name: '黑檀项链', icon: I + 'h_ebony_necklace.png', slot: 'necklace', equip: {"mag": 5}, req: 13, price: 12, cls: ["mage"] }, // [适配] 官方 魔法1-0
-  h_yellow_crystal_necklace: { id: 'h_yellow_crystal_necklace', name: '黄色水晶项链', icon: I + 'h_yellow_crystal_necklace.png', slot: 'necklace', equip: {"tao": 5}, req: 13, price: 12, cls: ["taoist"] }, // [适配] 官方 道术1-0
+  h_black_crystal_necklace: { id: 'h_black_crystal_necklace', name: '黑色水晶项链', icon: I + 'h_black_crystal_necklace.png', slot: 'necklace', equip: {"atk": 2}, req: 5, price: 15, cls: ["warrior"] }, // [适配] 官方 攻击1-0 // early-gear-3-5 [适配] 需求 官方13→5
+  h_ebony_necklace: { id: 'h_ebony_necklace', name: '黑檀项链', icon: I + 'h_ebony_necklace.png', slot: 'necklace', equip: {"mag": 5}, req: 5, price: 12, cls: ["mage"] }, // [适配] 官方 魔法1-0 // early-gear-3-5 [适配] 需求 官方13→5
+  h_yellow_crystal_necklace: { id: 'h_yellow_crystal_necklace', name: '黄色水晶项链', icon: I + 'h_yellow_crystal_necklace.png', slot: 'necklace', equip: {"tao": 5}, req: 5, price: 12, cls: ["taoist"] }, // [适配] 官方 道术1-0 // early-gear-3-5 [适配] 需求 官方13→5
   h_devil_necklace: { id: 'h_devil_necklace', name: '魔鬼项链', icon: I + 'h_devil_necklace.png', slot: 'necklace', equip: {"atk": 6}, req: 17, price: 25, cls: ["warrior"] }, // [适配] 官方 攻击2-0
   h_amber_necklace: { id: 'h_amber_necklace', name: '琥珀项链', icon: I + 'h_amber_necklace.png', slot: 'necklace', equip: {"mag": 10}, req: 17, price: 20, cls: ["mage"] }, // [适配] 官方 魔法2-0
   h_phoenix_pearl: { id: 'h_phoenix_pearl', name: '凤凰明珠', icon: I + 'h_phoenix_pearl.png', slot: 'necklace', equip: {"tao": 13}, req: 17, price: 20, cls: ["taoist"] }, // [适配] 官方 道术1-2 准确+1
   h_blue_jade_necklace: { id: 'h_blue_jade_necklace', name: '蓝翡翠项链', icon: I + 'h_blue_jade_necklace.png', slot: 'necklace', equip: {"atk": 6}, req: 23, price: 100, cls: ["warrior"] }, // [适配] 官方 攻击2-2
-  h_leather_glove: { id: 'h_leather_glove', name: '皮制手套', icon: I + 'h_leather_glove.png', slot: 'bracelet', equip: {"def": 5, "hp": 50}, req: 7, price: 15 }, // [适配] 官方 防御0-1
-  h_steel_bracelet: { id: 'h_steel_bracelet', name: '钢手镯', icon: I + 'h_steel_bracelet.png', slot: 'bracelet', equip: {"def": 5, "mdef": 5, "hp": 50}, req: 8, price: 20 }, // [适配] 官方 防御0-1 魔御0-1
-  h_big_bracelet: { id: 'h_big_bracelet', name: '大手镯', icon: I + 'h_big_bracelet.png', slot: 'bracelet', equip: {"def": 5, "hp": 50}, req: 9, price: 50 }, // [适配] 官方 防御1-1
+  h_leather_glove: { id: 'h_leather_glove', name: '皮制手套', icon: I + 'h_leather_glove.png', slot: 'bracelet', equip: {"def": 5, "hp": 50}, req: 3, price: 15 }, // [适配] 官方 防御0-1 // early-gear-3-5 [适配] 需求 官方7→3
+  h_steel_bracelet: { id: 'h_steel_bracelet', name: '钢手镯', icon: I + 'h_steel_bracelet.png', slot: 'bracelet', equip: {"def": 5, "mdef": 5, "hp": 50}, req: 4, price: 20 }, // [适配] 官方 防御0-1 魔御0-1 // early-gear-3-5 [适配] 需求 官方8→4
+  h_big_bracelet: { id: 'h_big_bracelet', name: '大手镯', icon: I + 'h_big_bracelet.png', slot: 'bracelet', equip: {"def": 5, "hp": 50}, req: 4, price: 50 }, // [适配] 官方 防御1-1 // early-gear-3-5 [适配] 需求 官方9→4
   h_magic_bracelet: { id: 'h_magic_bracelet', name: '魔法手镯', icon: I + 'h_magic_bracelet.png', slot: 'bracelet', equip: {"def": 5, "mdef": 10, "hp": 50}, req: 18, price: 40 }, // [适配] 官方 防御0-1 魔御1-2
   h_sturdy_glove: { id: 'h_sturdy_glove', name: '坚固手套', icon: I + 'h_sturdy_glove.png', slot: 'bracelet', equip: {"def": 10, "hp": 100}, req: 18, price: 70 }, // [适配] 官方 防御0-2
   h_ebony_bracelet: { id: 'h_ebony_bracelet', name: '黑檀手镯', icon: I + 'h_ebony_bracelet.png', slot: 'bracelet', equip: {"mag": 5}, req: 19, price: 40, cls: ["mage"] }, // [适配] 官方 魔法0-1
@@ -21,9 +21,9 @@ export const H_ITEMS: Record<string, ItemDef> = {
   h_power_bracelet: { id: 'h_power_bracelet', name: '魔力手镯', icon: I + 'h_power_bracelet.png', slot: 'bracelet', equip: {"atk": 4}, req: 20, price: 80, cls: ["warrior"] }, // [适配] 官方 攻击0-1
   h_death_glove: { id: 'h_death_glove', name: '死神手套', icon: I + 'h_death_glove.png', slot: 'bracelet', equip: {"atk": 8}, req: 22, price: 80, cls: ["warrior"] }, // [适配] 官方 攻击1-2
   h_gold_bracelet: { id: 'h_gold_bracelet', name: '金手镯', icon: I + 'h_gold_bracelet.png', slot: 'bracelet', equip: {"atk": 5, "mdef": 15}, req: 23, price: 70 }, // [适配] 官方 攻击0-1 魔御2-3
-  h_hex_ring: { id: 'h_hex_ring', name: '六角戒指', icon: I + 'h_hex_ring.png', slot: 'ring', equip: {"mag": 5}, req: 7, price: 8, cls: ["mage"] }, // [适配] 官方 魔法0-1
-  h_glass_ring: { id: 'h_glass_ring', name: '玻璃戒指', icon: I + 'h_glass_ring.png', slot: 'ring', equip: {"tao": 8}, req: 7, price: 8, cls: ["taoist"] }, // [适配] 官方 道术0-1
-  h_horn_ring: { id: 'h_horn_ring', name: '牛角戒指', icon: I + 'h_horn_ring.png', slot: 'ring', equip: {"atk": 2, "mdef": 4}, req: 9, price: 10, cls: ["warrior"] }, // [适配] 官方 攻击0-1 魔御0-1
+  h_hex_ring: { id: 'h_hex_ring', name: '六角戒指', icon: I + 'h_hex_ring.png', slot: 'ring', equip: {"mag": 5}, req: 3, price: 8, cls: ["mage"] }, // [适配] 官方 魔法0-1 // early-gear-3-5 [适配] 需求 官方7→3
+  h_glass_ring: { id: 'h_glass_ring', name: '玻璃戒指', icon: I + 'h_glass_ring.png', slot: 'ring', equip: {"tao": 8}, req: 3, price: 8, cls: ["taoist"] }, // [适配] 官方 道术0-1 // early-gear-3-5 [适配] 需求 官方7→3
+  h_horn_ring: { id: 'h_horn_ring', name: '牛角戒指', icon: I + 'h_horn_ring.png', slot: 'ring', equip: {"atk": 2, "mdef": 4}, req: 4, price: 10, cls: ["warrior"] }, // [适配] 官方 攻击0-1 魔御0-1 // early-gear-3-5 [适配] 需求 官方9→4
   h_blue_crystal_ring: { id: 'h_blue_crystal_ring', name: '蓝色水晶戒指', icon: I + 'h_blue_crystal_ring.png', slot: 'ring', equip: {"atk": 2, "mdef": 8}, req: 16, price: 15, cls: ["warrior"] }, // [适配] 官方 攻击1-0 魔御0-2
   h_black_crystal_ring: { id: 'h_black_crystal_ring', name: '黑色水晶戒指', icon: I + 'h_black_crystal_ring.png', slot: 'ring', equip: {"atk": 4}, req: 20, price: 20, cls: ["warrior"] }, // [适配] 官方 攻击0-2
   h_snake_eye_ring: { id: 'h_snake_eye_ring', name: '蛇眼戒指', icon: I + 'h_snake_eye_ring.png', slot: 'ring', equip: {"mag": 10}, req: 20, price: 20, cls: ["mage"] }, // [适配] 官方 魔法0-2
@@ -34,17 +34,17 @@ export const H_ITEMS: Record<string, ItemDef> = {
   h_soul_boots: { id: 'h_soul_boots', name: '避魂靴', icon: I + 'h_soul_boots.png', slot: 'boots', equip: {"def": 13, "hp": 230}, req: 35, price: 150 }, // [适配] 官方 防御1-3 负重+6；数值/售价暂定
 };
 export const H_PLAN: Record<string, [string, number][]> = {
-  h_gold_necklace: [["forest_yeti", 16], ["hook_cat", 16], ["rake_cat", 16], ["tree_demon", 8], ["skeleton_lord", 8]],
-  h_black_crystal_necklace: [["red_snake", 24], ["tiger_snake", 24], ["skeleton", 24], ["skeleton_lord", 12]],
-  h_ebony_necklace: [["red_snake", 24], ["tiger_snake", 24], ["skeleton", 24], ["skeleton_lord", 12]],
-  h_yellow_crystal_necklace: [["red_snake", 24], ["tiger_snake", 24], ["skeleton", 24], ["skeleton_lord", 12]],
+  h_gold_necklace: [["forest_yeti", 8], ["hook_cat", 8], ["rake_cat", 8], ["tree_demon", 4], ["skeleton_lord", 4]],
+  h_black_crystal_necklace: [["red_snake", 8], ["tiger_snake", 8], ["skeleton", 8], ["skeleton_lord", 4]],
+  h_ebony_necklace: [["red_snake", 8], ["tiger_snake", 8], ["skeleton", 8], ["skeleton_lord", 4]],
+  h_yellow_crystal_necklace: [["red_snake", 8], ["tiger_snake", 8], ["skeleton", 8], ["skeleton_lord", 4]],
   h_devil_necklace: [["skeleton", 24], ["zombie", 24], ["axe_skeleton", 24], ["skeleton_lord", 12], ["boss_evil_pincer", 12]],
   h_amber_necklace: [["skeleton", 24], ["zombie", 24], ["axe_skeleton", 24], ["skeleton_lord", 12], ["boss_evil_pincer", 12]],
   h_phoenix_pearl: [["skeleton", 24], ["zombie", 24], ["axe_skeleton", 24], ["skeleton_lord", 12], ["boss_evil_pincer", 12]],
   h_blue_jade_necklace: [["black_maggot", 40], ["centipede", 40], ["giant_worm", 40], ["boss_lich", 20], ["boss_evil_pincer", 20]],
-  h_leather_glove: [["forest_yeti", 16], ["orc", 16], ["red_snake", 16], ["skeleton_lord", 8]],
-  h_steel_bracelet: [["orc", 16], ["red_snake", 16], ["tiger_snake", 16], ["skeleton_lord", 8]],
-  h_big_bracelet: [["orc", 16], ["red_snake", 16], ["tiger_snake", 16], ["skeleton_lord", 8]],
+  h_leather_glove: [["forest_yeti", 8], ["orc", 8], ["red_snake", 8], ["skeleton_lord", 4]],
+  h_steel_bracelet: [["orc", 8], ["red_snake", 8], ["tiger_snake", 8], ["skeleton_lord", 4]],
+  h_big_bracelet: [["orc", 8], ["red_snake", 8], ["tiger_snake", 8], ["skeleton_lord", 4]],
   h_magic_bracelet: [["skeleton", 24], ["zombie", 24], ["axe_skeleton", 24], ["skeleton_lord", 12], ["boss_evil_pincer", 12]],
   h_sturdy_glove: [["skeleton", 24], ["zombie", 24], ["axe_skeleton", 24], ["skeleton_lord", 12], ["boss_evil_pincer", 12]],
   h_ebony_bracelet: [["black_maggot", 24], ["centipede", 24], ["giant_worm", 24], ["skeleton_lord", 12], ["boss_lich", 12]],
@@ -52,9 +52,9 @@ export const H_PLAN: Record<string, [string, number][]> = {
   h_power_bracelet: [["black_maggot", 40], ["centipede", 40], ["giant_worm", 40], ["skeleton_lord", 20], ["boss_lich", 20]],
   h_death_glove: [["black_maggot", 40], ["centipede", 40], ["giant_worm", 40], ["boss_lich", 20], ["boss_evil_pincer", 20]],
   h_gold_bracelet: [["black_maggot", 40], ["centipede", 40], ["giant_worm", 40], ["boss_lich", 20], ["boss_evil_pincer", 20]],
-  h_hex_ring: [["forest_yeti", 16], ["orc", 16], ["red_snake", 16], ["skeleton_lord", 8]],
-  h_glass_ring: [["forest_yeti", 16], ["orc", 16], ["red_snake", 16], ["skeleton_lord", 8]],
-  h_horn_ring: [["orc", 16], ["red_snake", 16], ["tiger_snake", 16], ["skeleton_lord", 8]],
+  h_hex_ring: [["forest_yeti", 8], ["orc", 8], ["red_snake", 8], ["skeleton_lord", 4]],
+  h_glass_ring: [["forest_yeti", 8], ["orc", 8], ["red_snake", 8], ["skeleton_lord", 4]],
+  h_horn_ring: [["orc", 8], ["red_snake", 8], ["tiger_snake", 8], ["skeleton_lord", 4]],
   h_blue_crystal_ring: [["skeleton", 24], ["zombie", 24], ["axe_skeleton", 24], ["skeleton_lord", 12], ["boss_lich", 12]],
   h_black_crystal_ring: [["black_maggot", 40], ["centipede", 40], ["giant_worm", 40], ["skeleton_lord", 20], ["boss_lich", 20]],
   h_snake_eye_ring: [["black_maggot", 40], ["centipede", 40], ["giant_worm", 40], ["skeleton_lord", 20], ["boss_lich", 20]],
