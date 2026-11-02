@@ -141,7 +141,7 @@ export class AutoHang {
     if (!t && !rest.length && !w.farmQueue.length && !ground.length) {
       // 用户新增：清层不再停止 → 进下一层再走回原层（loadFloor 进层全量重刷普通怪）。不能往返时停止并提示
       const why = this.canCycle(w); if (why) { this.info = why; return { dx: 0, stop: 'nocycle' }; }
-      this.phase = 'toNext'; this.origin = w.floorIndex; this.target = null; this.say(w, HANG_PHASE_TEXT.toNext); return { dx: 1, use: true, fight: false };
+      this.phase = 'toNext'; this.origin = w.floorIndex; this.target = null; this.say(w, this.info === HANG_PHASE_TEXT.bossDown && this.infoAt === now ? `首领已击败，${HANG_PHASE_TEXT.toNext}` : HANG_PHASE_TEXT.toNext); return { dx: 1, use: true, fight: false };
     }
     let dx = 0, fighting = false;
     if (t) {

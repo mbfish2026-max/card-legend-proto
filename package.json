@@ -6,6 +6,7 @@
   "scripts": {
     "verify:hang-stuck": "node tests/e2e/hang-stuck-verify.mjs",
     "verify:hang-cycle": "node tests/e2e/hang-cycle-verify.mjs",
+    "verify:hang-boss": "node tests/e2e/hang-boss-verify.mjs",
     "dev": "vite --host --port 5180",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
