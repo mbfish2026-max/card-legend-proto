@@ -9,7 +9,7 @@ const bag = [{ uid: 2, item: 'iron_sword', name: '好铁剑', rarity: 'rare', sl
 const save = { v: 1, cls: 'warrior', level: 30, exp: 0, gold: 5000, pots: [5, 0, 0, 9], floorIndex: 1, kills: 0, nextUid: 100, mapV: 3, eqV: 2, expV: 2, equip: { weapon: W1 }, bag, learned: [] };
 const sv = await startPreview(), b = await launch(); const out = {};
 const slots = page => page.evaluate(() => { const s = window.__game.scene.getScene('UI'), cv = window.__game.canvas.getBoundingClientRect(), wv = s.cameras.main.worldView, r = [];
-  const walk = l => l.forEach(o => { if (o.getData?.('slot')) { const bb = o.getBounds(); r.push({ x: cv.left + (bb.centerX - wv.x) * cv.width / wv.width, y: cv.top + (bb.centerY - wv.y) * cv.height / wv.height }); } if (o.list) walk(o.list); }); walk(s.children.list); return r; });
+  const walk = l => l.forEach(o => { if (o.getData?.('slot') && !/^eq_/.test(o.name ?? '')) { const bb = o.getBounds(); r.push({ x: cv.left + (bb.centerX - wv.x) * cv.width / wv.width, y: cv.top + (bb.centerY - wv.y) * cv.height / wv.height }); } if (o.list) walk(o.list); }); walk(s.children.list); return r; });
 const state = page => page.evaluate(() => { const p = window.__game.scene.getScene('UI').panel; return { sel: p.sel, tip: !!p.tip, cmp: p.tip?.name ?? null }; });
 try {
   for (const [vw, vh, touch] of [[844, 390, true], [1280, 720, false]]) {
@@ -21,8 +21,8 @@ try {
     await page.evaluate(() => window.__game.scene.getScene('Battle').openPanel('bag')); await sleep(800);
     const step = async (name) => { await sleep(400); const st = await state(page); r.steps.push({ name, ...st }); await page.screenshot({ path: `${dir}/tapclose-${name}-${vw}.png` }); return st; };
     // 背包第 1 格（好铁剑）：EQUIP_SLOTS 10 个在前（灵符商城加了血石栏 stone）
-    const sl = await slots(page); ok(sl.length >= 12, `${vw} 找到 ${sl.length} 个格子`); // 原脚本漏了这一行（sl 未定义）
-    const s0 = sl[10], s1 = sl[11];
+    const sl = await slots(page); ok(sl.length >= 2, `${vw} 找到 ${sl.length} 个格子`); // 原脚本漏了这一行（sl 未定义）
+    const s0 = sl[0], s1 = sl[1]; // fix/r78-equip-tap：按名字排除装备格（eq_*），不再依赖装备栏格数
     if (touch) {
       { const st = await (await page.touchscreen.tap(s0.x, s0.y), step('1-open')); ok(st.tip, '844 点格子 → 对比面板打开'); }
       const pb = await page.evaluate(() => { const t = window.__game.scene.getScene('UI').panel.tip, s = window.__game.scene.getScene('UI'), cv = window.__game.canvas.getBoundingClientRect(), wv = s.cameras.main.worldView, bb = t.getBounds(); return { x: cv.left + (bb.centerX - wv.x) * cv.width / wv.width, y: cv.top + (bb.bottom - 20 - wv.y) * cv.height / wv.height }; });
