@@ -12,4 +12,12 @@ export const BELT_ITEMS: Record<string, ItemDef> = {
   belt_guangmang: B('belt_guangmang', '光芒腰带', 45, { tao: 4, def: 13, hp: 240 }, 700, ['taoist']), // [暂定][待核]
 };
 /** 官方盘点：官方名/21cq id 未查到，official 先填「本作名（待核）」以保持名称映射唯一；数值[暂定] */
-export const BELT_META = Object.fromEntries(Object.values(BELT_ITEMS).map(b => [b.id, { official: b.name + '（待核）', cq: 0, ...(b.cls ? { cls: b.cls } : {}), origin: 'realign' as const, note: `阶段2 腰带；需求 ${b.req}；数值[暂定]${/lieyan|guangmang/.test(b.id) ? '，[待核]' : ''}；未挂掉落（待启用）` }]));
+export const BELT_META = Object.fromEntries(Object.values(BELT_ITEMS).map(b => [b.id, { official: b.name + '（待核）', cq: 0, ...(b.cls ? { cls: b.cls } : {}), origin: 'realign' as const, note: `阶段2 腰带；需求 ${b.req}；数值[暂定]${/lieyan|guangmang/.test(b.id) ? '，[待核]' : ''}；starter-cloth 起挂默认档位掉落（BELT_PLAN）` }]));
+
+/** feat/starter-cloth（gear-tiers P3/D6）：兽皮/铁/青铜腰带挂默认档位掉落（官方来源未查到 → REALIGN 段默认；普通怪 ×2）。
+ * 源怪满足 需求 ≤ 怪等级+6（BOSS +8）且 怪等级 ≤ 需求+15。T1/T2 腰带仍空（D6）。 */
+export const BELT_PLAN: Record<string, [string, number][]> = {
+  belt_hide: [['centipede', 24], ['black_maggot', 24], ['boss_evil_pincer', 12]],
+  belt_iron: [['woma_guard', 40], ['boss_lich', 20]],
+  belt_bronze: [['hongmo_pig', 60], ['boss_zuma', 30]],
+};

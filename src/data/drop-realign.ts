@@ -5,6 +5,7 @@
  * 首杀加成不做（G1），精英层级不加（G3）。
  */
 import { H_PLAN } from './h-chain';
+import { BELT_PLAN } from './belts';
 import { ENEMIES } from './units';
 import { ITEMS } from './items';
 import { REALIGN_PLAN } from './drop-realign-table';
@@ -36,6 +37,8 @@ export function applyRealign(): void {
   }
   // H 章过渡链新物品（只掉落，G9 不上商店）
   for (const [item, src] of Object.entries(H_PLAN)) for (const [uid, n] of src) { const u = ENEMIES[uid]; if (u) (u.drops ??= []).push({ item, chance: 1 / n }); }
+  // starter-cloth P3：腰带掉落（只掉落、不上商店）
+  for (const [item, src] of Object.entries(BELT_PLAN)) for (const [uid, n] of src) { const u = ENEMIES[uid]; if (u && ITEMS[item]) (u.drops ??= []).push({ item, chance: 1 / n }); }
 }
 /** D5 改名（只改显示名，id 不变）：旧名 → 新名 */
 export const RENAMED: Record<string, [string, string]> = { tao_sword: ['银蛇剑', '银蛇'], dragon_sword: ['屠龙刀', '屠龙'] };

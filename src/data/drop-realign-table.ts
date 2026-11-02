@@ -12,7 +12,7 @@ export const REALIGN_PLAN: Record<string, [string, number][]> = {
   set_chiyue_ring: [["boss_chulong", 30], ["boss_sq_jiguan", 30]],
   set_chiyue_bracelet: [["boss_chulong", 30], ["boss_sq_jiguan", 30]],
   wood_sword: [["forest_yeti", 25], ["hook_cat", 25], ["rake_cat", 25]],
-  iron_sword: [["red_snake", 44], ["tiger_snake", 56], ["skeleton", 60], ["skeleton_lord", 2]],
+  iron_sword: [["red_snake", 70], ["tiger_snake", 90], ["skeleton", 100], ["skeleton_lord", 5]], // starter-cloth D4：拉回 T2(11)，10–19 档重算
   magic_staff: [["zuma_guard", 40], ["boss_evil_pincer", 107], ["boss_chulong", 53]],
   tao_sword: [["zuma_guard", 40], ["boss_evil_pincer", 107], ["boss_chulong", 53]],
   dragon_sword: [["boss_zuma", 250], ["boss_bull_king", 250]],
@@ -43,10 +43,10 @@ export const REALIGN_PLAN: Record<string, [string, number][]> = {
   lianyu: [["black_boar", 40], ["red_boar", 40], ["scorpion_snake", 40], ["boss_evil_pincer", 107], ["boss_chulong", 53]],
   jingzhongyue: [["zuma_guard", 40], ["zuma_statue", 40], ["boss_chulong", 150], ["boss_evil_snake", 150]],
   wujigun: [["zuma_guard", 60], ["zuma_statue", 60], ["hongmo_pig", 120], ["boss_chulong", 100], ["boss_evil_snake", 100]],
-  longwen: [["zuma_guard", 60], ["zuma_statue", 60], ["hongmo_pig", 240], ["boss_chulong", 200], ["boss_evil_snake", 200]],
+  longwen: [["zuma_guard", 60], ["zuma_statue", 60], ["hongmo_pig", 240], ["boss_evil_snake", 200]],
   caijue: [["zuma_guard", 60], ["zuma_statue", 60], ["hongmo_pig", 240], ["boss_chulong", 100], ["boss_evil_snake", 200]],
-  guyu: [["zuma_guard", 60], ["zuma_statue", 60], ["hongmo_pig", 240], ["boss_chulong", 200], ["boss_evil_snake", 200]],
-  light_armor: [["red_snake", 44], ["tiger_snake", 56], ["skeleton", 60], ["skeleton_lord", 2]],
+  guyu: [["zuma_guard", 60], ["zuma_statue", 60], ["hongmo_pig", 240], ["boss_evil_snake", 200]],
+  light_armor: [["red_snake", 70], ["tiger_snake", 90], ["skeleton", 100], ["skeleton_lord", 5]], // starter-cloth D4：拉回 T2(11)，10–19 档重算
   soul_robe: [["black_maggot", 300], ["centipede", 300], ["giant_worm", 107], ["boss_lich", 20], ["boss_evil_pincer", 8]],
   magic_robe: [["black_maggot", 300], ["centipede", 300], ["giant_worm", 107], ["boss_lich", 20], ["boss_evil_pincer", 8]],
   war_armor: [["black_boar", 60], ["red_boar", 60], ["scorpion_snake", 60], ["boss_evil_pincer", 30], ["boss_evil_snake", 30]],

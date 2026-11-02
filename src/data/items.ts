@@ -55,9 +55,9 @@ export const ITEMS: Record<string, ItemDef> = {
   bone: { id: 'bone', name: '骷髅骨头', icon: 'assets/items/bone.png', price: 6 },
   // 武器
   wood_sword: { id: 'wood_sword', name: '木剑', icon: 'assets/items/eq_wood_sword.png', slot: 'weapon', equip: { atk: 6, mag: 3, tao: 3 }, req: 1, price: 10 },
-  iron_sword: { id: 'iron_sword', name: '铁剑', icon: 'assets/items/eq_iron_sword.png', slot: 'weapon', equip: { atk: 14 }, req: 5, price: 30 }, // early-gear-3-5 [适配] 需求 官方10→5
-  magic_staff: { id: 'magic_staff', name: '魔杖', icon: 'assets/items/eq_magic_staff.png', slot: 'weapon', equip: { mag: 16, atk: 3 }, req: 26, price: 45 },
-  tao_sword: { id: 'tao_sword', name: '银蛇', icon: 'assets/items/eq_tao_sword.png', slot: 'weapon', equip: { tao: 14, atk: 6 }, req: 26, price: 45 },
+  iron_sword: { id: 'iron_sword', name: '铁剑', icon: 'assets/items/eq_iron_sword.png', slot: 'weapon', equip: { atk: 14 }, req: 11, price: 30 }, // starter-cloth(gear-tiers) 需求→11（适配 官方10）
+  magic_staff: { id: 'magic_staff', name: '魔杖', icon: 'assets/items/eq_magic_staff.png', slot: 'weapon', equip: { mag: 16, atk: 3 }, req: 25, price: 45 }, // starter-cloth(gear-tiers) 需求→25（适配 官方26）
+  tao_sword: { id: 'tao_sword', name: '银蛇', icon: 'assets/items/eq_tao_sword.png', slot: 'weapon', equip: { tao: 14, atk: 6 }, req: 25, price: 45 }, // starter-cloth(gear-tiers) 需求→25（适配 官方26）
   dragon_sword: { id: 'dragon_sword', name: '屠龙', icon: 'assets/items/eq_dragon_sword.png', slot: 'weapon', equip: { atk: 45, mag: 20, tao: 20 }, req: 34, price: 300 },
   // 防具
   helmet: { id: 'helmet', name: '青铜头盔', icon: 'assets/items/eq_helmet.png', slot: 'helmet', equip: { def: 4, hp: 20 }, req: 4, price: 20 }, // early-gear-3-5 [适配] 需求 官方10→4
@@ -77,8 +77,8 @@ export const ITEMS: Record<string, ItemDef> = {
   ebony_sword: { id: 'ebony_sword', name: '乌木剑', icon: 'assets/items/eq_ebony_sword.png', slot: 'weapon', equip: { atk: 12, mag: 3 }, req: 1, price: 40 }, // id=82
   bronze_axe: { id: 'bronze_axe', name: '青铜斧', icon: 'assets/items/eq_bronze_axe.png', slot: 'weapon', equip: { atk: 22 }, req: 13, price: 15 }, // id=87
   bahuang: { id: 'bahuang', name: '八荒', icon: 'assets/items/eq_bahuang.png', slot: 'weapon', equip: { atk: 18 }, req: 15, price: 50 }, // id=89
-  banyue: { id: 'banyue', name: '半月', icon: 'assets/items/eq_banyue.png', slot: 'weapon', equip: { atk: 15, mag: 3, tao: 3 }, req: 15, price: 40 }, // id=91
-  haihun: { id: 'haihun', name: '海魂', icon: 'assets/items/eq_haihun.png', slot: 'weapon', equip: { atk: 15, mag: 6 }, req: 15, price: 30 }, // id=90
+  banyue: { id: 'banyue', name: '半月', icon: 'assets/items/eq_banyue.png', slot: 'weapon', equip: { atk: 15, mag: 3, tao: 3 }, req: 11, price: 40 }, // id=91 // starter-cloth(gear-tiers) 需求→11（适配 官方15）
+  haihun: { id: 'haihun', name: '海魂', icon: 'assets/items/eq_haihun.png', slot: 'weapon', equip: { atk: 15, mag: 6 }, req: 11, price: 30 }, // id=90 // starter-cloth(gear-tiers) 需求→11（适配 官方15）
   lingfeng: { id: 'lingfeng', name: '凌风', icon: 'assets/items/eq_lingfeng.png', slot: 'weapon', equip: { atk: 18 }, req: 19, price: 50 }, // id=92
   xiangmo: { id: 'xiangmo', name: '降魔', icon: 'assets/items/eq_xiangmo.png', slot: 'weapon', equip: { atk: 16, tao: 6 }, req: 20, price: 100 }, // id=96
   yanyue: { id: 'yanyue', name: '偃月', icon: 'assets/items/eq_yanyue.png', slot: 'weapon', equip: { atk: 15, mag: 9 }, req: 20, price: 100 }, // id=95
@@ -91,15 +91,15 @@ export const ITEMS: Record<string, ItemDef> = {
   wujigun: { id: 'wujigun', name: '无极棍', icon: 'assets/items/eq_wujigun.png', slot: 'weapon', equip: { atk: 24, tao: 15 }, req: 30, price: 300 }, // id=104
   longwen: { id: 'longwen', name: '龙纹剑', icon: 'assets/items/eq_longwen.png', slot: 'weapon', equip: { atk: 30, tao: 18 }, req: 35, price: 350 }, // id=107
   caijue: { id: 'caijue', name: '裁决之杖', icon: 'assets/items/eq_caijue.png', slot: 'weapon', equip: { atk: 45 }, req: 30, price: 350 }, // id=105
-  guyu: { id: 'guyu', name: '骨玉权杖', icon: 'assets/items/eq_guyu.png', slot: 'weapon', equip: { atk: 9, mag: 18 }, req: 35, price: 200 }, // id=106（v1：官方为魔法 2-6，原误写道术）
-  light_armor: { id: 'light_armor', name: '轻型盔甲', icon: 'assets/items/eq_light_armor.png', slot: 'armor', equip: { def: 7, hp: 56 }, req: 5, price: 30 }, // id=118 // early-gear-3-5 [适配] 需求 官方11→5
+  guyu: { id: 'guyu', name: '骨玉权杖', icon: 'assets/items/eq_guyu.png', slot: 'weapon', equip: { atk: 9, mag: 18 }, req: 30, price: 200 }, // id=106（v1：官方为魔法 2-6，原误写道术） // starter-cloth(gear-tiers) 需求→30（适配 官方35）
+  light_armor: { id: 'light_armor', name: '轻型盔甲', icon: 'assets/items/eq_light_armor.png', slot: 'armor', equip: { def: 7, hp: 56 }, req: 11, price: 30 }, // id=118 // starter-cloth(gear-tiers) 需求→11（官方11）
   soul_robe: { id: 'soul_robe', name: '灵魂战衣', icon: 'assets/items/eq_soul_robe.png', slot: 'armor', equip: { def: 14, hp: 112, tao: 6 }, req: 22, price: 100 }, // id=126
   magic_robe: { id: 'magic_robe', name: '魔法长袍', icon: 'assets/items/eq_magic_robe.png', slot: 'armor', equip: { def: 12, hp: 96, mag: 6 }, req: 22, price: 100 }, // id=124
   war_armor: { id: 'war_armor', name: '战神盔甲', icon: 'assets/items/eq_war_armor.png', slot: 'armor', equip: { def: 21, hp: 168 }, req: 30, price: 250 }, // id=128
   ghost_robe: { id: 'ghost_robe', name: '幽灵战衣', icon: 'assets/items/eq_ghost_robe.png', slot: 'armor', equip: { def: 16, hp: 128, tao: 12 }, req: 30, price: 220 }, // id=132
   demon_robe: { id: 'demon_robe', name: '恶魔长袍', icon: 'assets/items/eq_demon_robe.png', slot: 'armor', equip: { def: 16, hp: 128, mag: 12 }, req: 30, price: 220 }, // id=130
-  tao_helm: { id: 'tao_helm', name: '道士头盔', icon: 'assets/items/eq_tao_helm.png', slot: 'helmet', equip: { def: 5, hp: 40 }, req: 24, price: 50 }, // id=149
-  magic_helm: { id: 'magic_helm', name: '魔法头盔', icon: 'assets/items/eq_magic_helm.png', slot: 'helmet', equip: { def: 2, hp: 16 }, req: 14, price: 20 }, // id=148
+  tao_helm: { id: 'tao_helm', name: '道士头盔', icon: 'assets/items/eq_tao_helm.png', slot: 'helmet', equip: { def: 5, hp: 40 }, req: 20, price: 50 }, // id=149 // starter-cloth(gear-tiers) 需求→20（适配 官方24）
+  magic_helm: { id: 'magic_helm', name: '魔法头盔', icon: 'assets/items/eq_magic_helm.png', slot: 'helmet', equip: { def: 2, hp: 16 }, req: 11, price: 20 }, // id=148 // starter-cloth(gear-tiers) 需求→11（适配 官方14）
   // 官方装备表 v1 新增（数据与来源见 equip-official.ts / docs/equip-table.md）
   ...NEW_EQUIP,
   // P2 eg-sets：40–50 级 40 件（src/data/eg-equip.ts）
