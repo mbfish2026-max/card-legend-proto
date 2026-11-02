@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 自动挂机 P1/MVP 实现（feat/auto-hang，未合 main）
+- 新增 src/combat/autoHang.ts：在锚点之间巡逻；在拴绳范围内追怪；8 秒无伤害放弃目标；绕路 400px 拾取；卡住时掉头，累计 3 次停止。自动用药 3 格，阈值可在设置调整（红 40% / 太阳水 30% / 蓝 30%）。
+- 停止条件：低血无药、死亡（不恢复）、本层清空、遇首领、背包满。入口：桌面按钮 1226,546 88×44 + J 键；手机 #mh-hang 52×44，在灵符商城左侧。不存档。
+- 测试：tests/auto-hang.test.ts（已接入 npm test）、tests/e2e/auto-hang-verify.mjs、tests/e2e/auto-hang-layout10.mjs。未改战斗数值和游戏数据，未跑 sim。
+
 ## 自动挂机方案文档（feat/auto-hang，未合 main）
 - 新增 docs/auto-hang.md：巡逻/追击/技能/用药/低血与死亡/拾取背包/BOSS/换层行为设计，电脑与手机开关入口及接管规则，存档与离线，复用点与改动估算，风险、待拍板清单、MVP 分阶段。仅文档，未改 src、未跑 sim。
 

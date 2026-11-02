@@ -1,4 +1,4 @@
-# 自动挂机方案（feat/auto-hang，仅方案，未实现）
+# 自动挂机方案（feat/auto-hang，P1/MVP 已实现，未合 main）
 
 > 基线：origin/main 665b01d。本文只写设计，**未改任何 src 代码，未跑任何 sim**。标「适配」的是本作自定规则，非官方；查不到的写「未查到」。
 > 只读了：src/combat/World.ts（step/moveHero/自动普攻/autoCast/usePotionSlot/tickStone/pickup/respawn/useRecallScroll/出口逻辑）、src/scenes/BattleScene.ts（update/tryAutoSkills/onKey/walkTo/heroDied/onRespawn/saveGame）、src/settings.ts、src/ui/Hud.ts、src/ui/MobileHud.ts、src/ui/SettingsView.ts、tests/sim-lib.ts、src/data/world.ts 相关常量、CHANGELOG.md、docs/CHANGELOG.md。
@@ -172,3 +172,20 @@
 - Phaser 后台标签页暂停行为未在本项目验证。
 - 支线层在 requireUse 下的出口分支按代码阅读推断，未在游戏内验证。
 - 未跑 tsc/test/sim（本分支只加文档）。
+
+## 10. 实现状态（P1/MVP，按 15 项推荐值）
+
+已实现：src/combat/autoHang.ts（状态机），BattleScene 接入，Hud 桌面按钮 1226,546 88×44 + J 键，MobileHud #mh-hang 52×44，设置页红药/太阳水/蓝药阈值（默认 40%/30%/30%，20–60% 循环），tests/auto-hang.test.ts（22 项），tests/e2e/auto-hang-verify.mjs、tests/e2e/auto-hang-layout10.mjs。
+停止条件：低血且无药（停+提示）、死亡（复活后不恢复）、本层清空、遇首领/被首领追、背包满、卡住 3 次。连招、召唤物不自动；不存档，读档后为关；开面板暂停；方向键/A/D/摇杆接管，手动技能/药不关闭。
+
+### 与方案的偏差（均为「适配」）
+- **手机入口位置**：方案写「#mh-shop 正上方」。实测法师学满 10 技能（outerR=152）时，844×390 / 874×402 宽下按钮与顶栏按钮重叠，所以改到 #mh-shop **同一行左侧，留 8px**（right = 8+52+8）。
+- 远程站桩只是近似：非战士、MP≥10、距离≤300px 时原地输出。
+- 低血停止阈值固定为 20%，只在红药格（0）和太阳水格（2）都没药时触发。
+- 「本层清空」= 没有非首领怪、farmQueue 为空、地上没有物品。
+- 横幅放在 UI 场景，位于屏幕宽度中线、高度 18% 处，5 秒后消失。
+- 放弃目标：连续 8 秒打不出伤害就放弃，此后 10 秒内忽略该目标。
+- 卡住：2 秒内移动不到 8px 算一次，掉头；累计 3 次停止。只有单测验证，游戏内未复现。
+
+### 未验证
+- 卡住后掉头和停止只在单测里验证过。真机触屏、iOS 安全区、长时间挂机的性能都未查到。
