@@ -12,7 +12,7 @@ const instr = page => page.evaluate(() => { const p = window.__game.scene.getSce
   const r = p.refreshIfStale.bind(p); p.refreshIfStale = () => { const v = r(); if (v) L.push(`${T()} refreshIfStale→render snap=${p.statSnap()}`); return v; }; });
 // 装备格屏幕坐标：which = bag | eq | any（全部 slot）
 const slots = (page, which) => page.evaluate(w => { const s = window.__game.scene.getScene('UI'), cv = window.__game.canvas.getBoundingClientRect(), wv = s.cameras.main.worldView, r = [];
-  const walk = l => l.forEach(o => { if (o.getData?.('slot') && o.input?.enabled) { const eq = /^eq_/.test(o.name ?? ''); if (w === 'any' || (w === 'eq') === eq) { const bb = o.getBounds(); r.push({ n: o.name, x: cv.left + (bb.centerX - wv.x) * cv.width / wv.width, y: cv.top + (bb.centerY - wv.y) * cv.height / wv.height }); } } if (o.list) walk(o.list); }); walk(s.children.list); return r; }, which);
+  const walk = l => l.forEach(o => { if (o.getData?.('slot') && o.input?.enabled && (w !== 'any' || o.getData('hasItem'))) { const eq = /^eq_/.test(o.name ?? ''); if (w === 'any' || (w === 'eq') === eq) { const bb = o.getBounds(); r.push({ n: o.name, x: cv.left + (bb.centerX - wv.x) * cv.width / wv.width, y: cv.top + (bb.centerY - wv.y) * cv.height / wv.height }); } } if (o.list) walk(o.list); }); walk(s.children.list); return r; }, which);
 const tip = page => page.evaluate(() => !!window.__game.scene.getScene('UI').panel.tip?.active);
 // 一轮悬停：移到空处 → 移入格子（分 3 步，像真实鼠标）→ 每 100ms 采样 1.2s
 async function hover(page, q, tag) {

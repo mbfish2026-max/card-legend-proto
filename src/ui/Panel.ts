@@ -101,6 +101,9 @@ export class Panel {
     // feat/potion-expand：触屏「点一下选中、再点执行」进行中（sel 已选）或刚有按下（<AUTO_REFRESH_MS）时不自动重绘：
     // 重绘会销毁格子/提示，新格子要等下一帧才进 Phaser 命中表，第二下点击会被吞（手机双击解包偶发失败的根因）
     if (this.sel || this.s.time.now - this.lastDown < Panel.AUTO_REFRESH_MS) return false;
+    // fix/tooltip-flash：电脑鼠标悬停提示显示中不重绘。战斗中熟练度（skillTrain）约每秒变一次 → 每 ~800ms 重绘一次，
+    // 重绘先 hideTip 销毁提示，新建的格子在静止鼠标下收不到 pointerover → 提示闪一下就没了，要移出再移入才再出现。移出（hideTip）后下一帧补刷。
+    if (this.tip) return false;
     // 战斗中经验/熟练度几乎每帧变：限频重绘，否则每帧重建的点击对象还在 Phaser 待插入队列里，触屏点不中
     const now = this.s.time.now;
     if (now - this.lastAuto < Panel.AUTO_REFRESH_MS) return false;
@@ -172,7 +175,7 @@ export class Panel {
     if (hit > size) r.setInteractive({ hitArea: new Phaser.Geom.Rectangle((size - hit) / 2, (size - hit) / 2, hit, hit), hitAreaCallback: Phaser.Geom.Rectangle.Contains, useHandCursor: !!it });
     else r.setInteractive({ useHandCursor: !!it });
     if (key.startsWith('eq_')) r.setName(key);
-    r.setData('slot', true).setData('slotHit', hit).setData('slotPitch', pitch).setData('slotSize', size);
+    r.setData('slot', true).setData('hasItem', !!it).setData('slotHit', hit).setData('slotPitch', pitch).setData('slotSize', size);
     if (!IS_MOBILE) r.on('pointerover', () => { if (atl) r.setFillStyle(0xffe8a0, 0.12); else r.setFillStyle(0x2a2016); if (it) this.showTip(it, x + size / 2 + 6, y - size / 2); });
     if (!IS_MOBILE) r.on('pointerout', () => { r.setFillStyle(0x0a0806, atl ? 0.001 : 1); this.hideTip(); });
     // 触屏：点一次选中并显示属性，再点一次执行（装备/卸下/出售）
