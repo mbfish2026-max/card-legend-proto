@@ -27,6 +27,12 @@
 - 挂机：沿用现有逻辑，方向输入（出死区）= 手动接管，挂机关闭，提示「手动操作，挂机已关闭」；死区内按住不关。桌面版不变。
 - 测试：tests/float-joystick.test.ts（9 项，已接入 npm test）、tests/e2e/float-joystick-verify.mjs；portal-same 单测/e2e 的摇杆断言改为「门本体放行」。截图 docs/shots/float-joystick/。
 
+## feat/exp-scroll：5倍经验卷轴（未合并/未发布）
+- 灵符商城「成长」页新增 5倍经验卷轴，建议价 300 灵符（常量 EXP_SCROLL_PRICE，待定）。使用后 2 小时（在线游戏时间）内击杀经验 ×5。再次使用续时 2 小时，上限 8 小时，倍率不叠乘。计时随存档保存；旧存档没有此字段，视为无效果。
+- 战斗只加了最小钩子 World.getExpMultiplier()（World.ts:836/842）。新增倒计时图标（电脑/手机）、提示、到期提醒。
+- 图标：占位图，待 AI 生成（已登记 docs/art-requests.md）。
+- 测试：tests/exp-scroll.test.ts、tests/e2e/exp-scroll-verify.mjs；截图 docs/shots/exp-scroll/；说明 docs/exp-scroll.md。
+
 
 ## R81
 - R81：修复电脑版装备悬停提示闪两下后不再出现（合并 fix/tooltip-flash）。

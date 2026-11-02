@@ -1,3 +1,4 @@
+import { ExpScrollBadge } from '../ui/ExpScrollBadge';
 import { areaOf } from '../data/worldmap';
 import { overview, posBar } from '../data/mapOverview';
 import { foesWithoutView } from '../ui/foeViews';
@@ -57,6 +58,7 @@ export class BattleScene extends Phaser.Scene {
   get ui() { return this.scene.get('UI') as UIScene; }
   /** R11 学会新技能：面板关闭后重建快捷栏/手机技能键 */
   skillsDirty = false;
+  expBadge?: ExpScrollBadge;
   get paused() { return !!this.ui?.panel?.open; }
   /** feat/auto-hang：挂机状态（不存档；create 时重建 = 读档后一律关闭） */
   hang = new AutoHang(); hangStopMsg = ''; private hangToggleAt = -1e9; private hangInfoLogged = -1e9;
@@ -120,6 +122,7 @@ export class BattleScene extends Phaser.Scene {
     // 合击版 A1：点怪物卡指定英雄目标（无英雄/未召唤时静默忽略，不影响原操作）
     this.events.on('cardTap', (uid: number) => { const w = this.world; if (!w.companion?.out || this.paused) return; const e = w.setCompanionTarget(uid); if (e) this.log(e); else { const v = this.views.get(uid); if (v) fx.floatNumber(this, v.cx, v.cy - v.h * 0.45, v.h, '英雄目标', '#7fd7ff', 0.6); } this.handle(w.drainEvents()); });
     this.events.once('shutdown', () => this.events.off('cardTap'));
+    this.expBadge = new ExpScrollBadge(() => this.game.canvas); this.events.once('shutdown', () => { this.expBadge?.destroy(); this.expBadge = undefined; }); // feat/exp-scroll
     this.events.once('shutdown', () => this.groundAuras.clear());
     this.events.once('shutdown', () => { this.comboStatusClosing = true; this.comboStatus.clear(); this.comboStatusClosing = false; });
     // 其它键（F1~F4 技能等）：阻止 F1 帮助等默认行为；不占用 F5 等其它功能键
@@ -886,6 +889,7 @@ export class BattleScene extends Phaser.Scene {
     this.hud?.setExp(this.world.level, this.world.exp, this.world.expNext);
     if (this.hang.on && this.hang.infoAt !== this.hangInfoLogged) { this.hangInfoLogged = this.hang.infoAt; if (this.hang.info) this.log('[挂机] ' + this.hang.info, true); }
     this.hud?.setHang(this.hang.on, undefined, this.hang.on && this.world.time - this.hang.infoAt < 3.5 ? this.hang.info : this.hang.on && this.hang.boss !== null ? '首领战中（自动接战）' : '');
+    this.expBadge?.update(this.world.expScrollLeft, this.paused || this.state !== 'play'); // feat/exp-scroll：倒计时图标
     // 接近首领时切换首领战音乐，击败后回到本层音乐
     const boss = this.world.alive('enemy').find(e => e.tier === 'boss'), hh = this.world.hero;
     const nearBoss = !!boss && !!hh && Math.abs(boss.x - hh.x) < 900;

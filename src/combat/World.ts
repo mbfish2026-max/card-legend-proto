@@ -31,6 +31,7 @@ import { QUESTS, ACHIEVES, QuestDef, AchieveDef } from '../data/quests';
 import { gateGap, BOSS_GEAR_GATE, GATE_K_TAKEN, GATE_K_DEALT } from '../data/bossGearGate';
 import { summonDisplayName, summonNameColor, summonOwnerLabel } from './summonLabel';
 import { SKILL_NECKLACE_MUL } from '../shop/catalog';
+import { expScrollMult, tickExpScroll, loadExpScroll } from '../shop/expScroll';
 
 export const CRIT_CHANCE = 0.15, CRIT_MULT = 1.8;
 /** 三圣 4 件特效数值（用户指定，官方未查到 → [适配]），见 docs/set-fx.md */
@@ -45,6 +46,8 @@ export interface SaveData {
   starterGiven?: 1;
   /** feat/starter-cloth：出生布衣已发放（独立于 starterGiven） */
   starterClothGiven?: 1;
+  /** feat/exp-scroll：5 倍经验卷轴剩余秒数（在线游戏时间；可选字段，缺省/非法 = 0 无增益） */
+  expScrollSec?: number;
   v: 1; cls: ClassId; level: number; exp: number; gold: number; pots: number[]; /** feat/potion-expand：3 格药水栏各格当前选中药 key（缺省 = 旧档，按 defaultSel） */ potSel?: string[];
   equip: Partial<Record<EquipSlot, InvItem>>; bag: InvItem[]; floorIndex: number; kills: number; nextUid: number;
   /** 技能修炼点（熟练度），按技能 id */
@@ -242,6 +245,7 @@ export class World {
       this.cls = save.cls; this.level = save.level; this.exp = migrateExp(save.level, save.exp, save.expV); this.gold = save.gold; this.pots = [...save.pots]; this.potSel = normSel(save.potSel, this.pots);
       this.equip = migrateEquip(save); this.bag = [...save.bag]; this.kills = save.kills; this.nextItem = save.nextUid;
       this.summonBoostLv = Math.max(0, Math.min(SUMMON_MAX_LV, (save.summonBoostLv ?? 0) | 0));
+      this.expScrollLeft = loadExpScroll(save.expScrollSec);
       this.skillTrain = { ...(save.skillTrain ?? {}) }; this.reached = new Set(save.reached ?? []); this.bossKilled = new Set(save.bossKilled ?? []); this.townsSeen = new Set(Array.isArray(save.townsSeen) ? save.townsSeen.filter(x => typeof x === 'string') : []); this.lastTownId = typeof save.lastTownId === 'string' && TOWNS[save.lastTownId] ? save.lastTownId : save.town && TOWNS[save.town] ? save.town : null;
       for (const [k, v] of Object.entries(save.bossCd ?? {})) if (v > 0) this.bossCdUntil[+k] = Math.min(BOSS_RESPAWN, v);
       for (const [k, v] of Object.entries(save.bossCdId ?? {})) if (v > 0) this.bossCdId[k] = Math.min(BOSS_RESPAWN, v);
@@ -840,9 +844,13 @@ export class World {
       });
       this.ground.push(...items); this.events.push({ type: 'drop', uid: u.uid, x: u.x, y: u.y, items });
     }
-    this.gainExp(killExp(u.id, this.floorIndex, this.level, u.level ?? 1) * this.clearMindMult()); // balance-sys：官方经验 × 层倍率 × 等级差衰减；main：道心清明双倍经验
+    this.gainExp(killExp(u.id, this.floorIndex, this.level, u.level ?? 1) * this.clearMindMult() * this.getExpMultiplier()); // feat/exp-scroll：× 经验卷轴倍率（1 或 5）；balance-sys：官方经验 × 层倍率 × 等级差衰减；main：道心清明双倍经验
     if (!this.alive('enemy').length && !this.cleared && !this.womaPending) { this.cleared = true; this.events.push({ type: 'cleared' }); }
   }
+  /** feat/exp-scroll：5 倍经验卷轴剩余秒数（在线游戏时间，step 中扣） */
+  expScrollLeft = 0;
+  /** 击杀经验倍率（灵符商城 5 倍经验卷轴；只乘击杀经验） */
+  getExpMultiplier() { return expScrollMult(this.expScrollLeft); }
   /** 道心清明（被动）：击杀几率双倍经验；未学 = 1（不消耗随机数） */
   clearMindMult() {
     const sl = this.skillPool.find(x => x.doubleExp); if (!sl) return 1;
@@ -1594,7 +1602,7 @@ export class World {
     this.ground.push(it); this.events.push({ type: 'drop', uid: 0, x, y: it.y, items: [it] }, { type: 'log', text: `${d.name} 奖励：${ITEMS[id].name}`, color: 'green' });
   }
   toSave(): SaveData {
-    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], potSel: [...this.potSel], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, town: this.town, ...(this.summonBoostLv ? { summonBoostLv: this.summonBoostLv } : {}), kills: this.kills, nextUid: this.nextItem, ...(this.starterGiven ? { starterGiven: 1 as const } : {}), ...(this.starterClothGiven ? { starterClothGiven: 1 as const } : {}), skillTrain: { ...this.skillTrain }, townsSeen: [...this.townsSeen], ...(this.lastTownId ? { lastTownId: this.lastTownId } : {}), reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], ringQ: this.ringQ, ringDone: this.ringDone, eqV: EQUIP_VERSION, expV: EXP_VERSION, bossCd: Object.fromEntries(Object.keys(this.bossCdUntil).map(k => [k, this.bossCdLeft(+k)]).filter(e => (e[1] as number) > 0)), bossCdId: Object.fromEntries(Object.entries(this.bossCdId).map(([k, v]) => [k, Math.ceil(v - this.time)]).filter(e => (e[1] as number) > 0)), mineCd: Object.fromEntries(Object.keys(this.mineCdUntil).map(k => [k, this.mineCdLeft(+k)]).filter(e => (e[1] as number) > 0)), companion: this.companion ? JSON.parse(JSON.stringify(this.companion)) : null, summons: this.units.filter(u => u.summon && u.alive && !u.decoy && u.sBase).map(u => ({ id: u.id, ...(u.pet ? { pet: true } : {}), sLv: u.sLv ?? 0, sKills: u.sKills ?? 0, base: { ...u.sBase! }, hpR: u.maxHp > 0 ? u.hp / u.maxHp : 1, level: u.level, ...(u.pet ? { def: u.def, mdef: u.mdef } : {}) })), dungeonRuns: JSON.parse(JSON.stringify(this.dungeonRuns)), dungeonFirst: [...this.dungeonFirst]  };
+    return { v: 1, cls: this.cls, level: this.level, exp: this.exp, gold: this.gold, pots: [...this.pots], potSel: [...this.potSel], equip: { ...this.equip }, bag: [...this.bag], floorIndex: this.floorIndex, town: this.town, ...(this.summonBoostLv ? { summonBoostLv: this.summonBoostLv } : {}), ...(this.expScrollLeft > 0 ? { expScrollSec: Math.ceil(this.expScrollLeft) } : {}), kills: this.kills, nextUid: this.nextItem, ...(this.starterGiven ? { starterGiven: 1 as const } : {}), ...(this.starterClothGiven ? { starterClothGiven: 1 as const } : {}), skillTrain: { ...this.skillTrain }, townsSeen: [...this.townsSeen], ...(this.lastTownId ? { lastTownId: this.lastTownId } : {}), reached: [...this.reached], bossKilled: [...this.bossKilled], questProg: { ...this.questProg }, questDone: [...this.questDone], achieves: [...this.achieves], learned: [...this.learned], mapV: 3, storage: [...this.storage], skillOrder: [...this.skillOrder], ringQ: this.ringQ, ringDone: this.ringDone, eqV: EQUIP_VERSION, expV: EXP_VERSION, bossCd: Object.fromEntries(Object.keys(this.bossCdUntil).map(k => [k, this.bossCdLeft(+k)]).filter(e => (e[1] as number) > 0)), bossCdId: Object.fromEntries(Object.entries(this.bossCdId).map(([k, v]) => [k, Math.ceil(v - this.time)]).filter(e => (e[1] as number) > 0)), mineCd: Object.fromEntries(Object.keys(this.mineCdUntil).map(k => [k, this.mineCdLeft(+k)]).filter(e => (e[1] as number) > 0)), companion: this.companion ? JSON.parse(JSON.stringify(this.companion)) : null, summons: this.units.filter(u => u.summon && u.alive && !u.decoy && u.sBase).map(u => ({ id: u.id, ...(u.pet ? { pet: true } : {}), sLv: u.sLv ?? 0, sKills: u.sKills ?? 0, base: { ...u.sBase! }, hpR: u.maxHp > 0 ? u.hp / u.maxHp : 1, level: u.level, ...(u.pet ? { def: u.def, mdef: u.mdef } : {}) })), dungeonRuns: JSON.parse(JSON.stringify(this.dungeonRuns)), dungeonFirst: [...this.dungeonFirst]  };
   }
 
   /** 点按一格：滑行中的按键全部排队（同向最多 10 格，反向则替换队列），每次按键都会走一格 */
@@ -1695,6 +1703,7 @@ export class World {
     this.womaTick();
     if (this.done) return;
     this.time += dt;
+    if (this.expScrollLeft > 0) { const [l, end] = tickExpScroll(this.expScrollLeft, dt); this.expScrollLeft = l; if (end) this.events.push({ type: 'log', text: '5倍经验卷轴效果已结束，击杀经验恢复 ×1', color: 'gold' } as any); } // feat/exp-scroll
     if (this.town) { // R14 安全区：城内只左右走，不结算战斗
       const h = this.hero; if (!h) return; const dx = Math.sign(inp.dx), dy = Math.sign(inp.dy); h.moving = !!(dx || dy);
       if (dx) { h.facing = dx as 1 | -1; h.x = Math.max(24, Math.min(townWidth(this.town) - h.width / 2, h.x + dx * WORLD.heroSpeed * dt)); }
