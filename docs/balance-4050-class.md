@@ -17,7 +17,7 @@
 ---
 ## 历史：eedfa27（旧默认 sim，r6）
 
-#### eedfa27 时的参数（已被上文取代）
+### eedfa27 时的参数（已被上文取代）
 - `src/data/balance.ts` `FOE_CLS_4050`：战/法/道 atk 1.0、hp 1.0（L≥41 即 band4，从牛魔寺庙 L42 起生效；祖玛阁 L40 属 band3 不受影响）。机制保留，当前值不改怪物。
 - `src/data/expCurve.ts` `EXP_LATE_CLS`：战 1.25 / 法 1.25 / 道 1.3，乘在 `EXP_LATE_MUL` 上，作用于 Lv40–49 及 50+ 外推；不传职业（伙伴/合击英雄、怪物经验缩放）时不变。
 - `World.ts`：expNext 与 spawnFoe/boss 平均把 `this.cls` 传进去。
@@ -52,6 +52,6 @@
 - src/combat/World.ts +4/−4，src/data/balance.ts +9/−3，src/data/expCurve.ts +6/−4，package.json +1/−1（npm test 加单测）
 - tests/balance-4050-class.test.ts +42（新），tests/fixtures/foe-94f4a01.json（新），tests/sim-tune.ts +34（含 SIM_B4050_* 覆盖与移植的 sim 工具）
 
-### 已知偏差
+## 已知偏差
 - 真人反复刷 BOSS 时 40+ 装备获得更快，实际难度会比 sim 低。
 - 40+ 掉率没改：本任务只调怪物与经验，掉率归 drop-realign 线，免得两条线互相干扰。
