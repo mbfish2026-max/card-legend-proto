@@ -31,8 +31,8 @@ const foe = (uid: number, x: number, extra: any = {}) => ({ uid, x, y: 0, hp: 50
 { const w = mk({ units: [foe(9, 900)], hero: { hp: 10 } }); w.pots = [0, 5, 0, 5]; const a = new AutoHang(); a.start(w); ok(a.tick(w, 0.016).stop === 'lowhp', 'HP 10% 且红/太阳水为 0 → lowhp');
   w.pots = [1, 5, 0, 5]; ok(!a.tick(w, 0.016).stop, '有红药时不停'); }
 { const w = mk({ units: [foe(9, 900), foe(10, 3000, { tier: 'boss', homeX: 3000 })] }), a = new AutoHang(); a.start(w);
-  ok(a.anchors(w).R === 3000 - WORLD.aggroRange - 60, '首领层右锚停在首领仇恨圈外'); ok(!a.tick(w, 0.016).stop, '首领未追击不停');
-  w.units[1].ai = 'chase'; ok(a.tick(w, 0.016).stop === 'boss', '首领追击 → boss'); }
+  ok(!a.tick(w, 0.016).stop && a.target === 9 && a.boss === null, '首领未追击且远 → 先打普通怪');
+  w.units[1].ai = 'chase'; const r = a.tick(w, 0.016); ok(!r.stop && a.boss === 10 && a.target === 10 && /自动接战/.test(a.info), '用户新增/推翻：首领追击 → 自动接战（不再 boss 停）'); }
 { const w = mk({ units: [foe(9, 900)] }); w.bag = Array(WORLD.bagSize).fill({}); w.ground = [{ x: 700, landAt: -1, inv: {} }]; const a = new AutoHang(); a.start(w);
   ok(a.tick(w, 0.016).stop === 'bagfull', '背包满且附近有装备掉落 → bagfull'); w.ground = [{ x: 700, landAt: -1 }]; ok(!a.tick(w, 0.016).stop, '背包满但只有金币/药水 → 不停'); }
 { const w = mk({ units: [foe(9, 900)] }), a = new AutoHang(); a.start(w); ok(a.tick(w, 0.016).dx === 1 && a.target === 9, '1020px 内选最近怪并追击');

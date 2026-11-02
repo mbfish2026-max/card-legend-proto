@@ -877,7 +877,7 @@ export class BattleScene extends Phaser.Scene {
     this.portalHint?.setVisible(this.world.atExit && this.state === 'play' && !(this.world.floor.boss && this.world.alive('enemy').some(u => u.tier === 'boss')));
     this.hud?.setExp(this.world.level, this.world.exp, this.world.expNext);
     if (this.hang.on && this.hang.infoAt !== this.hangInfoLogged) { this.hangInfoLogged = this.hang.infoAt; if (this.hang.info) this.log('[挂机] ' + this.hang.info, true); }
-    this.hud?.setHang(this.hang.on, undefined, this.hang.on && this.world.time - this.hang.infoAt < 3.5 ? this.hang.info : '');
+    this.hud?.setHang(this.hang.on, undefined, this.hang.on && this.world.time - this.hang.infoAt < 3.5 ? this.hang.info : this.hang.on && this.hang.boss !== null ? '首领战中（自动接战）' : '');
     // 接近首领时切换首领战音乐，击败后回到本层音乐
     const boss = this.world.alive('enemy').find(e => e.tier === 'boss'), hh = this.world.hero;
     const nearBoss = !!boss && !!hh && Math.abs(boss.x - hh.x) < 900;

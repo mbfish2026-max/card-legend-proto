@@ -75,8 +75,8 @@ for (const cls of ['taoist', 'mage', 'warrior'] as ClassId[]) {
     w.bag = Array.from({ length: WORLD.bagSize }, (_, i) => ({ uid: 9000 + i } as any)); w.ground.push({ uid: 1, x: w.hero.x - 60, y: 0, landAt: -1, inv: { uid: 2 } } as any); } });
   ok(inj && r.stop === 'bagfull', `循环中（第 ${a.cycles} 轮后）背包满 → ${r.stop}`);
 }
-{ // 首领无冷却（如副本次数内）→ 返回原层首领重刷 → 按既有规则 boss 停
-  const w = mkW('warrior', 30, fi); const a = new AutoHang(); a.start(w); for (const u of w.alive('enemy')) u.alive = false; w.units = w.units.filter(u => u.alive); w.farmQueue.length = 0;
-  const r = sim(w, a, 120); ok(r.stop === 'boss' && a.cycles === 1, `首领未进冷却 → 返回后首领重刷 → ${r.stop}（${a.cycles} 轮）`);
+{ // 用户新增/推翻：首领无冷却 → 返回原层首领重刷 → 自动接战（不再 boss 停），英雄等级 60 打得过 → 击杀后继续循环
+  const w = mkW('warrior', 60, fi); const a = new AutoHang(); a.start(w); for (const u of w.alive('enemy')) u.alive = false; w.units = w.units.filter(u => u.alive); w.farmQueue.length = 0;
+  const r = sim(w, a, 240, () => a.cycles >= 2); ok(!r.stop && a.bossKills >= 1 && a.cycles >= 2, `首领未进冷却 → 返回后首领重刷 → 接战击杀 ${a.bossKills} 只 → 继续循环 ${a.cycles} 轮（停止=${r.stop || '无'}）`);
 }
 console.log(`hang-cycle: ${pass} ok, ${fail} fail`); if (fail) process.exit(1);

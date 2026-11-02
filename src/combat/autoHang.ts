@@ -4,14 +4,15 @@ import type { World } from './World';
 import { WORLD, FLOORS, SIDE_FLOORS, nextFloorOf, prevFloorOf } from '../data/world';
 import { REGIONS } from '../data/map';
 
-export type HangStop = 'lowhp' | 'dead' | 'bagfull' | 'cleared' | 'boss' | 'stuck' | 'manual' | 'town' | 'toggle' | 'nocycle';
+export type HangStop = 'lowhp' | 'dead' | 'bagfull' | 'cleared' | 'bosslow' | 'bosstimeout' | 'stuck' | 'manual' | 'town' | 'toggle' | 'nocycle';
 /** 停止原因 → 中文提示（醒目横幅 + 日志） */
 export const HANG_STOP_TEXT: Record<HangStop, string> = {
   lowhp: '血量过低且没有药水，挂机已停止',
   dead: '角色阵亡，挂机已停止（复活后不会自动恢复）',
   bagfull: '背包已满，挂机已停止',
   cleared: '本层已清空，挂机已停止',
-  boss: '遭遇首领，挂机已停止（挂机不打首领）',
+  bosslow: '打首领中血量过低且没有药水，挂机已停止（首领太强）',
+  bosstimeout: '首领久攻不下，挂机已停止（首领太强）',
   stuck: '挂机卡住（连续 3 次无法前进），已停止',
   manual: '手动操作，挂机已关闭',
   town: '城内不能挂机',
@@ -25,10 +26,13 @@ export const HANG = {
   lowHpStop: 0.2,      // 无药时 HP < 20% → 停
   rangedStand: 300,    // 法师/道士：目标间距 ≤300px 且有蓝时站定放技能
   standSec: 1.5,       // fix/hang-stuck：站桩后 1.5 秒内英雄没有出手（普攻/耗蓝施法）→ 本目标改为贴脸普攻
+  bossLowHp: 0.3,     // 用户新增：打首领中无药且 HP < 30% → 停（比普通低血 20% 略高，首领单次伤害大）
+  bossMaxSec: 300,    // 用户新增：同一首领接战累计 5 分钟游戏时间仍未击杀 → 停
+  bossStallSec: 60,   // 用户新增：对首领连续 60 秒游戏时间没有造成任何新伤害（血量未创新低）→ 停
   idleSec: 4,          // fix/hang-stuck：有目标却原地不动且英雄不出手累计 4 秒 → 放弃目标并掉头（兜底，绝不原地空转）
 };
 /** 用户新增：清层后换层刷新循环的阶段提示（绿色横幅） */
-export const HANG_PHASE_TEXT = { toNext: '本层已清空，正在进入下一层…', back: '正在返回原层…（途中不战斗）', resumed: '已返回原层，怪物已刷新，继续挂机' } as const;
+export const HANG_PHASE_TEXT = { toNext: '本层已清空，正在进入下一层…', back: '正在返回原层…（途中不战斗）', resumed: '已返回原层，怪物已刷新，继续挂机', boss: '遇到首领，自动接战', bossDown: '首领已击败，继续挂机循环' } as const;
 export type HangPhase = 'farm' | 'toNext' | 'back';
 export interface HangThresholds { red: number; sun: number; blue: number }
 
@@ -38,13 +42,15 @@ export class AutoHang {
   on = false; dir: 1 | -1 = 1; target: number | null = null;
   private tgtT = 0; private tgtHp = 0; private stuckT = 0; private stuckX = 0; private stuckN = 0;
   private ignore = new Map<number, number>();
+  /** 用户新增：打首领。boss=当前首领 uid；bossT0=接战时刻；bossMin/bossMinT=首领最低血量及其时刻 */
+  boss: number | null = null; bossKills = 0; private bossT0 = 0; private bossMin = 0; private bossMinT = 0;
   /** fix/hang-stuck：英雄出手检测（h.cd 被重置 = 普攻；MP 下降 = 施法）与站桩空转计时 */
   private lastCd = 0; private lastMp = 0; private actT = 0; private standT = 0; private idleT = 0; private meleeOnly: number | null = null;
   private acted(w: World) { const h = w.hero!; const a = h.cd > this.lastCd + 1e-3 || (h.mp ?? 0) < this.lastMp - 1e-3; this.lastCd = h.cd; this.lastMp = h.mp ?? 0; if (a) this.actT = w.time; return a; }
   start(w: World): HangStop | null {
     if (w.town || !w.hero?.alive) return 'town';
     this.on = true; this.target = null; this.stuckN = 0; this.stuckT = 0; this.stuckX = w.hero.x; this.ignore.clear();
-    this.phase = 'farm'; this.origin = w.floorIndex; this.cycles = 0; this.info = ''; this.backT = 0;
+    this.phase = 'farm'; this.origin = w.floorIndex; this.cycles = 0; this.info = ''; this.backT = 0; this.boss = null; this.bossKills = 0;
     this.lastCd = w.hero.cd; this.lastMp = w.hero.mp ?? 0; this.actT = w.time; this.standT = 0; this.idleT = 0; this.meleeOnly = null;
     const { L, R } = this.anchors(w); this.dir = w.hero.x < (L + R) / 2 ? 1 : -1; return null;
   }
@@ -52,7 +58,6 @@ export class AutoHang {
   /** 巡逻锚点：左避开回城/入口，右避开出口圈；首领层右锚停在首领仇恨圈外 */
   anchors(w: World) {
     const L = WORLD.heroStartX + 150 + 40; let R = w.exitX - WORLD.exitRadius - 40;
-    for (const b of w.alive('enemy')) if (b.tier === 'boss') R = Math.min(R, b.homeX - WORLD.aggroRange - 60);
     return { L, R: Math.max(L + 40, R) };
   }
   /** 用户新增：能否「进下一层→走回→原层重刷」。不能时返回原因（停止并提示）。
@@ -72,7 +77,7 @@ export class AutoHang {
   private transit(w: World): { dx: number; stop?: HangStop; use?: boolean; back?: boolean; fight: boolean } | null {
     const h = w.hero!;
     if (this.phase === 'toNext') {
-      if (w.floorIndex === this.origin) return { dx: 1, use: true, fight: false };
+      if (w.floorIndex === this.origin) { if (w.floor.boss && w.alive('enemy').some(u => u.tier === 'boss')) { this.phase = 'farm'; return null; } return { dx: 1, use: true, fight: false }; } // 途中首领刷出封印出口 → 回到本层打首领
       if (w.town) return { dx: 0, stop: 'town', fight: false };
       this.phase = 'back'; this.target = null; this.say(w, HANG_PHASE_TEXT.back);
     }
@@ -103,15 +108,28 @@ export class AutoHang {
     if (h.hp / h.maxHp < HANG.lowHpStop && !this.hasHpPotion(w)) return { dx: 0, stop: 'lowhp' };
     const foes = w.alive('enemy'), now = w.time; const acted = this.acted(w);
     if (this.phase !== 'farm') { const r = this.transit(w); if (r) { this.stuckCheck(w, dt, r.dx, false); return this.stuckN >= HANG.stuckMax ? { dx: 0, stop: 'stuck' } : r; } }
-    if (foes.some(b => b.tier === 'boss' && (b.ai === 'chase' || b.ai === 'alert' || Math.abs(b.x - h.x) <= WORLD.aggroRange + 60))) return { dx: 0, stop: 'boss' };
+    // 用户新增（推翻「遇首领停止」）：本层（刷怪层）遇首领自动接战，复用现有追击/普攻/技能/召唤/喝药
+    let bossU = this.boss !== null ? foes.find(u => u.uid === this.boss) : undefined;
+    if (this.boss !== null && !bossU) { this.boss = null; this.bossKills++; this.target = null; this.say(w, HANG_PHASE_TEXT.bossDown); }
+    if (!bossU) {
+      const b = foes.filter(u => u.tier === 'boss' && !u.pet && (u.ai === 'chase' || u.ai === 'alert' || Math.abs(u.x - h.x) <= WORLD.aggroRange + 60 || !foes.some(o => o.tier !== 'boss' && !o.pet)))
+        .sort((a, c) => Math.abs(a.x - h.x) - Math.abs(c.x - h.x))[0];
+      if (b) { bossU = b; this.boss = b.uid; this.bossT0 = now; this.bossMin = b.hp; this.bossMinT = now; this.target = b.uid; this.tgtHp = b.hp; this.tgtT = now; this.standT = 0; this.idleT = 0; this.meleeOnly = null; this.say(w, HANG_PHASE_TEXT.boss); }
+    }
+    if (bossU) {
+      if (bossU.hp < this.bossMin) { this.bossMin = bossU.hp; this.bossMinT = now; }
+      if (h.hp / h.maxHp < HANG.bossLowHp && !this.hasHpPotion(w)) return { dx: 0, stop: 'bosslow' };
+      if (now - this.bossT0 > HANG.bossMaxSec || now - this.bossMinT > HANG.bossStallSec) return { dx: 0, stop: 'bosstimeout' };
+    }
     const { L, R } = this.anchors(w);
     const ground = w.ground.filter(g => g.landAt <= now && g.x >= L - 60 && g.x <= R + 60 && Math.abs(g.x - h.x) <= HANG.pickupDetour);
     if (w.bag.length >= WORLD.bagSize && ground.some(g => g.inv)) return { dx: 0, stop: 'bagfull' };
     const inRange = (x: number) => x >= L - WORLD.leashRange && x <= R + WORLD.leashRange;
     // 目标维护
     let t = this.target !== null ? foes.find(u => u.uid === this.target) : undefined;
-    if (t && (!inRange(t.x) || Math.abs(t.x - h.x) > WORLD.leashRange)) t = undefined;
-    if (t) { if (t.hp < this.tgtHp) { this.tgtHp = t.hp; this.tgtT = now; } else if (now - this.tgtT > HANG.giveUpSec) { this.ignore.set(t.uid, now + 10); t = undefined; } }
+    if (bossU) t = bossU; // 首领优先，不受区间/拴绳/8 秒放弃限制（打不过由 bossStall/bossMax/bosslow 兜底）
+    else if (t && (!inRange(t.x) || Math.abs(t.x - h.x) > WORLD.leashRange)) t = undefined;
+    if (t && !bossU) { if (t.hp < this.tgtHp) { this.tgtHp = t.hp; this.tgtT = now; } else if (now - this.tgtT > HANG.giveUpSec) { this.ignore.set(t.uid, now + 10); t = undefined; } }
     if (!t) {
       const c = foes.filter(u => u.tier !== 'boss' && !u.pet && inRange(u.x) && Math.abs(u.x - h.x) <= WORLD.leashRange && (this.ignore.get(u.uid) ?? -Infinity) <= now)
         .sort((a, b) => Math.abs(a.x - h.x) - Math.abs(b.x - h.x))[0];
@@ -137,7 +155,7 @@ export class AutoHang {
       if (dx) this.dir = dx as 1 | -1;
       // 兜底：有目标、不移动、英雄也不出手 → 累计 idleSec 放弃该目标并掉头巡逻
       if (!dx && !acted && now - this.actT > HANG.idleSec) { this.idleT += dt; } else this.idleT = 0;
-      if (!dx && now - this.actT > HANG.idleSec && this.idleT > 0) { this.ignore.set(t.uid, now + 10); this.target = null; this.meleeOnly = null; this.actT = now; this.dir = -this.dir as 1 | -1; return { dx: this.dir }; }
+      if (!dx && !bossU && now - this.actT > HANG.idleSec && this.idleT > 0) { this.ignore.set(t.uid, now + 10); this.target = null; this.meleeOnly = null; this.actT = now; this.dir = -this.dir as 1 | -1; return { dx: this.dir }; }
     } else if (ground.length && !(w.bag.length >= WORLD.bagSize)) {
       const g = ground.sort((a, b) => Math.abs(a.x - h.x) - Math.abs(b.x - h.x))[0];
       dx = Math.abs(g.x - h.x) < WORLD.pickupRadius * 0.5 ? 0 : Math.sign(g.x - h.x); fighting = !dx;
