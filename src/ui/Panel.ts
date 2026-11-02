@@ -182,7 +182,7 @@ export class Panel {
     });
   }
   private renderEquip(R: Phaser.GameObjects.Container, top: number) {
-    const s = this.s, w = this.world(), c = CLASSES[w.cls], cx = 330, size = 48;
+    const s = this.s, w = this.world(), c = CLASSES[w.cls], cx = IS_MOBILE ? 440 : 330, size0 = 48;
     // 中间立绘，左右两列装备栏
     R.add(s.add.rectangle(cx, top + 210, 170, 260, c.bg)); R.add(frameBg(s, 'inset_frame', cx, top + 210, 170, 260, { fill: 0, alpha: 0, stroke: 0xb8a070, sw: 2 })); // 职业底色保留，内框叠上
     // 装备上身预览：衣服/武器分层合成；缺素材回退原立绘，层图就绪后重绘面板
@@ -190,8 +190,12 @@ export class Panel {
     if (s.textures.exists(look.key)) { const im = s.add.image(cx, top + 330, look.key).setOrigin(0.5, 1).setName('equipPreview'); im.setScale(Math.min(250 / im.height, 200 / im.width)); R.add(im); }
     // R78（docs/stage2-lingfu-conflict.md 布局方案）：左列 头盔/项链/武器/左手镯/左戒指/腰带；右列 衣服/靴子/血石/右手镯/右戒指（各 6 行预留，间距 50、格 48，末行底边 top+354，属性文字下移到 top+357）
     const L = cx - 130, Rx = cx + 130, y0 = top + 80, dy = 50;
-    const pos: Record<EquipSlot, [number, number]> = { helmet: [L, y0], necklace: [L, y0 + dy], weapon: [L, y0 + dy * 2], bracelet1: [L, y0 + dy * 3], ring1: [L, y0 + dy * 4],
+    // fix/r78-equip-tap：手机改 3 列×4 行（列距/行距 70，点击区 ≥44 CSS px），立绘右移到 x=440；桌面保持两列×6 行不变
+    const MC = [180, 250, 320], MY = top + 95, MD = 70, mp = (c: number, r: number): [number, number] => [MC[c], MY + MD * r];
+    const pos: Record<EquipSlot, [number, number]> = IS_MOBILE ? { helmet: mp(0, 0), armor: mp(1, 0), necklace: mp(2, 0), weapon: mp(0, 1), boots: mp(1, 1), stone: mp(2, 1),
+      bracelet1: mp(0, 2), belt: mp(1, 2), bracelet2: mp(2, 2), ring1: mp(0, 3), ring2: mp(2, 3) } : { helmet: [L, y0], necklace: [L, y0 + dy], weapon: [L, y0 + dy * 2], bracelet1: [L, y0 + dy * 3], ring1: [L, y0 + dy * 4],
       armor: [Rx, y0], boots: [Rx, y0 + dy], stone: [Rx, y0 + dy * 2], bracelet2: [Rx, y0 + dy * 3], ring2: [Rx, y0 + dy * 4], belt: [L, y0 + dy * 5] };
+    const pitch = IS_MOBILE ? MD : dy, size = IS_MOBILE ? 56 : size0;
     for (const sl of EQUIP_SLOTS) {
       const [x, y] = pos[sl];
       if (sl === 'stone' && !w.equip.stone) { const bs = bloodstoneSlot(s, x, y, size); if (bs) R.add(bs); } // 灵符商城：血石栏空槽底图
@@ -202,7 +206,7 @@ export class Panel {
           sfx(s, 'loot', 0.5); this.onChange(m, m.includes('成功')); this.render(); return;
         }
         const e = w.unequip(sl); this.onChange(e ?? `卸下 ${EQUIP_SLOT_NAMES[sl]}`); sfx(s, 'loot', 0.4); this.render();
-      }, 'eq_' + sl, dy);
+      }, 'eq_' + sl, pitch);
       if (empty) R.add(s.add.image(x, y, 'ui_slot_empty_' + sl).setDisplaySize(size - 8, size - 8).setName('slotEmpty_' + sl));
     }
     const st = w.stats(), h = w.hero;
