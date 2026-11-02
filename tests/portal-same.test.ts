@@ -22,7 +22,8 @@ ok(150 * 390 / 720 >= 44 && 220 * 390 / 720 >= 44, '点击区在 390 高手机�
 // 追加：下一层色调加深（各通道 ≤0xd0 至少一项、与上一层不同），摇杆区缩小
 { const t = PORTAL_LOOK.next.tint, ch = [t >> 16 & 255, t >> 8 & 255, t & 255];
   ok(t !== PORTAL_LOOK.back.tint && Math.min(...ch) <= 0x80, `下一层色调加深 0x${t.toString(16)}`); }
-{ const hud = readFileSync('src/ui/MobileHud.ts', 'utf8'), m = /#mh-joy\{[^}]*width:calc\(var\(--sl\) \+ (\d+)px\);height:calc\(var\(--sb\) \+ (\d+)px\)/.exec(hud);
-  ok(m && +m[1] <= 100 && +m[2] <= 80 && !/#mh-joy\{[^}]*vh/.test(hud), '摇杆区只覆盖移动圆钮附近（≤100×80，不再按视口比例）');
-  ok(/setPointerCapture/.test(hud), '摇杆用 pointer capture，拖出区域仍可控'); }
+{ const hud = readFileSync('src/ui/MobileHud.ts', 'utf8'), bs = readFileSync('src/scenes/BattleScene.ts', 'utf8');
+  // feat/float-joystick：摇杆元素改为纯显示（pointer-events:none），按下画布才激活；画布可点物（含传送门）命中测试放行
+  ok(/#mh-joy\{[^}]*pointer-events:none/.test(hud) && /joyBlockedAt/.test(hud) && /joyBlockedAt\(cx/.test(bs), '摇杆不挡传送门：画布可点物命中即放行');
+  ok(/pointermove[^\n]*pointerId === pid/.test(hud), '摇杆按 pointerId 跟踪，拖出区域仍可控'); }
 console.log(`portal-same: ${pass} ok`);
