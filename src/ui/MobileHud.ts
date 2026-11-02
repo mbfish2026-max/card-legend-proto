@@ -33,7 +33,7 @@ const CSS = `
  background:radial-gradient(circle at 50% 35%,rgba(74,50,22,.9),rgba(30,20,10,.88));border:2px solid #b8893a;border-radius:10px;color:#ffe8a0;font-size:12px;line-height:1.1;
  text-shadow:0 1px 2px #000;touch-action:none}
 #mhud .b:active,#mhud .b.on{filter:brightness(1.35)}
-#mhud .b .ic{font-size:17px;line-height:1}
+#mhud .b .ic{font-size:17px;line-height:1}#mhud .b .ic .ici{width:17px;height:17px;display:block;object-fit:contain}
 #mh-bars{position:absolute;left:var(--sl);top:var(--st);width:min(30vw,250px);pointer-events:none}
 .mh-bar{position:relative;height:13px;margin-bottom:3px;background:rgba(0,0,0,.6);border:1px solid #6b5020;border-radius:3px;overflow:hidden}
 .mh-bar i{position:absolute;left:0;top:0;bottom:0;width:0}
@@ -106,7 +106,7 @@ export class MobileHud {
     // 右上：功能图标，每个功能只出现一次
     const top = this.el('div', r, 'ctl'); top.id = 'mh-top';
     const icon = (ic: string, label: string, k: string, id: string) => { const e = this.btn(top, `<span class="ic">${ic}</span>${label}`, () => b.onKey(k)); e.dataset.id = id; return e; };
-    icon('🎒', '角色', 'B', 'bag'); icon('📜', '技能', 'K', 'skills'); icon('🎯', '悬赏', 'Q', 'quests'); icon('🗺', '传送', 'M', 'map'); // 地图面板即传送界面（点已到达入口传送）
+    icon('🎒', '角色', 'B', 'bag'); icon('📜', '技能', 'K', 'skills'); icon('<img class="ici" src="assets/items/INV_Misc_Bag_08.png" alt="">', '悬赏', 'Q', 'quests'); // bounty-icon：🎯 改用 art/bounty-icon 通缉令图标 icon('🗺', '传送', 'M', 'map'); // 地图面板即传送界面（点已到达入口传送）
     // 商人/传送合并为右下「对话/进入」键（城里 T 与 W 同为 townUse；战斗地图没有商人），不再单列商店图标
     { const e = this.btn(top, '<span class="ic">🏯</span>回城', () => { const en = b.entranceHere(); if (en === 'town' || en === 'prev' || b.world.town) b.mobileAct(); else b.onKey('H'); }); e.dataset.id = 'town'; } // 任务C：在起点入口=回城/上一层，野外其余位置=用回城卷 icon('⚙', '设置', 'ESCAPE', 'settings');
     // 左下：摇杆（fix/portal-same：触发区只覆盖「移动」圆钮及周边约 20px，不再盖住左端「上一层」传送门；按下后 pointer capture，手指拖出区域仍能控制），多点触控按 pointerId 区分
