@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 40–50 按职业分倍率（feat/balance-4050-class，未合 main）
+- FOE_CLS_4050（L≥41 分职业 atk/hp 倍率，最终值全 1.0）与 EXP_LATE_CLS（战1.25/法1.25/道1.3）；1–39 与 94f4a01 逐项一致。详见 docs/balance-4050-class.md。
+- 已知偏差：真人反复刷 BOSS 时 40+ 装备获得更快，实际难度会比 sim 低；40+ 掉率不变。
+
 ## 阶段2 腰带图标与空栏底图（feat/drop-realign，未合 main）
 
 - 合入 art/belt-icons（d581c18）：7 条腰带正式图标（AI 生成，64px + @2x），替换手镯占位；@2x 登记到 item-icons-2x。
