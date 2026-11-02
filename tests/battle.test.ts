@@ -709,7 +709,7 @@ const free = (w: World) => w.skills.map(() => 0);
 
 
 { // R5 黑铁强化：成功率、属性、提纯、破碎、商店限购、Boss 掉落
-  const w = mk([], [], 'warrior', 20);
+  const w = mk([], [], 'warrior', 20); w.equip.weapon = undefined; /* early-gear：本段假设武器栏原为空 */
   w.bag.push(w.makeItem('iron_sword')); w.equipItem(0);
   const baseAtk = w.equip.weapon!.stats.atk!;
   w.bag.push(w.makeItem('black_iron', 'common', { purity: 5 }));
@@ -734,7 +734,7 @@ const free = (w: World) => w.skills.map(() => 0);
   const r = mk([]); r.bag.push(r.makeItem('black_iron', 'common', { purity: 2 }), r.makeItem('black_iron', 'common', { purity: 2 }));
   ok(r.refineIron(0, 1).includes('[+3]') && r.bag.length === 1 && r.bag[0].purity === 3, '两块+2 提纯 → +3');
   // 破碎（+5 失败）
-  const sh = mk([], [], 'warrior', 20); sh.bag.push(sh.makeItem('iron_sword')); sh.equipItem(0);
+  const sh = mk([], [], 'warrior', 20); sh.equip.weapon = undefined; /* early-gear */ sh.bag.push(sh.makeItem('iron_sword')); sh.equipItem(0);
   sh.equip.weapon!.enhance = 5; sh.applyEnhanceStats(sh.equip.weapon!);
   sh.bag.push(sh.makeItem('black_iron', 'common', { purity: 1 }));
   // rng: first call enhanceChance fail (0.99), second shatterChance trigger (0)
@@ -807,9 +807,9 @@ const free = (w: World) => w.skills.map(() => 0);
   ok(changedSlots(ls, ls2).join() === 'weapon', '换武器只影响武器层');
   ok(changedSlots(ls, resolveLayers('warrior', {})).join() === 'body,armor,weapon' && resolveLayers('warrior', {}).length === 0, '全脱 → 回原立绘');
   const w = mk([]); w.equipItem(0);
-  const old = new World(seeded(1), 1, [{ name: 't', spawns: [] }], 'warrior', (({ equip, ...r }) => r)(w.toSave()) as any);
+  const old = new World(seeded(1), 1, [{ name: 't', spawns: [] }], 'warrior', (({ equip, ...r }) => ({ ...r, starterGiven: 1 /* early-gear：已发过出生木剑的旧档，避免补发 */ }))(w.toSave()) as any);
   ok(resolveLayers(old.cls, old.equip).length === 0 && resolveLayers('warrior', undefined).length === 0, '旧存档/无装备照常（无层）');
-  const w2 = mk([]); w2.bag.push(it('dragon_sword', 'weapon', 1)); const wi = w2.bag.length - 1;
+  const w2 = mk([]); w2.equip.weapon = undefined; /* early-gear */ w2.bag.push(it('dragon_sword', 'weapon', 1)); const wi = w2.bag.length - 1;
   { const a = comboKey('warrior', resolveLayers('warrior', w2.equip)); w2.equipItem(wi); const b = comboKey('warrior', resolveLayers('warrior', w2.equip)); w2.unequip('weapon'); const c2 = comboKey('warrior', resolveLayers('warrior', w2.equip)); ok(a !== b && c2 === a, '穿/脱武器后组合签名刷新并可还原'); }
 }
 
