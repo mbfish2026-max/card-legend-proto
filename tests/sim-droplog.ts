@@ -5,7 +5,8 @@ declare const process: { env: Record<string, string | undefined> };
 import { World } from '../src/combat/World';
 import { ITEMS } from '../src/data/items';
 import { WORLD } from '../src/data/world';
-import * as fs from 'fs';
+// @ts-ignore node 类型未装（与 sim-gear 同）
+import * as fs from 'node:fs';
 export const DL = process.env.SIM_DROP_LOG || '';
 const REQ = Number(process.env.SIM_DROP_REQ ?? 35);
 const SLOTS = new Set(['weapon', 'armor']);

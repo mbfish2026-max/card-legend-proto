@@ -20,6 +20,8 @@ export const OFFICIAL_MAX = OFFICIAL_EXP.length - 1;
 /** [适配] feat/balance-4050：40–49 级升级所需 ×EXP_LATE_MUL（官方表 40–49 级已原样使用，更高的官方值 未查到；依据：用户要求 40–49 段升级用时约为 R61 的 1.8–2.5 倍）。
  *  怪物经验倍率仍按官方表（EXP_PER_LEVEL_BASE）定标，所以每级所需击杀数 ×EXP_LATE_MUL；1–39 级不变；50 级以上随 49 级一起 ×EXP_LATE_MUL（保持单调） */
 export const EXP_LATE_MUL = 2;
+/** feat/balance-4050-class [适配]：40 级起升级所需再按玩家职业 ×该系数（实际倍率 = EXP_LATE_MUL × 系数）；不传职业（伙伴/英雄、怪物经验定标）= 1 */
+export const EXP_LATE_CLS: Record<string, number> = { warrior: 1, mage: 1, taoist: 1 };
 export const EXP_LATE_LV: readonly [number, number] = [40, 49];
 /** 官方形状曲线（不含 40–49 级加倍），用于怪物/悬赏经验定标 */
 export const EXP_PER_LEVEL_BASE = (lv: number): number => {
@@ -27,12 +29,12 @@ export const EXP_PER_LEVEL_BASE = (lv: number): number => {
   if (l <= OFFICIAL_MAX) return Math.round(OFFICIAL_EXP[l] / EXP_SCALE);
   return Math.round(OFFICIAL_EXP[OFFICIAL_MAX] / EXP_SCALE * EXP_BEYOND_GROWTH ** (l - OFFICIAL_MAX));
 };
-export const EXP_PER_LEVEL = (lv: number): number => {
-  const l = Math.max(1, Math.floor(lv));
-  if (l >= EXP_LATE_LV[0] && l <= EXP_LATE_LV[1]) return Math.round(OFFICIAL_EXP[l] / EXP_SCALE * EXP_LATE_MUL);
+export const EXP_PER_LEVEL = (lv: number, cls?: string): number => {
+  const l = Math.max(1, Math.floor(lv)), m = EXP_LATE_MUL * (cls ? EXP_LATE_CLS[cls] ?? 1 : 1);
+  if (l >= EXP_LATE_LV[0] && l <= EXP_LATE_LV[1]) return Math.round(OFFICIAL_EXP[l] / EXP_SCALE * m);
   if (l <= OFFICIAL_MAX) return Math.round(OFFICIAL_EXP[l] / EXP_SCALE);
   // 50 级以上从加倍后的 49 级外推，保证曲线严格单调（battle.test R22）
-  return Math.round(OFFICIAL_EXP[OFFICIAL_MAX] / EXP_SCALE * EXP_LATE_MUL * EXP_BEYOND_GROWTH ** (l - OFFICIAL_MAX));
+  return Math.round(OFFICIAL_EXP[OFFICIAL_MAX] / EXP_SCALE * m * EXP_BEYOND_GROWTH ** (l - OFFICIAL_MAX));
 };
 /** 旧线性曲线（expV<2 存档），仅迁移与对照用 */
 export const EXP_PER_LEVEL_V1 = (lv: number) => 80 + lv * 45;

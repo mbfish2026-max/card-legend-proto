@@ -26,3 +26,9 @@ if (A || H) {
 if (X) { const orig = World.prototype.gainExp; World.prototype.gainExp = function (this: World, n: number) { return orig.call(this, this.level >= 40 ? n / X[IDX[this.cls]] : n); } as any; }
 if (E.SIM_TUNE_DROP) { const k = +E.SIM_TUNE_DROP;
   for (const u of Object.values(ENEMIES) as any[]) for (const d of u.drops ?? []) { const it: any = ITEMS[d.item]; if (it?.slot && ['weapon', 'armor'].includes(it.slot) && it.req >= 40 && it.req <= 49) d.chance = Math.min(1, d.chance * k); } }
+// feat/balance-4050-class：在进程内覆盖仓库里的按职业系数（默认不设 = 用仓库值），用于并行试多组幅度
+//  SIM_B4050_ATK / SIM_B4050_HP = "战,法,道" → FOE_CLS_4050[cls].atk/hp；SIM_B4050_EXP = "战,法,道" → EXP_LATE_CLS[cls]
+import { FOE_CLS_4050 } from '../src/data/balance';
+import { EXP_LATE_CLS } from '../src/data/expCurve';
+{ const CL = ['warrior', 'mage', 'taoist'] as const, a = tri(E.SIM_B4050_ATK), h = tri(E.SIM_B4050_HP), x = tri(E.SIM_B4050_EXP);
+  CL.forEach((c, i) => { if (a) FOE_CLS_4050[c].atk = a[i]; if (h) FOE_CLS_4050[c].hp = h[i]; if (x) EXP_LATE_CLS[c] = x[i]; }); }
