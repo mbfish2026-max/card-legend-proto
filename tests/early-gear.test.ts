@@ -8,13 +8,13 @@ import { H_PLAN } from '../src/data/h-chain';
 import { realignDen, REALIGN_BANDS, refreshInvItem } from '../src/data/drop-realign';
 let fail = 0, n = 0; const ok = (c: boolean, m: string) => { n++; if (!c) { fail++; console.log('FAIL', m); } };
 const clone = <T>(x: T): T => JSON.parse(JSON.stringify(x));
-// 1) 出生木剑：三职业、武器栏、绑定、不可卖、req 1、属性不变；不送布衣（G-13）
+// 1) 出生木剑：三职业、武器栏、绑定、不可卖、req 1、属性不变；G-13 已被 starter-cloth 推翻（出生布衣，见 starter-cloth.test）
 for (const cls of ['warrior', 'mage', 'taoist'] as const) {
   const w = new World(() => 0.5, 1, FLOORS, cls), wp = w.equip.weapon;
   ok(wp?.item === 'wood_sword', `${cls} 出生武器栏=木剑`);
   ok(wp?.bound === true && wp.req === 1 && ITEMS.wood_sword.req === 1, `${cls} 木剑绑定 req=1`);
   ok(JSON.stringify(wp?.stats) === JSON.stringify({ atk: 6, mag: 3, tao: 3 }), `${cls} 木剑属性 攻6 魔3 道3`);
-  ok(!w.equip.armor && w.bag.length === 0, `${cls} 不送布衣、背包空`);
+  ok(w.equip.armor?.item === 'cloth' && w.bag.length === 0, `${cls} 出生布衣（starter-cloth）、背包空`);
   ok(w.toSave().starterGiven === 1, `${cls} 新档写入 starterGiven`);
   // 卸下后卖：拒绝
   w.unequip('weapon'); const i = w.bag.findIndex(b => b.item === 'wood_sword'), g = w.gold;
@@ -33,13 +33,13 @@ ok(!w3.equip.weapon && !w3.bag.some(b => b.item === 'wood_sword'), '有标记：
 const withW = clone(old); withW.equip = { weapon: { ...base.equip.weapon!, item: 'iron_sword', name: '铁剑', req: 10, bound: false } };
 const w4 = new World(() => 0.5, 12, FLOORS, 'mage', withW);
 ok(w4.equip.weapon?.item === 'iron_sword' && w4.toSave().starterGiven === 1, '旧档已有武器：不补，写标记');
-ok(w4.equip.weapon?.req === 5, `refreshInvItem 读档刷新铁剑需求 10→5（实际 ${w4.equip.weapon?.req}）`);
-// 3) 需求等级（14 件）
-const REQ: Record<string, number> = { h_leather_glove: 3, h_hex_ring: 3, h_glass_ring: 3, helmet: 4, h_steel_bracelet: 4, h_big_bracelet: 4, h_horn_ring: 4,
-  iron_sword: 5, short_sword: 5, light_armor: 5, bone_helm: 5, h_black_crystal_necklace: 5, h_ebony_necklace: 5, h_yellow_crystal_necklace: 5 };
+ok(w4.equip.weapon?.req === 11, `refreshInvItem 读档刷新铁剑需求 10→11（starter-cloth）（实际 ${w4.equip.weapon?.req}）`);
+// 3) 需求等级（14 件；starter-cloth D3 拉回 T2 的 9 件按新需求）
+const REQ: Record<string, number> = { h_leather_glove: 3, h_hex_ring: 9, h_glass_ring: 9, helmet: 4, h_steel_bracelet: 4, h_big_bracelet: 9, h_horn_ring: 9,
+  iron_sword: 11, short_sword: 5, light_armor: 11, bone_helm: 5, h_black_crystal_necklace: 11, h_ebony_necklace: 11, h_yellow_crystal_necklace: 11 };
 for (const [id, r] of Object.entries(REQ)) ok(ITEMS[id]?.req === r, `${ITEMS[id]?.name ?? id} 需求 ${r}（实际 ${ITEMS[id]?.req}）`);
 // G-1 不纳入
-for (const [id, r] of Object.entries({ bronze_axe: 13, magic_helm: 14, h_cloth_shoes: 15, bronze_sword: 5 })) ok(ITEMS[id]?.req === r, `${id} 需求不变 ${r}`);
+for (const [id, r] of Object.entries({ bronze_axe: 13, bronze_sword: 5 })) ok(ITEMS[id]?.req === r, `${id} 需求不变 ${r}`);
 for (const id of Object.keys(REQ)) { const it = { uid: 1, item: id, name: ITEMS[id].name, rarity: 'common', slot: ITEMS[id].slot, stats: {}, req: 13, price: 1 } as any; refreshInvItem(it); ok(it.req === REQ[id], `refreshInvItem ${id} → ${REQ[id]}`); }
 // 4) 爆率：1–9 档 ×2，其它档不动
 ok(JSON.stringify(REALIGN_BANDS[0]) === JSON.stringify([1, 9, 16, 2, 30, 4]), '1–9 档参数 ×2');
@@ -47,9 +47,9 @@ ok(JSON.stringify(REALIGN_BANDS[1]) === JSON.stringify([10, 19, 10, 5, 100, 12])
 const den = (item: string, u: string) => { const d = ENEMIES[u]?.drops?.find(x => x.item === item); return d ? Math.round(1 / d.chance) : 0; };
 // [物品, 怪, 旧分母, 新分母]
 const DEN: [string, string, number, number][] = [
-  ['wood_sword', 'hook_cat', 50, 25], ['bronze_sword', 'red_snake', 38, 19], ['iron_sword', 'red_snake', 70, 44], ['iron_sword', 'skeleton', 100, 60], ['iron_sword', 'skeleton_lord', 5, 2],
-  ['helmet', 'tiger_snake', 90, 56], ['light_armor', 'red_snake', 70, 44], ['bone_helm', 'tree_demon', 24, 15], ['bone_helm', 'skeleton_lord', 12, 4],
-  ['iron_ring', 'wolf_king', 8, 4], ['h_glass_ring', 'forest_yeti', 16, 8], ['h_horn_ring', 'orc', 16, 8], ['h_ebony_necklace', 'red_snake', 24, 8], ['h_yellow_crystal_necklace', 'skeleton_lord', 12, 4]];
+  ['wood_sword', 'hook_cat', 50, 25], ['bronze_sword', 'red_snake', 38, 19], 
+  ['helmet', 'tiger_snake', 90, 56], ['bone_helm', 'tree_demon', 24, 15], ['bone_helm', 'skeleton_lord', 12, 4],
+  ['iron_ring', 'wolf_king', 8, 4], ['h_leather_glove', 'forest_yeti', 16, 8], ['h_steel_bracelet', 'orc', 16, 8]]; // starter-cloth D4：拉回 T2 的件不再 ×2，见 starter-cloth.test
 for (const [it, u, o, nw] of DEN) ok(den(it, u) === nw && nw < o, `${it}×${u} 1/${o} → 1/${nw}（实际 1/${den(it, u)}）`);
 ok(den('bone_helm', 'black_maggot') === 0, 'G-8 骷髅头盔×黑色恶蛆 已删');
 ok(den('bronze_axe', 'red_snake') === 70, '青铜斧（13，不纳入）分母不动 1/70');

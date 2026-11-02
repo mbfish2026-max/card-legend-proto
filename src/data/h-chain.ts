@@ -44,7 +44,7 @@ export const H_PLAN: Record<string, [string, number][]> = {
   h_blue_jade_necklace: [["black_maggot", 40], ["centipede", 40], ["giant_worm", 40], ["boss_lich", 20], ["boss_evil_pincer", 20]],
   h_leather_glove: [["forest_yeti", 8], ["orc", 8], ["red_snake", 8], ["skeleton_lord", 4]],
   h_steel_bracelet: [["orc", 8], ["red_snake", 8], ["tiger_snake", 8], ["skeleton_lord", 4]],
-  h_big_bracelet: [["orc", 16], ["red_snake", 16], ["tiger_snake", 16], ["skeleton_lord", 8]], // starter-cloth D4：T2(9) 不享 ×2，按 1–9 原曲线段默认
+  h_big_bracelet: [["orc", 16], ["red_snake", 16], ["tiger_snake", 16], ["skeleton_lord", 8]], // starter-cloth D4：T2(9) 不享 ×2，按 1–9 原曲线段默认；六角/玻璃删森林雪人（F0 目标1级+6<9）换虎蛇
   h_magic_bracelet: [["skeleton", 24], ["zombie", 24], ["axe_skeleton", 24], ["skeleton_lord", 12], ["boss_evil_pincer", 12]],
   h_sturdy_glove: [["skeleton", 24], ["zombie", 24], ["axe_skeleton", 24], ["skeleton_lord", 12], ["boss_evil_pincer", 12]],
   h_ebony_bracelet: [["black_maggot", 24], ["centipede", 24], ["giant_worm", 24], ["skeleton_lord", 12], ["boss_lich", 12]],
@@ -52,9 +52,9 @@ export const H_PLAN: Record<string, [string, number][]> = {
   h_power_bracelet: [["black_maggot", 40], ["centipede", 40], ["giant_worm", 40], ["skeleton_lord", 20], ["boss_lich", 20]],
   h_death_glove: [["black_maggot", 40], ["centipede", 40], ["giant_worm", 40], ["boss_lich", 20], ["boss_evil_pincer", 20]],
   h_gold_bracelet: [["black_maggot", 40], ["centipede", 40], ["giant_worm", 40], ["boss_lich", 20], ["boss_evil_pincer", 20]],
-  h_hex_ring: [["forest_yeti", 16], ["orc", 16], ["red_snake", 16], ["skeleton_lord", 8]], // starter-cloth D4：T2(9) 不享 ×2，按 1–9 原曲线段默认
-  h_glass_ring: [["forest_yeti", 16], ["orc", 16], ["red_snake", 16], ["skeleton_lord", 8]], // starter-cloth D4：T2(9) 不享 ×2，按 1–9 原曲线段默认
-  h_horn_ring: [["orc", 16], ["red_snake", 16], ["tiger_snake", 16], ["skeleton_lord", 8]], // starter-cloth D4：T2(9) 不享 ×2，按 1–9 原曲线段默认
+  h_hex_ring: [["orc", 16], ["red_snake", 16], ["tiger_snake", 16], ["skeleton_lord", 8]], // starter-cloth D4：T2(9) 不享 ×2，按 1–9 原曲线段默认；六角/玻璃删森林雪人（F0 目标1级+6<9）换虎蛇
+  h_glass_ring: [["orc", 16], ["red_snake", 16], ["tiger_snake", 16], ["skeleton_lord", 8]], // starter-cloth D4：T2(9) 不享 ×2，按 1–9 原曲线段默认；六角/玻璃删森林雪人（F0 目标1级+6<9）换虎蛇
+  h_horn_ring: [["orc", 16], ["red_snake", 16], ["tiger_snake", 16], ["skeleton_lord", 8]], // starter-cloth D4：T2(9) 不享 ×2，按 1–9 原曲线段默认；六角/玻璃删森林雪人（F0 目标1级+6<9）换虎蛇
   h_blue_crystal_ring: [["skeleton", 24], ["zombie", 24], ["axe_skeleton", 24], ["skeleton_lord", 12], ["boss_lich", 12]],
   h_black_crystal_ring: [["black_maggot", 40], ["centipede", 40], ["giant_worm", 40], ["skeleton_lord", 20], ["boss_lich", 20]],
   h_snake_eye_ring: [["black_maggot", 40], ["centipede", 40], ["giant_worm", 40], ["skeleton_lord", 20], ["boss_lich", 20]],
