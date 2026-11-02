@@ -962,7 +962,7 @@ const free = (w: World) => w.skills.map(() => 0);
   ok(mitigate(100, 0, 10, 1) === 100 - 10 * f && mitigate(100, 40, 10, 1) === 100 - 10 * f, '魔御只减魔法伤害（防御不影响魔法）');
   ok(Math.abs(mitigate(100, 10, 0, 0.5) - (50 - 5 * f + 50)) < 1e-9, '沃玛混合：一半按防御、一半按魔御');
   ok(mitigate(100, 12, 12, 0.5) === mitigate(100, 12, 12, 0), '防御=魔御时混合伤害与旧公式一致');
-  const w = mk([], [], 'taoist', 30); const m0 = w.stats().mdef;
+  const w = mk([], [], 'taoist', 30); delete w.equip.armor; w.recompute(); /* starter-cloth：先脱出生布衣（魔御 2） */ const m0 = w.stats().mdef;
   ok(m0 === 0, `职业基础魔御 0（官方成长未查到）：${m0}`);
   w.bag.push(w.makeItem('soul_robe')); w.equipItem(0); const m1 = w.stats().mdef;
   ok(m1 === ITEMS.soul_robe.equip!.mdef && m1 === 9, `灵魂战衣魔御 3-3 → 中值×3 = 9（实际 ${m1}）`);
