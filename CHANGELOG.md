@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## fix/lingfu-click-close：电脑鼠标点灵符入口，商店打开又立刻关闭（未合 main）
+- 根因：桌面入口 lingfuEntry 在 pointerdown 打开面板；Panel.render 末尾 flushInput 让新建的全屏遮罩当帧就可点，同一次点击的 pointerup 落在遮罩上，经 shouldTapClose（面板外、位移 ≤8px）关闭面板。按住拖出 >8px 再松开不算点击，所以不关。手机入口是 DOM 按钮（#mh-shop），抬起不落在画布遮罩上，不受影响。
+- 修复（src/ui/LingfuShopView.ts）：遮罩 pointerdown 时记录 pointer.downTime，pointerup 仅当同一次按下发生在遮罩上才关闭。点面板外、点 ✕ 照常关闭。
+- 测试：tests/e2e/lingfu-click-verify.mjs（桌面鼠标 move/down/up 点灵符 + 角色/悬赏/技能/商店/设置 5 个菜单钮、面板内不关、面板外关、✕ 关；手机触摸灵符）。修复前 FAIL（灵符），修复后 ALL OK；其他入口修复前即正常（只有灵符面板挂了点外关闭）。
+
 ## fix/r78-equip-tap：手机装备栏点击区 ≥44（基于 release/r78，未合 main）
 
 - 手机装备栏由两列×6 行改为 3 列×4 行（行列距 70、格 56），立绘右移；属性文字上移到 top+338，不压底部提示。桌面两列×6 行不变。

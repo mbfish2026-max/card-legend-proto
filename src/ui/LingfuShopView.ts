@@ -33,6 +33,8 @@ export const lingfuState = { tab: 'hot' as ShopTab, off: 0, confirm: null as str
 export function resetLingfu() { lingfuState.tab = 'hot'; lingfuState.off = 0; lingfuState.confirm = null; lingfuState.lack = null; }
 
 const yuan = (n: number) => `≈${(n / LINGFU_PER_YUAN).toFixed(0)}元`;
+/** 遮罩收到 pointerdown 的 pointer.downTime；-1 = 无 */
+let dimDownAt = -1;
 function icon(s: Phaser.Scene, x: number, y: number, size: number) {
   return atlasReady(s, 'lingfu_icon_s') ? s.add.image(x, y, UI_ATLAS, 'lingfu_icon_s').setDisplaySize(size, size).setName('lingfuIcon') : null;
 }
@@ -53,7 +55,11 @@ export function renderLingfu(c: LingfuCtx) {
   R.add(txt(s, L + (ic ? 66 : 36), top + 22, `灵符 ${wal.balance()}`, 20, '#ffe070', { fontStyle: 'bold' }).setOrigin(0, 0.5).setName('lingfuBalance'));
   // 点面板外关闭（手机 tapClose；桌面点外面也关，便于鼠标操作）
   const dim = R.list[0] as Phaser.GameObjects.Rectangle;
+  // fix/lingfu-click-close：只认「在遮罩上按下」的那次点击。桌面入口在 pointerdown 打开面板，render 末尾 flushInput 让新遮罩立即可点，
+  // 同一次点击的 pointerup 落在遮罩上 → 刚打开就被关。按下时间记在模块级（列表拖动等重绘后仍有效）。
+  dim?.on?.('pointerdown', (p: Phaser.Input.Pointer) => { dimDownAt = p.downTime; });
   dim?.on?.('pointerup', (p: Phaser.Input.Pointer) => {
+    if (dimDownAt !== p.downTime) return; dimDownAt = -1;
     const q = c.toPanel(p), inside = q.x >= L && q.x <= L + W && q.y >= top - 20 && q.y <= top - 20 + c.H;
     if (shouldTapClose({ downX: p.downX, downY: p.downY, upX: p.upX, upY: p.upY, insidePanel: inside, onSlot: false }, true, true)) c.close();
   });
