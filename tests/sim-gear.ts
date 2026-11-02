@@ -1,4 +1,4 @@
-// feat/sim-gear-swap：sim 换装（SIM_GEAR_SWAP=1；默认关 = 旧行为「只往空格穿」）。只改 sim，不改游戏代码/数据。
+// feat/sim-gear-swap：sim 换装。feat/sim-swap-default 起默认开（换装+清包）；SIM_GEAR_SWAP=0 复现旧行为「只往空格穿」（字节一致）。只改 sim，不改游戏代码/数据。
 // 打分：score = Σ 权重×属性（物品 stats + 未写 mdef 时按 World.itemMdef 推算的魔御 + 幸运），权重见 W。
 // 每个栏位组（武器/头盔/衣服/项链/靴子/腰带单格；戒指/手镯双格）从「背包里可穿的件 + 已穿戴」中取分数最高的；
 // 可穿 = 有 slot、req ≤ 当前等级、ITEMS.cls 为空或含本职业。只在分数严格更高时替换（需求更高但分更低不换）；换下的件经 equipItem 回到背包原位。
@@ -9,7 +9,7 @@
 import { appendFileSync } from 'node:fs';
 declare const process: any;
 import { ITEMS } from '../src/data/items';
-export const GEAR_SWAP = !!process.env.SIM_GEAR_SWAP;
+export const GEAR_SWAP = process.env.SIM_GEAR_SWAP !== '0';
 const DUMP = process.env.SIM_GEAR_DUMP;
 export const W: Record<string, Record<string, number>> = {
   warrior: { atk: 10, mag: 0, tao: 0, def: 4, mdef: 3, hp: 0.2, mp: 0.02, luck: 8 },
