@@ -9,6 +9,10 @@ export function potCount(e: HTMLElement, n: number) {
 export const potRight = (outerR: number) => outerR + 25 + 50 + 8;
 /** 灵符商城入口 #mh-shop 底边（CSS px，相对 safe-area 底）：#mh-auto（底 outerR+58，高 44）上方再留 8px */
 export const mobileShopBottom = (outerR: number) => outerR + 58 + 44 + 8;
+/** feat/auto-hang：挂机开关 #mh-hang 与 #mh-shop 同一行、在其左侧留 8px（52×44）；
+ *  放在商城正上方时 10 技能（outerR=152）在 844/874 宽会与顶栏重叠，故改为同行 */
+export const mobileHangBottom = (outerR: number) => mobileShopBottom(outerR);
+export const mobileHangRight = 8 + 52 + 8;
 import { fmtInt } from './fmt';
 import { Settings } from '../settings';
 import { fmtExp } from '../data/expCurve';
@@ -72,6 +76,8 @@ const CSS = `
 #mh-auto{position:absolute;width:52px;height:44px}
 #mh-page{position:absolute;width:52px;height:44px}
 #mh-shop{position:absolute;width:52px;height:44px;font-size:13px!important;color:#ffe070!important;border-color:#d4a64a!important;line-height:1.05}
+#mh-hang{position:absolute;width:52px;height:44px;font-size:13px!important;line-height:1.05}
+#mh-hang.on{color:#7fff7f!important;border-color:#5fcf5f!important}
 #mh-comp{position:absolute;display:flex;gap:4px}
 #mh-comp .b{width:48px;height:44px}
 `;
@@ -80,7 +86,7 @@ export class MobileHud {
   root: HTMLDivElement; dx = 0; dy = 0; onStep?: (d: number) => void;
   private bars: Record<string, [HTMLElement, HTMLElement]> = {}; private info!: HTMLElement; private log!: HTMLElement; private floor!: HTMLElement;
   private skBtns: { el: Btn; cd: HTMLElement; t: HTMLElement; i: number }[] = []; potBar!: PotBarDom;
-  private act!: Btn; private auto!: Btn; private page!: Btn; private shop!: Btn; skPage = 0; private comp!: HTMLElement; private skSig = ''; private logSig = '';
+  private act!: Btn; private auto!: Btn; private page!: Btn; private shop!: Btn; private hang!: Btn; skPage = 0; private comp!: HTMLElement; private skSig = ''; private logSig = '';
   constructor(private b: BattleScene, private hud: Hud) {
     if (!document.getElementById('mhud-css')) { const st = document.createElement('style'); st.id = 'mhud-css'; st.textContent = CSS + POT_POP_CSS; document.head.appendChild(st); }
     document.getElementById('mhud')?.remove();
@@ -124,6 +130,7 @@ export class MobileHud {
     // 灵符商城入口：自动开关正上方（右侧竖排，避开 进入键/技能弧/药水栏/摇杆），52×44 CSS px
     this.shop = this.btn(r, '灵符<br>商城', () => b.onKey('L')); this.shop.id = 'mh-shop'; this.shop.dataset.id = 'lingfu'; this.shop.classList.add('ctl');
     // 技能多于 10 个（传世技能等）：弧形翻页，每页 10 个（内 4 外 6）
+    this.hang = this.btn(r, '挂机<br>关', () => b.onKey('J')); this.hang.id = 'mh-hang'; this.hang.dataset.id = 'hang'; this.hang.classList.add('ctl');
     this.page = this.btn(r, '', () => { this.skPage++; this.layoutSkills(); }); this.page.id = 'mh-page'; this.page.classList.add('ctl');
     const pots = this.el('div', r, 'ctl'); pots.id = 'mh-pots';
     this.potBar = new PotBarDom(pots, () => b.world, k => b.onKey(k), k => this.texUrl(k)); // feat/potion-expand：3 格 + 长按换药
@@ -168,6 +175,7 @@ export class MobileHud {
     const outerR = act.length > 4 ? 152 : 92;
     this.auto.style.right = `calc(var(--sr) + 8px)`; this.auto.style.bottom = `calc(var(--sb) + ${outerR + 50 + 8}px)`;
     this.shop.style.right = `calc(var(--sr) + 8px)`; this.shop.style.bottom = `calc(var(--sb) + ${mobileShopBottom(outerR)}px)`;
+    this.hang.style.right = `calc(var(--sr) + ${mobileHangRight}px)`; this.hang.style.bottom = `calc(var(--sb) + ${mobileHangBottom(outerR)}px)`;
     this.page.style.right = `calc(var(--sr) + 66px)`; this.page.style.bottom = `calc(var(--sb) + ${outerR + 50 + 8}px)`;
     const pots = this.root.querySelector('#mh-pots') as HTMLElement; pots.style.right = `calc(var(--sr) + ${potRight(outerR)}px)`;
     this.comp.style.right = `calc(var(--sr) + ${potRight(outerR)}px)`; this.comp.style.bottom = `calc(var(--sb) + ${POT_CSS + 10}px)`;
@@ -209,6 +217,7 @@ export class MobileHud {
     this.act.innerHTML = en === 'talk' ? '对话' : en === 'gate' ? '出城' : en === 'town' ? (/村/.test(w.backGate()?.name ?? '') ? '回村' : '回城') : en === 'prev' ? '上一层' : en === 'sealed' ? '封印' : en === 'mine' ? '挖矿' : w.town ? '对话' : '进入';
     this.act.classList.toggle('hot', !!en && en !== 'sealed');
     this.auto.innerHTML = `自动<br>${Settings.autoAttack ? '开' : '关'}`; this.auto.classList.toggle('on', Settings.autoAttack);
+    { const on = !!this.b.hang?.on; const hh = `挂机<br>${on ? '中' : '关'}`; if (this.hang.innerHTML !== hh) this.hang.innerHTML = hh; this.hang.classList.toggle('on', on); }
     this.comp.style.display = w.companion ? 'flex' : 'none';
     this.potBar.refresh(); // 写进角标 span（原先 textContent 覆盖掉 span，数字成了居中文字压在图标上）
     this.skBtns.forEach(s => {
