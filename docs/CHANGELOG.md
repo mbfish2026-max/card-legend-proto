@@ -21,6 +21,20 @@
 - 存档：EquipSlot 加 stone、InvItem 加 uses/charge/bound/cdAt（可选字段，旧档兼容）。
 - 测试：tests/lingfu-shop.test.ts 40 项进 npm test；e2e tests/e2e/lingfu-shop-verify.mjs（844×390/932×430/874×402/1280×720 触屏 + 1280×720 桌面，含 NOATLAS）；tapclose e2e 改为 10 个装备格。截图 docs/shots/lingfu-shop/。
 
+## 药水扩展（feat/potion-expand，未合 main）
+- 修：手机双击解包/短按药水偶发失败。根因①Phaser 3.90 新 setInteractive 对象要到下一帧 preUpdate 才进命中表，而 DOM 触摸即时处理——面板重绘后一帧内（卡顿时更长）的点击落空；`Panel.render` 后立即 `flushInput` 并入。②战斗中经验变化使背包每 800ms 自动重绘，正好落在「点一下选中、再点执行」之间；已选中或刚按下时不自动重绘。③手机药水格长按用 setTimeout 判定，卡顿时计时器先于已发生的 pointerup 触发，短按被误判成长按、弹层背景吞掉后续点击；改按事件时间戳判定。新增 tests/tap-timing.test.ts。
+- 数据（P1）：POTIONS 只在末尾追加 hp_big 强效金创药（HP560，180 金，Lv22）、mp_big 强效魔法药（MP900，180 金，Lv22）、sun 太阳水（HP180+MP240，300 金，Lv22）、sun_big 强效太阳水（HP300+MP480，600 金，Lv35，只卖捆）。旧 4 种的 index 和 key 不变。旧 key hp_strong/mp_strong/sun_water 合并到 hp_big/mp_big/sun，读档时迁移，瓶数不丢。
+- 药水捆（P2）：8 种捆，每捆 6 瓶，占背包 1 格，最多叠 999。双击解开，散装每种上限 999，放满时拒绝解开，捆也不扣。「超级」只出现在捆名里。
+- 商店（P3）：城内药店散装在上、捆在下，捆价 = 单价×6，等级不够的行灰显「需LvX」。灵符商城不卖药。
+- UI（P5）：桌面和手机的药水栏都只有 3 格（红药/蓝药/太阳水）。短按喝当前选中的药，长按（桌面也可右键）弹出同类药切换（红/蓝：小/中/强效；太阳水：太阳水/强效太阳水），点弹层外关闭。手机格 56px，点击区不重叠。缺图集时回退旧绘制或文字。存档新增 potSel。热键 1–4 不变。
+- API：World.getSelectedPotion(slot)/setSelectedPotion、buyBundle、unbundle、absorbPotionItem；src/data/potions.ts（BUNDLES、POT_SLOTS、migratePots、potShopRows）。
+- 不改战斗：用药仍走 BattleScene.onKey→usePotion，所以太阳水暂时还是 HoT（不是立刻回复），冷却也和旧药一样。P4 用药和 P6 掉落/平衡交给战斗开发，接口见 docs/potion-expand.md §8。
+- 测试：tests/potion-expand.test.ts；e2e tests/e2e/potion-expand-verify.mjs，4 个视口，有图集和无图集都全过，截图在 docs/shots/potion-expand/；potion-clip 和 mobile-panels 的 e2e 改成按 3 格断言。9 种子 sim（战/法/道）和 main 逐行一致。
+
+## 药水扩展方案文档（feat/potion-doc，只出文档）
+- docs/potion-expand.md：强效药、太阳水/强效太阳水、6 瓶捆与双击解包、商店掉落、平衡评估方案、存档兼容、实现拆分；art-requests 追加 P1 药水图标。
+
+
 ## 修复：换图后召唤物留在旧坐标/从远处走过来（fix/summon-mapchange，未合 main）
 - 根因：World.prevFloor（S 返回上一层）先 loadFloor 把召唤物放到本层起点附近，再把英雄挪到上一层终点（出口前），召唤物不跟着挪 → 相距约 8000px，要很久才走过来；enterTown（回城）完全不重置召唤物坐标；loadFloor 本身按 110+60k 排队，第 2/3 只已超 100px。另：读档恢复的召唤物（restoreSummons）不发 summon 事件，BattleScene 不建卡牌，直到换图前都看不见。
 - 修复：新增 World.placeSummonsNearHero()（召唤物含诱惑宠物交替落在英雄身后/身前 50/50/75/75/100px，夹在地图/长街内），在 loadFloor（下一层/传送/副本/出城/上一层按钮）、prevFloor 英雄落位之后、enterTown 调用；BattleScene.snapSummonViews() 换图/进城时卡牌直接跳到新坐标，缺卡牌的召唤物补建（读档后立即可见）。不改任何战斗/平衡数值。

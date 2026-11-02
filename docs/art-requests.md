@@ -1774,3 +1774,10 @@ AI 生成的 Legend of Mir 风格的蓝紫发光椭圆光圈漩涡，没有用 W
 | icons/shop_skill_necklace.png | 技巧项链 | 64×64，绿宝石项链带书卷纹 | eq_green_necklace.png |
 | icons/bloodstone_s/m/l/xl.png | 血石 小/中/大/特 | 64×64 ×4，红色宝石体积递增 | eq_pearl.png |
 | ui_atlas 帧 lingfu_entry | 右下常驻入口按钮（桌面 88×44、手机 52×44 CSS） | 九宫格可拉伸，金色符纸 | btn_normal + 文字 |
+
+## P1. 药水扩展图标（docs/potion-expand.md，方案阶段，未接入）
+- 尺寸：64×64 PNG 透明底（游戏内缩到 36px 显示：手机药水格 56px，扣掉框后净空 36px；桌面热键同样缩放）。风格和现有 hp_small/mp_small 药瓶一致：写实手绘、1.76 传奇药瓶轮廓，缩到 36px 仍能分辨。
+- 散装：强效金创药（大红瓶）、强效魔法药（大蓝瓶）、太阳水（金黄小瓶）、强效太阳水（金黄大瓶，带光晕）。
+- 捆（6 瓶捆在一起，用麻绳或布包，颜色和单瓶对应）：金创药(小)包、魔法药(小)包、金创药(中)包、魔法药(中)包、超级金创药、超级魔法药、太阳水包、强效太阳水包。
+- 共 12 张；文件名建议 `assets/items/pot_<key>.png`、`assets/items/bundle_<key>.png`。
+- **状态：已出图**（art/potion-icons，美术2）。public/assets/items/ 下 pot_hp_big / pot_mp_big / pot_sun / pot_sun_big；bundle_hp_small / bundle_mp_small / bundle_hp_mid / bundle_mp_mid / bundle_hp_big（超级金创药）/ bundle_mp_big（超级魔法药）/ bundle_sun / bundle_sun_big，均 64×64 透明 PNG，无 @2x。预览 docs/ui-preview/preview_potion_icons.jpg；脚本 docs/ui-preview/build_potion.py。区分：小包=麻绳捆、中包=布袋、超级=木箱、太阳水包=皮袋、强效太阳水包=红绣袋+金光。

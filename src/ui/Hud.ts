@@ -3,6 +3,7 @@ import { fmtExp } from '../data/expCurve';
 import Phaser from 'phaser';
 import { POTIONS, SkillDef } from '../data/skills';
 import { FX, FONT } from '../data/fx';
+import { PotBarDesk } from './potBar';
 import { MENU_LABELS } from '../assets-manifest';
 import type { Overview, PosBar } from '../data/mapOverview';
 /** 桌面灵符商城入口（1280×720 逻辑坐标，中心点） */
@@ -45,7 +46,7 @@ class Orb {
 
 export class Hud {
   hp: Orb; mp: Orb; radar: Phaser.GameObjects.Graphics; skillPos: { x: number; y: number }[] = [];
-  potT: Phaser.GameObjects.Text[] = []; dots: Phaser.GameObjects.Rectangle[] = [];
+  potT: Phaser.GameObjects.Text[] = []; potBar!: PotBarDesk; dots: Phaser.GameObjects.Rectangle[] = [];
   logT: Phaser.GameObjects.Text[] = []; lines: { t: string; c: string; at: number }[] = []; logBg?: Phaser.GameObjects.Rectangle | Phaser.GameObjects.NineSlice;
   expFill!: Phaser.GameObjects.Rectangle; expT!: Phaser.GameObjects.Text;
   expNs?: Phaser.GameObjects.NineSlice | null;
@@ -144,16 +145,7 @@ export class Hud {
     const m = s.make.graphics({}, false); m.fillStyle(0xffffff); this.skillPos.forEach(p => m.fillRect(p.x - SK / 2, p.y - SK / 2, SK, SK));
     this.radar.setMask(m.createGeometryMask());
     (this as any)._skSize = SK;
-    POTIONS.forEach((p, i) => {
-      const x = 684 + i * 52, y = 646;
-      slotBg(s, x, y, 44, false, { fill: 0x1a1a1a, stroke: 0x8a7a55, sw: 2 }).setDepth(20);
-      if (s.textures.exists('potion_' + i)) s.add.image(x, y, 'potion_' + i).setDisplaySize(38, 38).setDepth(20);
-      txt(s, x - 18, y - 21, p.key, 11, '#ffff66').setDepth(22);
-      this.potT.push(txt(s, x + 19, y + 20, '', 12).setOrigin(1, 1).setDepth(22));
-      // R54：药水格鼠标/触屏点击 = 按数字键（同走 onKey→World.usePotion：数量不足/间隔判断一致）；按下即拦截，不穿透到地图点地行走
-      if (onSkill) s.add.rectangle(x, y, 44, 44, 0, 0.001).setDepth(25).setName('potSlot' + i).setInteractive({ useHandCursor: true })
-        .on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); onSkill(p.key); });
-    });
+    this.potBar = new PotBarDesk(s, onSkill); // feat/potion-expand：3 格（红/蓝/太阳水），长按换药
     // 右侧 5 个圆形菜单按钮
     if (!mobile) MENU_LABELS.forEach((label, i) => {
       const x = 1070 + i * 48, y = 648;
@@ -200,7 +192,7 @@ export class Hud {
     });
     this.dead = dead;
     this.dots.forEach((d, i) => { d.setStrokeStyle(2, dead[i] ? 0x444444 : 0xffd24a); (d as any).cross?.setVisible(!!dead[i] && !this.mobile); });
-    POTIONS.forEach((p, i) => this.potT[i].setText(p.item ? String(pots[i]) : ''));
+    void pots; this.potBar.refresh();
     this.info.setText(info);
     const now = this.s.time.now; let any = 0;
     this.logT.forEach(o => { const age = (now - ((o as any).at ?? 0)) / 1000, a = age < 6 ? 1 : Math.max(0, 1 - (age - 6) / 1.5); o.setAlpha(a); any = Math.max(any, o.text ? a : 0); });

@@ -52,7 +52,7 @@ const P = src('src/ui/Panel.ts'), H = src('src/ui/Hud.ts');
 ok(/slotBg\(s, x, y, size, selected/.test(P) && /qualityFrame\(s, x, y, size - 4, it\.rarity\)/.test(P), 'Panel.slotBox 用 slotBg + qualityFrame');
 ok(/qualityFrame\(s, cx \+ icon/.test(P), '装备对比图标用 qualityFrame');
 ok(/slotHitSize\(IS_MOBILE, size, pitch/.test(P) && /'bag_' \+ i, size \+ 6\)/.test(P) && /'eq_' \+ sl, dy\)/.test(P), 'slotBox 点击区按格距封顶');
-ok((H.match(/slotBg\(s, x, y/g) ?? []).length === 2, 'Hud 快捷栏技能格+药水格用 slotBg');
+ok((H.match(/slotBg\(s, x, y/g) ?? []).length === 1 && /slotBg\(s, x, y, S, false/.test(readFileSync('src/ui/potBar.ts', 'utf8')), 'Hud 快捷栏技能格+药水格用 slotBg（药水格在 potBar.ts，feat/potion-expand）');
 ok(/rowTint\(s, row/.test(P), '技能行调用 rowTint');
 ok(!/(slotBg|qualityFrame)\([^;]*\.setScale/.test(P + H), '格子九宫格不 setScale');
 console.log(`ui-slots: ${pass} passed`);

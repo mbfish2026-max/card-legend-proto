@@ -21,6 +21,7 @@ import { OIL_PRICE } from '../combat/World';
 /** 阶段4：祝福油只由高级 BOSS 掉、黑铁矿只能挖矿 → 商店停售（保留代码便于回退） */
 const SELL_OIL_IRON = false as boolean;
 import { POTIONS } from '../data/skills';
+import { BUNDLES, potIndex, potShopRows } from '../data/potions';
 import { WORLD } from '../data/world';
 import { CLASSES, CLASS_IDS } from '../data/classes';
 export const BAG_PAGE = 30;
@@ -41,6 +42,7 @@ import { CONSUMABLE } from '../data/items-town';
 import { Settings, DEFAULT_AUTO_SKILLS } from '../settings';
 import { equipLook } from './EquipLayers';
 
+import { flushInput } from './flushInput';
 export type PanelMode = 'bag' | 'shop' | 'skills' | 'settings' | 'map' | 'quests' | 'town' | 'lingfu';
 export const RARITY_HEX: Record<string, string> = { common: '#ffffff', magic: '#5aa8ff', rare: '#ffb020' };
 const RARITY_NUM: Record<string, number> = { common: 0x8a8a8a, magic: 0x3a7aff, rare: 0xffa020 };
@@ -53,6 +55,8 @@ export class Panel {
   region: string | null = null;
   /** 背包选中的黑铁矿石下标：下一次点装备栏即强化 */
   ironIdx: number | null = null;
+  /** feat/potion-expand：桌面双击解包计时 */
+  private bundleClick: { uid: number; t: number } | null = null;
   /** 背包分页（200 格，每页 BAG_PAGE 格） */
   bagPage = 0;
   /** 商店分页：杂货 / 书店（R11 技能书） */
@@ -64,6 +68,7 @@ export class Panel {
   npc: string | null = null;
   constructor(public s: Phaser.Scene, public world: () => World, public onChange: (msg?: string, green?: boolean) => void, public onTitle: () => void) {
     // 手机版：对比面板打开时，点面板外空白处关闭（拖动 >8px、点面板内、点装备格不关）；桌面不挂
+    s.input?.on('pointerdown', () => { this.lastDown = this.s.time.now; });
     if (IS_MOBILE) s.input?.on('pointerup', (p: Phaser.Input.Pointer, objs: Phaser.GameObjects.GameObject[]) => this.tapOutside({ downX: p.downX, downY: p.downY, upX: p.upX, upY: p.upY, x: p.worldX, y: p.worldY }, objs as any));
   }
   /** 返回是否关闭（供测试） */
@@ -88,15 +93,21 @@ export class Panel {
   /** 角色/技能面板数据变了就重绘；返回是否重绘（供测试） */
   static AUTO_REFRESH_MS = 800;
   private lastAuto = -1e9;
+  /** 最近一次指针按下（scene 时间），供 refreshIfStale 避让 */
+  lastDown = -1e9;
   refreshIfStale(): boolean {
     if (this.mode !== 'bag' && this.mode !== 'skills') return false;
     if (this.statSnap() === this.snap) return false;
+    // feat/potion-expand：触屏「点一下选中、再点执行」进行中（sel 已选）或刚有按下（<AUTO_REFRESH_MS）时不自动重绘：
+    // 重绘会销毁格子/提示，新格子要等下一帧才进 Phaser 命中表，第二下点击会被吞（手机双击解包偶发失败的根因）
+    if (this.sel || this.s.time.now - this.lastDown < Panel.AUTO_REFRESH_MS) return false;
     // 战斗中经验/熟练度几乎每帧变：限频重绘，否则每帧重建的点击对象还在 Phaser 待插入队列里，触屏点不中
     const now = this.s.time.now;
     if (now - this.lastAuto < Panel.AUTO_REFRESH_MS) return false;
     this.lastAuto = now; this.render(); return true;
   }
-  render() {
+  render() { this.renderInner(); flushInput(this.s); }
+  private renderInner() {
     if (this.mode) this.snap = this.statSnap();
     this.root?.destroy(true); this.hideTip(); this.clearMapInput();
     if (!this.mode) return;
@@ -150,6 +161,7 @@ export class Panel {
     else if (label) R.add(txt(s, x, y, label, 12, '#6a5a40', { strokeThickness: 0 }).setOrigin(0.5));
     if (it?.enhance) R.add(txt(s, x + size / 2 - 4, y + size / 2 - 10, '+' + it.enhance, 12, '#c8f0ff', { fontStyle: 'bold', strokeThickness: 3 }).setOrigin(1, 0.5));
     if (it?.item === 'black_iron') { R.add(txt(s, x + size / 2 - 2, y + size / 2 - 8, '+' + (it.purity ?? 1), 11, '#aaf', { fontStyle: 'bold', strokeThickness: 2 }).setOrigin(1, 0.5)); if ((it.qty ?? 1) > 1) R.add(txt(s, x - size / 2 + 4, y + size / 2 - 8, '×' + (it.qty ?? 1), 11, '#ffe8a0', { fontStyle: 'bold', strokeThickness: 2 }).setOrigin(0, 0.5)); }
+    if (it && BUNDLES[it.item]) R.add(txt(s, x + size / 2 - 4, y + size / 2 - 9, String(it.qty ?? 1), 12, '#fff', { fontStyle: 'bold', strokeThickness: 3 }).setOrigin(1, 0.5).setName('bundleQty')); // feat/potion-expand：捆数量（右下）
     if (it && atl) { const q = qualityFrame(s, x, y, size - 4, it.rarity); if (q) R.add(q); else r.setStrokeStyle(2, RARITY_NUM[it.rarity]); }
     // 套装激活角标：已装备且该套装至少触发一档加成
     const setId = it && key.startsWith('eq_') ? ITEMS[it.item]?.set : undefined;
@@ -214,7 +226,7 @@ export class Panel {
     (['goods', 'books'] as const).forEach((t, i) => R.add([...tabButton(s, 395 + i * 84, top + 72, 76, 32, t === 'goods' ? '杂货' : '书店', this.shopTab === t, () => { this.shopTab = t; this.render(); }, 15)]));
     if (this.shopTab === 'books') return this.renderBooks(R, top);
     const SP = listRowPitch(IS_MOBILE, 62, this.cssU());
-    POTIONS.forEach((p, i) => {
+    POTIONS.slice(0, 4).forEach((p, i) => { // feat/potion-expand：旧商店页只列小/中 4 种，完整药水（强效/太阳水/捆）在城内药店
       const y = top + 112 + i * SP, it = ITEMS[p.item];
       R.add(rowBg(s, 330, y, 320, 56, false, { fill: 0x0a0806, stroke: 0x4a3a28 }));
       if (s.textures.exists('item_' + p.item)) R.add(s.add.image(200, y, 'item_' + p.item).setDisplaySize(46, 46));
@@ -222,13 +234,13 @@ export class Panel {
       R.add(txt(s, 232, y + 2, `${p.hp ? '恢复生命 ' + p.hp : '恢复魔法 ' + p.mp}   ${p.price} 金   持有 ${w.pots[i]}`, 13, '#ccc', { strokeThickness: 2 }));
       R.add([...this.fitRow(button(s, 448, y, 64, 34, '购买', () => { const e = w.buyPotion(i); if (!e) sfx(s, 'coin'); this.onChange(e ?? `购买 ${it.name}`, !e); this.render(); }, 16, w.gold >= p.price), SP)]);
     });
-    if (SELL_OIL_IRON) { const y = top + 112 + POTIONS.length * SP, it = ITEMS.bless_oil, sold = w.oilBoughtFloor === w.floorIndex;
+    if (SELL_OIL_IRON) { const y = top + 112 + 4 * SP, it = ITEMS.bless_oil, sold = w.oilBoughtFloor === w.floorIndex;
       R.add(rowBg(s, 330, y, 320, 56, true, { fill: 0x0a0806, stroke: 0x6a5a28 }));
       if (s.textures.exists('item_bless_oil')) R.add(s.add.image(200, y, 'item_bless_oil').setDisplaySize(46, 46));
       R.add(txt(s, 232, y - 20, it.name, 16, '#ffd24a'));
       R.add(txt(s, 232, y + 2, `武器幸运+1   ${OIL_PRICE} 金   ${sold ? '本层已购' : '每层限购 1'}`, 13, '#ccc', { strokeThickness: 2 }));
       R.add([...this.fitRow(button(s, 448, y, 64, 34, '购买', () => { const e = w.buyOil(); if (!e) sfx(s, 'coin'); this.onChange(e ?? '购买 祝福油', !e); this.render(); }, 16, !sold && w.gold >= OIL_PRICE), SP)]); }
-    if (SELL_OIL_IRON) { const y = top + 112 + (POTIONS.length + 1) * SP, it = ITEMS.black_iron;
+    if (SELL_OIL_IRON) { const y = top + 112 + 5 * SP, it = ITEMS.black_iron;
       const left = w.ironBoughtFloor === w.floorIndex ? Math.max(0, 5 - w.ironBoughtCount) : 5;
       R.add(rowBg(s, 330, y, 320, 56, false, { fill: 0x0a0806, stroke: 0x4a3a28 }));
       if (s.textures.exists('item_black_iron')) R.add(s.add.image(200, y, 'item_black_iron').setDisplaySize(46, 46));
@@ -279,6 +291,10 @@ export class Panel {
         else if (this.mode === 'shop' || this.npcKind() && this.npcKind() !== 'storage') { const g = w.sellItem(i); sfx(s, 'coin'); this.onChange(`出售 ${it!.name} 获得 ${g} 金币`, true); }
         else if (this.npcKind() === 'storage') { const e = w.deposit(i); this.onChange(e ?? `存入 ${it!.name}`, !e); }
         else if (isShopUsable(it!.item) && !right) { const r = useShopItem(w, i); sfx(s, 'loot', 0.5); this.onChange(r.msg, r.ok); if (r.ok && it!.item === 'return_stone') { this.mode = null; this.close(); } if (r.ok) this.onTeleport?.(); }
+        else if (BUNDLES[it!.item]) { // feat/potion-expand：双击解开（桌面 450ms 内连点两次；手机沿用「点一次选中、再点执行」）
+          const now = Date.now(), dbl = IS_MOBILE || (this.bundleClick?.uid === it!.uid && now - this.bundleClick.t < 450); this.bundleClick = dbl ? null : { uid: it!.uid, t: now };
+          if (dbl) { const r = w.unbundle(i); if (r.ok) sfx(s, 'loot', 0.5); this.onChange(r.msg, r.ok); } else { this.onChange(`${it!.name}×${it!.qty ?? 1}：双击解开（每捆 6 瓶）`); return; } }
+        else if (potIndex(it!.item) >= 0) { const m = w.absorbPotionItem(i); this.onChange(m, m.includes('放入')); }
         else if (CONSUMABLE[it!.item]) { const m = w.useConsumable(i); sfx(s, 'loot', 0.5); if (w.town) { this.mode = 'town'; this.npc = null; } this.onChange(m, m.startsWith('使用')); }
         else if (right) { w.dropItem(i); this.onChange(`丢弃 ${it!.name}`); }
         else if (it!.slot) { const e = w.equipItem(i); if (!e) sfx(s, 'loot', 0.5); this.onChange(e ?? `装备 ${it!.name}`, !e); }
@@ -402,7 +418,8 @@ export class Panel {
       this.scrollInfo[X] = { key, n, vis: VIS, off };
     } };
     const buy = (e: string | null, nm: string) => { if (!e) sfx(s, 'coin'); this.onChange(e ?? `购买 ${nm}`, !e); this.render(); };
-    if (n.kind === 'potion') POTIONS.forEach((p, i) => row(i, ITEMS[p.item].name, `${p.price} 金 · 原版 ${i % 2 ? 242 : 88}（S14）持有 ${w.pots[i]}`, '购买', () => buy(w.buyPotion(i), ITEMS[p.item].name), w.gold >= p.price, p.item));
+    if (n.kind === 'potion') potShopRows(w.level).forEach((r, k) => { const p = POTIONS[r.idx], nm = ITEMS[r.id].name, eff = `${p.hp ? 'HP' + p.hp : ''}${p.hp && p.mp ? '+' : ''}${p.mp ? 'MP' + p.mp : ''}${p.instant ? ' 立刻' : ''}`; // feat/potion-expand：散装在上、捆在下，按等级门槛灰显
+      row(k, nm + (r.locked ? ` 需Lv${r.lv}` : ''), r.kind === 'pot' ? `${r.price} 金 · ${eff} · 持有 ${w.pots[r.idx]}` : `${r.price} 金 · 6 瓶 · 背包 ${w.bag.filter(b => b.item === r.id).reduce((a, b) => a + (b.qty ?? 1), 0)}`, '购买', () => buy(r.kind === 'pot' ? w.buyPotion(r.idx) : w.buyBundle(r.id), nm), !r.locked && w.gold >= r.price, r.id); });
     else if (n.goods) n.goods.forEach((gd, i) => { const d = ITEMS[gd.item]; row(i, d.name + (d.req ? ` 需Lv${d.req}` : ''), `${gd.price} 金 · 原版 ${gd.official ?? '未查到'}${gd.official ? '×0.25' : ' [适配]'}`, '购买', () => buy(w.buyGoods(n.id, gd.item), d.name), w.gold >= gd.price, gd.item); });
     if (n.kind === 'general' && SELL_OIL_IRON) { const sold = w.oilBoughtFloor === w.floorIndex, k = n.goods?.length ?? 0;
       row(k, '祝福油', `${OIL_PRICE} 金 · 每层限购 1`, '购买', () => buy(w.buyOil(), '祝福油'), !sold && w.gold >= OIL_PRICE, 'bless_oil'); }
@@ -522,7 +539,7 @@ export class Panel {
       if (cl?.length) lines.push([`职业：${cl.map(c => CLASSES[c].name).join('/')}`, cl.includes(w.cls) ? '#fff' : '#ff4040']);
     }
     lines.push([`售价 ${it.price} 金币`, '#ffd24a']);
-    if (touch) lines.push([this.mode === 'shop' ? '再点一次：出售' : it.slot && this.sel?.startsWith('eq_') ? '再点一次：卸下' : it.slot ? '再点一次：装备' : '不可装备', '#9fd']);
+    if (touch) lines.push([this.mode === 'shop' ? '再点一次：出售' : it.slot && this.sel?.startsWith('eq_') ? '再点一次：卸下' : it.slot ? '再点一次：装备' : BUNDLES[it.item] ? '再点一次：解开（6 瓶）' : '不可装备', '#9fd']);
     { const cd = it.slot ? compareRows(it, w.equip) : null; if (cd) { this.showCompare(it, cd, lines.slice(2).filter(([t]) => !/^需要等级|^(生命|魔法值|攻击|魔法|道术|防御|魔御) \+/.test(t)), x, y, touch); return; } }
     const c = this.tip = s.add.container(Math.min(x, 1280 - 230), Math.max(10, Math.min(y, 720 - lines.length * 20 - 20))).setDepth(300);
     const bg = frameBg(s, 'tooltip_frame', 0, 0, 220, lines.length * 20 + 16, { fill: 0x05060c, alpha: 0.95, stroke: 0x9a9aa8, sw: 2 }, 0, 0).setName('tipBg');

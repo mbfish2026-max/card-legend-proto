@@ -15,8 +15,10 @@ ok(rule.includes('border-width:2px'), '药水格布局边框仍 2px（回退/点
 ok(css.includes(`/ ${n.map(v => v + 'px').join(' ')} stretch`), '其他按钮仍用 1x 边距');
 // 数字：3 位 12px 粗体约 ≤24px 宽，必须在框内净空（宽 56-8-8=40，右/下边距 ≥ 框宽）
 const src = readFileSync(new URL('../src/ui/MobileHud.ts', import.meta.url), 'utf8');
-ok(!/potBtns\[i\]\.textContent\s*=/.test(src), '数量不再用 textContent 覆盖按钮（会冲掉角标 span）');
-ok(/potCount\(this\.potBtns\[i\]/.test(src), '数量写进角标 span');
+// feat/potion-expand：手机药水格移到 potBar.ts（PotBarDom），数量写 this.cnt[slot]（角标 span）
+const pb = readFileSync(new URL('../src/ui/potBar.ts', import.meta.url), 'utf8');
+ok(!/btns\[\w+\]\.textContent\s*=/.test(pb) && !/potBtns\[i\]\.textContent\s*=/.test(src), '数量不再用 textContent 覆盖按钮（会冲掉角标 span）');
+ok(/new PotBarDom\(/.test(src) && /this\.cnt\[slot\]\.textContent = n/.test(pb) && /innerHTML = '<span><\/span>'/.test(pb), '数量写进角标 span');
 ok(2 + (r - 1) >= r && 2 + (bt - 2) >= bt - 0, '角标右/下偏移（含 2px 布局边框）≥ 框宽');
 ok(3 * 7.5 <= POT_CSS - l - r, '3 位数字宽度在净空内');
 console.log(`potion-clip: ${pass} ok`);

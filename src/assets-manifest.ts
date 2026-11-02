@@ -52,6 +52,7 @@ export const ASSETS: Record<string, string> = {
   bg_floor14: 'assets/bg/bg_floor3.jpg', bg_floor15: 'assets/bg/bg_floor3.jpg', bg_floor16: 'assets/bg/bg_floor3.jpg', bg_floor17: 'assets/bg/bg_floor3.jpg', bg_floor18: 'assets/bg/bg_floor2.jpg', bg_floor19: 'assets/bg/bg_floor2.jpg', // [适配] 占位：古墓/天然洞穴/自然洞穴背景待美术（docs/art-requests.md）
   potion_0: 'assets/items/hp_small.png', potion_1: 'assets/items/hp_mid.png',
   potion_2: 'assets/items/mp_small.png', potion_3: 'assets/items/mp_mid.png',
+  potion_4: 'assets/items/pot_hp_big.png', potion_5: 'assets/items/pot_mp_big.png', potion_6: 'assets/items/pot_sun.png', potion_7: 'assets/items/pot_sun_big.png', // feat/potion-expand
   set_badge: 'assets/ui/set_badge.png', menu_0: 'assets/portraits/INV_Misc_Head_Human_01.png', menu_1: 'assets/items/INV_Misc_Bag_08.png',
   menu_2: 'assets/items/INV_Misc_Book_09.png', menu_3: 'assets/items/INV_Misc_Coin_01.png', menu_4: 'assets/skills/Ability_Warrior_BattleShout.png',
   slot_bg: 'assets/ui/UI-Quickslot2.png', slot_empty: 'assets/ui/UI-Backpack-EmptySlot.png',

@@ -46,12 +46,12 @@ try {
     });
     const ins = (a, c, e = 0.5) => a && a.l >= c.l - e && a.t >= c.t - e && a.r <= c.r + e && a.b <= c.b + e;
     const ov = (a, c) => a.l < c.r && c.l < a.r && a.t < c.b && c.t < a.b;
-    chk(g.pots.length === 4 && g.pots.every(q => q.skin), `${tag} 4 格且 B6 框已启用 bw=${g.pots[0]?.bw.join('/')}`);
+    chk(g.pots.length === 3 && g.pots.every(q => q.skin), `${tag} 3 格（feat/potion-expand）且 B6 框已启用 bw=${g.pots[0]?.bw.join('/')}`);
     chk(g.pots.every(q => q.box.w >= 44 && q.box.h >= 44), `${tag} 药水点击区 ≥44px ${g.pots.map(q => q.box.w.toFixed(0)).join(' ')}`);
     chk(g.pots.every(q => ins(q.icon, q.inner)), `${tag} 图标完整在框内 icon=${(g.pots[0].icon.r - g.pots[0].icon.l).toFixed(1)}px inner=${(g.pots[0].inner.r - g.pots[0].inner.l).toFixed(1)}px`);
     chk(g.pots.every(q => Math.abs((q.icon.l + q.icon.r) / 2 - (q.box.l + q.box.r) / 2) < 1 && Math.abs((q.icon.t + q.icon.b) / 2 - (q.box.t + q.box.b) / 2) < 1), `${tag} 图标居中`);
     chk(g.pots.every(q => ins(q.num, q.inner)), `${tag} 数字（${g.pots.map(q => q.txt).join('/')}）完整在框内 ${g.pots.map(q => q.num ? `${(q.num.r - q.inner.r).toFixed(1)},${(q.num.b - q.inner.b).toFixed(1)}` : 'none').join(' ')}`);
-    chk(g.pots.map(q => q.txt).join('/') === '5/99/999/0', `${tag} 数量渲染正确`);
+    chk(g.pots.map(q => q.txt).join('/') === '5/999/0', `${tag} 数量渲染正确（红=小红5 蓝=小蓝999 太阳水=0）`);
     chk(g.sk.length > 0 && g.pots.every(q => g.sk.every(o => !ov(q.box, o))), `${tag} 不挤占技能栏`);
     const m = 10, clip = { x: Math.max(0, g.u.l - m), y: Math.max(0, g.u.t - m), width: g.u.r - g.u.l + 2 * m, height: Math.min(VH, g.u.b + m) - Math.max(0, g.u.t - m), scale: 2 };
     await p.screenshot({ path: `${dir}/${pre}-${tag}.png`, clip });
