@@ -60,3 +60,17 @@ r3 ATK 1.04,1.12,1.12 EXP 1.25,1.25,1.3
 - tsc EXIT=0；npm run build EXIT=0；npm test 单进程 EXIT=0（npmtest2.log）。
 - battle.test 三职业 9 种子全 Lv50 通关，死亡与 94f4a01 逐种子相同；有 10 项 GAP（只报告、不断言）。
 - e2e 串行：balance-battle / hj-battle / chuanshi / mobile-skills 全部 EXIT=0。
+
+# 默认sim换装（feat/sim-swap-default，基于 eedfa27）
+- 改动：tests/sim-gear.ts `GEAR_SWAP = process.env.SIM_GEAR_SWAP !== '0'`（默认开换装+清包；=0 为旧行为）。5f00605。
+## ① 基线/94f4a01 在默认换装下的 battle.test（临时 worktree /tmp/ssd-base、/tmp/ssd-94f，打 apply-sim-gear/droplog）
+| 版本 | 职业 | 9 种子死亡 | 中位 | 等级 | 单层最多 |
+|---|---|---|---|---|---|
+| 7817cd1 | 战 | 14/5/6/11/8/10/11/6/13 | 10 | 全 50 | 5 |
+| 7817cd1 | 法 | 5/1/7/5/2/5/1/3/2 | 3 | 全 50 | 3 |
+| 7817cd1 | 道 | 1/12/9/11/2/6/2/16/5 | 6 | 全 50 | 4 |
+| 94f4a01 | 战 | 10/6/2/6/13/0/6/12/8 | 6 | 全 50 | 6 |
+| 94f4a01 | 法 | 3/0/2/6/4/4/1/6/6 | 4 | 全 50 | 5 |
+| 94f4a01 | 道 | 3/2/2/3/3/0/0/0/0 | 2 | 全 50 | 2 |
+- 两版都 EXIT=0（硬断言全过）。GAP：7817cd1 有 2 项（法中位 3；法/战用时 0.51）；94f4a01 有 4 项（战单层 6；法中位 4；道中位 2；法/战 0.50）。
+- 说明：sim-bands 表里的「死亡」是 9 种子合计（94f 战 63 = 58+5），不是中位。
