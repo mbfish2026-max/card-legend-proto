@@ -49,12 +49,13 @@ class Orb {
 export class Hud {
   hangTxt?: Phaser.GameObjects.Text; hangBanner?: Phaser.GameObjects.Text; private hangUntil = 0;
   /** feat/auto-hang：按钮高亮 + 屏幕上方横幅（挂机中=绿色小字；停止=红色醒目，5 秒后淡出）。放在可视区上方 18% 处，不压中间战斗区 */
-  setHang(on: boolean, stopMsg?: string) {
+  setHang(on: boolean, stopMsg?: string, info = '') {
     const s = this.s; if (!s?.sys?.isActive()) return;
     this.hangTxt?.setText(on ? '挂机中 J' : '挂机 J').setColor(on ? '#7fff7f' : '#d8f0a0');
     if (!this.hangBanner?.scene) this.hangBanner = s.add.text(640, 130, '', { fontFamily: FONT, fontSize: '22px', color: '#fff', fontStyle: 'bold', stroke: '#000', strokeThickness: 5, backgroundColor: '#000000aa', padding: { x: 14, y: 6 } }).setOrigin(0.5).setDepth(101).setName('hangBanner');
     const wv = s.cameras.main.worldView; this.hangBanner.setPosition(wv.centerX, wv.y + wv.height * 0.18);
     if (stopMsg) { this.hangUntil = s.time.now + 5000; this.hangBanner.setText('⚠ ' + stopMsg).setColor('#ff5050').setFontSize(24).setVisible(true).setAlpha(1); }
+    else if (on && info) { this.hangBanner.setText(info).setColor('#ffe070').setFontSize(20).setVisible(true).setAlpha(1); }
     else if (on) { this.hangBanner.setText('自动挂机中（方向键 / J 取消）').setColor('#9fff9f').setFontSize(18).setVisible(true).setAlpha(1); }
     else if (s.time.now > this.hangUntil) this.hangBanner.setVisible(false);
   }

@@ -59,7 +59,7 @@ export class BattleScene extends Phaser.Scene {
   skillsDirty = false;
   get paused() { return !!this.ui?.panel?.open; }
   /** feat/auto-hang：挂机状态（不存档；create 时重建 = 读档后一律关闭） */
-  hang = new AutoHang(); hangStopMsg = ''; private hangToggleAt = -1e9;
+  hang = new AutoHang(); hangStopMsg = ''; private hangToggleAt = -1e9; private hangInfoLogged = -1e9;
   /** J 键 / 挂机按钮：开 ↔ 关（250ms 去抖，防同一次点按被 pointer/touch 重复派发导致「开了又关」） */
   toggleHang() {
     const now = performance.now(); if (now - this.hangToggleAt < 250) return; this.hangToggleAt = now;
@@ -69,7 +69,7 @@ export class BattleScene extends Phaser.Scene {
     this.hangStopMsg = ''; this.log('自动挂机已开启（方向键 / 摇杆 / J 取消）', true); this.hud?.setHang(true);
   }
   stopHang(why: HangStop) {
-    if (!this.hang.on) return; this.hang.stop(); this.hangStopMsg = HANG_STOP_TEXT[why];
+    if (!this.hang.on) return; this.hang.stop(); this.hangStopMsg = HANG_STOP_TEXT[why] + (why === 'nocycle' && this.hang.info ? `（${this.hang.info}）` : '');
     this.log(this.hangStopMsg); this.hud?.setHang(false, this.hangStopMsg); if (why !== 'toggle' && why !== 'manual') this.sfx('click');
   }
 
@@ -853,13 +853,16 @@ export class BattleScene extends Phaser.Scene {
       else if (this.townTarget && this.world.town && this.world.hero) { const d = this.townTarget.x - this.world.hero.x; if (Math.abs(d) < 12) { const t = this.townTarget; this.townTarget = null; this.townArrive(t.id); } else dx = Math.sign(d); }
       const dy = this.state === 'play' ? Math.sign((k.DOWN.isDown ? 1 : 0) - (k.UP.isDown ? 1 : 0) + (pad?.dy ?? 0)) : 0;
       // feat/auto-hang：玩家方向输入 = 接管（关挂机）；否则由 AutoHang 产出本帧 dx，并强制自动普攻/自动技能 + 三格自动用药
-      let hangOn = false;
+      let hangOn = false, hangFight = true;
       if (this.hang.on && this.state === 'play') {
         if (dx || dy) this.stopHang('manual');
-        else { const r = this.hang.tick(this.world, dt); if (r.stop) this.stopHang(r.stop); else { dx = r.dx; hangOn = true; this.hangPotions(); } }
+        else { const r = this.hang.tick(this.world, dt); if (r.stop) this.stopHang(r.stop); else { dx = r.dx; hangOn = true; this.hangPotions();
+          // 用户新增：清层循环——换层途中不战斗（关普攻/自动技能），到出口自动「使用」传送门，到入口返回原层
+          if (r.fight === false) hangFight = false; if (r.use) this.useNext = true;
+          if (r.back && !this.fading) { this.fading = true; this.cameras.main.fadeOut(300, 0, 0, 0); this.cameras.main.once('camerafadeoutcomplete', () => { this.fading = false; this.world.prevFloor(); this.cameras.main.fadeIn(300); }); } } }
       }
-      if (this.state === 'play') this.tryAutoSkills(hangOn);
-      this.world.step(dt, { dx, dy, use: this.useNext, autoAttack: Settings.autoAttack || hangOn }); this.useNext = false;
+      if (this.state === 'play') { if (hangFight) this.tryAutoSkills(hangOn); }
+      this.world.step(dt, { dx, dy, use: this.useNext, autoAttack: hangOn ? hangFight : Settings.autoAttack }); this.useNext = false;
       this.cds = this.cds.map(c => Math.max(0, c - dt));
       this.saveT += dt; if (this.saveT > 15) { this.saveT = 0; this.saveGame(); }
     }
@@ -873,7 +876,8 @@ export class BattleScene extends Phaser.Scene {
     this.portal.setAlpha(!this.world.cleared ? 0.35 : 1);
     this.portalHint?.setVisible(this.world.atExit && this.state === 'play' && !(this.world.floor.boss && this.world.alive('enemy').some(u => u.tier === 'boss')));
     this.hud?.setExp(this.world.level, this.world.exp, this.world.expNext);
-    this.hud?.setHang(this.hang.on);
+    if (this.hang.on && this.hang.infoAt !== this.hangInfoLogged) { this.hangInfoLogged = this.hang.infoAt; if (this.hang.info) this.log('[挂机] ' + this.hang.info, true); }
+    this.hud?.setHang(this.hang.on, undefined, this.hang.on && this.world.time - this.hang.infoAt < 3.5 ? this.hang.info : '');
     // 接近首领时切换首领战音乐，击败后回到本层音乐
     const boss = this.world.alive('enemy').find(e => e.tier === 'boss'), hh = this.world.hero;
     const nearBoss = !!boss && !!hh && Math.abs(boss.x - hh.x) < 900;
