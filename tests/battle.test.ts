@@ -906,7 +906,7 @@ const free = (w: World) => w.skills.map(() => 0);
   const lo = mk([], [], 'warrior', 1); lo.bag.push(lo.makeItem('gold_ring')); ok(lo.equipItem(0)!.includes('等级'), '戒指仍检查需求等级');
   // 旧档：单戒/单镯
   const old = mk([], [], 'taoist', 30) /* 金戒指需求 9→22，夹具等级 15→30，断言不变 */; old.bag.push(old.makeItem('gold_ring'), old.makeItem('bracelet')); old.equipItem(1); old.equipItem(0);
-  const sv: any = JSON.parse(JSON.stringify(old.toSave())); sv.equip = { ring: sv.equip.ring1, bracelet: sv.equip.bracelet1, weapon: sv.equip.weapon }; delete sv.eqV;
+  const sv: any = JSON.parse(JSON.stringify(old.toSave())); sv.equip = { ring: sv.equip.ring1, bracelet: sv.equip.bracelet1, weapon: sv.equip.weapon, armor: sv.equip.armor /* starter-cloth：保留出生布衣 */ }; delete sv.eqV;
   const before = old.stats(), bagN = sv.bag.length;
   const nw = new World(seeded(1), 1, FLOORS, 'taoist', sv as SaveData);
   ok(nw.equip.ring1?.item === 'gold_ring' && !nw.equip.ring2 && !(nw.equip as any).ring, '旧档单戒 → ring1，ring2 空');
