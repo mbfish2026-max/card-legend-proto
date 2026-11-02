@@ -55,3 +55,8 @@ r3 ATK 1.04,1.12,1.12 EXP 1.25,1.25,1.3
 | r7 | 1,1,1 | 1.2,1.2,1.2 | 1.25,1.25,1.3 | 36/7/4 | 12.83/10.86/14.80 | 7/9/9 | 否（战 seed88 Lv47） |
 - 终选 r6（=f6e376d 仓库常量）。用时达标。死亡与 94f4a01 相同（5/2/6），低于基线 15/7/13，未达标。
 - 最接近的全达标方案是 r3，但它使默认 sim（battle.test）三职业各有一个种子未通关。不再加轮：atk 和 hp 都会让默认 sim 塌，EXP 不影响死亡。
+
+## 阶段 7 验收（HEAD 26f1bb2）
+- tsc EXIT=0；npm run build EXIT=0；npm test 单进程 EXIT=0（npmtest2.log）。
+- battle.test 三职业 9 种子全 Lv50 通关，死亡与 94f4a01 逐种子相同；有 10 项 GAP（只报告、不断言）。
+- e2e 串行：balance-battle / hj-battle / chuanshi / mobile-skills 全部 EXIT=0。
