@@ -1892,3 +1892,8 @@ AI 生成的 Legend of Mir 风格的蓝紫发光椭圆光圈漩涡，没有用 W
 - 未进 ui_atlas：图集 512×512 已用高度 509，放不下，改单图交付；如需进图集要先扩图集或重排（由主Bot决定）。
 - 脚本 `docs/ui-preview/build_belt.py`、`compose_belt.py`；源图 `docs/ui-preview/src/belt{1,2}_src.jpg`、`slot_empty_src.jpg`；预览 `docs/ui-preview/preview_belt_icons.jpg`。
 - 待系统开发：src/data/belts.ts 的 icon 由 gen_bracelet 占位换为 items/belt_*.png 并登记 @2x；装备面板腰带/靴子空槽接入 ui/slot_empty_*.png。
+
+## 5倍经验卷轴图标（feat/exp-scroll）
+- 文件：`public/assets/icons/shop_exp_scroll.png`，64×64 RGBA，可另附 @2x 128×128。
+- 现状：**占位图**。由 shop_summon_scroll 改色为金色并加绿色「×5」，待 AI 生成正式图标。
+- 要求：卷轴展开，金色或经验绿色调，带「×5」或上升箭头的元素；与召唤卷轴明显区分；缩到 28px（倒计时图标尺寸）时仍可辨认。
