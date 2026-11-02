@@ -59,4 +59,4 @@ for (const [req, boss, N, d] of [[5, false, 700, 44], [5, false, 1000, 60], [5, 
 ok(!['scarecrow', 'deer'].some(u => den('cloth', u)), 'G-7 稻草人/鹿不恢复布衣掉落');
 ok(den('wood_sword', 'hook_cat') === 25, 'G-15 木剑保留在 F0 掉落表');
 ok(REALIGN_PLAN.wood_sword.length === 3 && Object.keys(H_PLAN).length > 0, '木剑掉落来源保留 3 个');
-console.log(`early-gear: ${n - fail}/${n} ok`); if (fail) process.exit(1);
+console.log(`early-gear: ${n - fail}/${n} ok`); if (fail) (globalThis as any).process.exit(1);
