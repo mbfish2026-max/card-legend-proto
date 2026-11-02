@@ -76,8 +76,12 @@ try {
       ['bagfull', /背包已满/, `W.bag = arg.bag.map(x => ({ ...x })); const h = W.hero; W.ground.push({ gid: 99001, item: 'iron_sword', name: '测试剑', rarity: 'common', x: h.x + 120, y: 0, landAt: W.time - 1, atk: 1, hp: 0, amount: 1, inv: { ...arg.bag[0], uid: 99001 } });`],
       ['lowhp', /血量过低/, 'W.pots = W.pots.map(() => 0); W.hero.hp = Math.ceil(W.hero.maxHp * 0.1);'],
       ['boss', /首领/, `const ids = [...new Set(W.floors.flatMap(f => f.spawns.map(s => s.id)))]; for (const id of ids) { W.spawnFoe(id, W.hero.x + 300, 0); const u = W.units[W.units.length - 1]; if (u.tier === 'boss') break; u.alive = false; } W.drainEvents();`],
-      ['cleared', /已清空/, 'W.units.forEach(u => { if (u.team === "enemy") u.alive = false; }); W.ground = []; W.farmQueue = [];'],
     ];
+    { // 用户新增（fix/hang-stuck 清层循环）：本层清空不再停止，改为前往下一层并提示
+      await reset(page); await startHang(page); await sleep(200); await run(page, 'W.units.forEach(u => { if (u.team === "enemy") u.alive = false; }); W.ground = []; W.farmQueue = [];');
+      let bn = '', on = false; for (let i = 0; i < 20 && !/正在进入下一层/.test(bn); i++) { await sleep(150); bn = await banner(page); on = await run(page, 'return B.hang.on;'); }
+      ok(on && /正在进入下一层/.test(bn), `${tag} cleared → 不停止，前往下一层，横幅「${bn}」`);
+      if (touch) await page.screenshot({ path: `${dir}/${tag}-cleared-tonext.png` }); }
     for (const [nm, re, code] of stops) {
       await reset(page); await startHang(page); await sleep(200); await page.evaluate(new Function('arg', 'const B = window.__game.scene.getScene("Battle"), W = B.world; ' + code), { bag });
       const m = await waitStop(page, re); await sleep(250); const bn = await banner(page);
