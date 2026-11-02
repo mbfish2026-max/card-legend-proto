@@ -22,6 +22,9 @@ export type BloodstoneId = keyof typeof BLOODSTONES;
 export const RETURN_STONE_USES = 10, RETURN_STONE_CD_MS = 30_000;
 /** 技巧项链：技能熟练度 ×5 [用户要求]（战斗开发在 addTrain 接入） */
 export const SKILL_NECKLACE_MUL = 5;
+/** 5 倍经验卷轴 [用户要求]：击杀经验 ×5，2 小时「在线游戏时间」；重复使用累加剩余时间，上限 8 小时 [适配]；
+ *  价格 300 灵符为建议值（推导见 docs/exp-scroll.md §1），由用户定——只改 EXP_SCROLL_PRICE 一处 */
+export const EXP_SCROLL_MUL = 5, EXP_SCROLL_SEC = 2 * 3600, EXP_SCROLL_MAX_SEC = 8 * 3600, EXP_SCROLL_PRICE = 300;
 /** 召唤物直升等级 [用户要求] */
 export const SUMMON_SCROLL_LV = 7;
 
@@ -32,6 +35,7 @@ export const BLOODSTONE_ICON: Record<string, string> = { stone_s: IC + 'bloodsto
 /** 商城物品定义（并入 ITEMS 由 items.ts 之外的 registerShopItems 完成，避免改动平衡模拟输入） */
 export const SHOP_ITEMS: Record<string, ItemDef> = {
   summon_lv7_scroll: { id: 'summon_lv7_scroll', name: '召唤直升卷轴', icon: IC + 'shop_summon_scroll.png', price: 0 },
+  exp_scroll: { id: 'exp_scroll', name: '5倍经验卷轴', icon: IC + 'shop_exp_scroll.png', price: 0 }, // 占位图（docs/art-requests.md 待美术）
   return_stone: { id: 'return_stone', name: '回城石', icon: IC + 'shop_return_stone.png', price: 0 },
   skill_necklace: { id: 'skill_necklace', name: '技巧项链', icon: IC + 'shop_skill_necklace.png', price: 0, slot: 'necklace', req: 1, equip: {} },
   ...Object.fromEntries(Object.entries(BLOODSTONES).map(([id, b]) => [id, { id, name: b.name, icon: BLOODSTONE_ICON[id] ?? I + 'eq_pearl.png', price: 0, slot: 'stone', req: b.req, equip: {} } as ItemDef])),
@@ -39,6 +43,7 @@ export const SHOP_ITEMS: Record<string, ItemDef> = {
 
 export const PRODUCTS: Product[] = [
   { sku: 'summon_lv7_scroll', item: 'summon_lv7_scroll', name: '召唤直升卷轴', price: 300, tab: 'summon', hot: true, desc: `场上召唤物直接升到 ${SUMMON_SCROLL_LV} 级（满级）`, note: '价格 [用户要求]；需有召唤物在场' },
+  { sku: 'exp_scroll', item: 'exp_scroll', name: '5倍经验卷轴', price: EXP_SCROLL_PRICE, tab: 'grow', hot: true, desc: `使用后 ${EXP_SCROLL_SEC / 3600} 小时内击杀经验 ×${EXP_SCROLL_MUL}（按在线游戏时间计，可续时，上限 ${EXP_SCROLL_MAX_SEC / 3600} 小时）`, note: '倍率/时长 [用户要求]；价格为建议值待定；上限 [适配]' },
   { sku: 'skill_necklace', item: 'skill_necklace', name: '技巧项链', price: 500, tab: 'grow', hot: true, desc: `佩戴后技能熟练度 ×${SKILL_NECKLACE_MUL}，占项链栏`, note: '价格/倍率 [用户要求]；无属性 [适配]' },
   ...(Object.entries(BLOODSTONES) as [BloodstoneId, typeof BLOODSTONES[BloodstoneId]][]).map(([id, b]) => ({
     sku: id, item: id, name: b.name, price: b.price, tab: 'supply' as const, hot: id === 'stone_s',

@@ -9,6 +9,7 @@ import { WORLD } from '../data/world';
 import { TOWNS, returnTownOf } from '../data/towns';
 import { PRODUCT_BY_SKU, BLOODSTONES, BloodstoneId, RETURN_STONE_USES, RETURN_STONE_CD_MS, SUMMON_SCROLL_LV } from './catalog';
 import { WalletBackend, newIdem } from './wallet';
+import { useExpScroll } from './expScroll';
 
 export type BuyResult = { ok: true; msg: string; balance: number } | { ok: false; reason: 'sku' | 'balance' | 'bag' | 'level' | 'wallet'; msg: string; balance: number };
 
@@ -39,7 +40,7 @@ export function buy(w: World, wal: WalletBackend & { refund?(k: string, n: numbe
 }
 
 /** 背包里可点击使用的商城物品 */
-export const isShopUsable = (item: string) => item === 'return_stone' || item === 'summon_lv7_scroll';
+export const isShopUsable = (item: string) => item === 'return_stone' || item === 'summon_lv7_scroll' || item === 'exp_scroll';
 
 /** 回城石：无读条回到所在区域主城（returnTownOf），10 次，30 秒冷却。now 为 Date.now() 毫秒 */
 export function useReturnStone(w: World, bagIdx: number, now = Date.now()): { ok: boolean; msg: string } {
@@ -71,5 +72,5 @@ export function useSummonScroll(w: World, bagIdx: number): { ok: boolean; msg: s
 
 export function useShopItem(w: World, bagIdx: number, now = Date.now()) {
   const it = w.bag[bagIdx];
-  return it?.item === 'return_stone' ? useReturnStone(w, bagIdx, now) : useSummonScroll(w, bagIdx);
+  return it?.item === 'return_stone' ? useReturnStone(w, bagIdx, now) : it?.item === 'exp_scroll' ? useExpScroll(w, bagIdx) : useSummonScroll(w, bagIdx);
 }
