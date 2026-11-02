@@ -33,8 +33,8 @@ const mk = (c: any = 'warrior', save?: any) => { const w = new World(() => 0.5, 
 { const r = new RemoteWallet(); const x = await r.spend('return_stone', 100, 1, 'k'); ok(!x.ok && x.error === 'not_configured' && r.kind === 'remote', 'RemoteWallet 预留：未配置返回 not_configured'); }
 // ── 价格表一致性
 {
-  const want: Record<string, number> = { summon_lv7_scroll: 300, return_stone: 100, skill_necklace: 500, stone_s: 200, stone_m: 450, stone_l: 900, stone_x: 1800 };
-  ok(PRODUCTS.length === 7 && PRODUCTS.every(p => want[p.sku] === p.price), '价格表 = 简报（300/100/500/200/450/900/1800）');
+  const want: Record<string, number> = { summon_lv7_scroll: 300, return_stone: 100, skill_necklace: 500, stone_s: 200, stone_m: 450, stone_l: 900, stone_x: 1800, exp_scroll: 300 /* feat/exp-scroll 建议价，待用户定 */ };
+  ok(PRODUCTS.length === 8 && PRODUCTS.every(p => want[p.sku] === p.price), '价格表 = 简报（300/100/500/200/450/900/1800）');
   ok(PRODUCTS.every(p => ITEMS[p.item] && SHOP_ITEMS[p.item]), '每个商品都有物品定义');
   ok(['stone_s', 'stone_m', 'stone_l', 'stone_x'].map(k => (BLOODSTONES as any)[k]).map((b: any) => `${b.hp}/${b.req}`).join(',') === '20000/1,50000/35,120000/40,300000/45', '血石储量/佩戴等级');
   ok(!PRODUCTS.some(p => /bless_oil|black_iron/.test(p.item)) && PRODUCTS.every(p => !ITEMS[p.item].equip || Object.keys(ITEMS[p.item].equip!).length === 0), '不售祝福油/黑铁/带属性装备');
