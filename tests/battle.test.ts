@@ -83,7 +83,7 @@ const free = (w: World) => w.skills.map(() => 0);
 }
 { // 职业属性与成长
   for (const c of ['warrior', 'mage', 'taoist'] as ClassId[]) {
-    const w = mk([], [], c, 1), h = w.hero!;
+    const w = mk([], [], c, 1), h = w.hero!; delete w.equip.armor; w.recompute(); /* starter-cloth：本段测裸属性，先脱出生布衣 */
     ok(h.maxHp === CLASSES[c].base.hp && h.atk === CLASSES[c].base.atk + (w.equip.weapon?.stats.atk ?? 0) /* early-gear：出生木剑 */ && w.equip.weapon?.item === 'wood_sword' && w.skills.length >= 4 && w.skills.every(s => !s.passive), `${CLASSES[c].name} 1 级属性 + 快捷栏主动技能`);
     const hp1 = h.maxHp, m1 = h.mag ?? 0, t1 = h.tao ?? 0; h.hp = 5; w.gainExp(w.expNext);
     ok(w.level === 2 && h.maxHp > hp1 && h.hp === h.maxHp && (c !== 'mage' || h.mag! > m1) && (c !== 'taoist' || h.tao! > t1), `${CLASSES[c].name} 升级自动成长并回满`);
