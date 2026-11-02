@@ -247,3 +247,8 @@
 - 法师前期紧：铁剑/轻盔甲/项链拉回 11 级，1–10 级法师只靠木剑+布衣+T1 首饰，清怪速度可能明显下降。
 - 战士偏强：布衣加防、T1 戒指手镯 9 级即可穿，战士前期生存可能超出基线。
 - 1–10 级难度基线（R82 起）没重跑，以上均为定性判断。
+
+### 7.5 验证（feat/starter-cloth）
+- tsc 通过；npm test 逐文件 60 个全部通过（含新增 starter-cloth.test 142 项、battle.test 663 项）；npm run build 通过。
+- e2e：tapclose / mobile-panels / ui-dom / equip-tap-shots / early-gear-shots 全部 EXIT 0；starter-cloth-shots 44 项 ok，截图 28 张在 docs/shots/starter-cloth/。脚本改写的旧截图已还原。
+- 未跑 sim。1–30 级难度、手感未验证。
