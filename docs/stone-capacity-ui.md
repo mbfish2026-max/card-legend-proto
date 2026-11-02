@@ -29,3 +29,7 @@
 - 手机上格子里的数字约 7–9 CSS px，偏小；精确值看提示框。
 - 桌面悬停提示打开时如果储量变化，面板重绘会关掉提示（与经验变化时的旧行为一致），需重新悬停。
 - 背包血石在已装备血石时会走「对比」提示框，容量行作为附加行显示；没有并排显示已装备血石的容量。
+
+## 回归结果（2026-11-02）
+tapclose / mobile-panels / ui-dom / potion-clip / lingfu-shop / lingfu-combat e2e 全过。
+ui-slots e2e 有 3 FAIL + 844 装备格 TypeError，在 origin/main 665b01d 上原样复现，属既有问题，与本分支无关。
