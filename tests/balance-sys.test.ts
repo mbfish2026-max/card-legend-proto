@@ -112,7 +112,8 @@ let pass = 0; const ok = (c: boolean, m: string) => { if (!c) { console.error('F
   ok(gear('boss_chulong').some(d => d.item === 'longwen') || gear('boss_white_boar').some(d => d.item === 'longwen'), '蜈蚣洞/石墓 BOSS 仍掉龙纹剑');
   const src = new Set(Object.values(ENEMIES).flatMap(u => (u.drops ?? []).map(d => d.item)));
   for (const id of ['iron_ring', 'medium_armor', 'shengzhan_helm', 'shengzhan_ring', 'fashen_helm', 'fashen_bracelet']) ok(src.has(id), `${ITEMS[id].name} 有掉落来源`);
-  for (const id of ['set_zuma_boots', 'set_chiyue_ring']) ok(!src.has(id), `${ITEMS[id].name} 停掉落（D8，eg-sets）`);
+  for (const id of ['set_chiyue_ring']) ok(!src.has(id), `${ITEMS[id].name} 停掉落（D8，eg-sets）`);
+  for (const id of ['set_zuma_helm', 'set_zuma_ring', 'set_zuma_boots']) ok(src.has(id), `${ITEMS[id].name} 恢复掉落（zuma-drops 推翻 E5）`);
   for (const n of ['保卫家园', '卧龙山庄', '雷炎洞穴', '火龙神殿', '魔龙血域']) { const f = F4.findIndex(x => x.name === n);
     ok(F4[f].spawns.some(s => gear(s.id).some(d => (ITEMS[d.item]?.req ?? 0) >= FLOOR_TARGET_LV[f] - 15)), `${n} 有本段装备掉落`); }
   ok(Object.keys(DROP_REMOVED).length > 0, `越级封顶移除 ${Object.keys(DROP_REMOVED).length} 只怪的条目`);

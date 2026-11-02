@@ -5,9 +5,9 @@ export const REALIGN_PLAN: Record<string, [string, number][]> = {
   set_woma_helm: [["boss_woma", 20]],
   set_woma_necklace: [["boss_woma", 20]],
   set_woma_bracelet: [["boss_woma", 20]],
-  set_zuma_helm: [["boss_evil_pincer", 30], ["boss_chulong", 30]],
-  set_zuma_ring: [["boss_evil_pincer", 30], ["boss_chulong", 30]],
-  set_zuma_boots: [["boss_evil_pincer", 30], ["boss_chulong", 30]],
+  set_zuma_helm: [["boss_evil_pincer", 30], ["boss_chulong", 30], ["boss_zuma", 30], ["zuma_guard", 60], ["zuma_statue", 60]], // zuma-drops：推翻 E5 恢复；自创件无官方来源，1/N 按 30 档默认（适配）
+  set_zuma_ring: [["boss_evil_pincer", 30], ["boss_chulong", 30], ["boss_zuma", 30], ["zuma_guard", 60], ["zuma_statue", 60]], // zuma-drops：推翻 E5 恢复；自创件无官方来源，1/N 按 30 档默认（适配）
+  set_zuma_boots: [["boss_evil_pincer", 30], ["boss_chulong", 30], ["boss_zuma", 30], ["zuma_guard", 60], ["zuma_statue", 60]], // zuma-drops：推翻 E5 恢复；自创件无官方来源，1/N 按 30 档默认（适配）
   set_chiyue_necklace: [["boss_chulong", 30], ["boss_sq_jiguan", 30]],
   set_chiyue_ring: [["boss_chulong", 30], ["boss_sq_jiguan", 30]],
   set_chiyue_bracelet: [["boss_chulong", 30], ["boss_sq_jiguan", 30]],

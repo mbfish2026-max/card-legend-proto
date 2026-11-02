@@ -44,7 +44,7 @@ ok(Object.values(ENEMIES).every(u => !(u.drops ?? []).some(d => d.item === 'h_si
 ok(!den('boss_chulong', 'guyu') && den('boss_chulong', 'longwen') === 200, '骨玉删触龙神源；龙纹保留触龙神 1/200');
 // 5) 腰带：BELT_PLAN 全部挂上
 for (const [b, src] of Object.entries(BELT_PLAN)) for (const [e, d] of src) ok(den(e, b) === d, `${b}×${e} 1/${d}`);
-ok(!Object.values(ENEMIES).some(u => (u.drops ?? []).some(d => /^set_zuma/.test(d.item)) || (u as any).setDrop?.some((x: string) => /zuma/.test(x))), 'D8：祖玛件仍退役（无掉落/无 setDrop）');
+ok(!Object.values(ENEMIES).some(u => (u as any).setDrop?.some((x: string) => /zuma/.test(x))), 'D8：祖玛件不走 setDrop（zuma-drops 已推翻 E5 改普通掉落，见 zuma-drops.test）');
 // 6) 所有调整件来源合法：req ≤ 最低出现层目标等级 + 6/8
 const adj = [...Object.keys(REQ).filter(i => i !== 'cloth'), ...Object.keys(BELT_PLAN)];
 for (const it of adj) for (const [e, u] of Object.entries(ENEMIES)) { if (!(u.drops ?? []).some(d => d.item === it)) continue; const L = minFloorLv(e); if (L === undefined) continue;

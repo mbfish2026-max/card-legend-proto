@@ -32,8 +32,11 @@ for (const s of EG_SETS) { const m = ({ warrior: 'atk', mage: 'mag', taoist: 'ta
   SETS[s.id] = { id: s.id, name: s.name, pieces, bonus: s.bonus.map(([n, v, hp, def]) => ({ n, stats: { [m]: v, ...(hp ? { hp } : {}), ...(def ? { def } : {}) },
     text: `${CN[m]}+${v}${hp ? ` 生命+${hp}` : ''}${def ? ` 防御+${def}` : ''} [适配]` })) }; }
 
-// D8/E5：自创祖玛套/赤月套停掉落（旧存档里的件仍有效，SETS 保留）
-export const RETIRED_SET_ITEMS = ['set_zuma_helm', 'set_zuma_ring', 'set_zuma_boots', 'set_chiyue_necklace', 'set_chiyue_ring', 'set_chiyue_bracelet'];
+// D8/E5：自创赤月套停掉落（旧存档里的件仍有效，SETS 保留）。
+// feat/zuma-drops：推翻 E5 中的祖玛三件——set_zuma_helm/ring/boots 恢复掉落（来源见 drop-realign-table，适配），boss_zuma 的 setDrop 仍不恢复（避免与普通掉落重复）。
+export const RESTORED_SET_ITEMS = ['set_zuma_helm', 'set_zuma_ring', 'set_zuma_boots'];
+export const RETIRED_SET_ITEMS = ['set_chiyue_necklace', 'set_chiyue_ring', 'set_chiyue_bracelet'];
 if (ENEMIES.boss_zuma) delete ENEMIES.boss_zuma.setDrop;
 for (const u of Object.values(ENEMIES)) { if (u.drops) u.drops = u.drops.filter(d => !RETIRED_SET_ITEMS.includes(d.item));
-  if (u.setDrop) u.setDrop = u.setDrop.filter(id => !RETIRED_SET_ITEMS.includes(id)); }
+  // zuma-drops：祖玛三件只走普通掉落；setDrop（含大法老 boss_m3_great_pharaoh 复制自祖玛教主模板的每杀必出 1 件）仍剔除
+  if (u.setDrop) { u.setDrop = u.setDrop.filter(id => !RETIRED_SET_ITEMS.includes(id) && !RESTORED_SET_ITEMS.includes(id)); if (!u.setDrop.length) delete u.setDrop; } }
