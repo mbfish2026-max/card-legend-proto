@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## R81
+- R81：修复电脑版装备悬停提示闪两下后不再出现（合并 fix/tooltip-flash）。
+
 ## fix/tooltip-flash（未合并）
 - 修复电脑版悬停装备提示闪一下就消失：战斗中熟练度变化触发背包每 ~800ms 自动重绘，销毁提示且新格子收不到 pointerover。现悬停提示显示时跳过自动重绘，移出后补刷。新增 tests/e2e/tooltip-flash-verify.mjs。
 
