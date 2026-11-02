@@ -1,4 +1,5 @@
 import { SET_SPECIALS } from '../data/eg-sets';
+import { boundSellMsg } from '../data/early-gear';
 import { clampOff, visibleRange, dragOff, wheelOff, isTap, thumb } from './scrollList';
 const NPC_VIS = 7;
 import { COMPANION_MODE_NAME } from '../data/companion';
@@ -297,7 +298,7 @@ export class Panel {
     for (let i = p0; i < Math.min(WORLD.bagSize, p0 + BAG_PAGE); i++) {
       const it = w.bag[i], k = i - p0, x = x0 + (k % cols) * (size + 6), y = y0 + Math.floor(k / cols) * (size + 6);
       this.slotBox(R, x, y, size, it, '', right => {
-        if ((this.mode === 'shop' || this.npcKind() && this.npcKind() !== 'storage') && it?.bound) this.onChange(it.item === 'wood_sword' ? '出生木剑已绑定，不可出售' : '灵符商城物品不可出售', false);
+        if ((this.mode === 'shop' || this.npcKind() && this.npcKind() !== 'storage') && it?.bound) this.onChange(boundSellMsg(it), false);
         else if (this.mode === 'shop' || this.npcKind() && this.npcKind() !== 'storage') { const g = w.sellItem(i); sfx(s, 'coin'); this.onChange(`出售 ${it!.name} 获得 ${g} 金币`, true); }
         else if (this.npcKind() === 'storage') { const e = w.deposit(i); this.onChange(e ?? `存入 ${it!.name}`, !e); }
         else if (isShopUsable(it!.item) && !right) { const r = useShopItem(w, i); sfx(s, 'loot', 0.5); this.onChange(r.msg, r.ok); if (r.ok && it!.item === 'return_stone') { this.mode = null; this.close(); } if (r.ok) this.onTeleport?.(); }
