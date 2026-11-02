@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## fix/tooltip-flash（未合并）
+- 修复电脑版悬停装备提示闪一下就消失：战斗中熟练度变化触发背包每 ~800ms 自动重绘，销毁提示且新格子收不到 pointerover。现悬停提示显示时跳过自动重绘，移出后补刷。新增 tests/e2e/tooltip-flash-verify.mjs。
+
 ## fix/lingfu-click-close：电脑鼠标点灵符入口，商店打开又立刻关闭（未合 main）
 - 根因：桌面入口 lingfuEntry 在 pointerdown 打开面板；Panel.render 末尾 flushInput 让新建的全屏遮罩当帧就可点，同一次点击的 pointerup 落在遮罩上，经 shouldTapClose（面板外、位移 ≤8px）关闭面板。按住拖出 >8px 再松开不算点击，所以不关。手机入口是 DOM 按钮（#mh-shop），抬起不落在画布遮罩上，不受影响。
 - 修复（src/ui/LingfuShopView.ts）：遮罩 pointerdown 时记录 pointer.downTime，pointerup 仅当同一次按下发生在遮罩上才关闭。点面板外、点 ✕ 照常关闭。
