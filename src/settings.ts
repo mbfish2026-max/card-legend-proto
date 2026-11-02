@@ -23,6 +23,8 @@ export const Settings = {
   lowFx: null as boolean | null,
   /** 进入怪物近战范围时自动普攻（不追怪，移动仍由玩家控制） */
   autoAttack: true,
+  /** feat/auto-hang：挂机自动用药阈值（比例 0~1）；红 HP、太阳水 HP、蓝 MP。挂机开关本身不存 */
+  hangRed: 0.4, hangSun: 0.3, hangBlue: 0.3,
   /** 自动释放的技能 id 列表（按优先级）；null=用职业推荐；[]=不放技能 */
   autoSkills: null as string[] | null,
   /** 已手动改过自动技能的职业；null=旧存档（列表对所有职业生效）。未改过的职业用推荐默认，避免改战士后法师/道士全被清空 */
@@ -46,6 +48,7 @@ export const Settings = {
       if (typeof raw.showPadMobile === 'boolean' || raw.showPadMobile === null) this.showPadMobile = raw.showPadMobile as boolean | null;
       else this.showPadMobile = null;
       if (typeof raw.autoAttack === 'boolean') this.autoAttack = raw.autoAttack;
+      for (const k of ['hangRed', 'hangSun', 'hangBlue'] as const) { const v = raw[k]; if (typeof v === 'number' && Number.isFinite(v)) this[k] = Math.max(0, Math.min(0.9, v)); }
       if (raw.autoSkills === null) this.autoSkills = null;
       else if (Array.isArray(raw.autoSkills)) this.autoSkills = raw.autoSkills.filter((x): x is string => typeof x === 'string');
       if (Array.isArray(raw.autoTouched)) this.autoTouched = raw.autoTouched.filter((x): x is ClassId => typeof x === 'string' && x in DEFAULT_AUTO_SKILLS);
@@ -61,7 +64,7 @@ export const Settings = {
     ls()?.setItem(SET_KEY, JSON.stringify({
       volume: this.volume, muted: this.muted, music: this.music,
       showPadMobile: this.showPadMobile, lowFx: this.lowFx,
-      autoAttack: this.autoAttack, autoSkills: this.autoSkills, autoTouched: this.autoTouched, zoom: this.zoom, zoomAuto: this.zoomAuto, res: this.res, wmZoom: this.wmZoom, wmArea: this.wmArea,
+      autoAttack: this.autoAttack, autoSkills: this.autoSkills, autoTouched: this.autoTouched, hangRed: this.hangRed, hangSun: this.hangSun, hangBlue: this.hangBlue, zoom: this.zoom, zoomAuto: this.zoomAuto, res: this.res, wmZoom: this.wmZoom, wmArea: this.wmArea,
     }));
   },
   /** 手机/触屏：null 或 true → 显示虚拟按键；电脑永远 false */
