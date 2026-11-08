@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 召唤直升卷轴覆盖法师宠物 + 全职业召唤物生存（未合并/未发布）
+- 升级卡仍是灵符商城「召唤直升卷轴」。原先 `useSummonScroll` 只看 `World.summons`（不含 `pet`），法师只有诱惑宠物时提示没有召唤物且不消耗；`boostSummon` 虽能升宠物，但诱惑成功不读 `summonBoostLv`，用过卡之后新宠物仍从技能等级起。现改为 `upgradeSummons()`：道士骷髅、神兽、尸灵、金甲骷髅，以及法师诱惑之光宠物。至少升了一只才写 `summonBoostLv` 并扣卡；无目标、已满 7 级不扣卡、不改标记。替身法符、合击英雄、BOSS 召出的敌方小怪不算。
+- 法师召唤来源以 `classes.ts` 为准：只有 `charm`。冰系与五雷轰不生成单位。战士没有召唤技能。
+- 生存 [适配]：`WORLD.summonSurvHp=1.15`、`summonSurvDef=1.2`。`applySummonLv` 的生命与防御/魔御乘这两个数，攻击公式和 `summonInh*`、`summonHpMul`/`summonAtkMul` 不动。系数从 `sBase` 现算、不写回。血量保持原比例，不回满。替身用同一对系数，攻击仍为 0，不进卡、不存档。
+- 旧档：没有 `summons` / `summonBoostLv` 时行为与以前相同（无召唤物、未用过卡）。旧宠物档没有 `sBase.def` 时，用当时存的 `def`/`mdef` 补进基准再乘一次；基准里已有数则不再抄当前值。换图只搬家。
+- 公式与典型值见 docs/skills-official.md「5.1」、docs/lingfu-shop.md §10.6。本次按要求未跑 sim / npm test / e2e，只跑 tsc 与 build。未提供截图（没有不跑测试的现成截图手段）。
+
 ## 手机浮动摇杆（feat/float-joystick，未合 main）
 - 手机横屏 #mh-joy 改为浮动摇杆：左半屏、safe-area 顶 +64px 以下任意空地按下画布，底盘出现在按下点，拖动方向即移动方向，松手消失并停止。
 - 参数（src/ui/joyMath.ts）：底盘 120px，拇指最大位移 R=44px；死区横 0.35R、纵 0.5R；超半径时拇指钳在边上，底盘不跟随。

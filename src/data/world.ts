@@ -42,6 +42,11 @@ export const WORLD = {
   /** 等级差修正（balance-plan B [适配]，官方公式未查到）：怪物每高主角 1 级伤害 +3%；每低 1 级 −2%，下限 −30% */
   /** BOSS 调整（balance-plan I [适配]，官方数值未查到）：首图豁免 */
   summonHpMul: 0.3, summonAtkMul: 0.3, summonNerfLv: 11, summonNerfFullLv: 25, // feat/balance-battle：道士召唤物血/攻倍率，人物 15 级起线性降到 25 级的 ×0.3（避免断崖） [适配]
+  /** [适配] 全职业召唤物生存：只乘生命与防御/魔御，不乘攻击、不改英雄属性与继承比例（summonInh*）。
+   *  在 applySummonLv 里用 sBase 现算，不写回 sBase，所以读档、换图、继承刷新都不会叠加，也不会把当前血量补满。
+   *  幅度：生命 ×1.15（小于召唤等级一档，3→4 级官方血比 228/168≈+36%）；防御/魔御 ×1.20（防御原本不随召唤等级成长）。
+   *  不改 summonHpMul/summonAtkMul，避免抵消 25 级后的 ×0.3。官方无此系数。 */
+  summonSurvHp: 1.15, summonSurvDef: 1.2,
   bossAtkEarly: 0.6, bossAtkMid: 1.5, /* balance-battle2 W：1.12→1.5 [适配] */  bossAtkLate: 1.15, bossEarlyLv: 15, bossMidLv: 30,
   bossAtkVsNormal: 1.6, bossHpVsNormal: 4, bossAtkInterval: 1.2,
   bossMechMinLv: 31,          // 主线 BOSS 通用机制起始层目标等级（早期层只保留攻速）[适配]

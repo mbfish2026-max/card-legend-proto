@@ -38,7 +38,7 @@ export const CRIT_CHANCE = 0.15, CRIT_MULT = 1.8;
 export const SET_FX = { shengzhanCrit: 0.05, shengzhanCritDmg: 1.5, fashenMana: 0.1, tianzunSummon: 0.1, tianzunHeal: 0.1 };
 export interface Input { dx: number; dy: number; use?: boolean; step?: number; /** false 时关闭自动普攻；缺省/true 保持原行为 */ autoAttack?: boolean }
 /** 召唤物存档：id = 召唤物/原怪 UnitDef id；pet = 诱惑宠物；base = sBase（未继承的原公式属性）；hpR = 当前血量比例 */
-export interface SummonSave { id: string; pet?: boolean; sLv: number; sKills: number; base: { hp: number; atk: number; def?: number; start: number; name: string }; hpR: number; level?: number; def?: number; mdef?: number }
+export interface SummonSave { id: string; pet?: boolean; sLv: number; sKills: number; base: { hp: number; atk: number; def?: number; mdef?: number; start: number; name: string }; hpR: number; level?: number; def?: number; mdef?: number }
 export interface SaveData {
   /** feat/lingfu-combat：召唤直升卷轴已用 → 之后新召唤物初始等级（可选字段，缺省 0 = 未用） */
   summonBoostLv?: number;
@@ -291,6 +291,11 @@ export class World {
       if (r.pet) Object.assign(u, { pet: true, boss: undefined });
       if (r.def !== undefined) u.def = r.def; if (r.mdef !== undefined) u.mdef = r.mdef;
       u.sLv = Math.max(0, Math.min(SUMMON_MAX_LV, r.sLv | 0)); u.sKills = r.sKills | 0; u.sBase = { ...r.base };
+      // 旧档宠物只存了当前防/魔御、sBase 无 def：记入基准再乘一次生存系数。已有 sBase.def 的新档不再抄当前值，避免把已加成的数再乘一次
+      if (u.pet && u.sBase) {
+        if (u.sBase.def === undefined && typeof r.def === 'number') u.sBase.def = r.def;
+        if (u.sBase.mdef === undefined && typeof r.mdef === 'number') u.sBase.mdef = r.mdef;
+      }
       u.hp = u.maxHp = 1; this.applySummonLv(u); u.hp = Math.max(1, Math.round(u.maxHp * Math.min(1, Math.max(0, r.hpR ?? 1))));
     } catch { /* 坏条目忽略，不影响其它存档数据 */ }
   }
@@ -318,6 +323,14 @@ export class World {
   get summon() { return this.units.find(u => u.summon && !u.pet && u.alive); }
   /** 全部存活召唤物（不含宠物） */
   get summons() { return this.units.filter(u => u.summon && !u.pet && u.alive); }
+  /** 召唤直升卷轴的目标：有成长基准的存活召唤物与诱惑宠物。替身（无 sBase）、合击英雄、敌方小怪不算 */
+  upgradeSummons() { return this.units.filter(u => u.summon && u.alive && !u.decoy && !!u.sBase); }
+  /** 初始等级 = min(3, 技能等级)。召唤直升卷轴已用且更高时，从 summonBoostLv 起（sKills 补到该级门槛）。不改 sBase.start */
+  private stampSummonLevel(u: Unit, skillLv: number) {
+    const L = Math.min(3, Math.max(0, skillLv));
+    u.sLv = L; u.sKills = 0;
+    if (this.summonBoostLv > L) { u.sLv = this.summonBoostLv; u.sKills = SUMMON_LV_KILLS[this.summonBoostLv]; }
+  }
   get decoy() { return this.units.find(u => u.decoy && u.alive); }
   /** 自动施放门槛 [适配]：射程内最近目标可驯服且成功率 ≥50% 才放（免疫/等级过高/满宠不浪费魔法） */
   charmAutoOk() {
@@ -346,8 +359,9 @@ export class World {
     const def: UnitDef = { ...base, level: this.level + (beast ? slv : 0), hp: Math.round(hp0 * hpF * k.hp), atk: Math.round(atk0 * atkF * k.atk), def: Math.round(def0 * k.def) };
     const u = this.spawn(def, 'ally', h.x - h.facing * (110 + off), WORLD.summonLane); u.summon = true; u.facing = h.facing; u.ai = 'chase';
     // 召唤物等级：初始 = 技能等级（最高 3）；「重启」= 重新召唤从技能等级对应初始等级开始，不继承上一只已升等级
-    u.sLv = L; u.sKills = 0; u.sBase = { hp: def.hp, atk: def.atk, def: def.def, start: L, name: base.name };
-    if (this.summonBoostLv > L) { u.sLv = this.summonBoostLv; u.sKills = SUMMON_LV_KILLS[this.summonBoostLv]; } // 召唤直升卷轴：之后新召唤也从 7 级起（成长仍按 start=技能等级 的官方比例）
+    // sBase 记未乘生存系数的原公式；start 保持技能等级，直升卷轴只抬 sLv
+    u.sBase = { hp: def.hp, atk: def.atk, def: def.def, start: L, name: base.name };
+    this.stampSummonLevel(u, slv);
     this.applySummonLv(u);
     this.events.push({ type: 'summon', uid: u.uid });
   }
@@ -741,14 +755,14 @@ export class World {
   heroMoveSpeed(): number { return WORLD.heroSpeed * (this.hero?.spdMul ?? 1); }
   /** 召唤直升卷轴已用 → 新召唤物初始等级（0 = 未用）；存档字段 summonBoostLv */
   summonBoostLv = 0;
-  /** 召唤直升卷轴（灵符商城）：场上召唤物/宠物立即升到 lv，并记住 → 之后新召唤也按 lv。返回提升的只数 */
+  /** 召唤直升卷轴（灵符商城）：场上召唤物与诱惑宠物立即升到 lv。至少升了一只才记住 summonBoostLv（之后新召唤、新诱惑也按 lv）。返回实际提升的只数；已满级返回 0 且不改标记 */
   boostSummon(lv: number): number {
     const L = Math.max(0, Math.min(SUMMON_MAX_LV, lv | 0)); let n = 0;
-    this.summonBoostLv = Math.max(this.summonBoostLv, L);
-    for (const u of this.units) if (u.summon && u.alive && u.sBase && (u.sLv ?? 0) < L) {
+    for (const u of this.upgradeSummons()) if ((u.sLv ?? 0) < L && u.sBase) {
       u.sLv = L; u.sKills = Math.max(u.sKills ?? 0, SUMMON_LV_KILLS[L]); this.applySummonLv(u); n++;
       this.events.push({ type: 'log', text: `${u.sBase.name}升到 ${L} 级`, color: 'green' });
     }
+    if (n > 0) this.summonBoostLv = Math.max(this.summonBoostLv, L);
     return n;
   }
   /** 血石参数 [适配]（官方：每秒 HP10/MP15，扣储量，耗尽消失；本作按 docs/lingfu-shop.md §3.3 加快节奏，见 §10.6） */
@@ -780,10 +794,12 @@ export class World {
   }
   applySummonLv(u: Unit) {
     // 诱惑之光宠物：不吃骷髅的召唤物整体倍率（只按等级比例成长）
+    // [适配] summonSurvHp/Def 只乘生命与防御/魔御；攻击公式与英雄继承（hi）原样。系数从 sBase 现算、不写回，重复调用不叠加；血量按原比例保留，不回满
     const b = u.sBase!, L = u.sLv ?? 0, O = SKELETON_OFFICIAL, hm = u.pet ? 1 : summonMulAt(this.level, WORLD.summonHpMul), am = u.pet ? 1 : summonMulAt(this.level, WORLD.summonAtkMul), r = u.maxHp > 0 ? u.hp / u.maxHp : 1;
     const hi = this.summonInherit(u);
-    u.maxHp = u.hp = Math.round(hm * b.hp * O.hp[L] / O.hp[b.start]) + hi.hp; u.hp = Math.round(u.maxHp * r); u.atk = Math.round(am * b.atk * O.atkMax[L] / O.atkMax[b.start]) + hi.atk;
-    if (b.def !== undefined) u.def = b.def + hi.def;
+    u.maxHp = u.hp = Math.round(hm * b.hp * O.hp[L] / O.hp[b.start] * WORLD.summonSurvHp) + hi.hp; u.hp = Math.round(u.maxHp * r); u.atk = Math.round(am * b.atk * O.atkMax[L] / O.atkMax[b.start]) + hi.atk;
+    if (b.def !== undefined) u.def = Math.round(b.def * WORLD.summonSurvDef) + hi.def;
+    if (b.mdef !== undefined) u.mdef = Math.round(b.mdef * WORLD.summonSurvDef);
     u.inhKey = hi.key;
     u.name = summonDisplayName(b.name, L, this.ownerLabel); u.nameColor = summonNameColor(L);
   }
@@ -1302,8 +1318,9 @@ export class World {
       else if (c.res === 'high') { this.events.push({ type: 'charm', uid: t.uid, result: 'high' }, { type: 'log', text: `诱惑失败：${t.name}等级高于自身 ${CHARM.levelGap} 级以上` }); }
       else if (this.rng() < c.p) {
         Object.assign(t, { team: 'ally', summon: true, pet: true, ai: 'chase', y: WORLD.summonLane, boss: undefined, poisonUntil: 0, redUntil: 0, slowUntil: 0, facing: h.facing });
-        // 法师宠物升级同道士召唤物：初始 = 技能等级（最高 3），杀怪升级、名字带等级与蓝色
-        const L = Math.min(3, slv); t.sLv = L; t.sKills = 0; t.sBase = { hp: t.maxHp, atk: t.atk, start: L, name: t.name }; this.applySummonLv(t);
+        // 法师宠物升级同道士召唤物：初始 = 技能等级（最高 3），杀怪升级、名字带等级与蓝色。sBase 记下诱惑当时的血/攻/防（未乘生存系数）
+        const L = Math.min(3, slv); t.sBase = { hp: t.maxHp, atk: t.atk, def: t.def ?? 0, ...(t.mdef !== undefined ? { mdef: t.mdef } : {}), start: L, name: t.name };
+        this.stampSummonLevel(t, slv); this.applySummonLv(t);
         this.events.push({ type: 'charm', uid: t.uid, result: 'ok' }, { type: 'log', text: `诱惑成功：${t.name}成为宠物`, color: 'green' });
       } else {
         if (t.ai !== 'chase') { t.ai = 'chase'; this.events.push({ type: 'aggro', uid: t.uid }); }
@@ -1328,7 +1345,7 @@ export class World {
       // 替身法符：替身站在主角面前，周围追击中的怪仇恨转移到替身（官方）；[适配] HP 随道术与技能等级
       const near = this.alive('enemy').filter(e => e.ai === 'chase' && Math.abs(e.x - h.x) <= 600);
       const side = Math.sign((near[0]?.x ?? h.x + h.facing) - h.x) || h.facing;
-      const def: UnitDef = { ...DECOY, level: this.level, hp: Math.round((120 + (h.tao ?? 0) * 4) * lvF), atk: 0, def: Math.round(3 + this.level * 0.8) };
+      const def: UnitDef = { ...DECOY, level: this.level, hp: Math.round((120 + (h.tao ?? 0) * 4) * lvF * WORLD.summonSurvHp), atk: 0, def: Math.round((3 + this.level * 0.8) * WORLD.summonSurvDef) };
       const u = this.spawn(def, 'ally', h.x + side * 120, WORLD.summonLane); u.decoy = true; u.decoyUntil = this.time + dur; u.facing = side as 1 | -1;
       for (const e of near) if (!BOSS_MECH.has(e.id)) e.aggroUid = u.uid;
       this.events.push({ type: 'summon', uid: u.uid }, { type: 'log', text: `${s.name}：${near.length} 个怪物转而攻击替身（${dur} 秒）` });

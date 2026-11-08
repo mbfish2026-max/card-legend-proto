@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 召唤直升卷轴覆盖法师宠物 + 全职业召唤物生存（未合并/未发布）
+- 召唤直升卷轴改为同时作用于道士召唤物与法师诱惑宠物。没有可升级目标或已经满级不消耗，也不抬高 `summonBoostLv`。用过之后，新召唤和新诱惑从该等级起。
+- [适配] 全职业召唤物生命 ×1.15、防御/魔御 ×1.20（`summonSurvHp` / `summonSurvDef`）。不加攻击，不改英雄属性和继承比例。从 `sBase` 现算，读档不叠加，换图不回血。替身同样乘这两个数，攻击仍为 0。
+- 说明见 docs/skills-official.md「5.1」。本次未跑 sim / npm test / e2e。
+
 ## R85
 - R85：手机浮动摇杆（feat/float-joystick）、5 倍经验卷轴（feat/exp-scroll，图标仍为占位图）、血石剩余/总容量显示（feat/stone-capacity-ui）。本次按要求未跑 npm test / e2e，仅 tsc + build。
 

@@ -41,8 +41,8 @@ export interface Unit extends UnitDef {
   aggroUid?: number;
   /** 传世替身法符：替身单位（不攻击、不移动，到时消散；不存档） */
   decoy?: boolean; decoyUntil?: number;
-  /** 召唤物等级 0–7（[适配] 官方 宝宝 7 级）、本只召唤物期间主角+召唤物总击杀、成长基准（初始属性与初始等级）、名字颜色；均不存档 */
-  sLv?: number; sKills?: number; sBase?: { hp: number; atk: number; def?: number; start: number; name: string }; inhKey?: string; /** 英雄移动速度倍率（加速/减速效果挂这里，默认 1） */ spdMul?: number; nameColor?: string;
+  /** 召唤物等级 0–7（[适配] 官方 宝宝 7 级）、本只召唤物期间主角+召唤物总击杀、成长基准（初始属性与初始等级，生存系数不写回这里）、名字颜色 */
+  sLv?: number; sKills?: number; sBase?: { hp: number; atk: number; def?: number; /** 诱惑宠物原魔御；无此字段则不改 mdef */ mdef?: number; start: number; name: string }; inhKey?: string; /** 英雄移动速度倍率（加速/减速效果挂这里，默认 1） */ spdMul?: number; nameColor?: string;
   armorUntil?: number; armorReduce?: number;
   /** #12 幽灵盾（魔御）/神圣战甲术（防御）增益，不存档 */
   mdefUpUntil?: number; mdefUp?: number; defUpUntil?: number; defUp?: number;

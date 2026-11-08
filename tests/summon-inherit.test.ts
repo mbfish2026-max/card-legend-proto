@@ -13,7 +13,7 @@ for (const id of ['summon_skeleton', 'summon_beast', 'drive_corpse', 'summon_gol
   const i = w.skills.findIndex(s => s.id === id); const r = w.cast(i, w.skills.map(() => 0)); if (!r.ok) throw new Error(id + ' ' + r.reason);
   const u = summonsOf(w).find(x => x.sBase && !x.pet)!; const b = u.sBase!;
   // 当前继承部分 = 最终 − 不继承时（summonInherit 返回值）
-  const chk = (tag: string) => { const e = inh(h), got = w.summonInherit(u); ok(got.atk === e.atk && got.def === e.def && got.hp === e.hp && u.def === (b.def ?? 0) + e.def, `${id} ${tag}：继承 攻${got.atk}=20%×max(攻${h.atk},道${h.tao}) 防${got.def}=20%×${h.def} 血${got.hp}=15%×${h.maxHp}；召唤物 攻${u.atk} 防${u.def} 血${u.maxHp}`); };
+  const chk = (tag: string) => { const e = inh(h), got = w.summonInherit(u); ok(got.atk === e.atk && got.def === e.def && got.hp === e.hp && u.def === Math.round((b.def ?? 0) * WORLD.summonSurvDef) + e.def, `${id} ${tag}：继承 攻${got.atk}=20%×max(攻${h.atk},道${h.tao}) 防${got.def}=20%×${h.def} 血${got.hp}=15%×${h.maxHp}；召唤物防=round(基准×${WORLD.summonSurvDef})+继承 攻${u.atk} 防${u.def} 血${u.maxHp}`); };
   chk('召唤时');
   const a0 = u.atk, d0 = u.def!, m0 = u.maxHp; u.hp = Math.round(u.maxHp / 2); const r0 = u.hp / u.maxHp;
   // 换装：直接加一件 +50 道术 +40 防 +500 血的武器

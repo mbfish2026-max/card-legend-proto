@@ -1,6 +1,6 @@
 import { summonNameColor, SUMMON_NAME_COLORS, summonOwnerLabel, summonDisplayName, summonNameParts, fitSummonName } from '../src/combat/summonLabel';
 import { World, SUMMON_LV_KILLS } from '../src/combat/World';
-import { FLOORS } from '../src/data/world';
+import { FLOORS, WORLD } from '../src/data/world';
 let n = 0; const ok = (c: boolean, m: string) => { if (!c) throw new Error('FAIL ' + m); n++; };
 const blue = (c: string) => { const v = parseInt(c.slice(1), 16), r = v >> 16, g = (v >> 8) & 255, b = v & 255; return b > r && b > g; };
 // 等级 → 颜色
@@ -29,7 +29,7 @@ w.applySummonLv(fake); ok(fake.name === '骷髅·0级 道士的宠物' && fake.n
 (w as any).ownerName = '小明'; fake.sLv = 7; w.applySummonLv(fake); ok(fake.name === '骷髅·7级 小明的宠物' && fake.nameColor === SUMMON_NAME_COLORS[7], '角色名 + 满级蓝');
 const wm = new World(() => 0.01, 30, FLOORS, 'mage');
 const pet: any = { ...h, uid: 9992, summon: true, pet: true, sLv: 1, sKills: 0, sBase: { hp: 200, atk: 20, start: 1, name: '钉耙猫' }, maxHp: 200, hp: 200, atk: 20, isHero: false };
-wm.applySummonLv(pet); ok(pet.name === '钉耙猫·1级 法师的宠物' && pet.nameColor === summonNameColor(1) && pet.maxHp === 200 && pet.atk === 20, '法师宠物同格式且初始不改属性');
+wm.applySummonLv(pet); ok(pet.name === '钉耙猫·1级 法师的宠物' && pet.nameColor === summonNameColor(1) && pet.maxHp === Math.round(200 * WORLD.summonSurvHp) && pet.atk === 20, '法师宠物同格式；同级只乘生存血量、攻击不变');
 pet.sLv = 5; wm.applySummonLv(pet); ok(pet.maxHp > 200 && pet.nameColor === summonNameColor(5), '法师宠物升级成长 + 变色');
 ok(SUMMON_LV_KILLS.length === 8, '等级阈值表');
 console.log(`summon-label: ${n} ok`);

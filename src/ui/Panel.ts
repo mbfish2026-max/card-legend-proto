@@ -9,7 +9,7 @@ import { COMPANION_UNLOCK_LEVEL, comboFor, BOOK_PAGE, BRM_BOOK, GOLD_BAR, PAGES_
 import { toLogic, toLogicX, MAX_LW, Render } from '../render';
 import { isShopUsable, useShopItem } from '../shop/shop';
 import { fmtLeft } from '../shop/expScroll';
-import { EXP_SCROLL_MUL, EXP_SCROLL_SEC, EXP_SCROLL_MAX_SEC } from '../shop/catalog';
+import { EXP_SCROLL_MUL, EXP_SCROLL_SEC, EXP_SCROLL_MAX_SEC, SUMMON_SCROLL_LV } from '../shop/catalog';
 import { renderLingfu, resetLingfu } from './LingfuShopView';
 import { frameBg, atlasReady, listRowPitch, rowHitHeight, viewCss, rowBg, scrollBar, slotBg, qualityFrame, slotHitSize, bloodstoneSlot, rowTint, SKILL_ROW_TINT, UI_SLICES , panelFrameName, MOBILE_TABS, MIN_TAP } from './uiSlices';
 import { compareRows, diffText, CmpData } from './equipCompare';
@@ -548,6 +548,7 @@ export class Panel {
     { const cl = ITEMS[it.item]?.cls; if (cl?.length && !cl.includes(w.cls)) lines.push([`职业不符：${cl.map(c => CLASSES[c].name).join('/')}专用，无法装备`, '#f66']); }
     if (ITEMS[it.item]?.book) { const sk = w.skillPool.find(x => x.id === ITEMS[it.item].book); lines.push([sk ? (w.learned.has(sk.id) ? '已学会（可出售）' : `点击学习（需 Lv${w.needLevel(sk)}）`) : '非本职业技能书', '#9fd']); }
     if (it.item === 'exp_scroll') { const L = w.expScrollLeft; lines.push([`点击使用：${EXP_SCROLL_SEC / 3600} 小时内击杀经验 ×${EXP_SCROLL_MUL}`, '#9fd'], ['按在线游戏时间计（暂停/关页面不计），续用累加', '#9ab'], [`剩余时间上限 ${EXP_SCROLL_MAX_SEC / 3600} 小时；倍率不叠加`, '#9ab'], [L > 0 ? `当前剩余 ${fmtLeft(L)}` : '当前未生效', L > 0 ? '#7aff7a' : '#777']); } // feat/exp-scroll
+    if (it.item === 'summon_lv7_scroll') lines.push([`点击使用：场上召唤物与法师诱惑宠物升到 ${SUMMON_SCROLL_LV} 级`, '#9fd'], ['没有召唤物、已经满级、只有替身或英雄时不消耗', '#9ab'], [w.summonBoostLv > 0 ? `之后新召唤从 ${w.summonBoostLv} 级起` : '生效后，之后新召唤也从 7 级起', '#9ab']);
     if (it.item === 'bless_oil') lines.push(['点击：作用于当前武器（幸运+1，上限7，可能诅咒）', '#9fd']);
     if (it.item === 'black_iron') lines.push([`纯度 ${it.purity ?? 1} ×${it.qty ?? 1}：点装备栏强化；再点可提纯`, '#9fd']);
     if (it.enhance) lines.push([`强化 +${it.enhance}（上限 +${ENHANCE_MAX}）`, '#c8c8ff']);

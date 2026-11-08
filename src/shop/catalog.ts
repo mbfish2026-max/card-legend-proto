@@ -42,7 +42,7 @@ export const SHOP_ITEMS: Record<string, ItemDef> = {
 };
 
 export const PRODUCTS: Product[] = [
-  { sku: 'summon_lv7_scroll', item: 'summon_lv7_scroll', name: '召唤直升卷轴', price: 300, tab: 'summon', hot: true, desc: `场上召唤物直接升到 ${SUMMON_SCROLL_LV} 级（满级）`, note: '价格 [用户要求]；需有召唤物在场' },
+  { sku: 'summon_lv7_scroll', item: 'summon_lv7_scroll', name: '召唤直升卷轴', price: 300, tab: 'summon', hot: true, desc: `场上道士召唤物与法师诱惑宠物升到 ${SUMMON_SCROLL_LV} 级（满级）。没有可升级目标不消耗`, note: '价格 [用户要求]；满级/无召唤物/替身与英雄不消耗。生存系数另见召唤物公式 [适配]，不改攻击' },
   { sku: 'exp_scroll', item: 'exp_scroll', name: '5倍经验卷轴', price: EXP_SCROLL_PRICE, tab: 'grow', hot: true, desc: `使用后 ${EXP_SCROLL_SEC / 3600} 小时内击杀经验 ×${EXP_SCROLL_MUL}（按在线游戏时间计，可续时，上限 ${EXP_SCROLL_MAX_SEC / 3600} 小时）`, note: '倍率/时长 [用户要求]；价格为建议值待定；上限 [适配]' },
   { sku: 'skill_necklace', item: 'skill_necklace', name: '技巧项链', price: 500, tab: 'grow', hot: true, desc: `佩戴后技能熟练度 ×${SKILL_NECKLACE_MUL}，占项链栏`, note: '价格/倍率 [用户要求]；无属性 [适配]' },
   ...(Object.entries(BLOODSTONES) as [BloodstoneId, typeof BLOODSTONES[BloodstoneId]][]).map(([id, b]) => ({

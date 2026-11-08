@@ -57,15 +57,15 @@ export function useReturnStone(w: World, bagIdx: number, now = Date.now()): { ok
   return { ok: true, msg: `使用回城石：回到 ${TOWNS[t].name}（剩 ${Math.max(0, it.uses)} 次）` };
 }
 
-/** 召唤直升卷轴：场上召唤物升到 7 级（调用 World 现有 applySummonLv；正式接口 World.boostSummon 待战斗开发） */
+/** 召唤直升卷轴：场上道士召唤物与法师诱惑宠物升到 7 级。没有可升级目标（无召唤物、已满级、只有替身/英雄）不消耗，也不改 summonBoostLv */
 export function useSummonScroll(w: World, bagIdx: number): { ok: boolean; msg: string } {
   const it = w.bag[bagIdx]; if (!it || it.item !== 'summon_lv7_scroll') return { ok: false, msg: '无此物品' };
-  const boost = (w as any).boostSummon as ((lv: number) => number) | undefined;
-  const list = w.summons.filter(u => u.sBase && (u.sLv ?? 0) < SUMMON_SCROLL_LV);
-  if (!w.summons.length) return { ok: false, msg: '没有在场的召唤物（未消耗）' };
+  const all = w.upgradeSummons();
+  const list = all.filter(u => u.sBase && (u.sLv ?? 0) < SUMMON_SCROLL_LV);
+  if (!all.length) return { ok: false, msg: '没有在场的召唤物（未消耗）' };
   if (!list.length) return { ok: false, msg: '召唤物已是满级（未消耗）' };
-  if (boost) boost.call(w, SUMMON_SCROLL_LV);
-  else for (const u of list) { u.sLv = SUMMON_SCROLL_LV; w.applySummonLv(u); }
+  const n = w.boostSummon(SUMMON_SCROLL_LV);
+  if (n <= 0) return { ok: false, msg: '召唤物已是满级（未消耗）' };
   w.bag.splice(bagIdx, 1); w.events.push({ type: 'inventory' });
   return { ok: true, msg: `使用召唤直升卷轴：${list.map(u => u.sBase!.name).join('、')}升到 ${SUMMON_SCROLL_LV} 级` };
 }
