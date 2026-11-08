@@ -28,3 +28,48 @@ export function hdFixed<T extends { x: number; y: number }>(o: T): T { const sx 
 export const toLogic = (v: number) => v / Render.k;
 /** 屏幕 x（画布像素）→ 1280 内容坐标（扣除手机加宽的居中偏移） */
 export const toLogicX = (v: number) => v / Render.k - Render.ox;
+
+/**
+ * 文字工厂读取的「即将套上的父容器缩放」。
+ * 手机面板会先把整页放大（约 1.2–1.28），若文字仍按相机 zoom 栅格化，放大时就是在拉一张偏小的纹理。
+ * 只在构建这块 UI 期间抬高，结束必须改回 1。
+ */
+export let uiTextScale = 1;
+export function setUiTextScale(v: number) { uiTextScale = v > 0 ? v : 1; }
+/** 单张文字纹理的 resolution 上限。2–3x 屏上再高几乎看不出，面积却按平方涨。 */
+export const TEXT_RES_MAX = 3;
+
+/** 画布 backing 被浏览器放大到设备像素的倍数。画布已经比屏幕更细时返回值 < 1。 */
+function canvasToDevice(): number {
+  if (typeof window === 'undefined') return 1;
+  const dpr = window.devicePixelRatio > 0 ? window.devicePixelRatio : 1;
+  try {
+    const canvas = document.querySelector('#game canvas') as HTMLCanvasElement | null;
+    if (canvas && canvas.width > 0 && canvas.height > 0) {
+      const r = canvas.getBoundingClientRect();
+      const sx = r.width > 0 ? (r.width * dpr) / canvas.width : 0;
+      const sy = r.height > 0 ? (r.height * dpr) / canvas.height : 0;
+      const b = Math.max(sx, sy);
+      if (b > 0) return b;
+    }
+  } catch { /* 无 DOM */ }
+  const cssH = window.innerHeight || 0;
+  const k = Render.k > 0 ? Render.k : 1;
+  return cssH > 0 ? (cssH * dpr) / (LOGIC_H * k) : 1;
+}
+
+/**
+ * Phaser Text.resolution：内部画布像素 / 对象本地尺寸。
+ * 相机 zoom=k 且父容器缩放为 parentScale 时，要让纹理像素贴近设备像素：
+ * resolution = parentScale × k × max(画布→设备放大, 1)。
+ * 画布短于屏幕时，多出来的倍率是画进画布之前的超采样，浏览器再放大边缘更干净；不加大整张 framebuffer。
+ * 画布已经细过屏幕（boost<1）时不再加码，避免无谓的纹理。
+ */
+export function textResolution(parentScale = 1): number {
+  const k = Render.k > 0 ? Render.k : 1;
+  const ps = parentScale > 0 ? parentScale : 1;
+  let res = ps * k * Math.max(canvasToDevice(), 1);
+  if (!(res > 1.01)) return 1;
+  res = Math.min(TEXT_RES_MAX, Math.round(res * 100) / 100);
+  return res < 1 ? 1 : res;
+}

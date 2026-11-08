@@ -6,7 +6,7 @@ import { COMPANION_MODE_NAME } from '../data/companion';
 import { fmtInt, fmtText, bookEntry } from './fmt';
 import { SKILL_BOOK_DROPS } from '../data/skillBookDrops';
 import { COMPANION_UNLOCK_LEVEL, comboFor, BOOK_PAGE, BRM_BOOK, GOLD_BAR, PAGES_PER_BOOK, COMBO_LEVEL, heartFeedValue, RAGE_MAX, HEART_STORE_MAX, RECRUIT_DIALOG } from '../data/companion';
-import { toLogic, toLogicX, MAX_LW, Render } from '../render';
+import { toLogic, toLogicX, MAX_LW, Render, setUiTextScale } from '../render';
 import { isShopUsable, useShopItem } from '../shop/shop';
 import { fmtLeft } from '../shop/expScroll';
 import { EXP_SCROLL_MUL, EXP_SCROLL_SEC, EXP_SCROLL_MAX_SEC, SUMMON_SCROLL_LV } from '../shop/catalog';
@@ -121,13 +121,24 @@ export class Panel {
     const s = this.s, R = this.root = s.add.container(0, 0).setDepth(200);
     R.add(s.add.rectangle(640, 360, MAX_LW, 720, 0x000000, 0.45).setInteractive());
     const W = this.mode === 'settings' ? 640 : 1000, H = this.mode === 'settings' ? 580 : 500, top = Math.max(40, 360 - H / 2);
+    // 手机面板会 setScale(fitK)。文字必须按这个缩放栅格化，否则 18px 说明被放大后只有 ~0.65 设备像素/纹理像素。
+    const mobileFit = IS_MOBILE && this.mode !== 'map';
+    const fitK = mobileFit ? Math.min(1280 / W, 700 / H) : 1;
+    this.mscale = fitK;
+    setUiTextScale(fitK);
+    try { this.renderBody(R, W, H, top, mobileFit, fitK); } finally { setUiTextScale(1); }
+  }
+  /** 面板内容。调用期间 uiTextScale = 手机面板缩放，文字工厂据此提高 resolution。 */
+  private renderBody(R: Phaser.GameObjects.Container, W: number, H: number, top: number, mobileFit: boolean, fitK: number) {
+    if (!this.mode) return;
+    const s = this.s;
     // 边框与内容对齐：非设置面板内容从 top 起排到 top+478，边框覆盖 top-20 ~ top+480
     R.add(frameBg(s, panelFrameName(IS_MOBILE, f => atlasReady(s, f)), 640, this.mode === 'settings' ? 300 : top + H / 2 - 20, W, H, { fill: 0x15100b, alpha: 0.97, stroke: 0xd4a64a, sw: 3 }).setName('panelBg'));
     const titles = { bag: '角色 / 背包', shop: '商人 · 杂货铺', skills: '技能', settings: '设置', map: this.wm.area ? '' : '世界地图', quests: '悬赏 / 成就', lingfu: '灵符商城', town: `${TOWNS[this.world().town ?? 'bichi']?.name ?? '城镇'} · 安全区` };
     if (titles[this.mode] && atlasReady(s, 'title_plate')) R.add(frameBg(s, 'title_plate', 640, top + 22, Math.max(200, titles[this.mode].length * 26 + 80), 40, { fill: 0 }).setName('titlePlate')); // B2 标题底牌（无图集不画，保持原样）
     R.add(txt(s, 640, top + 22, titles[this.mode], 24, '#ffd24a', { fontStyle: 'bold' }).setOrigin(0.5));
     // 手机：面板整体放大到接近全屏（地图面板自带拖动/缩放坐标换算，不放大）；关闭键加大到 ≥44px
-    if (IS_MOBILE && this.mode !== 'map') { const k = Math.min(1280 / W, 700 / H); this.mscale = k; const cy = this.mode === 'settings' ? 300 : top + H / 2 - 20; R.setScale(k).setPosition(640 * (1 - k), cy * (1 - k) + (360 - cy)); } else this.mscale = 1;
+    if (mobileFit) { const cy = this.mode === 'settings' ? 300 : top + H / 2 - 20; R.setScale(fitK).setPosition(640 * (1 - fitK), cy * (1 - fitK) + (360 - cy)); }
     if (IS_MOBILE) { const cw = this.mscale > 1 ? 84 : 90, ch = this.mscale > 1 ? 76 : 84; R.add([...button(s, 640 + W / 2 - cw / 2 - 4, top + 14 + (ch - 64) / 2, cw, ch, '✕', () => this.close(), 30)]); }
     else R.add([...button(s, 640 + W / 2 - 26, top + 22, 36, 32, '✕', () => this.close(), 18)]);
     if (this.mode === 'settings') return this.renderSettings(R, top);
