@@ -252,6 +252,87 @@ export class Panel {
     const hh = rowHitHeight(IS_MOBILE, o.height, pitch, this.cssU());
     (o.input.hitArea as Phaser.Geom.Rectangle).setTo(0, (o.height - hh) / 2, o.width, hh); o.setData('rowHit', hh).setData('rowPitch', pitch); return b;
   }
+  /** 技能页 ▲▼ / 自动 / ↑↓：手机把偏窄的点击区加宽到 ≥44 CSS px。只改 hitArea，视觉宽高不动。
+   *  同行之间（含没有 input 的禁用钮占位）留 ≥0.5 CSS px，避免 Rectangle.Contains 双边闭合抢到同一点。
+   *  点击区顶边贴住按钮视觉顶，不再向上伸进关闭钮；关闭钮下缘因此让出，且自身仍 ≥44 CSS px。 */
+  private widenSkillRowHits(btns: Phaser.GameObjects.GameObject[]) {
+    if (!IS_MOBILE || btns.length === 0) return;
+    const css = Math.max(this.cssU(), 0.01);
+    const minW = MIN_TAP / css;
+    const GAP = 0.5 / css;
+    type It = { o: Phaser.GameObjects.Rectangle; visL: number; visR: number; visT: number; on: boolean };
+    const items: It[] = btns.map(o => {
+      const b = o as Phaser.GameObjects.Rectangle;
+      const visL = b.x - b.displayOriginX;
+      return { o: b, visL, visR: visL + b.width, visT: b.y - b.displayOriginY, on: !!(b.input?.hitArea && b.input.enabled !== false) };
+    });
+    const rows = new Map<number, It[]>();
+    for (const it of items) {
+      const key = Math.round(it.o.y);
+      const row = rows.get(key); if (row) row.push(it); else rows.set(key, [it]);
+    }
+    const placed: { l: number; t: number; r: number; b: number }[] = [];
+    for (const row of rows.values()) {
+      row.sort((a, b) => a.visL - b.visL);
+      let prevR = -1e9;
+      for (let i = 0; i < row.length; i++) {
+        const it = row[i];
+        const nextL = i + 1 < row.length ? row[i + 1].visL : 1e9;
+        if (!it.on) { prevR = Math.max(prevR, it.visR); continue; }
+        const ha = it.o.input!.hitArea as Phaser.Geom.Rectangle;
+        const leftBound = prevR > -1e8 ? prevR + GAP : -1e9;
+        const rightBound = nextL < 1e8 ? nextL - GAP : 1e9;
+        const need = Math.max(it.o.width, minW);
+        let left = it.o.x - need / 2;
+        let right = left + need;
+        if (left < leftBound) { const d = leftBound - left; left += d; right += d; }
+        if (right > rightBound) { const d = right - rightBound; left -= d; right -= d; }
+        if (left < leftBound) left = leftBound;
+        if (right > rightBound) right = rightBound;
+        if (left > it.visL) left = it.visL;
+        if (right < it.visR) right = it.visR;
+        ha.setTo(left - it.visL, 0, right - left, ha.height);
+        prevR = it.visL + ha.x + ha.width;
+        placed.push({ l: it.visL + ha.x, t: it.visT + ha.y, r: it.visL + ha.x + ha.width, b: it.visT + ha.y + ha.height });
+      }
+    }
+    this.trimSkillClose(placed, GAP, css);
+  }
+  /** 技能页关闭钮：下缘收到不会盖住技能行点击区的位置。剩余高度仍 ≥44 CSS px，否则不动。 */
+  private trimSkillClose(hits: { l: number; t: number; r: number; b: number }[], gap: number, css: number) {
+    const root = this.root; if (!root) return;
+    let text: Phaser.GameObjects.Text | undefined;
+    const walkT = (o: Phaser.GameObjects.GameObject) => {
+      const t = o as Phaser.GameObjects.Text;
+      if (!text && t.type === 'Text' && t.text === '✕') text = t;
+      const list = (o as Phaser.GameObjects.Container).list as Phaser.GameObjects.GameObject[] | undefined;
+      if (list) for (const c of list) walkT(c);
+    };
+    walkT(root);
+    if (!text) return;
+    let bg: Phaser.GameObjects.Rectangle | undefined;
+    const walkB = (o: Phaser.GameObjects.GameObject) => {
+      if (bg) return;
+      const b = o as Phaser.GameObjects.Rectangle;
+      if (b.input?.hitArea && b.x === text!.x && b.y === text!.y) bg = b;
+      const list = (o as Phaser.GameObjects.Container).list as Phaser.GameObjects.GameObject[] | undefined;
+      if (list) for (const c of list) walkB(c);
+    };
+    walkB(root);
+    if (!bg?.input?.hitArea) return;
+    const ha = bg.input.hitArea as Phaser.Geom.Rectangle;
+    const cL = bg.x - bg.displayOriginX + ha.x;
+    const cT = bg.y - bg.displayOriginY + ha.y;
+    const cR = cL + ha.width;
+    const cB = cT + ha.height;
+    let limit = cB;
+    for (const h of hits) {
+      if (Math.min(cR, h.r) - Math.max(cL, h.l) > 0 && h.t < cB) limit = Math.min(limit, h.t - gap);
+    }
+    if (limit >= cB) return;
+    const newH = limit - cT;
+    if (newH >= MIN_TAP / css) ha.setTo(ha.x, ha.y, ha.width, newH);
+  }
   private renderShop(R: Phaser.GameObjects.Container, top: number) {
     const s = this.s, w = this.world();
     R.add(txt(s, 175, top + 50, `金币：${w.gold}`, 18, '#ffd24a')); // 上移缩小：避开书店「普通书店/传世秘籍」页签
@@ -364,6 +445,7 @@ export class Panel {
     }
     const autoList = Settings.skillsFor(w.cls), autoable = new Set(DEFAULT_AUTO_SKILLS[w.cls]);
     const rowH = IS_MOBILE ? 66 : 55, y0 = top + 48 + rowH / 2, fs = IS_MOBILE ? 16 : 13;
+    const skillHits: Phaser.GameObjects.GameObject[] = [];
     const shopIds = new Set(w.shopBooks().map(b => b.skill)), dropSrc = Object.fromEntries(SKILL_BOOK_DROPS.map(d => [d.skill, d.src.map(x => x.floorName).join('/')]));
     list.forEach((k, i) => {
       const y = y0 + i * rowH, inBar = barIdx.has(k.id);
@@ -385,16 +467,19 @@ export class Panel {
       if (k.train && lv >= 0 && lv < 3) { const p = Math.min(1, pts / k.train[lv]); R.add(s.add.rectangle(212, y + rowH / 2 - 6, 220, 3, 0x333333).setOrigin(0, 0.5)); R.add(s.add.rectangle(212, y + rowH / 2 - 6, 220 * p, 3, 0x55cc77).setOrigin(0, 0.5)); }
       if (inBar) {
         const bi = barIdx.get(k.id)!;
-        R.add([...this.fitRow(button(s, IS_MOBILE ? 760 : 800, y, IS_MOBILE ? 60 : 36, rowH - 18, '▲', () => { w.moveSkill(k.id, bi - 1); this.render(); }, 14, bi > 0), rowH)]);
-        R.add([...this.fitRow(button(s, IS_MOBILE ? 830 : 840, y, IS_MOBILE ? 60 : 36, rowH - 18, '▼', () => { w.moveSkill(k.id, bi + 1); this.render(); }, 14, bi < bar.length - 1), rowH)]);
+        const upB = this.fitRow(button(s, IS_MOBILE ? 760 : 800, y, IS_MOBILE ? 60 : 36, rowH - 18, '▲', () => { w.moveSkill(k.id, bi - 1); this.render(); }, 14, bi > 0), rowH);
+        const dnB = this.fitRow(button(s, IS_MOBILE ? 830 : 840, y, IS_MOBILE ? 60 : 36, rowH - 18, '▼', () => { w.moveSkill(k.id, bi + 1); this.render(); }, 14, bi < bar.length - 1), rowH);
+        skillHits.push(upB[0], dnB[0]); R.add([...upB]); R.add([...dnB]);
         if (autoable.has(k.id)) {
           const on = autoList.includes(k.id), pr = autoList.indexOf(k.id);
-          R.add([...this.fitRow(button(s, IS_MOBILE ? 940 : 975, y, 96, rowH - 18, `${on ? '☑' : '☐'} 自动${on ? ' #' + (pr + 1) : ''}`, () => { Settings.toggleAutoSkill(k.id, w.cls); this.render(); }, 13), rowH)]);
-          R.add([...this.fitRow(button(s, IS_MOBILE ? 1020 : 1045, y, IS_MOBILE ? 60 : 32, rowH - 18, '↑', () => { Settings.moveAutoSkill(k.id, -1, w.cls); this.render(); }, 13, on && pr > 0), rowH)]);
-          R.add([...this.fitRow(button(s, IS_MOBILE ? 1084 : 1081, y, IS_MOBILE ? 60 : 32, rowH - 18, '↓', () => { Settings.moveAutoSkill(k.id, 1, w.cls); this.render(); }, 13, on && pr < autoList.length - 1), rowH)]);
+          const autoB = this.fitRow(button(s, IS_MOBILE ? 940 : 975, y, 96, rowH - 18, `${on ? '☑' : '☐'} 自动${on ? ' #' + (pr + 1) : ''}`, () => { Settings.toggleAutoSkill(k.id, w.cls); this.render(); }, 13), rowH);
+          const priU = this.fitRow(button(s, IS_MOBILE ? 1020 : 1045, y, IS_MOBILE ? 60 : 32, rowH - 18, '↑', () => { Settings.moveAutoSkill(k.id, -1, w.cls); this.render(); }, 13, on && pr > 0), rowH);
+          const priD = this.fitRow(button(s, IS_MOBILE ? 1084 : 1081, y, IS_MOBILE ? 60 : 32, rowH - 18, '↓', () => { Settings.moveAutoSkill(k.id, 1, w.cls); this.render(); }, 13, on && pr < autoList.length - 1), rowH);
+          skillHits.push(autoB[0], priU[0], priD[0]); R.add([...autoB]); R.add([...priU]); R.add([...priD]);
         } else R.add(txt(s, 975, y, '手动', 12, '#888').setOrigin(0.5));
       }
     });
+    this.widenSkillRowHits(skillHits);
     if (IS_MOBILE) R.add(txt(s, 160, top + 450, '▲▼ 调整快捷栏顺序；☑自动 勾选后自动施放，↑↓ 调优先级', 18, '#9fd')); else R.add(txt(s, 160, top + 444, `▲▼/拖动≡ 调整快捷栏；☑自动 与设置页同一份，#n 为自动优先级。学习等级/修炼点取自 1.76 官方，修炼满足后自动升级；耗魔×3；轻量冷却 1.5–6s + 公共施法间隔 0.8s（适配）。等级加成 ×${w.skillScale().toFixed(2)}`, 12, '#aaa', { wordWrap: { width: 960 } }));
   }
   // ---------- R14 城镇 ----------
