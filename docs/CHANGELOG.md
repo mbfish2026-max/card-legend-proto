@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 召唤直升卷轴覆盖法师宠物 + 全职业召唤物生存（未合并/未发布）
+## R86：召唤直升卷轴覆盖法师宠物 + 全职业召唤物生存
 - 升级卡仍是灵符商城「召唤直升卷轴」。原先 `useSummonScroll` 只看 `World.summons`（不含 `pet`），法师只有诱惑宠物时提示没有召唤物且不消耗；`boostSummon` 虽能升宠物，但诱惑成功不读 `summonBoostLv`，用过卡之后新宠物仍从技能等级起。现改为 `upgradeSummons()`：道士骷髅、神兽、尸灵、金甲骷髅，以及法师诱惑之光宠物。至少升了一只才写 `summonBoostLv` 并扣卡；无目标、已满 7 级不扣卡、不改标记。替身法符、合击英雄、BOSS 召出的敌方小怪不算。
 - 法师召唤来源以 `classes.ts` 为准：只有 `charm`。冰系与五雷轰不生成单位。战士没有召唤技能。
 - 生存 [适配]：`WORLD.summonSurvHp=1.15`、`summonSurvDef=1.2`。`applySummonLv` 的生命与防御/魔御乘这两个数，攻击公式和 `summonInh*`、`summonHpMul`/`summonAtkMul` 不动。系数从 `sBase` 现算、不写回。血量保持原比例，不回满。替身用同一对系数，攻击仍为 0，不进卡、不存档。
